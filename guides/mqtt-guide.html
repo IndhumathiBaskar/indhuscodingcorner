@@ -1,0 +1,1719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MQTT — Complete Visual Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ── */
+:root {
+  --bg:       #faf9f7;
+  --surface:  #f3f1ed;
+  --surface2: #ede9e3;
+  --card:     #ffffff;
+  --border:   #e4dfd8;
+  --border2:  #d4cfc8;
+  --accent:   #c96a2a;
+  --accent-l: #f5e6d8;
+  --accent2:  #2a7a5a;
+  --accent3:  #2a5a9a;
+  --accent4:  #9a2a7a;
+  --accent5:  #d4872a;
+  --text:     #1a1814;
+  --muted:    #8c877f;
+  --code-bg:  #1e1e2e;
+  --radius:   10px;
+  --shadow:   0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size: 15px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+/* ── HERO ── */
+.hero {
+  background: linear-gradient(135deg, #faf9f7 0%, #f0ebe3 60%, #e8dfd4 100%);
+  border-bottom: 1px solid var(--border);
+  padding: clamp(2.5rem,7vw,5rem) clamp(1rem,5vw,3rem);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(ellipse 70% 50% at 50% 30%, rgba(201,106,42,0.07) 0%, transparent 70%);
+  pointer-events:none;
+}
+.grid-bg { display: none; }
+
+.hero-badge {
+  display:inline-flex; align-items:center; gap:8px;
+  background: var(--accent-l);
+  border: 1px solid rgba(201,106,42,0.3);
+  border-radius: 100px;
+  padding: 5px 16px;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 1.25rem;
+}
+.hero-badge::before {
+  content:''; width:6px; height:6px;
+  background: var(--accent); border-radius:50%;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+h1.hero-title {
+  font-size: clamp(2.2rem, 7vw, 5rem);
+  font-weight: 700; letter-spacing: -0.03em; line-height: 1.05;
+  color: var(--text); margin-bottom: 0.75rem;
+}
+h1.hero-title span.accent { color: var(--accent); }
+h1.hero-title span.sub {
+  display:block; font-size: clamp(0.85rem, 2.5vw, 1.1rem);
+  font-weight: 400; color: var(--muted); letter-spacing: 0.03em; margin-top: 0.5rem;
+}
+.hero-desc { max-width: 560px; margin: 0 auto 1.5rem; color: var(--muted); font-size: 0.95rem; }
+
+.hero-stats { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin-top: 0.75rem; }
+.stat { text-align: center; }
+.stat-num { font-size: 1.6rem; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+.stat-label { font-size: 0.68rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ── TAB NAV ── */
+.tab-nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(250,249,247,0.97);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tab-nav::-webkit-scrollbar { display: none; }
+.tab-nav-inner {
+  display: inline-flex; gap: 2px; min-width: 100%;
+  padding: 6px 0; white-space: nowrap;
+}
+.tab-btn {
+  flex-shrink: 0; background: none; border: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  color: var(--muted); padding: 7px 13px; border-radius: 6px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.tab-btn:hover { background: var(--surface); color: var(--text); }
+.tab-btn.active { background: var(--accent-l); color: var(--accent); font-weight: 600; }
+
+/* ── TAB PANELS ── */
+.tab-panel { display: none; animation: fadeIn 0.25s ease; }
+.tab-panel.active { display: block; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* ── SECTIONS (now inside panels) ── */
+section {
+  padding: clamp(2rem,5vw,3.5rem) clamp(1rem,4vw,2rem);
+  max-width: 860px; margin: 0 auto;
+}
+
+.section-tag {
+  display: inline-block; font-size: 0.68rem; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--accent);
+  background: var(--accent-l); border: 1px solid rgba(201,106,42,0.2);
+  border-radius: 4px; padding: 3px 10px; margin-bottom: 0.75rem;
+}
+h2.section-title {
+  font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 700;
+  letter-spacing: -0.02em; margin-bottom: 0.4rem; color: var(--text);
+}
+.section-sub { color: var(--muted); max-width: 580px; margin-bottom: 2rem; font-size: 0.9rem; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: clamp(1rem,3vw,1.4rem);
+  transition: border-color 0.2s, transform 0.2s; box-shadow: var(--shadow);
+}
+.card:hover { border-color: rgba(201,106,42,0.4); transform: translateY(-2px); }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px,100%), 1fr)); gap: 1.25rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px,100%), 1fr)); gap: 1.25rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px,100%), 1fr)); gap: 1rem; }
+.card-icon { font-size: 1.75rem; margin-bottom: 0.6rem; }
+.card-title { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; color: var(--text); }
+.card-body { color: var(--muted); font-size: 0.85rem; }
+
+/* ── DIVIDER ── */
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 0; }
+
+/* ── CODE BLOCKS ── */
+.code-block {
+  background: var(--code-bg); border: 1px solid #2a2a3e;
+  border-radius: var(--radius); overflow: hidden; margin: 1.25rem 0;
+}
+.code-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.6rem 1.1rem;
+  background: rgba(255,255,255,0.04); border-bottom: 1px solid #2a2a3e;
+}
+.code-lang { font-size: 0.67rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+.code-dots { display:flex; gap:5px; }
+.code-dots span { width:9px; height:9px; border-radius:50%; }
+.dot-r { background:#ff5f57; } .dot-y { background:#ffbd2e; } .dot-g { background:#28ca41; }
+pre {
+  padding: clamp(0.9rem,2.5vw,1.3rem); overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(0.7rem,1.8vw,0.8rem); line-height: 1.7;
+  color: #cdd6f4; white-space: pre;
+}
+.kw { color: #cba6f7; } .cls { color: #89b4fa; } .str { color: #a6e3a1; }
+.num { color: #fab387; } .cmt { color: #6c7086; font-style:italic; }
+.mth { color: #89b4fa; } .tp { color: #f9e2af; } .var { color: #cdd6f4; } .prop { color: #89dceb; }
+
+/* ── DIAGRAM ── */
+.diagram {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: clamp(1rem,3vw,1.75rem);
+  margin: 1.5rem 0; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  box-shadow: var(--shadow);
+}
+.diagram-title {
+  font-size: 0.68rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 1.25rem; text-align: center;
+}
+.flow-svg { width: 100%; max-width: 860px; display: block; margin: 0 auto; height: auto; }
+
+/* ── TABLE ── */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+th { background: var(--surface); color: var(--text); font-size: 0.68rem; letter-spacing: 0.08em;
+     text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; }
+td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--muted); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface); color: var(--text); }
+
+.badge { display:inline-block; padding:2px 9px; border-radius:100px; font-size:0.68rem; font-weight:700; }
+.badge-green { background: rgba(42,122,90,0.12); color: #1f6b4a; }
+.badge-red   { background: rgba(220,53,69,0.1);  color: #b02a37; }
+.badge-yellow{ background: rgba(201,106,42,0.12); color: var(--accent); }
+.badge-blue  { background: rgba(42,90,154,0.1);  color: #1e4f8c; }
+.badge-purple{ background: rgba(154,42,122,0.1); color: #7a1f60; }
+
+/* ── QOS ── */
+.qos-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px,100%), 1fr)); gap: 1.25rem; margin: 1.5rem 0; }
+.qos-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; position: relative; overflow: hidden; box-shadow: var(--shadow); }
+.qos-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.qos-0::before { background: #dc3545; }
+.qos-1::before { background: var(--accent5); }
+.qos-2::before { background: var(--accent2); }
+.qos-num { font-family:'JetBrains Mono',monospace; font-size:2.5rem; font-weight:700; line-height:1; margin-bottom:0.4rem; }
+.qos-0 .qos-num { color: #dc3545; } .qos-1 .qos-num { color: var(--accent5); } .qos-2 .qos-num { color: var(--accent2); }
+.qos-name { font-weight:700; font-size:0.95rem; margin-bottom:0.6rem; }
+.qos-desc { color:var(--muted); font-size:0.83rem; margin-bottom:0.9rem; }
+.flow-steps { display:flex; flex-direction:column; gap:3px; font-size:0.75rem; font-family:'JetBrains Mono',monospace; }
+.flow-step { display:flex; align-items:center; gap:8px; color:var(--muted); padding:3px 0; }
+.arrow { color:var(--accent); }
+
+/* ── TOPIC DEMO ── */
+.topic-demo {
+  background: var(--code-bg); border: 1px solid #2a2a3e;
+  border-radius: var(--radius); padding: clamp(0.9rem,2.5vw,1.3rem) clamp(1rem,3vw,1.75rem);
+  margin: 1.25rem 0; font-family:'JetBrains Mono',monospace;
+  font-size: clamp(0.72rem,2vw,0.95rem); overflow-x:auto; -webkit-overflow-scrolling:touch;
+}
+.topic-part { display:inline-block; padding:3px 9px; border-radius:5px; margin:2px; font-weight:700; }
+.tp-home   { background:rgba(201,106,42,0.18); color:var(--accent); }
+.tp-room   { background:rgba(154,42,122,0.15); color:#7a1f60; }
+.tp-sensor { background:rgba(42,122,90,0.15);  color:#1f6b4a; }
+.tp-type   { background:rgba(42,90,154,0.15);  color:#1e4f8c; }
+.tp-sep    { color:var(--muted); margin:0 1px; }
+
+.wildcard-demo { display:grid; grid-template-columns:auto 1fr; gap:0.6rem 1.25rem; align-items:center; margin:0.9rem 0; font-size:0.88rem; }
+.wc-pattern { font-family:'JetBrains Mono',monospace; background:var(--accent-l); border:1px solid rgba(201,106,42,0.25); padding:3px 11px; border-radius:5px; color:var(--accent); white-space:nowrap; }
+
+/* ── FEATURE VISUAL ── */
+.feature-visual { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:clamp(1rem,3vw,1.75rem); margin:1.25rem 0; box-shadow:var(--shadow); }
+.timeline { display:flex; align-items:center; gap:0; margin:0.9rem 0; overflow-x:auto; }
+.tl-item { display:flex; flex-direction:column; align-items:center; gap:7px; min-width:100px; }
+.tl-dot { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1rem; }
+.tl-dot.green  { background:rgba(42,122,90,0.15); border:2px solid var(--accent2); }
+.tl-dot.red    { background:rgba(220,53,69,0.1);  border:2px solid #dc3545; }
+.tl-dot.blue   { background:rgba(42,90,154,0.1);  border:2px solid var(--accent3); }
+.tl-dot.yellow { background:rgba(201,106,42,0.12);border:2px solid var(--accent); }
+.tl-label { font-size:0.7rem; text-align:center; color:var(--muted); }
+.tl-line { flex:1; height:2px; background:var(--border); min-width:24px; margin-bottom:26px; }
+.tl-line.active { background:var(--accent); }
+.tl-line.dashed { background:repeating-linear-gradient(90deg,var(--muted) 0,var(--muted) 5px,transparent 5px,transparent 10px); }
+
+/* ── SECURITY ── */
+.security-layers { position:relative; margin:1.5rem auto; max-width:460px; }
+.sec-layer { border-radius:10px; padding:0.9rem 1.25rem; margin-bottom:7px; display:flex; align-items:center; gap:0.9rem; font-size:0.88rem; font-weight:600; }
+.sec-layer:nth-child(1) { background:rgba(220,53,69,0.08);  border:1px solid rgba(220,53,69,0.25); }
+.sec-layer:nth-child(2) { background:rgba(201,106,42,0.08); border:1px solid rgba(201,106,42,0.25); margin:0 10px 7px; }
+.sec-layer:nth-child(3) { background:rgba(42,122,90,0.08);  border:1px solid rgba(42,122,90,0.25);  margin:0 20px 7px; }
+.sec-layer:nth-child(4) { background:rgba(42,90,154,0.08);  border:1px solid rgba(42,90,154,0.25);  margin:0 30px; }
+
+/* ── BROKERS ── */
+.broker-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr)); gap:0.9rem; margin:1.25rem 0; }
+.broker-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:1.1rem; text-align:center; box-shadow:var(--shadow); }
+.broker-name { font-size:1rem; font-weight:700; margin-bottom:0.4rem; color:var(--text); }
+.broker-type { font-size:0.65rem; color:var(--muted); margin-bottom:0.9rem; letter-spacing:0.1em; text-transform:uppercase; }
+.broker-bar { height:3px; border-radius:2px; margin-bottom:3px; }
+.broker-bar-label { display:flex; justify-content:space-between; font-size:0.65rem; color:var(--muted); margin-bottom:7px; }
+
+/* ── SCENARIOS ── */
+.scenario { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:1.25rem; overflow:hidden; box-shadow:var(--shadow); }
+.scenario-header { display:flex; align-items:center; gap:0.9rem; padding:1rem 1.25rem; background:var(--surface); border-bottom:1px solid var(--border); }
+.scenario-icon { font-size:1.5rem; }
+.scenario-title { font-weight:700; font-size:1rem; }
+.scenario-desc { color:var(--muted); font-size:0.82rem; }
+.scenario-body { padding:clamp(0.9rem,2.5vw,1.3rem); }
+
+/* ── CHECKLIST ── */
+.checklist { list-style:none; }
+.checklist li { display:flex; align-items:flex-start; gap:9px; padding:0.55rem 0; border-bottom:1px solid var(--border); font-size:0.88rem; color:var(--muted); }
+.checklist li:last-child { border:none; }
+.checklist li::before { content:'✓'; color:var(--accent2); font-weight:700; flex-shrink:0; margin-top:2px; }
+
+/* ── INFO BOX ── */
+.info-box { border-radius:8px; padding:0.9rem 1.1rem; margin:0.9rem 0; display:flex; gap:0.7rem; font-size:0.85rem; }
+.info-box.info    { background:rgba(42,90,154,0.06);  border:1px solid rgba(42,90,154,0.2); }
+.info-box.warn    { background:rgba(201,106,42,0.06); border:1px solid rgba(201,106,42,0.2); }
+.info-box.success { background:rgba(42,122,90,0.06);  border:1px solid rgba(42,122,90,0.2); }
+.info-box.danger  { background:rgba(220,53,69,0.06);  border:1px solid rgba(220,53,69,0.2); }
+.info-icon { font-size:1rem; flex-shrink:0; margin-top:1px; }
+.info-content { color:var(--muted); }
+.info-content strong { color:var(--text); }
+
+/* ── VERSION ROWS ── */
+.version-row { display:flex; gap:0.9rem; align-items:center; padding:0.65rem 0; border-bottom:1px solid var(--border); }
+.v-num { font-family:'JetBrains Mono',monospace; font-weight:700; font-size:1rem; color:var(--accent); min-width:55px; }
+.v-year { color:var(--muted); font-size:0.78rem; min-width:45px; }
+.v-features { color:var(--text); font-size:0.84rem; flex:1; }
+
+/* ── PATTERNS ── */
+.pattern-box { background:var(--card); border-left:3px solid var(--accent2); border-radius:0 var(--radius) var(--radius) 0; padding:1.1rem; margin:0.9rem 0; border-top:1px solid var(--border); border-right:1px solid var(--border); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
+.pattern-title { font-weight:700; margin-bottom:0.4rem; color:var(--accent2); }
+.pattern-desc { color:var(--muted); font-size:0.85rem; }
+
+/* ── FOOTER ── */
+footer { text-align:center; padding:2.5rem 2rem; color:var(--muted); font-size:0.78rem; border-top:1px solid var(--border); margin-top:3rem; }
+footer strong { color:var(--text); }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:none} }
+.fade-up { animation: fadeUp 0.5s ease both; }
+
+/* ── RESPONSIVE ── */
+@media(max-width:680px) {
+  section { padding: 1.75rem 1rem; }
+  pre { font-size: 0.68rem; }
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .qos-cards { grid-template-columns: 1fr; }
+  .broker-grid { grid-template-columns: repeat(2,1fr); }
+  .wildcard-demo { grid-template-columns: 1fr; }
+  .sec-layer:nth-child(2),.sec-layer:nth-child(3),.sec-layer:nth-child(4) { margin-left:0; margin-right:0; }
+}
+@media(max-width:420px) {
+  pre { font-size: 0.64rem; }
+  h2.section-title { font-size: 1.25rem; }
+  .topic-demo { font-size: 0.68rem; }
+  .qos-num { font-size: 2rem; }
+  .tl-item { min-width: 76px; }
+  .hero-stats { gap: 1rem; }
+  .stat-num { font-size: 1.3rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-badge">Complete Reference Guide</div>
+  <h1 class="hero-title">
+    <span class="accent">MQTT</span>
+    <span class="sub">Message Queuing Telemetry Transport</span>
+  </h1>
+  <p class="hero-desc">
+    The lightweight publish/subscribe messaging protocol built for IoT, embedded systems, and high-latency networks — from zero to expert.
+  </p>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">~2KB</div><div class="stat-label">Min Overhead</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">QoS Levels</div></div>
+    <div class="stat"><div class="stat-num">1883</div><div class="stat-label">Default Port</div></div>
+    <div class="stat"><div class="stat-num">8883</div><div class="stat-label">TLS Port</div></div>
+  </div>
+</div>
+
+<!-- TAB NAV -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="showTab('what',this)">What is MQTT</button>
+    <button class="tab-btn" onclick="showTab('how',this)">How it Works</button>
+    <button class="tab-btn" onclick="showTab('topics',this)">Topics</button>
+    <button class="tab-btn" onclick="showTab('qos',this)">QoS Levels</button>
+    <button class="tab-btn" onclick="showTab('features',this)">Features</button>
+    <button class="tab-btn" onclick="showTab('code',this)">C# Code</button>
+    <button class="tab-btn" onclick="showTab('brokers',this)">Brokers</button>
+    <button class="tab-btn" onclick="showTab('security',this)">Security</button>
+    <button class="tab-btn" onclick="showTab('patterns',this)">Patterns</button>
+    <button class="tab-btn" onclick="showTab('scenarios',this)">Real World</button>
+    <button class="tab-btn" onclick="showTab('vs',this)">MQTT vs REST</button>
+    <button class="tab-btn" onclick="showTab('checklist',this)">Checklist</button>
+  </div>
+</div>
+
+<!-- TAB PANELS -->
+<div id="tab-what" class="tab-panel active">
+<!-- SECTION 1: WHAT IS MQTT -->
+<section id="what">
+  <div class="section-tag">Chapter 01</div>
+  <h2 class="section-title">What is MQTT?</h2>
+  <p class="section-sub">A lightweight, publish/subscribe protocol designed for constrained devices and low-bandwidth, high-latency networks.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">📡</div>
+      <div class="card-title">Publish / Subscribe</div>
+      <div class="card-body">Senders (publishers) don't send directly to receivers. They publish to a <em>topic</em>. Receivers subscribe to topics they care about. Fully decoupled.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🪶</div>
+      <div class="card-title">Ultra Lightweight</div>
+      <div class="card-body">Minimum 2-byte fixed header. Designed for devices with 256KB RAM, cellular modems, and satellite links with 300ms+ latency.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🔌</div>
+      <div class="card-title">Always Connected</div>
+      <div class="card-body">Persistent TCP connections with keep-alive heartbeats. Clients stay connected; the broker routes messages instantly.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏗️</div>
+      <div class="card-title">Broker-Centric</div>
+      <div class="card-body">A central <strong>broker</strong> (like Mosquitto or HiveMQ) receives all published messages and routes them to matching subscribers.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <div class="card-title">Real-Time</div>
+      <div class="card-body">Sub-millisecond delivery on local networks. Used for live sensor data, remote control commands, and telemetry streams.</div>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌐</div>
+      <div class="card-title">IoT Native</div>
+      <div class="card-body">Powers billions of devices — smart home sensors, industrial PLCs, wearables, fleet tracking, and more.</div>
+    </div>
+  </div>
+
+  <!-- Origin -->
+  <div class="diagram" style="margin-top:2.5rem;">
+    <div class="diagram-title">Protocol History</div>
+    <div class="version-row">
+      <span class="v-num">v3.1</span>
+      <span class="v-year">1999</span>
+      <span class="v-features">Original spec by IBM (Andy Stanford-Clark) &amp; Arcom for satellite pipeline monitoring. Low bandwidth focus.</span>
+    </div>
+    <div class="version-row">
+      <span class="v-num">v3.1.1</span>
+      <span class="v-year">2014</span>
+      <span class="v-features">OASIS standard. Cleaned up specs, improved interoperability. Most widely deployed version today.</span>
+    </div>
+    <div class="version-row" style="border:none;">
+      <span class="v-num">v5.0</span>
+      <span class="v-year">2019</span>
+      <span class="v-features">Major upgrade: message expiry, reason codes, user properties, topic aliases, shared subscriptions, request/response pattern.</span>
+    </div>
+  </div>
+
+  <div class="info-box info">
+    <span class="info-icon">💡</span>
+    <div class="info-content"><strong>Analogy:</strong> MQTT is like a <strong>radio station</strong>. The station (broker) broadcasts on channels (topics). Anyone with a radio (subscriber) can tune in. Listeners don't need to know who's broadcasting — just what channel to tune to.</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-how" class="tab-panel">
+<!-- SECTION 2: HOW IT WORKS -->
+<section id="how">
+  <div class="section-tag">Chapter 02</div>
+  <h2 class="section-title">How MQTT Works</h2>
+  <p class="section-sub">The complete message flow from publisher to subscriber, through the broker.</p>
+
+  <!-- Architecture SVG -->
+  <div class="diagram">
+    <div class="diagram-title">Architecture — Publish / Subscribe Flow</div>
+    <svg class="flow-svg" viewBox="0 0 880 340" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Publishers -->
+      <rect x="10" y="80" width="130" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="75" y="105" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="12" font-weight="700">🌡️ Temp Sensor</text>
+      <text x="75" y="122" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Publisher</text>
+
+      <rect x="10" y="160" width="130" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="75" y="185" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="12" font-weight="700">💡 Light Switch</text>
+      <text x="75" y="202" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Publisher</text>
+
+      <rect x="10" y="240" width="130" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="75" y="265" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="12" font-weight="700">🚗 GPS Tracker</text>
+      <text x="75" y="282" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Publisher</text>
+
+      <!-- Arrows to broker -->
+      <line x1="140" y1="110" x2="330" y2="165" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+      <line x1="140" y1="190" x2="330" y2="190" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+      <line x1="140" y1="270" x2="330" y2="215" stroke="#00d4ff" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-blue)"/>
+
+      <!-- Broker -->
+      <rect x="330" y="120" width="180" height="140" rx="12" fill="#0d1117" stroke="#00d4ff" stroke-width="2"/>
+      <text x="420" y="155" text-anchor="middle" fill="#00d4ff" font-family="Syne,sans-serif" font-size="14" font-weight="800">BROKER</text>
+      <text x="420" y="173" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Mosquitto / HiveMQ</text>
+      <rect x="350" y="185" width="140" height="22" rx="4" fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.2)"/>
+      <text x="420" y="200" text-anchor="middle" fill="#94a3b8" font-family="Space Mono,monospace" font-size="9">home/sensor/temp</text>
+      <rect x="350" y="212" width="140" height="22" rx="4" fill="rgba(124,58,237,0.07)" stroke="rgba(124,58,237,0.2)"/>
+      <text x="420" y="227" text-anchor="middle" fill="#94a3b8" font-family="Space Mono,monospace" font-size="9">home/light/status</text>
+      <rect x="350" y="239" width="140" height="22" rx="4" fill="rgba(16,185,129,0.07)" stroke="rgba(16,185,129,0.2)"/>
+      <text x="420" y="254" text-anchor="middle" fill="#94a3b8" font-family="Space Mono,monospace" font-size="9">fleet/truck/gps</text>
+
+      <!-- Arrows from broker -->
+      <line x1="510" y1="165" x2="700" y2="110" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+      <line x1="510" y1="190" x2="700" y2="190" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+      <line x1="510" y1="215" x2="700" y2="270" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow-green)"/>
+
+      <!-- Subscribers -->
+      <rect x="700" y="80" width="150" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="775" y="105" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="11" font-weight="700">📱 Mobile App</text>
+      <text x="775" y="122" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Subscriber</text>
+
+      <rect x="700" y="160" width="150" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="775" y="185" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="11" font-weight="700">🖥️ Dashboard</text>
+      <text x="775" y="202" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Subscriber</text>
+
+      <rect x="700" y="240" width="150" height="60" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="775" y="265" text-anchor="middle" fill="#e2e8f0" font-family="Syne,sans-serif" font-size="11" font-weight="700">🗄️ Database</text>
+      <text x="775" y="282" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="10">Subscriber</text>
+
+      <!-- Labels -->
+      <text x="215" y="155" text-anchor="middle" fill="#00d4ff" font-family="Syne,sans-serif" font-size="9">PUBLISH</text>
+      <text x="620" y="155" text-anchor="middle" fill="#10b981" font-family="Syne,sans-serif" font-size="9">DELIVER</text>
+
+      <!-- Arrow markers -->
+      <defs>
+        <marker id="arrow-blue" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#00d4ff"/>
+        </marker>
+        <marker id="arrow-green" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#10b981"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Connection Lifecycle -->
+  <h3 style="font-size:1.25rem; font-weight:700; margin-bottom:1rem;">Connection Lifecycle</h3>
+  <div class="diagram">
+    <div class="diagram-title">Client ↔ Broker Communication Steps</div>
+    <svg class="flow-svg" viewBox="0 0 880 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Steps -->
+      <rect x="20" y="60" width="110" height="80" rx="8" fill="#111827" stroke="#1e2d47"/>
+      <text x="75" y="88" text-anchor="middle" fill="#00d4ff" font-family="Space Mono,monospace" font-size="10" font-weight="700">CONNECT</text>
+      <text x="75" y="106" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">clientId</text>
+      <text x="75" y="120" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">credentials</text>
+      <text x="75" y="134" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">keepAlive</text>
+
+      <line x1="130" y1="100" x2="200" y2="100" stroke="#1e2d47" stroke-width="2" marker-end="url(#arr-gray)"/>
+      
+      <rect x="200" y="60" width="110" height="80" rx="8" fill="#111827" stroke="#10b981"/>
+      <text x="255" y="88" text-anchor="middle" fill="#10b981" font-family="Space Mono,monospace" font-size="10" font-weight="700">CONNACK</text>
+      <text x="255" y="106" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">returnCode</text>
+      <text x="255" y="120" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">sessionPresent</text>
+      <line x1="310" y1="100" x2="380" y2="100" stroke="#1e2d47" stroke-width="2" marker-end="url(#arr-gray)"/>
+
+      <rect x="380" y="60" width="110" height="80" rx="8" fill="#111827" stroke="#a78bfa"/>
+      <text x="435" y="88" text-anchor="middle" fill="#a78bfa" font-family="Space Mono,monospace" font-size="10" font-weight="700">SUBSCRIBE</text>
+      <text x="435" y="106" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">topic filter</text>
+      <text x="435" y="120" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">QoS level</text>
+      <line x1="490" y1="100" x2="560" y2="100" stroke="#1e2d47" stroke-width="2" marker-end="url(#arr-gray)"/>
+
+      <rect x="560" y="60" width="110" height="80" rx="8" fill="#111827" stroke="#00d4ff"/>
+      <text x="615" y="88" text-anchor="middle" fill="#00d4ff" font-family="Space Mono,monospace" font-size="10" font-weight="700">PUBLISH</text>
+      <text x="615" y="106" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">topic</text>
+      <text x="615" y="120" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">payload</text>
+      <text x="615" y="134" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">QoS, retain</text>
+      <line x1="670" y1="100" x2="740" y2="100" stroke="#1e2d47" stroke-width="2" marker-end="url(#arr-gray)"/>
+
+      <rect x="740" y="60" width="110" height="80" rx="8" fill="#111827" stroke="#ef4444"/>
+      <text x="795" y="88" text-anchor="middle" fill="#ef4444" font-family="Space Mono,monospace" font-size="10" font-weight="700">DISCONNECT</text>
+      <text x="795" y="106" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">graceful close</text>
+
+      <!-- Step numbers -->
+      <circle cx="75" cy="48" r="12" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.3)"/>
+      <text x="75" y="53" text-anchor="middle" fill="#00d4ff" font-family="Space Mono,monospace" font-size="10" font-weight="700">1</text>
+      <circle cx="255" cy="48" r="12" fill="rgba(16,185,129,0.15)" stroke="rgba(16,185,129,0.3)"/>
+      <text x="255" y="53" text-anchor="middle" fill="#10b981" font-family="Space Mono,monospace" font-size="10" font-weight="700">2</text>
+      <circle cx="435" cy="48" r="12" fill="rgba(124,58,237,0.15)" stroke="rgba(124,58,237,0.3)"/>
+      <text x="435" y="53" text-anchor="middle" fill="#a78bfa" font-family="Space Mono,monospace" font-size="10" font-weight="700">3</text>
+      <circle cx="615" cy="48" r="12" fill="rgba(0,212,255,0.15)" stroke="rgba(0,212,255,0.3)"/>
+      <text x="615" y="53" text-anchor="middle" fill="#00d4ff" font-family="Space Mono,monospace" font-size="10" font-weight="700">4</text>
+      <circle cx="795" cy="48" r="12" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)"/>
+      <text x="795" y="53" text-anchor="middle" fill="#ef4444" font-family="Space Mono,monospace" font-size="10" font-weight="700">5</text>
+
+      <defs>
+        <marker id="arr-gray" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L8,3 z" fill="#1e2d47"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <!-- Packet structure -->
+  <h3 style="font-size:1.25rem; font-weight:700; margin:2rem 0 1rem;">MQTT Packet Structure</h3>
+  <div class="diagram">
+    <div class="diagram-title">Fixed Header (minimum 2 bytes) — The core of MQTT's efficiency</div>
+    <svg class="flow-svg" viewBox="0 0 880 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="20" y="20" width="160" height="60" rx="0" fill="rgba(0,212,255,0.1)" stroke="#00d4ff"/>
+      <text x="100" y="45" text-anchor="middle" fill="#00d4ff" font-family="Space Mono,monospace" font-size="10" font-weight="700">Byte 1</text>
+      <text x="100" y="63" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">Type (4 bits) + Flags (4 bits)</text>
+
+      <rect x="180" y="20" width="160" height="60" rx="0" fill="rgba(124,58,237,0.1)" stroke="#a78bfa"/>
+      <text x="260" y="45" text-anchor="middle" fill="#a78bfa" font-family="Space Mono,monospace" font-size="10" font-weight="700">Byte 2+</text>
+      <text x="260" y="63" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">Remaining Length (1–4 bytes)</text>
+
+      <rect x="340" y="20" width="180" height="60" rx="0" fill="rgba(16,185,129,0.1)" stroke="#10b981"/>
+      <text x="430" y="45" text-anchor="middle" fill="#10b981" font-family="Space Mono,monospace" font-size="10" font-weight="700">Variable Header</text>
+      <text x="430" y="63" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">Topic, Packet ID (optional)</text>
+
+      <rect x="520" y="20" width="340" height="60" rx="0" fill="rgba(245,158,11,0.1)" stroke="#f59e0b"/>
+      <text x="690" y="45" text-anchor="middle" fill="#f59e0b" font-family="Space Mono,monospace" font-size="10" font-weight="700">Payload</text>
+      <text x="690" y="63" text-anchor="middle" fill="#64748b" font-family="Syne,sans-serif" font-size="9">Application message content (any bytes — JSON, binary, text)</text>
+    </svg>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-topics" class="tab-panel">
+<!-- SECTION 3: TOPICS -->
+<section id="topics">
+  <div class="section-tag">Chapter 03</div>
+  <h2 class="section-title">Topics &amp; Wildcards</h2>
+  <p class="section-sub">Topics are UTF-8 strings that act as routing keys. They define <em>what</em> a message is about and <em>where</em> it should go.</p>
+
+  <h3 style="margin-bottom:1rem; font-weight:700;">Topic Anatomy</h3>
+  <div class="topic-demo">
+    <span class="topic-part tp-home">home</span>
+    <span class="tp-sep">/</span>
+    <span class="topic-part tp-room">livingroom</span>
+    <span class="tp-sep">/</span>
+    <span class="topic-part tp-sensor">sensor</span>
+    <span class="tp-sep">/</span>
+    <span class="topic-part tp-type">temperature</span>
+  </div>
+
+  <div class="grid-4" style="margin:1rem 0 2rem;">
+    <div class="card" style="border-color:rgba(0,212,255,0.3);">
+      <div style="font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem;">Level 1</div>
+      <code style="color:var(--accent);">home</code>
+      <div class="card-body" style="margin-top:.5rem;">Namespace / domain</div>
+    </div>
+    <div class="card" style="border-color:rgba(124,58,237,0.3);">
+      <div style="font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;color:#a78bfa;margin-bottom:.5rem;">Level 2</div>
+      <code style="color:#a78bfa;">livingroom</code>
+      <div class="card-body" style="margin-top:.5rem;">Location / group</div>
+    </div>
+    <div class="card" style="border-color:rgba(16,185,129,0.3);">
+      <div style="font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;color:#10b981;margin-bottom:.5rem;">Level 3</div>
+      <code style="color:#10b981;">sensor</code>
+      <div class="card-body" style="margin-top:.5rem;">Device type</div>
+    </div>
+    <div class="card" style="border-color:rgba(245,158,11,0.3);">
+      <div style="font-size:0.72rem;letter-spacing:.1em;text-transform:uppercase;color:#f59e0b;margin-bottom:.5rem;">Level 4</div>
+      <code style="color:#f59e0b;">temperature</code>
+      <div class="card-body" style="margin-top:.5rem;">Metric / action</div>
+    </div>
+  </div>
+
+  <!-- Wildcards -->
+  <h3 style="margin-bottom:1rem; font-weight:700;">Wildcards</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="font-family:'Space Mono',monospace; font-size:1.5rem; color:var(--accent);">+</div>
+      <div style="font-weight:700; margin-bottom:.5rem;">Single-Level Wildcard</div>
+      <div class="card-body" style="margin-bottom:1rem;">Matches exactly ONE topic level.</div>
+      <div class="wildcard-demo">
+        <code class="wc-pattern">home/+/temperature</code>
+        <span style="color:var(--muted); font-size:.85rem;">Matches any room's temperature</span>
+        <code class="wc-pattern">home/+/+</code>
+        <span style="color:var(--muted); font-size:.85rem;">Any room, any sensor type</span>
+        <code class="wc-pattern">fleet/truck123/+</code>
+        <span style="color:var(--muted); font-size:.85rem;">All metrics for truck123</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="font-family:'Space Mono',monospace; font-size:1.5rem; color:#a78bfa;">#</div>
+      <div style="font-weight:700; margin-bottom:.5rem;">Multi-Level Wildcard</div>
+      <div class="card-body" style="margin-bottom:1rem;">Matches everything from that level down. Must be the LAST character.</div>
+      <div class="wildcard-demo">
+        <code class="wc-pattern">home/#</code>
+        <span style="color:var(--muted); font-size:.85rem;">Everything under home/</span>
+        <code class="wc-pattern">fleet/truck123/#</code>
+        <span style="color:var(--muted); font-size:.85rem;">All data for truck123</span>
+        <code class="wc-pattern">#</code>
+        <span style="color:var(--muted); font-size:.85rem;">⚠️ ALL topics (use with care!)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box warn" style="margin-top:1.5rem;">
+    <span class="info-icon">⚠️</span>
+    <div class="info-content"><strong>Best Practice:</strong> Topics starting with <code>$</code> are reserved for system use (e.g., <code>$SYS/broker/clients/connected</code>). Wildcards like <code>#</code> do NOT match <code>$SYS</code> topics. Design a clear naming hierarchy before deploying to production.</div>
+  </div>
+
+  <!-- Topic Design Patterns -->
+  <h3 style="margin:2rem 0 1rem; font-weight:700;">Topic Naming Best Practices</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div style="color:#10b981; font-weight:700; margin-bottom:.5rem;">✅ Good</div>
+      <pre style="background:transparent; padding:0; font-size:.8rem; color:#10b981;">factory/line1/motor/rpm
+home/bedroom/light/state
+user/u123/alerts</pre>
+    </div>
+    <div class="card">
+      <div style="color:#ef4444; font-weight:700; margin-bottom:.5rem;">❌ Avoid</div>
+      <pre style="background:transparent; padding:0; font-size:.8rem; color:#ef4444;">/leading/slash
+topic with spaces
+ALLCAPS/TOPICS</pre>
+    </div>
+    <div class="card">
+      <div style="color:#f59e0b; font-weight:700; margin-bottom:.5rem;">💡 Tips</div>
+      <ul style="list-style:none; font-size:.85rem; color:var(--muted);">
+        <li style="padding:.3rem 0;">Lowercase always</li>
+        <li style="padding:.3rem 0;">No leading/trailing slashes</li>
+        <li style="padding:.3rem 0;">Keep depth ≤ 6 levels</li>
+        <li style="padding:.3rem 0;">Use IDs not names for devices</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-qos" class="tab-panel">
+<!-- SECTION 4: QOS -->
+<section id="qos">
+  <div class="section-tag">Chapter 04</div>
+  <h2 class="section-title">Quality of Service (QoS)</h2>
+  <p class="section-sub">QoS defines the guarantee of message delivery between publisher and broker, and broker and subscriber.</p>
+
+  <div class="qos-cards">
+    <!-- QoS 0 -->
+    <div class="qos-card qos-0">
+      <div class="qos-num">0</div>
+      <div class="qos-name">At Most Once — "Fire and Forget"</div>
+      <div class="qos-desc">Message sent once. No acknowledgment, no retry. May be lost if connection drops. Fastest &amp; lowest overhead.</div>
+      <div class="flow-steps">
+        <div class="flow-step"><span class="arrow">→</span> Publisher sends PUBLISH</div>
+        <div class="flow-step"><span style="color:var(--muted);">✗</span> No ACK expected</div>
+        <div class="flow-step"><span style="color:var(--muted);">✗</span> No retry on failure</div>
+      </div>
+      <div style="margin-top:1rem;">
+        <span class="badge badge-red">Possible Loss</span>
+        <span class="badge badge-green" style="margin-left:.5rem;">Fastest</span>
+      </div>
+      <div style="margin-top:.75rem; font-size:.8rem; color:var(--muted);">
+        <strong>Use when:</strong> Sensor readings sent every second (missing one is fine)
+      </div>
+    </div>
+
+    <!-- QoS 1 -->
+    <div class="qos-card qos-1">
+      <div class="qos-num">1</div>
+      <div class="qos-name">At Least Once — "Acknowledged"</div>
+      <div class="qos-desc">Message delivered at least once. Broker sends PUBACK. Publisher retries until ACK received. May cause duplicates.</div>
+      <div class="flow-steps">
+        <div class="flow-step"><span class="arrow">→</span> Publisher sends PUBLISH</div>
+        <div class="flow-step"><span class="arrow">←</span> Broker sends PUBACK</div>
+        <div class="flow-step"><span class="arrow">↻</span> Retry if no PUBACK received</div>
+      </div>
+      <div style="margin-top:1rem;">
+        <span class="badge badge-yellow">Possible Duplicate</span>
+        <span class="badge badge-blue" style="margin-left:.5rem;">Balanced</span>
+      </div>
+      <div style="margin-top:.75rem; font-size:.8rem; color:var(--muted);">
+        <strong>Use when:</strong> Alerts, notifications — must arrive, duplicates OK
+      </div>
+    </div>
+
+    <!-- QoS 2 -->
+    <div class="qos-card qos-2">
+      <div class="qos-num">2</div>
+      <div class="qos-name">Exactly Once — "4-Way Handshake"</div>
+      <div class="qos-desc">Message delivered exactly once. Uses a 4-step handshake to ensure no loss and no duplicates. Highest overhead.</div>
+      <div class="flow-steps">
+        <div class="flow-step"><span class="arrow">→</span> PUBLISH (packetId)</div>
+        <div class="flow-step"><span class="arrow">←</span> PUBREC</div>
+        <div class="flow-step"><span class="arrow">→</span> PUBREL</div>
+        <div class="flow-step"><span class="arrow">←</span> PUBCOMP</div>
+      </div>
+      <div style="margin-top:1rem;">
+        <span class="badge badge-green">Guaranteed Once</span>
+        <span class="badge badge-red" style="margin-left:.5rem;">Highest Overhead</span>
+      </div>
+      <div style="margin-top:.75rem; font-size:.8rem; color:var(--muted);">
+        <strong>Use when:</strong> Financial transactions, billing events, critical commands
+      </div>
+    </div>
+  </div>
+
+  <!-- QoS Decision Matrix -->
+  <div class="diagram" style="margin-top:2rem;">
+    <div class="diagram-title">QoS Comparison Matrix</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>QoS 0</th>
+          <th>QoS 1</th>
+          <th>QoS 2</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Message Loss</td><td><span class="badge badge-red">Possible</span></td><td><span class="badge badge-green">None</span></td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>Duplicates</td><td><span class="badge badge-green">None</span></td><td><span class="badge badge-yellow">Possible</span></td><td><span class="badge badge-green">None</span></td></tr>
+        <tr><td>Network Overhead</td><td><span class="badge badge-green">1 packet</span></td><td><span class="badge badge-yellow">2 packets</span></td><td><span class="badge badge-red">4 packets</span></td></tr>
+        <tr><td>Latency</td><td><span class="badge badge-green">Lowest</span></td><td><span class="badge badge-yellow">Medium</span></td><td><span class="badge badge-red">Highest</span></td></tr>
+        <tr><td>Stored by broker</td><td><span class="badge badge-red">No</span></td><td><span class="badge badge-yellow">Until PUBACK</span></td><td><span class="badge badge-blue">Full handshake</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-features" class="tab-panel">
+<!-- SECTION 5: FEATURES -->
+<section id="features">
+  <div class="section-tag">Chapter 05</div>
+  <h2 class="section-title">Key Features</h2>
+  <p class="section-sub">The powerful mechanisms that make MQTT reliable in unreliable environments.</p>
+
+  <!-- Retained Messages -->
+  <h3 style="font-weight:700; font-size:1.25rem; margin-bottom:1rem;">📌 Retained Messages</h3>
+  <div class="feature-visual">
+    <p style="color:var(--muted); font-size:.9rem; margin-bottom:1.5rem;">The broker stores the <strong>last retained message</strong> for a topic. New subscribers immediately receive it without waiting for the next publish.</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot green">📡</div>
+        <div class="tl-label">Sensor publishes<br/><code style="font-size:.7rem; color:#10b981;">retain=true</code></div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot blue">🗄️</div>
+        <div class="tl-label">Broker stores<br/>last message</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot yellow">⏱️</div>
+        <div class="tl-label">Time passes...<br/>new client connects</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot blue">📱</div>
+        <div class="tl-label">New subscriber<br/>joins topic</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot green">⚡</div>
+        <div class="tl-label">Instantly receives<br/>last known value!</div>
+      </div>
+    </div>
+    <div class="info-box success" style="margin-top:1rem;">
+      <span class="info-icon">✅</span>
+      <div class="info-content"><strong>Perfect for:</strong> Device status (ON/OFF), last sensor reading, configuration values, firmware version. Clear a retained message by publishing an empty payload to the same topic with retain=true.</div>
+    </div>
+  </div>
+
+  <!-- Last Will & Testament -->
+  <h3 style="font-weight:700; font-size:1.25rem; margin:2rem 0 1rem;">☠️ Last Will & Testament (LWT)</h3>
+  <div class="feature-visual">
+    <p style="color:var(--muted); font-size:.9rem; margin-bottom:1.5rem;">When a client connects, it registers a <strong>will message</strong>. If the client disconnects unexpectedly (crash, network loss), the broker automatically publishes the will on its behalf.</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot blue">🔌</div>
+        <div class="tl-label">Client connects<br/>with LWT registered</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot green">💚</div>
+        <div class="tl-label">Normal operation<br/>heartbeats OK</div>
+      </div>
+      <div class="tl-line dashed"></div>
+      <div class="tl-item">
+        <div class="tl-dot red">💥</div>
+        <div class="tl-label">Client crashes<br/>no DISCONNECT sent</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot yellow">⏱️</div>
+        <div class="tl-label">Broker detects<br/>keepalive timeout</div>
+      </div>
+      <div class="tl-line active"></div>
+      <div class="tl-item">
+        <div class="tl-dot red">📢</div>
+        <div class="tl-label">Broker publishes<br/>LWT message!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keep Alive -->
+  <h3 style="font-weight:700; font-size:1.25rem; margin:2rem 0 1rem;">💓 Keep Alive / PING</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">How It Works</div>
+      <div class="card-body">Client sends <code>PINGREQ</code> packets at regular intervals (keep-alive seconds). Broker replies with <code>PINGRESP</code>. If broker gets no packet for 1.5× the keep-alive interval, it assumes the client is disconnected and fires the LWT.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Typical Values</div>
+      <table style="margin-top:.5rem;">
+        <tbody>
+          <tr><td>Mobile devices</td><td><span class="badge badge-blue">30–60s</span></td></tr>
+          <tr><td>IoT sensors</td><td><span class="badge badge-blue">60–300s</span></td></tr>
+          <tr><td>Industrial devices</td><td><span class="badge badge-blue">120–600s</span></td></tr>
+          <tr><td>0 = disabled</td><td><span class="badge badge-yellow">No timeout</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Persistent Sessions -->
+  <h3 style="font-weight:700; font-size:1.25rem; margin:2rem 0 1rem;">💾 Persistent Sessions (Clean Session)</h3>
+  <div class="grid-2">
+    <div class="card" style="border-color:rgba(239,68,68,0.3);">
+      <div style="color:#ef4444; font-weight:700; margin-bottom:.75rem;">cleanSession = true</div>
+      <div class="card-body">Every connect starts fresh. No subscriptions remembered. No queued messages. Simple, no state overhead.</div>
+      <div style="margin-top:1rem; font-size:.8rem; color:var(--muted);">Best for: Dashboards, clients that always re-subscribe on connect.</div>
+    </div>
+    <div class="card" style="border-color:rgba(16,185,129,0.3);">
+      <div style="color:#10b981; font-weight:700; margin-bottom:.75rem;">cleanSession = false</div>
+      <div class="card-body">Broker remembers subscriptions and queues missed QoS 1/2 messages. On reconnect, queued messages delivered automatically.</div>
+      <div style="margin-top:1rem; font-size:.8rem; color:var(--muted);">Best for: IoT devices that go offline periodically but must receive all messages.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-code" class="tab-panel">
+<!-- SECTION 6: C# CODE -->
+<section id="code">
+  <div class="section-tag">Chapter 06</div>
+  <h2 class="section-title">C# Code Examples</h2>
+  <p class="section-sub">Using <strong>MQTTnet</strong> — the most popular .NET/C# MQTT library. Install via NuGet: <code>dotnet add package MQTTnet</code></p>
+
+  <!-- Basic Connect & Subscribe -->
+  <h3 style="font-weight:700; margin-bottom:.75rem;">1. Basic Client — Connect &amp; Subscribe</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — MQTTnet v4</span>
+    </div>
+    <pre><span class="kw">using</span> MQTTnet;
+<span class="kw">using</span> MQTTnet.Client;
+
+<span class="kw">var</span> <span class="var">factory</span> = <span class="kw">new</span> <span class="cls">MqttFactory</span>();
+<span class="kw">var</span> <span class="var">client</span> = <span class="var">factory</span>.<span class="mth">CreateMqttClient</span>();
+
+<span class="cmt">// 1. Build connection options</span>
+<span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+    .<span class="mth">WithTcpServer</span>(<span class="str">"broker.hivemq.com"</span>, <span class="num">1883</span>)  <span class="cmt">// host, port</span>
+    .<span class="mth">WithClientId</span>(<span class="str">"my-sensor-01"</span>)
+    .<span class="mth">WithKeepAlivePeriod</span>(<span class="cls">TimeSpan</span>.<span class="mth">FromSeconds</span>(<span class="num">60</span>))
+    .<span class="mth">WithCleanSession</span>(<span class="kw">true</span>)
+    .<span class="mth">Build</span>();
+
+<span class="cmt">// 2. Handle incoming messages</span>
+<span class="var">client</span>.<span class="prop">ApplicationMessageReceivedAsync</span> += <span class="var">e</span> =>
+{
+    <span class="kw">string</span> <span class="var">topic</span>   = <span class="var">e</span>.<span class="prop">ApplicationMessage</span>.<span class="prop">Topic</span>;
+    <span class="kw">string</span> <span class="var">payload</span> = <span class="var">e</span>.<span class="prop">ApplicationMessage</span>.<span class="mth">ConvertPayloadToString</span>();
+    <span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">$"📩 [{topic}] → {payload}"</span>);
+    <span class="kw">return</span> <span class="cls">Task</span>.<span class="prop">CompletedTask</span>;
+};
+
+<span class="cmt">// 3. Connect</span>
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">ConnectAsync</span>(<span class="var">options</span>);
+<span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"✅ Connected to broker!"</span>);
+
+<span class="cmt">// 4. Subscribe to a topic</span>
+<span class="kw">var</span> <span class="var">subOptions</span> = <span class="kw">new</span> <span class="cls">MqttClientSubscribeOptionsBuilder</span>()
+    .<span class="mth">WithTopicFilter</span>(<span class="var">f</span> => <span class="var">f</span>
+        .<span class="mth">WithTopic</span>(<span class="str">"home/sensor/temperature"</span>)
+        .<span class="mth">WithQualityOfServiceLevel</span>(<span class="cls">MqttQualityOfServiceLevel</span>.<span class="prop">AtLeastOnce</span>))
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">SubscribeAsync</span>(<span class="var">subOptions</span>);
+<span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"👂 Subscribed to home/sensor/temperature"</span>);
+
+<span class="cmt">// Wait for messages...</span>
+<span class="kw">await</span> <span class="cls">Task</span>.<span class="mth">Delay</span>(<span class="cls">TimeSpan</span>.<span class="prop">FromMinutes</span>(<span class="num">5</span>));
+
+<span class="cmt">// 5. Clean disconnect</span>
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">DisconnectAsync</span>();</pre>
+  </div>
+
+  <!-- Publish -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">2. Publishing a Message</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — Publish with QoS &amp; Retain</span>
+    </div>
+    <pre><span class="cmt">// Build the message</span>
+<span class="kw">var</span> <span class="var">message</span> = <span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+    .<span class="mth">WithTopic</span>(<span class="str">"home/sensor/temperature"</span>)
+    .<span class="mth">WithPayload</span>(<span class="str">"{ \"temp\": 22.5, \"unit\": \"C\" }"</span>)
+    .<span class="mth">WithQualityOfServiceLevel</span>(<span class="cls">MqttQualityOfServiceLevel</span>.<span class="prop">AtLeastOnce</span>)  <span class="cmt">// QoS 1</span>
+    .<span class="mth">WithRetainFlag</span>(<span class="kw">true</span>)  <span class="cmt">// retain last value</span>
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(<span class="var">message</span>);
+<span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"📤 Published temperature reading"</span>);</pre>
+  </div>
+
+  <!-- Last Will -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">3. Connecting with Last Will &amp; Testament</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — Last Will Setup</span>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">willMessage</span> = <span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+    .<span class="mth">WithTopic</span>(<span class="str">"devices/sensor-01/status"</span>)
+    .<span class="mth">WithPayload</span>(<span class="str">"offline"</span>)
+    .<span class="mth">WithQualityOfServiceLevel</span>(<span class="cls">MqttQualityOfServiceLevel</span>.<span class="prop">AtLeastOnce</span>)
+    .<span class="mth">WithRetainFlag</span>(<span class="kw">true</span>)
+    .<span class="mth">Build</span>();
+
+<span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+    .<span class="mth">WithTcpServer</span>(<span class="str">"localhost"</span>)
+    .<span class="mth">WithClientId</span>(<span class="str">"sensor-01"</span>)
+    .<span class="mth">WithWillMessage</span>(<span class="var">willMessage</span>)  <span class="cmt">// 👈 register LWT here</span>
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">ConnectAsync</span>(<span class="var">options</span>);
+
+<span class="cmt">// Publish "online" status on connect (retained)</span>
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(<span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+    .<span class="mth">WithTopic</span>(<span class="str">"devices/sensor-01/status"</span>)
+    .<span class="mth">WithPayload</span>(<span class="str">"online"</span>)
+    .<span class="mth">WithRetainFlag</span>(<span class="kw">true</span>)
+    .<span class="mth">Build</span>());</pre>
+  </div>
+
+  <!-- TLS + Auth -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">4. TLS + Username/Password Authentication</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — Secure Connection (port 8883)</span>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+    .<span class="mth">WithTcpServer</span>(<span class="str">"my-broker.com"</span>, <span class="num">8883</span>)   <span class="cmt">// TLS port</span>
+    .<span class="mth">WithCredentials</span>(<span class="str">"myuser"</span>, <span class="str">"mypassword"</span>)
+    .<span class="mth">WithTlsOptions</span>(<span class="var">o</span> => <span class="var">o</span>
+        .<span class="mth">UseTls</span>(<span class="kw">true</span>)
+        .<span class="mth">WithCertificateValidationHandler</span>(<span class="var">ctx</span> =>
+        {
+            <span class="cmt">// Validate server certificate (production: use proper CA validation)</span>
+            <span class="kw">return</span> <span class="kw">true</span>;
+        }))
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">ConnectAsync</span>(<span class="var">options</span>);
+<span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"🔐 Secure connection established"</span>);</pre>
+  </div>
+
+  <!-- Auto-Reconnect -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">5. Auto-Reconnect with Retry</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — Managed Client with Auto-Reconnect</span>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">factory</span> = <span class="kw">new</span> <span class="cls">MqttFactory</span>();
+<span class="kw">var</span> <span class="var">managedClient</span> = <span class="var">factory</span>.<span class="mth">CreateManagedMqttClient</span>();
+
+<span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">ManagedMqttClientOptionsBuilder</span>()
+    .<span class="mth">WithAutoReconnectDelay</span>(<span class="cls">TimeSpan</span>.<span class="mth">FromSeconds</span>(<span class="num">5</span>))
+    .<span class="mth">WithClientOptions</span>(<span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+        .<span class="mth">WithTcpServer</span>(<span class="str">"localhost"</span>)
+        .<span class="mth">WithClientId</span>(<span class="str">"resilient-client"</span>)
+        .<span class="mth">Build</span>())
+    .<span class="mth">Build</span>();
+
+<span class="cmt">// Events fire automatically on reconnect</span>
+<span class="var">managedClient</span>.<span class="prop">ConnectedAsync</span> += <span class="var">e</span> =>
+{
+    <span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"✅ Reconnected!"</span>);
+    <span class="kw">return</span> <span class="cls">Task</span>.<span class="prop">CompletedTask</span>;
+};
+
+<span class="var">managedClient</span>.<span class="prop">DisconnectedAsync</span> += <span class="var">e</span> =>
+{
+    <span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">$"❌ Disconnected: {e.Reason}. Retrying..."</span>);
+    <span class="kw">return</span> <span class="cls">Task</span>.<span class="prop">CompletedTask</span>;
+};
+
+<span class="kw">await</span> <span class="var">managedClient</span>.<span class="mth">StartAsync</span>(<span class="var">options</span>);
+
+<span class="cmt">// Managed client queues messages when offline and sends on reconnect</span>
+<span class="kw">await</span> <span class="var">managedClient</span>.<span class="mth">EnqueueAsync</span>(<span class="str">"sensors/temp"</span>, <span class="str">"21.3"</span>);</pre>
+  </div>
+
+  <!-- Embedded Broker -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">6. Embedded MQTT Broker in C#</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — Run Broker Inside Your App</span>
+    </div>
+    <pre><span class="cmt">// Great for local IoT gateways, testing, edge devices</span>
+<span class="kw">var</span> <span class="var">factory</span> = <span class="kw">new</span> <span class="cls">MqttFactory</span>();
+<span class="kw">var</span> <span class="var">server</span> = <span class="var">factory</span>.<span class="mth">CreateMqttServer</span>();
+
+<span class="kw">var</span> <span class="var">serverOptions</span> = <span class="kw">new</span> <span class="cls">MqttServerOptionsBuilder</span>()
+    .<span class="mth">WithDefaultEndpoint</span>()              <span class="cmt">// port 1883</span>
+    .<span class="mth">WithDefaultEndpointPort</span>(<span class="num">1883</span>)
+    .<span class="mth">Build</span>();
+
+<span class="cmt">// Handle client connections</span>
+<span class="var">server</span>.<span class="prop">ClientConnectedAsync</span> += <span class="var">e</span> =>
+{
+    <span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">$"Client connected: {e.ClientId}"</span>);
+    <span class="kw">return</span> <span class="cls">Task</span>.<span class="prop">CompletedTask</span>;
+};
+
+<span class="cmt">// Intercept messages (logging, routing, validation)</span>
+<span class="var">server</span>.<span class="prop">InterceptingPublishAsync</span> += <span class="var">e</span> =>
+{
+    <span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">$"[{e.ClientId}] → {e.ApplicationMessage.Topic}"</span>);
+    <span class="var">e</span>.<span class="prop">ProcessPublish</span> = <span class="kw">true</span>; <span class="cmt">// allow the message</span>
+    <span class="kw">return</span> <span class="cls">Task</span>.<span class="prop">CompletedTask</span>;
+};
+
+<span class="kw">await</span> <span class="var">server</span>.<span class="mth">StartAsync</span>(<span class="var">serverOptions</span>);
+<span class="cls">Console</span>.<span class="mth">WriteLine</span>(<span class="str">"🚀 MQTT Broker running on port 1883"</span>);
+<span class="kw">await</span> <span class="cls">Task</span>.<span class="mth">Delay</span>(<span class="cls">Timeout</span>.<span class="prop">Infinite</span>); <span class="cmt">// run forever</span></pre>
+  </div>
+
+  <!-- MQTT 5 Features -->
+  <h3 style="font-weight:700; margin:.75rem 0 .75rem;">7. MQTT 5.0 Features in C#</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">C# — MQTT 5.0: User Properties, Message Expiry, Response Topic</span>
+    </div>
+    <pre><span class="cmt">// Connect with MQTT v5</span>
+<span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+    .<span class="mth">WithTcpServer</span>(<span class="str">"localhost"</span>)
+    .<span class="mth">WithProtocolVersion</span>(<span class="cls">MqttProtocolVersion</span>.<span class="prop">V500</span>)  <span class="cmt">// 👈 MQTT 5.0</span>
+    .<span class="mth">Build</span>();
+
+<span class="cmt">// Publish with MQTT 5 features</span>
+<span class="kw">var</span> <span class="var">message</span> = <span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+    .<span class="mth">WithTopic</span>(<span class="str">"commands/start"</span>)
+    .<span class="mth">WithPayload</span>(<span class="str">"{ \"action\": \"start\", \"speed\": 50 }"</span>)
+    .<span class="mth">WithMessageExpiryInterval</span>(<span class="num">30</span>)          <span class="cmt">// expires in 30 seconds</span>
+    .<span class="mth">WithResponseTopic</span>(<span class="str">"commands/response"</span>)  <span class="cmt">// for request/response pattern</span>
+    .<span class="mth">WithCorrelationData</span>(<span class="cls">Guid</span>.<span class="mth">NewGuid</span>().<span class="mth">ToByteArray</span>())
+    .<span class="mth">WithUserProperty</span>(<span class="str">"source"</span>, <span class="str">"control-panel"</span>)
+    .<span class="mth">WithUserProperty</span>(<span class="str">"version"</span>, <span class="str">"2.1"</span>)
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(<span class="var">message</span>);</pre>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-brokers" class="tab-panel">
+<!-- SECTION 7: BROKERS -->
+<section id="brokers">
+  <div class="section-tag">Chapter 07</div>
+  <h2 class="section-title">MQTT Brokers</h2>
+  <p class="section-sub">The broker is the heart of any MQTT system. Choose based on scale, features, and deployment model.</p>
+
+  <div class="broker-grid">
+    <div class="broker-card">
+      <div class="broker-name" style="color:#10b981;">🦟 Mosquitto</div>
+      <div class="broker-type">Open Source · Eclipse</div>
+      <div class="broker-bar-label"><span>Performance</span><span>High</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#10b981 85%,var(--border) 85%);"></div>
+      <div class="broker-bar-label"><span>Ease of Use</span><span>Easy</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#10b981 90%,var(--border) 90%);"></div>
+      <div style="font-size:.78rem; color:var(--muted); margin-top:.5rem;">Best for dev, edge, small IoT. Runs on Raspberry Pi.</div>
+    </div>
+    <div class="broker-card">
+      <div class="broker-name" style="color:#00d4ff;">🐝 HiveMQ</div>
+      <div class="broker-type">Enterprise / Cloud</div>
+      <div class="broker-bar-label"><span>Performance</span><span>Very High</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#00d4ff 95%,var(--border) 95%);"></div>
+      <div class="broker-bar-label"><span>Ease of Use</span><span>Medium</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#00d4ff 70%,var(--border) 70%);"></div>
+      <div style="font-size:.78rem; color:var(--muted); margin-top:.5rem;">Built for enterprise IoT. Millions of connections, clustering.</div>
+    </div>
+    <div class="broker-card">
+      <div class="broker-name" style="color:#a78bfa;">🐰 RabbitMQ</div>
+      <div class="broker-type">Multi-Protocol</div>
+      <div class="broker-bar-label"><span>Performance</span><span>High</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#a78bfa 80%,var(--border) 80%);"></div>
+      <div class="broker-bar-label"><span>Ease of Use</span><span>Medium</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#a78bfa 65%,var(--border) 65%);"></div>
+      <div style="font-size:.78rem; color:var(--muted); margin-top:.5rem;">MQTT plugin available. Good if you already use RabbitMQ.</div>
+    </div>
+    <div class="broker-card">
+      <div class="broker-name" style="color:#f59e0b;">⚡ EMQX</div>
+      <div class="broker-type">High Performance</div>
+      <div class="broker-bar-label"><span>Performance</span><span>Extreme</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#f59e0b 98%,var(--border) 98%);"></div>
+      <div class="broker-bar-label"><span>Ease of Use</span><span>Medium</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#f59e0b 68%,var(--border) 68%);"></div>
+      <div style="font-size:.78rem; color:var(--muted); margin-top:.5rem;">100M+ connections. Great dashboard. Erlang-based.</div>
+    </div>
+    <div class="broker-card">
+      <div class="broker-name" style="color:#ff6b35;">☁️ AWS IoT Core</div>
+      <div class="broker-type">Managed Cloud</div>
+      <div class="broker-bar-label"><span>Performance</span><span>High</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#ff6b35 82%,var(--border) 82%);"></div>
+      <div class="broker-bar-label"><span>Ease of Use</span><span>Easy</span></div>
+      <div class="broker-bar" style="background:linear-gradient(90deg,#ff6b35 80%,var(--border) 80%);"></div>
+      <div style="font-size:.78rem; color:var(--muted); margin-top:.5rem;">No servers to manage. Deep AWS integration (Lambda, S3).</div>
+    </div>
+  </div>
+
+  <!-- Mosquitto Quick Start -->
+  <h3 style="font-weight:700; margin:2rem 0 .75rem;">Quick Start: Mosquitto (Docker)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">Shell — Docker</span>
+    </div>
+    <pre><span class="cmt"># Start Mosquitto broker locally</span>
+docker run -it -p 1883:1883 -p 9001:9001 eclipse-mosquitto
+
+<span class="cmt"># Test: Subscribe (terminal 1)</span>
+mosquitto_sub -h localhost -t "home/#" -v
+
+<span class="cmt"># Test: Publish (terminal 2)</span>
+mosquitto_pub -h localhost -t "home/sensor/temp" -m "22.5"</pre>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-security" class="tab-panel">
+<!-- SECTION 8: SECURITY -->
+<section id="security">
+  <div class="section-tag">Chapter 08</div>
+  <h2 class="section-title">Security</h2>
+  <p class="section-sub">MQTT was designed for constrained networks. Security must be added intentionally — in layers.</p>
+
+  <div class="security-layers">
+    <div class="sec-layer">
+      <span style="font-size:1.5rem;">🛡️</span>
+      <div>
+        <div style="color:#ef4444; font-size:.85rem; margin-bottom:.25rem;">Layer 4 — Authorization</div>
+        <div style="font-size:.8rem; color:var(--muted);">ACLs: control which clients can pub/sub to which topics</div>
+      </div>
+    </div>
+    <div class="sec-layer">
+      <span style="font-size:1.5rem;">🔑</span>
+      <div>
+        <div style="color:#f59e0b; font-size:.85rem; margin-bottom:.25rem;">Layer 3 — Authentication</div>
+        <div style="font-size:.8rem; color:var(--muted);">Username/password, X.509 client certificates, JWT tokens</div>
+      </div>
+    </div>
+    <div class="sec-layer">
+      <span style="font-size:1.5rem;">🔐</span>
+      <div>
+        <div style="color:#10b981; font-size:.85rem; margin-bottom:.25rem;">Layer 2 — Encryption (TLS/SSL)</div>
+        <div style="font-size:.8rem; color:var(--muted);">All traffic encrypted via TLS 1.2/1.3 on port 8883</div>
+      </div>
+    </div>
+    <div class="sec-layer">
+      <span style="font-size:1.5rem;">🌐</span>
+      <div>
+        <div style="color:var(--accent); font-size:.85rem; margin-bottom:.25rem;">Layer 1 — Network</div>
+        <div style="font-size:.8rem; color:var(--muted);">VPN, private subnets, firewall rules, VPC</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:2rem;">
+    <div class="card">
+      <div class="card-title">Ports at a Glance</div>
+      <table style="margin-top:.75rem;">
+        <tbody>
+          <tr><td><code>1883</code></td><td>MQTT (plaintext) — dev only</td></tr>
+          <tr><td><code>8883</code></td><td>MQTT over TLS — production</td></tr>
+          <tr><td><code>9001</code></td><td>MQTT over WebSockets</td></tr>
+          <tr><td><code>8084</code></td><td>MQTT over Secure WebSockets</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">ACL Example (Mosquitto)</div>
+      <div class="code-block" style="margin-top:.75rem;">
+        <pre style="font-size:.78rem; padding:1rem;"><span class="cmt"># /etc/mosquitto/acl.conf</span>
+<span class="kw">user</span> sensor-01
+<span class="mth">topic</span> write home/sensor/#
+
+<span class="kw">user</span> dashboard
+<span class="mth">topic</span> read home/#
+
+<span class="kw">user</span> admin
+<span class="mth">topic</span> readwrite #</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-box danger" style="margin-top:1.5rem;">
+    <span class="info-icon">🚨</span>
+    <div class="info-content"><strong>Never</strong> expose port 1883 to the public internet without authentication. Use TLS + strong passwords or client certificates for any production deployment. Default Mosquitto config allows anonymous access — always disable this first.</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-patterns" class="tab-panel">
+<!-- SECTION 9: ADVANCED PATTERNS -->
+<section id="patterns">
+  <div class="section-tag">Chapter 09</div>
+  <h2 class="section-title">Advanced Patterns</h2>
+  <p class="section-sub">Design patterns for real-world MQTT architectures.</p>
+
+  <div class="pattern-box">
+    <div class="pattern-title">🔄 Request / Response (MQTT 5.0)</div>
+    <div class="pattern-desc">Publisher sets <code>responseTopic</code> and <code>correlationData</code> in message. Receiver publishes reply to that topic. Enables RPC-style communication over MQTT without a full REST layer.</div>
+  </div>
+
+  <div class="pattern-box" style="border-color:var(--accent2);">
+    <div class="pattern-title" style="color:#ff6b35;">📊 Bridge Pattern</div>
+    <div class="pattern-desc">Connect two separate MQTT brokers (e.g., edge broker → cloud broker). Messages on matching topics are forwarded automatically. Used for OT/IT integration, on-premise to cloud sync, reducing cloud bandwidth.</div>
+  </div>
+
+  <div class="pattern-box" style="border-color:#10b981;">
+    <div class="pattern-title" style="color:#10b981;">👥 Shared Subscriptions (MQTT 5.0)</div>
+    <div class="pattern-desc">Multiple consumer instances share a single subscription: <code>$share/group/topic</code>. Load balanced across consumers. Great for processing pipelines without all consumers seeing all messages.</div>
+  </div>
+
+  <div class="pattern-box" style="border-color:#f59e0b;">
+    <div class="pattern-title" style="color:#f59e0b;">🔌 Device Shadow / Digital Twin</div>
+    <div class="pattern-desc">Two topics per device: <code>devices/{id}/state</code> (current actual state) and <code>devices/{id}/desired</code> (desired state). Backend publishes to desired; device acts on delta and confirms via state. Used by AWS IoT, Azure IoT Hub.</div>
+  </div>
+
+  <div class="pattern-box" style="border-color:#a78bfa;">
+    <div class="pattern-title" style="color:#a78bfa;">🏭 MQTT + Time-Series Database</div>
+    <div class="pattern-desc">A bridge service subscribes to all sensor topics and writes to InfluxDB/TimescaleDB. Decouples ingestion from storage. MQTT handles real-time delivery; the database handles history &amp; analytics.</div>
+  </div>
+
+  <h3 style="margin:2rem 0 1rem; font-weight:700;">Topic Design Pattern: Device Hierarchy</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+      <span class="code-lang">Topic Schema — Industrial IoT</span>
+    </div>
+    <pre><span class="cmt"># Telemetry (device → cloud)</span>
+<span class="str">factory/{factoryId}/line/{lineId}/machine/{machineId}/telemetry</span>
+<span class="str">factory/plant-01/line/L3/machine/cnc-07/telemetry</span>
+
+<span class="cmt"># Commands (cloud → device)</span>
+<span class="str">factory/{factoryId}/line/{lineId}/machine/{machineId}/command</span>
+
+<span class="cmt"># Device status (retained)</span>
+<span class="str">factory/{factoryId}/line/{lineId}/machine/{machineId}/status</span>
+
+<span class="cmt"># Alarms (subscribed by ops team)</span>
+<span class="str">factory/{factoryId}/alarms/{severity}</span>   <span class="cmt"># severity = critical/warning/info</span>
+
+<span class="cmt"># Subscribe to all alarms at any factory:</span>
+<span class="str">factory/+/alarms/critical</span>
+
+<span class="cmt"># Subscribe to everything for one machine:</span>
+<span class="str">factory/plant-01/line/L3/machine/cnc-07/#</span></pre>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-scenarios" class="tab-panel">
+<!-- SECTION 10: REAL WORLD SCENARIOS -->
+<section id="scenarios">
+  <div class="section-tag">Chapter 10</div>
+  <h2 class="section-title">Real-World Scenarios</h2>
+  <p class="section-sub">End-to-end examples of MQTT in production systems.</p>
+
+  <!-- Smart Home -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-icon">🏠</span>
+      <div>
+        <div class="scenario-title">Smart Home Automation</div>
+        <div class="scenario-desc">Motion sensors, lights, thermostats, and a central hub all communicate via MQTT</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="grid-2">
+        <div>
+          <p style="color:var(--muted); font-size:.9rem; margin-bottom:1rem;">Topic design for a smart home system with Home Assistant:</p>
+          <div class="code-block">
+            <pre style="font-size:.78rem; padding:1rem;"><span class="cmt"># Motion sensor triggers light</span>
+<span class="str">home/bedroom/motion</span>       → <span class="str">"ON"</span>
+<span class="str">home/bedroom/light/set</span>    ← <span class="str">"ON"</span>
+<span class="str">home/bedroom/light/state</span>  → <span class="str">"ON"</span> (retained)
+
+<span class="cmt"># Thermostat</span>
+<span class="str">home/hvac/temperature</span>     → <span class="str">"21.5"</span>
+<span class="str">home/hvac/setpoint/set</span>    ← <span class="str">"22"</span>
+<span class="str">home/hvac/mode</span>            → <span class="str">"heat"</span> (retained)
+
+<span class="cmt"># Hub subscribes to all</span>
+<span class="str">home/#</span></pre>
+          </div>
+        </div>
+        <div>
+          <p style="color:var(--muted); font-size:.9rem; margin-bottom:1rem;">C# — React to motion and control lights:</p>
+          <div class="code-block">
+            <pre style="font-size:.78rem; padding:1rem;"><span class="var">client</span>.<span class="prop">ApplicationMessageReceivedAsync</span> += <span class="kw">async</span> <span class="var">e</span> =>
+{
+    <span class="kw">var</span> <span class="var">topic</span> = <span class="var">e</span>.<span class="prop">ApplicationMessage</span>.<span class="prop">Topic</span>;
+    <span class="kw">var</span> <span class="var">payload</span> = <span class="var">e</span>.<span class="prop">ApplicationMessage</span>
+                    .<span class="mth">ConvertPayloadToString</span>();
+
+    <span class="kw">if</span> (<span class="var">topic</span>.<span class="mth">EndsWith</span>(<span class="str">"/motion"</span>) &amp;&amp; <span class="var">payload</span> == <span class="str">"ON"</span>)
+    {
+        <span class="cmt">// Turn on the light in same room</span>
+        <span class="kw">var</span> <span class="var">room</span> = <span class="var">topic</span>.<span class="mth">Split</span>(<span class="str">'/'</span>)[<span class="num">1</span>];
+        <span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(
+            <span class="str">$"home/{room}/light/set"</span>, <span class="str">"ON"</span>);
+    }
+};</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Fleet Tracking -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-icon">🚛</span>
+      <div>
+        <div class="scenario-title">Fleet GPS Tracking</div>
+        <div class="scenario-desc">Vehicles publish location every 10 seconds to the cloud, even over spotty cellular</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+          <span class="code-lang">C# — Vehicle Tracker with QoS 1 + Persistent Session</span>
+        </div>
+        <pre><span class="cmt">// Vehicle client — must not lose location updates</span>
+<span class="kw">var</span> <span class="var">options</span> = <span class="kw">new</span> <span class="cls">MqttClientOptionsBuilder</span>()
+    .<span class="mth">WithTcpServer</span>(<span class="str">"fleet.mycompany.com"</span>, <span class="num">8883</span>)
+    .<span class="mth">WithClientId</span>(<span class="str">$"truck-{TruckId}"</span>)
+    .<span class="mth">WithCleanSession</span>(<span class="kw">false</span>)        <span class="cmt">// persistent: don't lose msgs</span>
+    .<span class="mth">WithCredentials</span>(<span class="str">"fleet-user"</span>, <span class="str">"secret"</span>)
+    .<span class="mth">WithWillMessage</span>(<span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+        .<span class="mth">WithTopic</span>(<span class="str">$"fleet/truck-{TruckId}/status"</span>)
+        .<span class="mth">WithPayload</span>(<span class="str">"offline"</span>)
+        .<span class="mth">WithRetainFlag</span>(<span class="kw">true</span>)
+        .<span class="mth">Build</span>())
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">ConnectAsync</span>(<span class="var">options</span>);
+
+<span class="cmt">// Publish GPS every 10 seconds</span>
+<span class="kw">while</span> (<span class="kw">true</span>)
+{
+    <span class="kw">var</span> <span class="var">gps</span> = <span class="kw">new</span> { lat = <span class="mth">GetLat</span>(), lng = <span class="mth">GetLng</span>(), ts = <span class="cls">DateTimeOffset</span>.<span class="prop">UtcNow</span> };
+    <span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(<span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+        .<span class="mth">WithTopic</span>(<span class="str">$"fleet/truck-{TruckId}/gps"</span>)
+        .<span class="mth">WithPayload</span>(<span class="cls">JsonSerializer</span>.<span class="mth">Serialize</span>(<span class="var">gps</span>))
+        .<span class="mth">WithQualityOfServiceLevel</span>(<span class="cls">MqttQualityOfServiceLevel</span>.<span class="prop">AtLeastOnce</span>)
+        .<span class="mth">Build</span>());
+    <span class="kw">await</span> <span class="cls">Task</span>.<span class="mth">Delay</span>(<span class="num">10_000</span>);
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Industrial -->
+  <div class="scenario">
+    <div class="scenario-header">
+      <span class="scenario-icon">🏭</span>
+      <div>
+        <div class="scenario-title">Industrial Sensor Monitoring</div>
+        <div class="scenario-desc">Factory machines publish telemetry; operators get real-time alerts for anomalies</div>
+      </div>
+    </div>
+    <div class="scenario-body">
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots"><span class="dot-r"></span><span class="dot-y"></span><span class="dot-g"></span></div>
+          <span class="code-lang">C# — Alert Subscription + Machine Command</span>
+        </div>
+        <pre><span class="cmt">// Ops dashboard — subscribe to alerts and send commands</span>
+<span class="kw">var</span> <span class="var">subOptions</span> = <span class="kw">new</span> <span class="cls">MqttClientSubscribeOptionsBuilder</span>()
+    .<span class="mth">WithTopicFilter</span>(<span class="str">"factory/+/alarms/critical"</span>)
+    .<span class="mth">WithTopicFilter</span>(<span class="str">"factory/+/+/machine/+/telemetry"</span>)
+    .<span class="mth">Build</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="mth">SubscribeAsync</span>(<span class="var">subOptions</span>);
+
+<span class="var">client</span>.<span class="prop">ApplicationMessageReceivedAsync</span> += <span class="kw">async</span> <span class="var">e</span> =>
+{
+    <span class="kw">var</span> <span class="var">data</span> = <span class="cls">JsonSerializer</span>.<span class="mth">Deserialize</span>&lt;<span class="tp">TelemetryData</span>&gt;(
+        <span class="var">e</span>.<span class="prop">ApplicationMessage</span>.<span class="mth">ConvertPayloadToString</span>());
+
+    <span class="cmt">// Auto-stop machine if temperature too high</span>
+    <span class="kw">if</span> (<span class="var">data</span>.<span class="prop">Temperature</span> &gt; <span class="num">85</span>)
+    {
+        <span class="kw">var</span> <span class="var">machineId</span> = <span class="mth">ExtractMachineId</span>(<span class="var">e</span>.<span class="prop">ApplicationMessage</span>.<span class="prop">Topic</span>);
+        <span class="kw">await</span> <span class="var">client</span>.<span class="mth">PublishAsync</span>(<span class="kw">new</span> <span class="cls">MqttApplicationMessageBuilder</span>()
+            .<span class="mth">WithTopic</span>(<span class="str">$"factory/plant-01/machine/{machineId}/command"</span>)
+            .<span class="mth">WithPayload</span>(<span class="str">"{ \"action\": \"emergency-stop\" }"</span>)
+            .<span class="mth">WithQualityOfServiceLevel</span>(<span class="cls">MqttQualityOfServiceLevel</span>.<span class="prop">ExactlyOnce</span>) <span class="cmt">// QoS 2!</span>
+            .<span class="mth">Build</span>());
+    }
+};</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-vs" class="tab-panel">
+<!-- SECTION 11: MQTT vs REST -->
+<section id="vs">
+  <div class="section-tag">Chapter 11</div>
+  <h2 class="section-title">MQTT vs REST vs WebSocket</h2>
+  <p class="section-sub">Choosing the right protocol for the right job.</p>
+
+  <div class="diagram">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>MQTT</th>
+          <th>REST / HTTP</th>
+          <th>WebSocket</th>
+          <th>gRPC</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pattern</td>
+          <td><span class="badge badge-blue">Pub/Sub</span></td>
+          <td><span class="badge badge-yellow">Request/Response</span></td>
+          <td><span class="badge badge-purple">Bidirectional</span></td>
+          <td><span class="badge badge-yellow">RPC/Streaming</span></td>
+        </tr>
+        <tr>
+          <td>Overhead</td>
+          <td><span class="badge badge-green">2 bytes min</span></td>
+          <td><span class="badge badge-red">~700 bytes headers</span></td>
+          <td><span class="badge badge-yellow">Medium</span></td>
+          <td><span class="badge badge-green">Low (binary)</span></td>
+        </tr>
+        <tr>
+          <td>IoT Suitability</td>
+          <td><span class="badge badge-green">Excellent</span></td>
+          <td><span class="badge badge-red">Poor</span></td>
+          <td><span class="badge badge-yellow">OK</span></td>
+          <td><span class="badge badge-yellow">OK</span></td>
+        </tr>
+        <tr>
+          <td>Many-to-Many</td>
+          <td><span class="badge badge-green">Native</span></td>
+          <td><span class="badge badge-red">Complex</span></td>
+          <td><span class="badge badge-yellow">Manual</span></td>
+          <td><span class="badge badge-yellow">Manual</span></td>
+        </tr>
+        <tr>
+          <td>Offline Tolerance</td>
+          <td><span class="badge badge-green">Built-in (QoS/Session)</span></td>
+          <td><span class="badge badge-red">None</span></td>
+          <td><span class="badge badge-red">None</span></td>
+          <td><span class="badge badge-red">None</span></td>
+        </tr>
+        <tr>
+          <td>Low Bandwidth</td>
+          <td><span class="badge badge-green">Excellent</span></td>
+          <td><span class="badge badge-red">Wasteful</span></td>
+          <td><span class="badge badge-yellow">Good</span></td>
+          <td><span class="badge badge-green">Good</span></td>
+        </tr>
+        <tr>
+          <td>Firewall Friendly</td>
+          <td><span class="badge badge-yellow">Needs port 1883/8883</span></td>
+          <td><span class="badge badge-green">Port 80/443</span></td>
+          <td><span class="badge badge-green">Port 80/443</span></td>
+          <td><span class="badge badge-yellow">Port 443</span></td>
+        </tr>
+        <tr>
+          <td>Ecosystem / Tooling</td>
+          <td><span class="badge badge-blue">IoT-focused</span></td>
+          <td><span class="badge badge-green">Massive</span></td>
+          <td><span class="badge badge-yellow">Medium</span></td>
+          <td><span class="badge badge-blue">Backend services</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="info-box info" style="margin-top:1.5rem;">
+    <span class="info-icon">💡</span>
+    <div class="info-content"><strong>Rule of thumb:</strong> Use MQTT when devices need to push data frequently, when bandwidth is limited, or when you have many devices that may go offline. Use REST when humans (browsers, mobile apps) are making infrequent requests and need simple integration. Use WebSockets when a web browser needs real-time data — often combined: device → MQTT → backend → WebSocket → browser.</div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+</div>
+
+<div id="tab-checklist" class="tab-panel">
+<!-- SECTION 12: CHECKLIST -->
+<section id="checklist">
+  <div class="section-tag">Chapter 12</div>
+  <h2 class="section-title">Production Checklist</h2>
+  <p class="section-sub">Before going live with MQTT in production — make sure you've covered these.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">🔒 Security</div>
+      <ul class="checklist">
+        <li>Disable anonymous authentication</li>
+        <li>Use TLS/SSL (port 8883) for all connections</li>
+        <li>Unique clientId per device</li>
+        <li>Strong passwords or X.509 certificates</li>
+        <li>Topic ACLs: least-privilege per client</li>
+        <li>Rate limiting on connections &amp; publishes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">📐 Architecture</div>
+      <ul class="checklist">
+        <li>Document topic naming conventions</li>
+        <li>Use retained messages for device state</li>
+        <li>Implement LWT for all critical devices</li>
+        <li>Choose QoS level deliberately per use case</li>
+        <li>Use persistent sessions for offline devices</li>
+        <li>Plan for broker clustering/HA if needed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">📦 Client Code</div>
+      <ul class="checklist">
+        <li>Use managed client for auto-reconnect</li>
+        <li>Handle disconnection events gracefully</li>
+        <li>Include error handling on publish/subscribe</li>
+        <li>Don't use <code>#</code> wildcard in production subs</li>
+        <li>Publish "online" retained on connect</li>
+        <li>Keep payload schema documented (JSON schema)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:1rem;">📊 Operations</div>
+      <ul class="checklist">
+        <li>Monitor broker via $SYS topics</li>
+        <li>Set up alerts on client disconnects</li>
+        <li>Log all messages for audit trail</li>
+        <li>Test with simulated network failures</li>
+        <li>Load test: simulate peak device count</li>
+        <li>Document broker version and config</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Quick Reference -->
+  <h3 style="font-weight:700; margin:2.5rem 0 1rem;">⚡ Quick Reference</h3>
+  <div class="diagram">
+    <table>
+      <thead><tr><th>Concept</th><th>One-liner</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Topic</td><td>Routing key, slash-separated levels</td><td><code>home/kitchen/temp</code></td></tr>
+        <tr><td>Publish</td><td>Send a message to a topic</td><td>Device → broker</td></tr>
+        <tr><td>Subscribe</td><td>Receive messages from a topic pattern</td><td>Dashboard ← broker</td></tr>
+        <tr><td>QoS 0</td><td>Fire-and-forget, fastest</td><td>Streaming sensor data</td></tr>
+        <tr><td>QoS 1</td><td>At-least-once, may duplicate</td><td>Alerts, notifications</td></tr>
+        <tr><td>QoS 2</td><td>Exactly-once, slowest</td><td>Billing events, commands</td></tr>
+        <tr><td>Retained</td><td>Broker stores last message; new subs get it immediately</td><td>Device status ON/OFF</td></tr>
+        <tr><td>LWT</td><td>Broker publishes if client unexpectedly disconnects</td><td>Status → "offline"</td></tr>
+        <tr><td>Clean Session</td><td>true = fresh start; false = remember subscriptions</td><td>IoT → false</td></tr>
+        <tr><td>Keep Alive</td><td>Heartbeat interval; broker disconnects if missed</td><td>60 seconds</td></tr>
+        <tr><td>+ wildcard</td><td>Match single topic level</td><td><code>home/+/temp</code></td></tr>
+        <tr><td># wildcard</td><td>Match all remaining levels</td><td><code>home/#</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</div><!-- /tab-checklist -->
+
+<footer>
+  <strong>MQTT — Complete Visual Reference</strong> · Built with C# &amp; MQTTnet examples
+  <br><span style="margin-top:.5rem; display:block;">Covers MQTT 3.1.1 &amp; 5.0 · Beginner to Advanced</span>
+</footer>
+
+<script>
+function showTab(id, btn) {
+  // Hide all panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  // Deactivate all buttons
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  // Show selected panel
+  document.getElementById('tab-' + id).classList.add('active');
+  // Activate button
+  btn.classList.add('active');
+  // Scroll to top of content
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
