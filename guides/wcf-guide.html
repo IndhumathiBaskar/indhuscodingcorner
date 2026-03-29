@@ -1,0 +1,1135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WCF - Complete Visual Guide for Beginners</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--accent:#c96a2a;--accent-l:#f5e6d8;--accent2:#2a5a9a;--accent3:#2a7a5a;--text:#1a1814;--muted:#8c877f;--code-bg:#1e1e2e;--r:8px;--sh:0 1px 3px rgba(0,0,0,.05),0 4px 12px rgba(0,0,0,.04);}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;padding:0;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.5rem,5vw,2.4rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--accent);}
+.header p{color:var(--muted);font-size:.92rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--accent-l);color:var(--accent);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--accent-l);letter-spacing:-.01em;}
+.section h3{color:var(--accent);font-size:.98rem;font-weight:700;margin:18px 0 8px;}
+.section>p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+.visual-box{background:var(--accent-l);border:1px solid rgba(201,106,42,.2);border-radius:var(--r);padding:clamp(.9rem,3vw,1.4rem);margin:14px 0;}
+.visual-box h3{color:var(--accent);margin-top:0;}
+.visual-box>div{background:var(--card);padding:14px;border-radius:6px;}
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-number{background:var(--accent);color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;}
+.step-content{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--accent);}
+.step-content h4{color:var(--accent);margin-bottom:5px;font-size:.88rem;}
+.step-content p{color:var(--muted);font-size:.83rem;}
+.feature-card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);border-left:3px solid var(--accent);}
+.feature-card h4{color:var(--accent);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.feature-card p,.feature-card li{color:var(--muted);font-size:.83rem;}
+.feature-card ul{padding-left:14px;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.example-box{background:var(--surface);border-left:4px solid var(--accent2);border-radius:var(--r);padding:14px;margin:14px 0;border:1px solid var(--border);}
+.example-box h4{color:var(--accent2);margin-bottom:6px;font-size:.88rem;}
+.example-box p{color:var(--muted);font-size:.83rem;}
+.comparison-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.comparison-table th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+.comparison-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);}
+.comparison-table tr:last-child td{border-bottom:none;}
+.comparison-table tr:hover td{background:var(--surface);color:var(--text);}
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--accent);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.78rem;font-weight:600;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+.tip-box{background:rgba(42,90,154,.06);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--accent2);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip-box h4{color:var(--accent2);margin-bottom:5px;font-size:.86rem;}
+.tip-box p{color:var(--muted);font-size:.83rem;}
+.warning-box{background:rgba(201,106,42,.06);border:1px solid rgba(201,106,42,.2);border-left:4px solid var(--accent);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warning-box h4{color:var(--accent);margin-bottom:5px;font-size:.86rem;}
+.warning-box p{color:var(--muted);font-size:.83rem;}
+.benefit-card{background:rgba(42,122,90,.06);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--accent3);padding:9px 12px;border-radius:var(--r);margin:7px 0;}
+.benefit-card h5{color:var(--accent3);margin-bottom:3px;font-size:.8rem;}
+.benefit-card p{color:var(--muted);font-size:.8rem;}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--accent);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.keyword{color:#cba6f7;}.string{color:#a6e3a1;}.comment{color:#6c7086;font-style:italic;}.function{color:#89b4fa;}.attribute{color:#fab387;}
+code{background:rgba(201,106,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--accent);}
+.comparison-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;}
+@media(max-width:520px){.comparison-row{grid-template-columns:1fr;}}
+.comparison-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);box-shadow:var(--sh);}
+.comparison-item h4{color:var(--accent);margin-bottom:6px;font-size:.88rem;}
+.comparison-item p,.comparison-item li{color:var(--muted);font-size:.82rem;}
+.comparison-item ul{padding-left:14px;}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--accent3);font-weight:700;}
+.architecture-diagram{background:var(--surface);padding:18px;border-radius:var(--r);margin:14px 0;border:1px solid var(--border);overflow-x:auto;}
+.architecture-diagram p{color:var(--text);line-height:2;font-family:'JetBrains Mono',monospace;font-size:clamp(.64rem,1.8vw,.78rem);}
+.flow{background:var(--surface);padding:18px;border-radius:var(--r);margin:14px 0;text-align:center;border:1px solid var(--border);}
+.flow-item{display:inline-block;background:var(--card);padding:10px 16px;margin:6px;border-radius:var(--r);border:1px solid var(--border);font-weight:600;color:var(--accent);text-align:center;min-width:110px;box-shadow:var(--sh);font-size:.82rem;}
+.flow-line{text-align:center;color:var(--accent);font-size:1.2rem;margin:6px 0;}
+.contract-section{background:var(--accent-l);padding:14px;border-radius:var(--r);margin:10px 0;border-left:4px solid var(--accent);}
+.contract-section p{color:var(--text);font-size:.86rem;}
+.footer{background:var(--card);border-top:1px solid var(--border);padding:24px 20px;text-align:center;color:var(--muted);font-size:.76rem;}
+.footer strong,.footer h3{color:var(--text);}
+@media(max-width:640px){
+  .feature-grid{grid-template-columns:1fr;}
+  .icon-grid{grid-template-columns:repeat(2,1fr);}
+  .step{gap:8px;}
+  .code-block pre{font-size:.62rem;}
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔧 <span>WCF</span> — Complete Visual Guide</h1>
+            <p>Windows Communication Foundation - Everything You Need to Know!</p>
+        </div>
+        
+        <div class="tab-nav"><div class="tab-nav-inner">
+          <button class="tab-btn active" onclick="showTab('what',this)">What is WCF</button>
+          <button class="tab-btn " onclick="showTab('arch',this)">Architecture</button>
+          <button class="tab-btn " onclick="showTab('abc',this)">ABC Concepts</button>
+          <button class="tab-btn " onclick="showTab('contract',this)">Service Contract</button>
+          <button class="tab-btn " onclick="showTab('data',this)">Data Contract</button>
+          <button class="tab-btn " onclick="showTab('bindings',this)">Bindings</button>
+          <button class="tab-btn " onclick="showTab('hosting',this)">Hosting</button>
+          <button class="tab-btn " onclick="showTab('example',this)">Full Example</button>
+          <button class="tab-btn " onclick="showTab('security',this)">Security</button>
+          <button class="tab-btn " onclick="showTab('best',this)">Best Practices</button>
+          <button class="tab-btn " onclick="showTab('mistakes',this)">Mistakes</button>
+          <button class="tab-btn " onclick="showTab('vs',this)">WCF vs Web API</button>
+          <button class="tab-btn " onclick="showTab('ref',this)">Quick Reference</button>
+        </div></div>
+        <div id="tab-what" class="tab-panel active">
+        <!-- Section 1: What is WCF -->
+        <div class="section">
+            <h2>🔧 What is WCF? (Simple Explanation)</h2>
+            
+            <p style="font-size: 1.1em; color: #666; margin-bottom: 20px; line-height: 1.8;">
+                <strong>WCF = Windows Communication Foundation</strong><br>
+                Framework to build .NET services that communicate across networks. Enable different apps to talk to each other!
+            </p>
+            
+            <div class="visual-box">
+                <h3 style="text-align: center; color: #7C3AED; margin-bottom: 20px;">🔗 Real Life Analogy</h3>
+                <div style="background: white; padding: 20px; border-radius: 8px;">
+                    <p style="color: #666; line-height: 1.8;">
+                        <strong>Without WCF:</strong><br>
+                        Each application is isolated. Cannot communicate ❌<br>
+                        Desktop app, web app, mobile app all separate<br><br>
+                        
+                        <strong>With WCF:</strong><br>
+                        Create a Service that all apps can use ✅<br>
+                        - Desktop app calls WCF service<br>
+                        - Web app calls same WCF service<br>
+                        - Mobile app calls same WCF service<br>
+                        - All use same data and logic<br><br>
+                        
+                        <strong>WCF = Universal communication bridge!</strong>
+                    </p>
+                </div>
+            </div>
+            
+            <h3>Why Use WCF?</h3>
+            
+            <div class="icon-grid">
+                <div class="icon-item">
+                    <div class="emoji">🌐</div>
+                    <h4>Multi-Protocol</h4>
+                    <p>HTTP, TCP, Named Pipes</p>
+                </div>
+                <div class="icon-item">
+                    <div class="emoji">🔀</div>
+                    <h4>Interoperable</h4>
+                    <p>Talk to Java, PHP, JavaScript</p>
+                </div>
+                <div class="icon-item">
+                    <div class="emoji">🔐</div>
+                    <h4>Security</h4>
+                    <p>Built-in encryption & auth</p>
+                </div>
+                <div class="icon-item">
+                    <div class="emoji">📊</div>
+                    <h4>Reliable</h4>
+                    <p>Message delivery guaranteed</p>
+                </div>
+                <div class="icon-item">
+                    <div class="emoji">⚡</div>
+                    <h4>Performance</h4>
+                    <p>Optimized for speed</p>
+                </div>
+                <div class="icon-item">
+                    <div class="emoji">🛠️</div>
+                    <h4>Flexible</h4>
+                    <p>SOAP, REST, JSON support</p>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-arch" class="tab-panel">
+        <!-- Section 2: WCF Architecture -->
+        <div class="section">
+            <h2>🏗️ WCF Architecture (The Big Picture)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                WCF has 3 main layers working together:
+            </p>
+            
+            <h3>The 3-Layer Architecture</h3>
+            
+            <div class="architecture-diagram">
+                <p style="text-align: center; color: #7C3AED; font-weight: bold; margin-bottom: 20px; font-size: 1.2em;">WCF Service Architecture</p>
+                
+                <div style="background: #e6f2ff; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                    <p style="color: #555; line-height: 2; font-weight: bold; text-align: center;">
+                        ┌─────────────────────────────────┐<br>
+                        │   CLIENT (App that uses service) │<br>
+                        └─────────────────────────────────┘<br>
+                        │<br>
+                        │ HTTP, TCP, Named Pipes, etc.<br>
+                        │<br>
+                        ┌─────────────────────────────────┐<br>
+                        │   ENDPOINT (How to access?)     │<br>
+                        │   - Address                      │<br>
+                        │   - Binding                      │<br>
+                        │   - Contract                     │<br>
+                        └─────────────────────────────────┘<br>
+                        │<br>
+                        ┌─────────────────────────────────┐<br>
+                        │   SERVICE (The actual methods)  │<br>
+                        │   - GetCustomer()               │<br>
+                        │   - UpdateOrder()               │<br>
+                        │   - DeleteProduct()             │<br>
+                        └─────────────────────────────────┘
+                    </p>
+                </div>
+            </div>
+            
+            <h3>WCF Communication Flow</h3>
+            
+            <div class="step">
+                <div class="step-number">1️⃣</div>
+                <div class="step-content">
+                    <h4>Client Calls Service</h4>
+                    <p>Client sends request to WCF service</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2️⃣</div>
+                <div class="step-content">
+                    <h4>Find Endpoint</h4>
+                    <p>WCF finds matching endpoint (Address + Binding + Contract)</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3️⃣</div>
+                <div class="step-content">
+                    <h4>Message Flows Through Binding</h4>
+                    <p>Message serialized, encrypted, transformed through binding layers</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4️⃣</div>
+                <div class="step-content">
+                    <h4>Call Service Method</h4>
+                    <p>WCF calls matching method on service implementation</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">5️⃣</div>
+                <div class="step-content">
+                    <h4>Method Executes</h4>
+                    <p>Service method runs, processes data, returns result</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">6️⃣</div>
+                <div class="step-content">
+                    <h4>Response Flows Back</h4>
+                    <p>Message serialized and sent back through binding</p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">7️⃣</div>
+                <div class="step-content">
+                    <h4>Client Receives Response</h4>
+                    <p>Client gets result and continues execution</p>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-abc" class="tab-panel">
+        <!-- Section 3: WCF Concepts (ABC) -->
+        <div class="section">
+            <h2>🎯 WCF Core Concepts (The ABC's)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                WCF is built on 3 fundamental concepts: Address, Binding, Contract (ABC)
+            </p>
+            
+            <h3>A = Address (Where?)</h3>
+            
+            <div class="feature-card">
+                <h4>📍 Address - Where is the service?</h4>
+                <p style="opacity: 0.9;">
+                    <strong>What:</strong> URI that clients use to find the service<br>
+                    <strong>Format:</strong> protocol://host:port/path<br>
+                    <strong>Examples:</strong><br>
+                    - http://localhost:8080/MyService<br>
+                    - tcp://server:9000/Service<br>
+                    - net.pipe://localhost/NamedPipeService<br><br>
+                    
+                    <strong>Parts:</strong><br>
+                    protocol = How to connect (http, tcp, named pipes)<br>
+                    host = Where service runs (localhost, server name)<br>
+                    port = Communication port number<br>
+                    path = Service identifier
+                </p>
+            </div>
+            
+            <h3>B = Binding (How?)</h3>
+            
+            <div class="feature-card">
+                <h4>🔗 Binding - How to communicate?</h4>
+                <p style="opacity: 0.9;">
+                    <strong>What:</strong> How messages are sent (protocol, encoding, security)<br>
+                    <strong>Main Bindings:</strong><br>
+                    - BasicHttpBinding: Simple HTTP/SOAP<br>
+                    - WSHttpBinding: Secure HTTP/SOAP<br>
+                    - NetTcpBinding: Fast binary over TCP<br>
+                    - NetNamedPipeBinding: Local machine communication<br>
+                    - WebHttpBinding: REST/JSON<br><br>
+                    
+                    <strong>Binding Configures:</strong><br>
+                    - Transport (HTTP, TCP, Named Pipes)<br>
+                    - Encoding (Text, Binary, MTOM)<br>
+                    - Security (None, Transport, Message)<br>
+                    - Message format (SOAP, JSON, XML)
+                </p>
+            </div>
+            
+            <h3>C = Contract (What?)</h3>
+            
+            <div class="feature-card">
+                <h4>📋 Contract - What methods are available?</h4>
+                <p style="opacity: 0.9;">
+                    <strong>What:</strong> Interface defining service methods<br>
+                    <strong>Types:</strong><br>
+                    1. Service Contract: Methods client can call<br>
+                    2. Data Contract: Data structures exchanged<br>
+                    3. Message Contract: Custom message format<br>
+                    4. Fault Contract: Errors that can occur<br><br>
+                    
+                    <strong>Example:</strong><br>
+                    [ServiceContract]<br>
+                    public interface ICustomerService<br>
+                    {<br>
+                    &nbsp;&nbsp;[OperationContract]<br>
+                    &nbsp;&nbsp;Customer GetCustomer(int id);<br>
+                    }
+                </p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-contract" class="tab-panel">
+        <!-- Section 4: Service Contract -->
+        <div class="section">
+            <h2>📋 Service Contract (Define Your Service Methods)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                ServiceContract tells clients what methods they can call
+            </p>
+            
+            <h3>Simple Service Contract Example</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">using</span> System.ServiceModel;
+
+<span class="comment">// Step 1: Define Service Contract (what methods available)</span>
+[<span class="function">ServiceContract</span>]
+<span class="keyword">public interface</span> <span class="function">ICalculatorService</span>
+{
+    <span class="comment">// Step 2: Mark methods as operations</span>
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">int</span> <span class="function">Add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);
+    
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">int</span> <span class="function">Subtract</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);
+    
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">int</span> <span class="function">Multiply</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b);
+}
+
+<span class="comment">// Step 3: Implement the service</span>
+<span class="keyword">public class</span> <span class="function">CalculatorService</span> : <span class="function">ICalculatorService</span>
+{
+    <span class="keyword">public int</span> <span class="function">Add</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b)
+    {
+        <span class="keyword">return</span> a + b;
+    }
+    
+    <span class="keyword">public int</span> <span class="function">Subtract</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b)
+    {
+        <span class="keyword">return</span> a - b;
+    }
+    
+    <span class="keyword">public int</span> <span class="function">Multiply</span>(<span class="keyword">int</span> a, <span class="keyword">int</span> b)
+    {
+        <span class="keyword">return</span> a * b;
+    }
+}</pre>
+            </div>
+            
+            <h3>What Do These Attributes Do?</h3>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Attribute</th>
+                    <th>What It Does</th>
+                    <th>Example</th>
+                </tr>
+                <tr>
+                    <td><span class="keyword-type">[ServiceContract]</span></td>
+                    <td>Mark interface as service contract</td>
+                    <td><code>[ServiceContract] public interface IMyService</code></td>
+                </tr>
+                <tr>
+                    <td><span class="keyword-type">[OperationContract]</span></td>
+                    <td>Mark method as callable operation</td>
+                    <td><code>[OperationContract] int Add(int a, int b);</code></td>
+                </tr>
+                <tr>
+                    <td><span class="keyword-type">[DataContract]</span></td>
+                    <td>Mark class as exchangeable data</td>
+                    <td><code>[DataContract] public class Customer</code></td>
+                </tr>
+                <tr>
+                    <td><span class="keyword-type">[DataMember]</span></td>
+                    <td>Mark property as data member</td>
+                    <td><code>[DataMember] public string Name;</code></td>
+                </tr>
+                <tr>
+                    <td><span class="keyword-type">[FaultContract]</span></td>
+                    <td>Define possible errors</td>
+                    <td><code>[FaultContract(typeof(Exception))]</code></td>
+                </tr>
+            </table>
+        </div>
+        
+        </div>
+        <div id="tab-data" class="tab-panel">
+        <!-- Section 5: Data Contract -->
+        <div class="section">
+            <h2>📦 Data Contract (Define Your Data)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                DataContract defines data structures exchanged between client and service
+            </p>
+            
+            <h3>Complete Data Contract Example</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">using</span> System.ServiceModel;
+<span class="keyword">using</span> System;
+
+<span class="comment">// Define data that will be exchanged</span>
+[<span class="function">DataContract</span>]
+<span class="keyword">public class</span> <span class="function">Customer</span>
+{
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public int</span> Id { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public string</span> Name { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public string</span> Email { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public decimal</span> Balance { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}
+
+<span class="comment">// Service that returns Customer data</span>
+[<span class="function">ServiceContract</span>]
+<span class="keyword">public interface</span> <span class="function">ICustomerService</span>
+{
+    [<span class="function">OperationContract</span>]
+    <span class="function">Customer</span> <span class="function">GetCustomer</span>(<span class="keyword">int</span> id);
+    
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">void</span> <span class="function">UpdateCustomer</span>(<span class="function">Customer</span> customer);
+}
+
+<span class="comment">// Implement the service</span>
+<span class="keyword">public class</span> <span class="function">CustomerService</span> : <span class="function">ICustomerService</span>
+{
+    <span class="keyword">public</span> <span class="function">Customer</span> <span class="function">GetCustomer</span>(<span class="keyword">int</span> id)
+    {
+        <span class="comment">// Get from database</span>
+        <span class="keyword">return new</span> <span class="function">Customer</span>
+        {
+            Id = id,
+            Name = <span class="string">"John Smith"</span>,
+            Email = <span class="string">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ddb7b2b5b39db8a5bcb0adb1b8f3beb2b0">[email&#160;protected]</a>"</span>,
+            Balance = 1000m
+        };
+    }
+    
+    <span class="keyword">public void</span> <span class="function">UpdateCustomer</span>(<span class="function">Customer</span> customer)
+    {
+        <span class="comment">// Save to database</span>
+        System.Console.WriteLine(<span class="string">"Customer updated: "</span> + customer.Name);
+    }
+}</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-bindings" class="tab-panel">
+        <!-- Section 6: Bindings Explained -->
+        <div class="section">
+            <h2>🔗 Bindings (Different Ways to Communicate)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                Bindings determine HOW your service communicates
+            </p>
+            
+            <h3>Main Bindings & When to Use</h3>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Binding Name</th>
+                    <th>Protocol</th>
+                    <th>Best For</th>
+                    <th>Security</th>
+                    <th>Performance</th>
+                </tr>
+                <tr>
+                    <td><strong>BasicHttpBinding</strong></td>
+                    <td>HTTP/SOAP</td>
+                    <td>Web services, legacy systems</td>
+                    <td>Low</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td><strong>WSHttpBinding</strong></td>
+                    <td>HTTP/SOAP</td>
+                    <td>Secure web services</td>
+                    <td>High</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td><strong>NetTcpBinding</strong></td>
+                    <td>TCP/Binary</td>
+                    <td>Intranet apps, speed matters</td>
+                    <td>High</td>
+                    <td>Very High</td>
+                </tr>
+                <tr>
+                    <td><strong>NetNamedPipeBinding</strong></td>
+                    <td>Named Pipes</td>
+                    <td>Local machine only</td>
+                    <td>High</td>
+                    <td>Highest</td>
+                </tr>
+                <tr>
+                    <td><strong>WebHttpBinding</strong></td>
+                    <td>HTTP/REST/JSON</td>
+                    <td>Web APIs, mobile apps</td>
+                    <td>Medium</td>
+                    <td>Medium</td>
+                </tr>
+                <tr>
+                    <td><strong>NetMsmqBinding</strong></td>
+                    <td>MSMQ/Queue</td>
+                    <td>Async, reliable messaging</td>
+                    <td>High</td>
+                    <td>Medium</td>
+                </tr>
+            </table>
+            
+            <h3>Binding Configuration Example</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// In App.config or Web.config</span>
+&lt;configuration&gt;
+  &lt;system.serviceModel&gt;
+    &lt;services&gt;
+      &lt;service name=<span class="string">"CalculatorService"</span>&gt;
+        
+        <span class="comment">&lt;!-- Endpoint 1: HTTP SOAP --&gt;</span>
+        &lt;endpoint address=<span class="string">"http://localhost:8080/Calculator"</span>
+                  binding=<span class="string">"basicHttpBinding"</span>
+                  contract=<span class="string">"ICalculatorService"</span> /&gt;
+        
+        <span class="comment">&lt;!-- Endpoint 2: TCP Binary --&gt;</span>
+        &lt;endpoint address=<span class="string">"net.tcp://localhost:9000/Calculator"</span>
+                  binding=<span class="string">"netTcpBinding"</span>
+                  contract=<span class="string">"ICalculatorService"</span> /&gt;
+        
+        <span class="comment">&lt;!-- Endpoint 3: REST JSON --&gt;</span>
+        &lt;endpoint address=<span class="string">"http://localhost:8080/CalculatorRest"</span>
+                  binding=<span class="string">"webHttpBinding"</span>
+                  contract=<span class="string">"ICalculatorService"</span> /&gt;
+        
+      &lt;/service&gt;
+    &lt;/services&gt;
+  &lt;/system.serviceModel&gt;
+&lt;/configuration&gt;</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-hosting" class="tab-panel">
+        <!-- Section 7: Hosting -->
+        <div class="section">
+            <h2>🏠 Hosting WCF Service (Where It Runs)</h2>
+            
+            <p style="color: #666; margin-bottom: 20px; font-size: 1.1em;">
+                WCF services need to be hosted somewhere. Where can they run?
+            </p>
+            
+            <h3>Hosting Options</h3>
+            
+            <div class="comparison-row">
+                <div class="comparison-item">
+                    <h4>🖥️ Console App (Self-Hosted)</h4>
+                    <p style="margin-bottom: 10px;">
+                        <strong>What:</strong> Run service in console app<br>
+                        <strong>Easy:</strong> Simple to setup<br>
+                        <strong>Control:</strong> Full control<br>
+                        <strong>Use:</strong> Dev/testing<br>
+                        <strong>Deployment:</strong> Run exe file
+                    </p>
+                </div>
+                
+                <div class="comparison-item">
+                    <h4>🌐 IIS (Internet Information Server)</h4>
+                    <p style="margin-bottom: 10px;">
+                        <strong>What:</strong> Host in IIS web server<br>
+                        <strong>Advantage:</strong> Professional hosting<br>
+                        <strong>Management:</strong> IIS handles lifecycle<br>
+                        <strong>Use:</strong> Production<br>
+                        <strong>Deployment:</strong> Copy to IIS folder
+                    </p>
+                </div>
+            </div>
+            
+            <div class="comparison-row">
+                <div class="comparison-item">
+                    <h4>⚙️ Windows Service</h4>
+                    <p style="margin-bottom: 10px;">
+                        <strong>What:</strong> Run as Windows service<br>
+                        <strong>Advantage:</strong> Auto-start on reboot<br>
+                        <strong>Management:</strong> Services.msc controls it<br>
+                        <strong>Use:</strong> Production backend<br>
+                        <strong>Deployment:</strong> Install via SC command
+                    </p>
+                </div>
+                
+                <div class="comparison-item">
+                    <h4>🔵 Windows Process Activation Service</h4>
+                    <p style="margin-bottom: 10px;">
+                        <strong>What:</strong> Managed by Windows<br>
+                        <strong>Advantage:</strong> Automatic scaling<br>
+                        <strong>Management:</strong> Auto-start on demand<br>
+                        <strong>Use:</strong> Enterprise<br>
+                        <strong>Deployment:</strong> Via IIS
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-example" class="tab-panel">
+        <!-- Section 8: Complete Example -->
+        <div class="section">
+            <h2>🌍 Complete WCF Example (Order Service)</h2>
+            
+            <h3>Step 1: Define Contracts</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">using</span> System.ServiceModel;
+
+<span class="comment">// Step 1: Data Contract - What data</span>
+[<span class="function">DataContract</span>]
+<span class="keyword">public class</span> <span class="function">Order</span>
+{
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public int</span> OrderId { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public string</span> CustomerName { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+    
+    [<span class="function">DataMember</span>]
+    <span class="keyword">public decimal</span> Total { <span class="keyword">get</span>; <span class="keyword">set</span>; }
+}
+
+<span class="comment">// Step 2: Service Contract - What methods</span>
+[<span class="function">ServiceContract</span>]
+<span class="keyword">public interface</span> <span class="function">IOrderService</span>
+{
+    [<span class="function">OperationContract</span>]
+    <span class="function">Order</span> <span class="function">GetOrder</span>(<span class="keyword">int</span> orderId);
+    
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">bool</span> <span class="function">CreateOrder</span>(<span class="function">Order</span> order);
+    
+    [<span class="function">OperationContract</span>]
+    <span class="keyword">bool</span> <span class="function">CancelOrder</span>(<span class="keyword">int</span> orderId);
+}</pre>
+            </div>
+            
+            <h3>Step 2: Implement Service</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// Step 3: Implement the service</span>
+<span class="keyword">public class</span> <span class="function">OrderService</span> : <span class="function">IOrderService</span>
+{
+    <span class="comment">// Sample data (in real app, use database)</span>
+    <span class="keyword">private static</span> List&lt;<span class="function">Order</span>&gt; orders = <span class="keyword">new</span> List&lt;<span class="function">Order</span>&gt;();
+    
+    <span class="keyword">public</span> <span class="function">Order</span> <span class="function">GetOrder</span>(<span class="keyword">int</span> orderId)
+    {
+        <span class="keyword">var</span> order = orders.FirstOrDefault(o =&gt; o.OrderId == orderId);
+        <span class="keyword">if</span> (order == <span class="keyword">null</span>)
+            <span class="keyword">throw new</span> FaultException(<span class="string">"Order not found"</span>);
+        <span class="keyword">return</span> order;
+    }
+    
+    <span class="keyword">public bool</span> <span class="function">CreateOrder</span>(<span class="function">Order</span> order)
+    {
+        <span class="keyword">try</span>
+        {
+            order.OrderId = orders.Count + 1;
+            orders.Add(order);
+            System.Console.WriteLine(<span class="string">"Order created: "</span> + order.OrderId);
+            <span class="keyword">return true</span>;
+        }
+        <span class="keyword">catch</span> (Exception ex)
+        {
+            System.Console.WriteLine(<span class="string">"Error: "</span> + ex.Message);
+            <span class="keyword">return false</span>;
+        }
+    }
+    
+    <span class="keyword">public bool</span> <span class="function">CancelOrder</span>(<span class="keyword">int</span> orderId)
+    {
+        <span class="keyword">var</span> order = orders.FirstOrDefault(o =&gt; o.OrderId == orderId);
+        <span class="keyword">if</span> (order == <span class="keyword">null</span>)
+            <span class="keyword">return false</span>;
+        
+        orders.Remove(order);
+        System.Console.WriteLine(<span class="string">"Order cancelled: "</span> + orderId);
+        <span class="keyword">return true</span>;
+    }
+}</pre>
+            </div>
+            
+            <h3>Step 3: Host the Service</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// Step 4: Self-host in console app</span>
+<span class="keyword">class</span> <span class="function">Program</span>
+{
+    <span class="keyword">static void</span> <span class="function">Main</span>()
+    {
+        <span class="comment">// Create service host</span>
+        <span class="keyword">var</span> serviceHost = <span class="keyword">new</span> ServiceHost(
+            <span class="keyword">typeof</span>(<span class="function">OrderService</span>),
+            <span class="keyword">new</span> Uri(<span class="string">"http://localhost:8080/OrderService"</span>)
+        );
+        
+        <span class="comment">// Add endpoint with HTTP binding</span>
+        serviceHost.AddServiceEndpoint(
+            <span class="keyword">typeof</span>(<span class="function">IOrderService</span>),
+            <span class="keyword">new</span> BasicHttpBinding(),
+            <span class="string">"http://localhost:8080/OrderService"</span>
+        );
+        
+        <span class="comment">// Start the service</span>
+        serviceHost.Open();
+        System.Console.WriteLine(<span class="string">"Order Service is running..."</span>);
+        System.Console.WriteLine(<span class="string">"Address: http://localhost:8080/OrderService"</span>);
+        System.Console.WriteLine(<span class="string">"Press Enter to stop..."</span>);
+        System.Console.ReadLine();
+        
+        serviceHost.Close();
+    }
+}</pre>
+            </div>
+            
+            <h3>Step 4: Call from Client</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// Client calls the service</span>
+<span class="keyword">class</span> <span class="function">Program</span>
+{
+    <span class="keyword">static void</span> <span class="function">Main</span>()
+    {
+        <span class="comment">// Create proxy to service</span>
+        <span class="keyword">var</span> proxy = <span class="keyword">new</span> ChannelFactory&lt;<span class="function">IOrderService</span>&gt;(
+            <span class="keyword">new</span> BasicHttpBinding(),
+            <span class="keyword">new</span> EndpointAddress(<span class="string">"http://localhost:8080/OrderService"</span>)
+        ).CreateChannel();
+        
+        <span class="comment">// Create order</span>
+        <span class="keyword">var</span> newOrder = <span class="keyword">new</span> <span class="function">Order</span> 
+        { 
+            CustomerName = <span class="string">"John Smith"</span>, 
+            Total = 99.99m 
+        };
+        <span class="keyword">bool</span> created = proxy.CreateOrder(newOrder);
+        System.Console.WriteLine(<span class="string">"Order created: "</span> + created);
+        
+        <span class="comment">// Get order</span>
+        <span class="keyword">var</span> order = proxy.GetOrder(1);
+        System.Console.WriteLine(<span class="string">"Order: "</span> + order.OrderId + <span class="string">" - "</span> + order.Total);
+    }
+}</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-security" class="tab-panel">
+        <!-- Section 9: Security -->
+        <div class="section">
+            <h2>🔐 WCF Security (Protecting Your Service)</h2>
+            
+            <h3>Security Modes</h3>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Security Mode</th>
+                    <th>Encryption</th>
+                    <th>Authentication</th>
+                    <th>Best For</th>
+                </tr>
+                <tr>
+                    <td><strong>None</strong></td>
+                    <td>❌ No</td>
+                    <td>❌ No</td>
+                    <td>Development/Testing</td>
+                </tr>
+                <tr>
+                    <td><strong>Transport</strong></td>
+                    <td>✅ Yes (SSL/TLS)</td>
+                    <td>✅ Basic Auth</td>
+                    <td>HTTP (HTTPS)</td>
+                </tr>
+                <tr>
+                    <td><strong>Message</strong></td>
+                    <td>✅ Yes (Encrypted)</td>
+                    <td>✅ Token-based</td>
+                    <td>Complex scenarios</td>
+                </tr>
+                <tr>
+                    <td><strong>TransportWithMessageCredential</strong></td>
+                    <td>✅ Both</td>
+                    <td>✅ Both</td>
+                    <td>High security</td>
+                </tr>
+            </table>
+            
+            <h3>Security Configuration Example</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// In Web.config - Enable HTTPS Security</span>
+&lt;configuration&gt;
+  &lt;system.serviceModel&gt;
+    &lt;bindings&gt;
+      &lt;basicHttpBinding&gt;
+        &lt;binding name=<span class="string">"SecureBinding"</span>&gt;
+          &lt;security mode=<span class="string">"Transport"</span>&gt;
+            &lt;transport clientCredentialType=<span class="string">"Basic"</span> /&gt;
+          &lt;/security&gt;
+        &lt;/binding&gt;
+      &lt;/basicHttpBinding&gt;
+    &lt;/bindings&gt;
+    
+    &lt;services&gt;
+      &lt;service name=<span class="string">"MyService"</span>&gt;
+        &lt;endpoint address=<span class="string">"https://localhost/MyService"</span>
+                  binding=<span class="string">"basicHttpBinding"</span>
+                  bindingConfiguration=<span class="string">"SecureBinding"</span>
+                  contract=<span class="string">"IMyService"</span> /&gt;
+      &lt;/service&gt;
+    &lt;/services&gt;
+  &lt;/system.serviceModel&gt;
+&lt;/configuration&gt;</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-best" class="tab-panel">
+        <!-- Section 10: Best Practices -->
+        <div class="section">
+            <h2>✅ WCF Best Practices</h2>
+            
+            <h3>Design Practices</h3>
+            
+            <div class="checklist">
+                <li>Keep contracts simple and focused</li>
+                <li>Use versioning for service evolution</li>
+                <li>Avoid circular references in data contracts</li>
+                <li>Use appropriate binding for your scenario</li>
+                <li>Always implement proper error handling (FaultContract)</li>
+                <li>Use OneWay operation for fire-and-forget calls</li>
+                <li>Implement proper resource cleanup (IDisposable)</li>
+                <li>Use asynchronous operations for long-running tasks</li>
+            </div>
+            
+            <h3>Security Practices</h3>
+            
+            <div class="checklist">
+                <li>Never use security mode "None" in production</li>
+                <li>Always use HTTPS for internet services</li>
+                <li>Implement proper authentication (Windows, certificates, tokens)</li>
+                <li>Use authorization to control access</li>
+                <li>Enable auditing for sensitive operations</li>
+                <li>Validate all input data</li>
+                <li>Use secure credentials management</li>
+                <li>Implement throttling to prevent abuse</li>
+            </div>
+            
+            <h3>Performance Practices</h3>
+            
+            <div class="checklist">
+                <li>Use NetTcpBinding for intranet apps (faster than HTTP)</li>
+                <li>Implement caching where appropriate</li>
+                <li>Use streaming for large files</li>
+                <li>Configure appropriate timeouts</li>
+                <li>Monitor service performance regularly</li>
+                <li>Use DataContract (serialization) efficiently</li>
+                <li>Implement connection pooling</li>
+                <li>Use asynchronous calls to avoid blocking</li>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-mistakes" class="tab-panel">
+        <!-- Section 11: Common Mistakes -->
+        <div class="section">
+            <h2>⚠️ Common WCF Mistakes</h2>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 1: Missing [DataContract] or [DataMember]</h4>
+                <p>Client won't receive data! Always mark classes and properties that need to be serialized.</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 2: Circular References in Data Contracts</h4>
+                <p>Customer → Order → Customer causes serialization errors. Flatten your data structures.</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 3: Using Security Mode "None" in Production</h4>
+                <p>Anyone can intercept your data! Always use Transport or Message security.</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 4: Not Implementing FaultContract</h4>
+                <p>Clients don't know how to handle errors. Define expected exceptions with FaultContract.</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 5: Wrong Binding Choice</h4>
+                <p>Using BasicHttpBinding for internal app? Use NetTcpBinding for better performance!</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 6: No Timeout Configuration</h4>
+                <p>Default timeout is 1 minute. Long operations fail! Configure appropriate timeouts.</p>
+            </div>
+            
+            <div class="warning-box">
+                <h4>❌ Mistake 7: Resource Leaks (Not Disposing)</h4>
+                <p>Service consumes resources. Implement IDisposable and dispose connections properly.</p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-vs" class="tab-panel">
+        <!-- Section 12: WCF vs Web API -->
+        <div class="section">
+            <h2>⚖️ WCF vs Web API (Which to Use?)</h2>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>WCF</th>
+                    <th>Web API</th>
+                </tr>
+                <tr>
+                    <td><strong>Framework</strong></td>
+                    <td>.NET Framework</td>
+                    <td>ASP.NET Core (newer)</td>
+                </tr>
+                <tr>
+                    <td><strong>Protocols</strong></td>
+                    <td>HTTP, TCP, Named Pipes, MSMQ</td>
+                    <td>HTTP/HTTPS only</td>
+                </tr>
+                <tr>
+                    <td><strong>Best For</strong></td>
+                    <td>Enterprise, SOAP, multiple transports</td>
+                    <td>REST APIs, web/mobile apps</td>
+                </tr>
+                <tr>
+                    <td><strong>Learning Curve</strong></td>
+                    <td>Steep (many options)</td>
+                    <td>Easy (simplified)</td>
+                </tr>
+                <tr>
+                    <td><strong>Performance</strong></td>
+                    <td>High (binary TCP)</td>
+                    <td>Very High (optimized)</td>
+                </tr>
+                <tr>
+                    <td><strong>Modern?</strong></td>
+                    <td>Legacy</td>
+                    <td>Current standard</td>
+                </tr>
+                <tr>
+                    <td><strong>Use Today?</strong></td>
+                    <td>Legacy systems only</td>
+                    <td>✅ Yes! (recommended)</td>
+                </tr>
+            </table>
+            
+            <h3>Recommendation</h3>
+            
+            <div class="tip-box">
+                <h4>💡 When to Use WCF</h4>
+                <p>
+                    - Maintaining legacy systems<br>
+                    - Need multiple transport protocols (TCP, Named Pipes)<br>
+                    - Enterprise SOAP services<br>
+                    - Need complex security scenarios
+                </p>
+            </div>
+            
+            <div class="tip-box">
+                <h4>💡 When to Use Web API</h4>
+                <p>
+                    - Building new services (recommended!)<br>
+                    - REST APIs<br>
+                    - Web and mobile applications<br>
+                    - Cloud services (Azure)<br>
+                    - You should prefer this!
+                </p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-ref" class="tab-panel">
+        <!-- Section 13: Quick Reference -->
+        <div class="section">
+            <h2>📚 Quick Reference</h2>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Task</th>
+                    <th>Code/Configuration</th>
+                </tr>
+                <tr>
+                    <td>Mark Service Contract</td>
+                    <td><code>[ServiceContract] public interface IMyService</code></td>
+                </tr>
+                <tr>
+                    <td>Mark Operation</td>
+                    <td><code>[OperationContract] string GetData(int id);</code></td>
+                </tr>
+                <tr>
+                    <td>Mark Data Contract</td>
+                    <td><code>[DataContract] public class Customer</code></td>
+                </tr>
+                <tr>
+                    <td>Mark Data Member</td>
+                    <td><code>[DataMember] public string Name;</code></td>
+                </tr>
+                <tr>
+                    <td>Create Service Host</td>
+                    <td><code>var host = new ServiceHost(typeof(MyService));</code></td>
+                </tr>
+                <tr>
+                    <td>Add HTTP Endpoint</td>
+                    <td><code>host.AddServiceEndpoint(typeof(IMyService), new BasicHttpBinding(), "http://...");</code></td>
+                </tr>
+                <tr>
+                    <td>Add TCP Endpoint</td>
+                    <td><code>host.AddServiceEndpoint(typeof(IMyService), new NetTcpBinding(), "net.tcp://...");</code></td>
+                </tr>
+                <tr>
+                    <td>Create Client Proxy</td>
+                    <td><code>var proxy = new ChannelFactory&lt;IMyService&gt;(...).CreateChannel();</code></td>
+                </tr>
+                <tr>
+                    <td>Return Error</td>
+                    <td><code>throw new FaultException("Error message");</code></td>
+                </tr>
+                <tr>
+                    <td>Enable HTTPS Security</td>
+                    <td><code>&lt;security mode="Transport"&gt;&lt;/security&gt;</code></td>
+                </tr>
+            </table>
+        </div>
+        
+        </div><!-- close last tab -->
+        <!-- Footer -->
+        <div class="footer">
+            <h3>🎉 You Now Understand WCF Completely!</h3>
+            <p>You've learned:</p>
+            <p style="margin: 10px 0;">✅ What WCF is and why to use it<br>
+            ✅ WCF architecture (ABC - Address, Binding, Contract)<br>
+            ✅ Service contracts (define methods)<br>
+            ✅ Data contracts (define data)<br>
+            ✅ All binding types (HTTP, TCP, Named Pipes, etc)<br>
+            ✅ Hosting options (Console, IIS, Windows Service)<br>
+            ✅ Complete working examples<br>
+            ✅ Security implementation<br>
+            ✅ Best practices & common mistakes<br>
+            ✅ WCF vs Web API comparison<br>
+            ✅ Quick reference guide</p>
+            <p style="margin-top: 20px; color: #666;">WCF is a powerful framework for building enterprise .NET services. Practice with different bindings!</p>
+        </div>
+        </div><!-- close last tab -->
+    </div><!-- container -->
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
