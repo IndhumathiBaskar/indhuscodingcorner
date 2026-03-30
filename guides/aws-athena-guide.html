@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Athena - DEEP DIVE Complete C# Guide for Beginners</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --accent:#c96a2a;--accent-l:#f5e6d8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;padding:0;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.5rem,5vw,2.4rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.9rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:18px 0 8px;}
+.section>p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+.flow-diagram{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;position:relative;max-width:480px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:4px;}
+.flow-node-items{font-size:.78rem;color:var(--text2);list-style:none;}
+.flow-node-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-node-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:6px 0;color:var(--border2);font-size:1.4rem;}
+.node-user{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.node-user .flow-node-title{color:var(--blue);}
+.node-athena{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.node-athena .flow-node-title{color:var(--aws);}
+.node-exec{background:var(--surface);border:1px solid var(--border);}
+.node-exec .flow-node-title{color:var(--text);}
+.node-s3{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.node-s3 .flow-node-title{color:var(--green);}
+.node-result{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);}
+.node-result .flow-node-title{color:var(--blue);}
+.node-billing{background:#fff5e0;border:1px solid rgba(212,135,42,.3);}
+.node-billing .flow-node-title{color:#a06010;}
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-number{background:var(--aws);color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;}
+.step-content{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-content h4{color:var(--aws);margin-bottom:5px;font-size:.88rem;}
+.step-content p{color:var(--muted);font-size:.83rem;}
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;}
+.card ul,.card ol{padding-left:14px;}
+.card li{margin-bottom:4px;}
+.feature-card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);border-left:3px solid var(--aws);}
+.feature-card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;}
+.feature-card p{color:var(--muted);font-size:.83rem;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:12px;margin:14px 0;}
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.78rem;font-weight:600;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+.visual-box{background:var(--aws-l);border:1px solid rgba(212,135,42,.2);border-radius:var(--r);padding:clamp(.9rem,3vw,1.4rem);margin:14px 0;}
+.visual-box h3{color:var(--aws);margin-top:0;}
+.visual-box>div{background:var(--card);padding:14px;border-radius:6px;}
+.example-box{background:var(--surface);border-left:4px solid var(--blue);border-radius:var(--r);padding:14px;margin:14px 0;border:1px solid var(--border);}
+.example-box h4{color:var(--blue);margin-bottom:6px;font-size:.88rem;}
+.example-box p{color:var(--muted);font-size:.83rem;}
+.tip-box{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip-box h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip-box p{color:var(--muted);font-size:.83rem;}
+.warning-box{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warning-box h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warning-box p{color:var(--muted);font-size:.83rem;}
+.benefit-card{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:9px 12px;border-radius:var(--r);margin:7px 0;}
+.benefit-card h5{color:var(--green);margin-bottom:3px;font-size:.8rem;}
+.benefit-card p{color:var(--muted);font-size:.8rem;}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.keyword{color:#cba6f7;}.string{color:#a6e3a1;}.comment{color:#6c7086;font-style:italic;}.function{color:#89b4fa;}.attribute{color:#fab387;}.type{color:#89dceb;}.number{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:420px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.comparison-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;}
+@media(max-width:520px){.comparison-row{grid-template-columns:1fr;}}
+.comparison-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);box-shadow:var(--sh);}
+.comparison-item h4{color:var(--aws);margin-bottom:6px;font-size:.88rem;}
+.comparison-item p,.comparison-item li{color:var(--muted);font-size:.82rem;}
+.comparison-item ul{padding-left:14px;}
+.architecture-diagram{background:var(--surface);padding:18px;border-radius:var(--r);margin:14px 0;border:1px solid var(--border);overflow-x:auto;}
+.architecture-diagram p{color:var(--text);line-height:2;font-family:'JetBrains Mono',monospace;font-size:clamp(.64rem,1.8vw,.78rem);}
+.footer{background:var(--card);border-top:1px solid var(--border);padding:24px 20px;text-align:center;color:var(--muted);font-size:.76rem;}
+.footer h3{color:var(--text);margin-bottom:8px;font-size:1rem;}
+.completion-card{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion-card h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion-card p{color:var(--text2);font-size:.85rem;line-height:1.8;}
+@media(max-width:640px){
+  .feature-grid{grid-template-columns:1fr;}
+  .icon-grid{grid-template-columns:repeat(2,1fr);}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔍 <span>AWS Athena</span> — Complete Deep Dive</h1>
+            <p>Ultimate Resource for Athena Architecture, Console Setup, SDK Implementation & Enterprise Analytics</p>
+        </div>
+        
+        <div class="tab-nav"><div class="tab-nav-inner">
+          <button class="tab-btn active" onclick="showTab('what',this)">What is Athena</button>
+          <button class="tab-btn " onclick="showTab('arch',this)">Architecture</button>
+          <button class="tab-btn " onclick="showTab('console',this)">Console Setup</button>
+          <button class="tab-btn " onclick="showTab('sdk',this)">C# SDK</button>
+          <button class="tab-btn " onclick="showTab('config',this)">Configuration</button>
+          <button class="tab-btn " onclick="showTab('optimize',this)">Optimization</button>
+          <button class="tab-btn " onclick="showTab('realworld',this)">Real World</button>
+          <button class="tab-btn " onclick="showTab('vs',this)">vs Alternatives</button>
+          <button class="tab-btn " onclick="showTab('mistakes',this)">Mistakes</button>
+          <button class="tab-btn " onclick="showTab('best',this)">Best Practices</button>
+        </div></div>
+        <div id="tab-what" class="tab-panel active">
+        <!-- Section 1: What is Athena Deep Dive -->
+        <div class="section">
+            <h2>🔍 AWS Athena - Complete Deep Dive</h2>
+            
+            <p style="font-size: 1.1em; color: #666; margin-bottom: 20px; line-height: 1.8;">
+                <strong>Athena = Serverless Interactive Query Service</strong><br>
+                Query data in S3 directly using SQL. No servers to manage, pay only for queries you run.
+            </p>
+            
+            <h3>What Makes Athena Special?</h3>
+            
+            <p style="color: #666; line-height: 1.8; margin-bottom: 20px;">
+                <strong>🎯 Athena vs Traditional Databases:</strong><br><br>
+                
+                <strong>Traditional Database (RDS, DynamoDB):</strong><br>
+                • Data stored in database<br>
+                • Query via SQL/API<br>
+                • Pay for storage + compute<br>
+                • Must provision capacity<br>
+                • Good for transactional data<br><br>
+                
+                <strong>Athena (Query Service):</strong><br>
+                • Data stored in S3<br>
+                • Query via SQL<br>
+                • Pay ONLY for queries ($5 per TB scanned)<br>
+                • Serverless (no servers)<br>
+                • Good for analytics, logs, archives<br>
+                • Scan only needed columns (cost saving)<br><br>
+                
+                <strong>Key Insight:</strong><br>
+                Athena = SQL engine + S3<br>
+                Reads data from S3, analyzes, returns results<br>
+                Original S3 files unchanged<br>
+                Perfect for big data analysis
+            </p>
+        </div>
+        
+        </div>
+        <div id="tab-arch" class="tab-panel">
+        <!-- Section 2: Athena Architecture -->
+        <div class="section">
+            <h2>🏗️ Athena Architecture & How It Works</h2>
+            
+            <h3>Complete Athena Query Execution Flow</h3>
+            
+            <div class="flow-diagram">
+              <div class="flow-node node-user">
+                <div class="flow-node-title">👤 You / Your Application</div>
+                <ul class="flow-node-items">
+                  <li>Write a SQL query</li>
+                  <li>Submit via AWS Console, SDK, or API</li>
+                </ul>
+              </div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-node node-athena">
+                <div class="flow-node-title">🔍 Athena — Query Engine (Presto)</div>
+                <ul class="flow-node-items">
+                  <li>Parses your SQL query</li>
+                  <li>Creates an execution plan</li>
+                  <li>Distributes work across parallel workers</li>
+                </ul>
+              </div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-node node-s3">
+                <div class="flow-node-title">🗄️ S3 — Your Data Source</div>
+                <ul class="flow-node-items">
+                  <li>Reads only the columns you need</li>
+                  <li>Supports Parquet, CSV, JSON, ORC formats</li>
+                  <li>Applies filters early — scans less data</li>
+                  <li>⚠️ You are charged per TB scanned here</li>
+                </ul>
+              </div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-node node-exec">
+                <div class="flow-node-title">⚡ Parallel Query Execution</div>
+                <ul class="flow-node-items">
+                  <li>Multiple workers process data simultaneously</li>
+                  <li>Pushdown filtering reduces data movement</li>
+                  <li>Results aggregated from all workers</li>
+                </ul>
+              </div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-node node-result">
+                <div class="flow-node-title">📋 Results — Stored back in S3</div>
+                <ul class="flow-node-items">
+                  <li>CSV file saved to your results S3 bucket</li>
+                  <li>Unique Query ID assigned for reference</li>
+                  <li>Execution stats: rows, bytes scanned, duration</li>
+                  <li>Results reusable for 7 days (with caching on)</li>
+                </ul>
+              </div>
+              <div class="flow-arrow">↓</div>
+              <div class="flow-node node-billing">
+                <div class="flow-node-title">💰 Billing — Pay Only per Scan</div>
+                <ul class="flow-node-items">
+                  <li>$5 per TB of data scanned — not per row</li>
+                  <li>Parquet/ORC format = up to 10x cheaper</li>
+                  <li>Partitioning = scan less = pay less</li>
+                  <li>No charge when query returns 0 rows</li>
+                </ul>
+              </div>
+            </div>
+            
+            <h3>Core Components Explained</h3>
+            
+            <div class="step">
+                <div class="step-number">1️⃣</div>
+                <div class="step-content">
+                    <h4>S3 Data Source</h4>
+                    <p><strong>What:</strong> Your actual data files<br>
+                    <strong>Formats supported:</strong> CSV, JSON, Parquet, ORC, TSV, Avro<br>
+                    <strong>Organization:</strong> Folders = tables, objects = partitions<br>
+                    <strong>Cost impact:</strong> Parquet/ORC = compressed = cheaper scans<br>
+                    <strong>Best practice:</strong> Organize by date for partitioning
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">2️⃣</div>
+                <div class="step-content">
+                    <h4>Metadata (Glue Catalog)</h4>
+                    <p><strong>What:</strong> Table definitions and schema<br>
+                    <strong>Contains:</strong> Column names, types, partitions<br>
+                    <strong>Where stored:</strong> AWS Glue Data Catalog<br>
+                    <strong>Use:</strong> Athena knows how to parse S3 files<br>
+                    <strong>Alternative:</strong> Manual table definition in Athena
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">3️⃣</div>
+                <div class="step-content">
+                    <h4>Query Engine</h4>
+                    <p><strong>What:</strong> Presto-based SQL engine<br>
+                    <strong>Capabilities:</strong> Full SQL, joins, aggregations, window functions<br>
+                    <strong>Parallel:</strong> Distributes query across workers<br>
+                    <strong>Optimization:</strong> Pushdown filtering, column pruning<br>
+                    <strong>Timeout:</strong> 30 minutes default
+                    </p>
+                </div>
+            </div>
+            
+            <div class="step">
+                <div class="step-number">4️⃣</div>
+                <div class="step-content">
+                    <h4>Results Location</h4>
+                    <p><strong>What:</strong> S3 bucket for query results<br>
+                    <strong>Contains:</strong> .csv file + metadata JSON<br>
+                    <strong>Organization:</strong> Folder per query execution<br>
+                    <strong>Retention:</strong> You control (usually 45 days)<br>
+                    <strong>Cost:</strong> S3 storage charge for results
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-console" class="tab-panel">
+        <!-- Section 3: AWS Console Setup (UI Configuration) -->
+        <div class="section">
+            <h2>⚙️ AWS Athena Console Setup - Step By Step</h2>
+            
+            <h3>Step 1: Open Athena Console</h3>
+            
+            <div class="config-box">
+                <h4>Navigate to Athena:</h4>
+                <p style="color: #555; margin: 10px 0; line-height: 1.8;">
+                    <strong>1. Go to AWS Console</strong><br>
+                    → Search for "Athena" → Click "Athena"<br><br>
+                    
+                    <strong>2. You see "Query Editor" page</strong><br>
+                    ✓ Left panel: Databases & Tables<br>
+                    ✓ Middle panel: SQL query editor<br>
+                    ✓ Right panel: Query settings<br><br>
+                    
+                    <strong>3. First time warning:</strong><br>
+                    "Before you run queries, specify a results location in S3"<br>
+                    → Click "Edit settings" to fix
+                </p>
+            </div>
+            
+            <h3>Step 2: Configure Results Location</h3>
+            
+            <div class="config-box">
+                <h4>Set Query Results S3 Bucket:</h4>
+                <p style="color: #555; margin: 10px 0; line-height: 1.8;">
+                    <strong>1. Click Settings button (top-right)</strong><br>
+                    → Opens "Settings" panel<br><br>
+                    
+                    <strong>2. Find "Query Results Location"</strong><br>
+                    → S3 folder where results stored<br>
+                    → Example: s3://my-athena-results/<br><br>
+                    
+                    <strong>3. Enter or Browse for S3 bucket</strong><br>
+                    → Must have write permissions<br>
+                    → Create if doesn't exist<br><br>
+                    
+                    <strong>4. Encryption (Optional but recommended):</strong><br>
+                    ☐ Server-side encryption (SSE-S3)<br>
+                    ☐ SSE-KMS (customer-managed key)<br>
+                    ☐ CSE-KMS (client-side)<br><br>
+                    
+                    <strong>5. Click "Save"</strong><br>
+                    → Settings saved for this account
+                </p>
+            </div>
+            
+            <h3>Step 3: Create Database & Table</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">-- In Athena Query Editor, run this:</span>
+
+<span class="comment">-- Create database</span>
+<span class="keyword">CREATE DATABASE</span> <span class="keyword">IF NOT EXISTS</span> my_analytics;
+
+<span class="comment">-- Create table from S3 CSV</span>
+<span class="keyword">CREATE TABLE</span> <span class="keyword">IF NOT EXISTS</span> my_analytics.users (
+  user_id <span class="type">INT</span>,
+  name <span class="type">VARCHAR</span>(255),
+  email <span class="type">VARCHAR</span>(255),
+  signup_date <span class="type">DATE</span>,
+  country <span class="type">VARCHAR</span>(100)
+)
+<span class="keyword">WITH (</span>
+  format = <span class="string">'CSV'</span>,
+  external_location = <span class="string">'s3://my-data-bucket/users/'</span>,
+  skip_header_line_count = 1
+<span class="keyword">)</span>;
+
+<span class="comment">-- Now query it</span>
+<span class="keyword">SELECT</span> * <span class="keyword">FROM</span> my_analytics.users 
+<span class="keyword">WHERE</span> country = <span class="string">'USA'</span> 
+<span class="keyword">LIMIT</span> 10;</pre>
+            </div>
+            
+            <h3>Step 4: View Results</h3>
+            
+            <div class="config-box">
+                <h4>After Query Runs:</h4>
+                <p style="color: #555; margin: 10px 0; line-height: 1.8;">
+                    <strong>1. Results appear below query</strong><br>
+                    ✓ Shows data returned<br>
+                    ✓ Shows query time<br>
+                    ✓ Shows data scanned<br><br>
+                    
+                    <strong>2. Query History (left side):</strong><br>
+                    ✓ Shows all past queries<br>
+                    ✓ Execution time<br>
+                    ✓ Data scanned<br>
+                    ✓ Cost estimate<br><br>
+                    
+                    <strong>3. Query Details:</strong><br>
+                    ✓ Query ID<br>
+                    ✓ Status (QUEUED, RUNNING, SUCCEEDED)<br>
+                    ✓ Execution time (milliseconds)<br>
+                    ✓ Data scanned<br>
+                    ✓ Cost ($)<br>
+                    ✓ Results location (S3 path)
+                </p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-sdk" class="tab-panel">
+        <!-- Section 4: Complete SDK Implementation -->
+        <div class="section">
+            <h2>💻 AWS Athena SDK - Complete C# Implementation</h2>
+            
+            <h3>Step 1: Install NuGet Package</h3>
+            
+            <div class="code-block">
+<pre><span class="comment">// Via Package Manager Console:</span>
+Install-Package AWSSDK.Athena
+
+<span class="comment">// Via .NET CLI:</span>
+dotnet add package AWSSDK.Athena
+
+<span class="comment">// Also need for file operations:</span>
+Install-Package AWSSDK.S3</pre>
+            </div>
+            
+            <h3>Step 2: Setup & Client Creation</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">using</span> Amazon.Athena;
+<span class="keyword">using</span> Amazon.Athena.Model;
+<span class="keyword">using</span> Amazon.S3;
+<span class="keyword">using</span> System;
+<span class="keyword">using</span> System.Threading.Tasks;
+
+<span class="comment">// Create Athena client</span>
+<span class="keyword">var</span> athenaClient = <span class="keyword">new</span> AmazonAthenaClient();
+
+<span class="comment">// Create S3 client (for results bucket)</span>
+<span class="keyword">var</span> s3Client = <span class="keyword">new</span> AmazonS3Client();</pre>
+            </div>
+            
+            <h3>Complete Example 1: Run Simple Query</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">public static async Task</span> <span class="function">RunSimpleQuery</span>()
+{
+    <span class="keyword">var</span> athenaClient = <span class="keyword">new</span> AmazonAthenaClient();
+    
+    <span class="comment">// 1. Start query execution</span>
+    <span class="keyword">var</span> startRequest = <span class="keyword">new</span> StartQueryExecutionRequest
+    {
+        QueryString = <span class="string">"SELECT * FROM my_analytics.users WHERE country='USA' LIMIT 10"</span>,
+        
+        <span class="comment">// Required: Which database to use</span>
+        QueryExecutionContext = <span class="keyword">new</span> QueryExecutionContext
+        {
+            Database = <span class="string">"my_analytics"</span>
+        },
+        
+        <span class="comment">// Required: Where to save results</span>
+        ResultConfiguration = <span class="keyword">new</span> ResultConfiguration
+        {
+            OutputLocation = <span class="string">"s3://my-athena-results/"</span>
+        }
+    };
+    
+    <span class="keyword">var</span> startResponse = <span class="keyword">await</span> athenaClient.StartQueryExecutionAsync(startRequest);
+    <span class="keyword">string</span> queryId = startResponse.QueryExecutionId;
+    
+    Console.WriteLine(<span class="function">$</span><span class="string">"Query started: {queryId}"</span>);
+    
+    <span class="comment">// 2. Wait for query to complete</span>
+    <span class="keyword">var</span> maxAttempts = 30;  <span class="comment">// 30 attempts * 2 sec = 60 sec max</span>
+    <span class="keyword">var</span> attempt = 0;
+    
+    <span class="keyword">while</span> (attempt &lt; maxAttempts)
+    {
+        <span class="keyword">var</span> statusRequest = <span class="keyword">new</span> GetQueryExecutionRequest
+        {
+            QueryExecutionId = queryId
+        };
+        
+        <span class="keyword">var</span> statusResponse = <span class="keyword">await</span> athenaClient.GetQueryExecutionAsync(statusRequest);
+        <span class="keyword">var</span> status = statusResponse.QueryExecution.Status.State;
+        
+        Console.WriteLine(<span class="function">$</span><span class="string">"Status: {status}"</span>);
+        
+        <span class="keyword">if</span> (status == QueryExecutionState.SUCCEEDED)
+        {
+            <span class="comment">// Query completed successfully!</span>
+            <span class="keyword">break</span>;
+        }
+        <span class="keyword">else if</span> (status == QueryExecutionState.FAILED)
+        {
+            Console.WriteLine(<span class="function">$</span><span class="string">"Query failed: {statusResponse.QueryExecution.Status.StateChangeReason}"</span>);
+            <span class="keyword">return</span>;
+        }
+        <span class="keyword">else if</span> (status == QueryExecutionState.CANCELLED)
+        {
+            Console.WriteLine(<span class="string">"Query was cancelled"</span>);
+            <span class="keyword">return</span>;
+        }
+        
+        <span class="comment">// Still running, wait 2 seconds</span>
+        <span class="keyword">await</span> Task.Delay(2000);
+        attempt++;
+    }
+    
+    <span class="comment">// 3. Get results</span>
+    <span class="keyword">var</span> resultsRequest = <span class="keyword">new</span> GetQueryResultsRequest
+    {
+        QueryExecutionId = queryId,
+        MaxResults = 100  <span class="comment">// Max 1000 rows per call</span>
+    };
+    
+    <span class="keyword">var</span> resultsResponse = <span class="keyword">await</span> athenaClient.GetQueryResultsAsync(resultsRequest);
+    
+    <span class="comment">// 4. Process results</span>
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> row <span class="keyword">in</span> resultsResponse.ResultSet.Rows)
+    {
+        <span class="keyword">foreach</span> (<span class="keyword">var</span> datum <span class="keyword">in</span> row.Data)
+        {
+            Console.Write(datum.VarCharValue + <span class="string">"  "</span>);
+        }
+        Console.WriteLine();
+    }
+    
+    Console.WriteLine(<span class="function">$</span><span class="string">"Total rows: {resultsResponse.ResultSet.Rows.Count}"</span>);
+}
+
+<span class="comment">// Output example:
+// Query started: a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6
+// Status: RUNNING
+// Status: RUNNING
+// Status: SUCCEEDED
+// 1    John    <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3852575056785d40595548545d165b5755">[email&#160;protected]</a>    2020-01-15    USA
+// 2    Alice   <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="11707d787274517469707c617d743f727e7c">[email&#160;protected]</a>   2020-02-20    USA
+// Total rows: 2</span></pre>
+            </div>
+            
+            <h3>Complete Example 2: Parameterized Query (Safe & Reusable)</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">public static async Task</span> <span class="function">QueryWithParameters</span>(
+    <span class="keyword">string</span> country,
+    <span class="keyword">int</span> minAge)
+{
+    <span class="keyword">var</span> athenaClient = <span class="keyword">new</span> AmazonAthenaClient();
+    
+    <span class="comment">// Build query with parameters</span>
+    <span class="keyword">var</span> query = <span class="function">$</span><span class="string">@"
+        SELECT 
+            user_id,
+            name,
+            email,
+            country,
+            age
+        FROM my_analytics.users 
+        WHERE country = '{country}'
+            AND age >= {minAge}
+        ORDER BY name
+    "</span>;
+    
+    <span class="keyword">var</span> startRequest = <span class="keyword">new</span> StartQueryExecutionRequest
+    {
+        QueryString = query,
+        QueryExecutionContext = <span class="keyword">new</span> QueryExecutionContext
+        {
+            Database = <span class="string">"my_analytics"</span>
+        },
+        ResultConfiguration = <span class="keyword">new</span> ResultConfiguration
+        {
+            OutputLocation = <span class="string">"s3://my-athena-results/"</span>,
+            EncryptionConfiguration = <span class="keyword">new</span> EncryptionConfiguration
+            {
+                EncryptionOption = EncryptionOption.SSE_S3
+            }
+        }
+    };
+    
+    <span class="keyword">var</span> response = <span class="keyword">await</span> athenaClient.StartQueryExecutionAsync(startRequest);
+    
+    Console.WriteLine(<span class="function">$</span><span class="string">"Query ID: {response.QueryExecutionId}"</span>);
+    Console.WriteLine(<span class="function">$</span><span class="string">"Country: {country}, Min Age: {minAge}"</span>);
+}
+
+<span class="comment">// Usage:</span>
+<span class="keyword">await</span> <span class="function">QueryWithParameters</span>(<span class="string">"USA"</span>, 25);</pre>
+            </div>
+            
+            <h3>Complete Example 3: Batch Query Processing</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">public class</span> <span class="type">AthenaQueryService</span>
+{
+    <span class="keyword">private readonly</span> IAmazonAthena _athenaClient;
+    
+    <span class="keyword">public</span> <span class="function">AthenaQueryService</span>(IAmazonAthena athenaClient)
+    {
+        _athenaClient = athenaClient;
+    }
+    
+    <span class="comment">// Run query and wait for completion</span>
+    <span class="keyword">public async Task&lt;QueryExecutionState&gt;</span> <span class="function">ExecuteQueryAsync</span>(
+        <span class="keyword">string</span> query,
+        <span class="keyword">string</span> database,
+        <span class="keyword">string</span> resultsLocation)
+    {
+        <span class="comment">// Start query</span>
+        <span class="keyword">var</span> startRequest = <span class="keyword">new</span> StartQueryExecutionRequest
+        {
+            QueryString = query,
+            QueryExecutionContext = <span class="keyword">new</span> QueryExecutionContext { Database = database },
+            ResultConfiguration = <span class="keyword">new</span> ResultConfiguration { OutputLocation = resultsLocation }
+        };
+        
+        <span class="keyword">var</span> startResponse = <span class="keyword">await</span> _athenaClient.StartQueryExecutionAsync(startRequest);
+        <span class="keyword">string</span> queryId = startResponse.QueryExecutionId;
+        
+        <span class="comment">// Wait for completion</span>
+        <span class="keyword">var</span> finalStatus = <span class="keyword">await</span> <span class="function">WaitForQueryCompletion</span>(queryId);
+        
+        <span class="keyword">return</span> finalStatus;
+    }
+    
+    <span class="comment">// Wait for query to finish</span>
+    <span class="keyword">private async Task&lt;QueryExecutionState&gt;</span> <span class="function">WaitForQueryCompletion</span>(<span class="keyword">string</span> queryId)
+    {
+        <span class="keyword">while</span> (<span class="keyword">true</span>)
+        {
+            <span class="keyword">var</span> statusRequest = <span class="keyword">new</span> GetQueryExecutionRequest { QueryExecutionId = queryId };
+            <span class="keyword">var</span> statusResponse = <span class="keyword">await</span> _athenaClient.GetQueryExecutionAsync(statusRequest);
+            
+            <span class="keyword">var</span> status = statusResponse.QueryExecution.Status.State;
+            
+            <span class="keyword">if</span> (status == QueryExecutionState.SUCCEEDED ||
+                status == QueryExecutionState.FAILED ||
+                status == QueryExecutionState.CANCELLED)
+            {
+                <span class="keyword">return</span> status;
+            }
+            
+            <span class="keyword">await</span> Task.Delay(1000);  <span class="comment">// Check every second</span>
+        }
+    }
+    
+    <span class="comment">// Get query results</span>
+    <span class="keyword">public async Task&lt;List&lt;Dictionary&lt;</span><span class="keyword">string</span><span class="keyword">, string&gt;&gt;</span> <span class="function">GetQueryResultsAsync</span>(<span class="keyword">string</span> queryId)
+    {
+        <span class="keyword">var</span> results = <span class="keyword">new</span> List&lt;Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;&gt;();
+        
+        <span class="keyword">var</span> resultsRequest = <span class="keyword">new</span> GetQueryResultsRequest
+        {
+            QueryExecutionId = queryId,
+            MaxResults = 1000
+        };
+        
+        <span class="keyword">var</span> resultsResponse = <span class="keyword">await</span> _athenaClient.GetQueryResultsAsync(resultsRequest);
+        
+        <span class="comment">// Get column names from header</span>
+        <span class="keyword">var</span> headers = resultsResponse.ResultSet.Rows[0].Data
+            .Select(d => d.VarCharValue)
+            .ToList();
+        
+        <span class="comment">// Convert remaining rows to dictionaries</span>
+        <span class="keyword">for</span> (<span class="keyword">int</span> i = 1; i &lt; resultsResponse.ResultSet.Rows.Count; i++)
+        {
+            <span class="keyword">var</span> rowDict = <span class="keyword">new</span> Dictionary&lt;<span class="keyword">string</span>, <span class="keyword">string</span>&gt;();
+            <span class="keyword">var</span> rowData = resultsResponse.ResultSet.Rows[i].Data;
+            
+            <span class="keyword">for</span> (<span class="keyword">int</span> j = 0; j &lt; headers.Count; j++)
+            {
+                rowDict[headers[j]] = rowData[j].VarCharValue ?? <span class="string">""</span>;
+            }
+            
+            results.Add(rowDict);
+        }
+        
+        <span class="keyword">return</span> results;
+    }
+}
+
+<span class="comment">// Usage:</span>
+<span class="keyword">var</span> service = <span class="keyword">new</span> <span class="type">AthenaQueryService</span>(athenaClient);
+
+<span class="keyword">var</span> status = <span class="keyword">await</span> service.ExecuteQueryAsync(
+    <span class="string">"SELECT * FROM my_analytics.users LIMIT 100"</span>,
+    <span class="string">"my_analytics"</span>,
+    <span class="string">"s3://my-athena-results/"</span>);
+
+<span class="keyword">if</span> (status == QueryExecutionState.SUCCEEDED)
+{
+    <span class="keyword">var</span> data = <span class="keyword">await</span> service.GetQueryResultsAsync(queryId);
+    <span class="keyword">foreach</span> (<span class="keyword">var</span> row <span class="keyword">in</span> data)
+    {
+        Console.WriteLine(<span class="function">$</span><span class="string">"{row["user_id"]} - {row["name"]} - {row["email"]}"</span>);
+    }
+}</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-config" class="tab-panel">
+        <!-- Section 5: Athena Configuration & Settings -->
+        <div class="section">
+            <h2>⚙️ Athena Configuration & Settings</h2>
+            
+            <h3>StartQueryExecutionRequest Parameters</h3>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Parameter</th>
+                    <th>What It Does</th>
+                    <th>Required?</th>
+                    <th>Default/Options</th>
+                </tr>
+                <tr>
+                    <td><strong>QueryString</strong></td>
+                    <td>Your SQL query</td>
+                    <td>Yes</td>
+                    <td>Any valid SQL</td>
+                </tr>
+                <tr>
+                    <td><strong>Database</strong></td>
+                    <td>Which database to use</td>
+                    <td>Yes</td>
+                    <td>Database name</td>
+                </tr>
+                <tr>
+                    <td><strong>OutputLocation</strong></td>
+                    <td>S3 folder for results</td>
+                    <td>Yes</td>
+                    <td>s3://bucket/prefix/</td>
+                </tr>
+                <tr>
+                    <td><strong>ExecutionParameters</strong></td>
+                    <td>Parameterized values</td>
+                    <td>No</td>
+                    <td>List of strings</td>
+                </tr>
+                <tr>
+                    <td><strong>QueryExecutionContext</strong></td>
+                    <td>Database context</td>
+                    <td>No</td>
+                    <td>Database name</td>
+                </tr>
+                <tr>
+                    <td><strong>ResultReuseByAgeConfiguration</strong></td>
+                    <td>Reuse past results (save cost)</td>
+                    <td>No</td>
+                    <td>Minutes (e.g., 60)</td>
+                </tr>
+                <tr>
+                    <td><strong>EncryptionConfiguration</strong></td>
+                    <td>Encrypt results in S3</td>
+                    <td>No</td>
+                    <td>SSE-S3, SSE-KMS</td>
+                </tr>
+                <tr>
+                    <td><strong>WorkGroup</strong></td>
+                    <td>Which workgroup to use</td>
+                    <td>No</td>
+                    <td>primary (default)</td>
+                </tr>
+            </table>
+        </div>
+        
+        </div>
+        <div id="tab-optimize" class="tab-panel">
+        <!-- Section 6: Query Optimization & Performance -->
+        <div class="section">
+            <h2>⚡ Query Optimization - Save Money & Time</h2>
+            
+            <h3>Cost Optimization Techniques</h3>
+            
+            <div class="feature-card">
+                <h4>1. Use Partitioning (Most Important!)</h4>
+                <p style="opacity: 0.9;">
+                    <strong>Without partitioning:</strong> Athena scans entire dataset<br>
+                    Example: 1000 GB of data = $5.00 per query<br><br>
+                    
+                    <strong>With partitioning by date:</strong> Scan only needed dates<br>
+                    Example: Query 1 month = 30 GB scanned = $0.15 per query<br><br>
+                    
+                    <strong>How to partition:</strong><br>
+                    Organize S3 like: s3://bucket/year=2024/month=01/day=15/<br>
+                    Athena auto-discovers partitions<br>
+                    Query only needed partitions = 95% cost reduction!
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <h4>2. Use Compression (Parquet/ORC)</h4>
+                <p style="opacity: 0.9;">
+                    <strong>CSV format:</strong> 100 GB uncompressed<br>
+                    Cost: $0.50 per query<br><br>
+                    
+                    <strong>Parquet format:</strong> 10 GB compressed (10% size)<br>
+                    Cost: $0.05 per query<br><br>
+                    
+                    <strong>Savings: 90% reduction!**<br>
+                    Plus: Faster query execution
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <h4>3. Projec Only Needed Columns</h4>
+                <p style="opacity: 0.9;">
+                    <strong>❌ Wrong:</strong> SELECT * FROM large_table<br>
+                    Scans all columns = full cost<br><br>
+                    
+                    <strong>✅ Right:</strong> SELECT id, name, email FROM large_table<br>
+                    Scans only 3 columns = 10% of cost<br><br>
+                    
+                    <strong>Benefit:</strong> Works especially well with Parquet (column-based format)
+                </p>
+            </div>
+            
+            <div class="feature-card">
+                <h4>4. Use WHERE Clauses (Push Down Filtering)</h4>
+                <p style="opacity: 0.9;">
+                    <strong>❌ Wrong:</strong> SELECT * FROM table, then filter in application<br>
+                    Scans full table<br><br>
+                    
+                    <strong>✅ Right:</strong> SELECT * FROM table WHERE country='USA'<br>
+                    Athena filters BEFORE returning results<br><br>
+                    
+                    <strong>Cost impact:</strong> Huge! Filter early, scan less
+                </p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-realworld" class="tab-panel">
+        <!-- Section 7: Real-World Enterprise Example -->
+        <div class="section">
+            <h2>🏢 Real-World Enterprise Example (Log Analytics)</h2>
+            
+            <h3>Log Analysis Pipeline</h3>
+            
+            <div class="architecture-diagram">
+                <p style="font-weight: bold; margin-bottom: 15px; color: #FF6B35;">📊 Log Analytics with Athena</p>
+                <p style="margin: 10px 0; text-align: left;">
+APPLICATION LOGS<br>
+├─ Web server logs<br>
+├─ API logs<br>
+├─ Database logs<br>
+└─ All generating data<br>
+        ↓<br>
+S3 (Organized by Date)<br>
+s3://logs/year=2024/month=03/day=13/<br>
+├─ Part-00001.parquet<br>
+├─ Part-00002.parquet<br>
+└─ ...<br>
+        ↓<br>
+GLUE CRAWLER<br>
+└─ Auto-discovers partitions<br>
+└─ Updates Glue Catalog<br>
+        ↓<br>
+ATHENA QUERIES<br>
+├─ Find errors: SELECT * WHERE level='ERROR'<br>
+├─ API response time: SELECT endpoint, AVG(duration)<br>
+├─ User sessions: SELECT user_id, COUNT(*)<br>
+└─ Security scan: SELECT * WHERE source_ip='suspicious_ip'<br>
+        ↓<br>
+RESULTS<br>
+├─ Dashboards (QuickSight)<br>
+├─ Reports<br>
+├─ Alerts (if suspicious found)<br>
+└─ Archive for compliance
+                </p>
+            </div>
+            
+            <h3>Complete Log Analysis Code</h3>
+            
+            <div class="code-block">
+<pre><span class="keyword">public class</span> <span class="type">LogAnalyticsService</span>
+{
+    <span class="keyword">private readonly</span> IAmazonAthena _athenaClient;
+    
+    <span class="comment">// Analyze errors in logs</span>
+    <span class="keyword">public async Task</span> <span class="function">AnalyzeErrorsAsync</span>(
+        <span class="keyword">string</span> dateStr)  <span class="comment">// "2024-03-13"</span>
+    {
+        <span class="keyword">var</span> query = <span class="function">$</span><span class="string">@"
+            SELECT 
+                timestamp,
+                service,
+                error_message,
+                stack_trace,
+                count(*) as error_count
+            FROM logs
+            WHERE 
+                year = '{dateStr.Substring(0, 4)}'
+                AND month = '{dateStr.Substring(5, 2)}'
+                AND day = '{dateStr.Substring(8, 2)}'
+                AND level = 'ERROR'
+            GROUP BY 
+                service, 
+                error_message
+            ORDER BY error_count DESC
+            LIMIT 50
+        "</span>;
+        
+        <span class="keyword">var</span> startRequest = <span class="keyword">new</span> StartQueryExecutionRequest
+        {
+            QueryString = query,
+            QueryExecutionContext = <span class="keyword">new</span> QueryExecutionContext { Database = <span class="string">"logs_db"</span> },
+            ResultConfiguration = <span class="keyword">new</span> ResultConfiguration 
+            { 
+                OutputLocation = <span class="string">"s3://athena-results/"</span>
+            }
+        };
+        
+        <span class="keyword">var</span> response = <span class="keyword">await</span> _athenaClient.StartQueryExecutionAsync(startRequest);
+        
+        Console.WriteLine(<span class="function">$</span><span class="string">"Analyzing logs for {dateStr}"</span>);
+        Console.WriteLine(<span class="function">$</span><span class="string">"Query ID: {response.QueryExecutionId}"</span>);
+    }
+    
+    <span class="comment">// Calculate API response times by endpoint</span>
+    <span class="keyword">public async Task</span> <span class="function">AnalyzeAPIPerformanceAsync</span>(
+        <span class="keyword">string</span> dateStr)
+    {
+        <span class="keyword">var</span> query = <span class="function">$</span><span class="string">@"
+            SELECT 
+                endpoint,
+                method,
+                COUNT(*) as request_count,
+                AVG(response_time_ms) as avg_response_ms,
+                MAX(response_time_ms) as max_response_ms,
+                PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY response_time_ms) as p95_ms,
+                SUM(CASE WHEN status_code >= 400 THEN 1 ELSE 0 END) as error_count
+            FROM logs
+            WHERE 
+                year = '{dateStr.Substring(0, 4)}'
+                AND month = '{dateStr.Substring(5, 2)}'
+                AND day = '{dateStr.Substring(8, 2)}'
+                AND service = 'api'
+            GROUP BY endpoint, method
+            ORDER BY avg_response_ms DESC
+        "</span>;
+        
+        <span class="keyword">var</span> startRequest = <span class="keyword">new</span> StartQueryExecutionRequest
+        {
+            QueryString = query,
+            QueryExecutionContext = <span class="keyword">new</span> QueryExecutionContext { Database = <span class="string">"logs_db"</span> },
+            ResultConfiguration = <span class="keyword">new</span> ResultConfiguration 
+            { 
+                OutputLocation = <span class="string">"s3://athena-results/"</span>
+            }
+        };
+        
+        <span class="keyword">var</span> response = <span class="keyword">await</span> _athenaClient.StartQueryExecutionAsync(startRequest);
+        Console.WriteLine(<span class="function">$</span><span class="string">"API Performance Analysis: {response.QueryExecutionId}"</span>);
+    }
+}
+
+<span class="comment">// Usage:</span>
+<span class="keyword">var</span> analyticsService = <span class="keyword">new</span> <span class="type">LogAnalyticsService</span>(athenaClient);
+
+<span class="comment">// Analyze today's errors</span>
+<span class="keyword">await</span> analyticsService.AnalyzeErrorsAsync(<span class="string">"2024-03-13"</span>);
+
+<span class="comment">// Analyze API performance</span>
+<span class="keyword">await</span> analyticsService.AnalyzeAPIPerformanceAsync(<span class="string">"2024-03-13"</span>);</pre>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-vs" class="tab-panel">
+        <!-- Section 8: Athena vs Alternatives -->
+        <div class="section">
+            <h2>📊 Athena vs Alternatives (When to Use What?)</h2>
+            
+            <table class="comparison-table">
+                <tr>
+                    <th>Service</th>
+                    <th>Best For</th>
+                    <th>Data Location</th>
+                    <th>Cost Model</th>
+                    <th>Setup</th>
+                </tr>
+                <tr>
+                    <td><strong>Athena</strong></td>
+                    <td>Ad-hoc queries on S3 data</td>
+                    <td>S3</td>
+                    <td>$5/TB scanned</td>
+                    <td>Serverless (instant)</td>
+                </tr>
+                <tr>
+                    <td><strong>Redshift</strong></td>
+                    <td>Large-scale data warehouse</td>
+                    <td>Redshift cluster</td>
+                    <td>By cluster size</td>
+                    <td>Complex setup</td>
+                </tr>
+                <tr>
+                    <td><strong>RDS/Aurora</strong></td>
+                    <td>Transactional database</td>
+                    <td>Database</td>
+                    <td>By instance size</td>
+                    <td>Complex setup</td>
+                </tr>
+                <tr>
+                    <td><strong>DynamoDB</strong></td>
+                    <td>NoSQL queries</td>
+                    <td>DynamoDB</td>
+                    <td>By requests</td>
+                    <td>Simple setup</td>
+                </tr>
+                <tr>
+                    <td><strong>EMR</strong></td>
+                    <td>Complex MapReduce jobs</td>
+                    <td>S3</td>
+                    <td>By instance hours</td>
+                    <td>Very complex</td>
+                </tr>
+            </table>
+        </div>
+        
+        </div>
+        <div id="tab-mistakes" class="tab-panel">
+        <!-- Section 9: Common Mistakes -->
+        <div class="section">
+            <h2>⚠️ Common Athena Mistakes & Solutions</h2>
+            
+            <h3>Mistake 1: No Partitioning</h3>
+            
+            <div class="config-box">
+                <h4>❌ Wrong: All data in one folder</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    s3://bucket/all_users.csv (100 GB)<br>
+                    Query scans 100% = $0.50 per query<br>
+                    Monthly cost: $15/day = $450/month
+                </p>
+                
+                <h4>✅ Right: Partition by date</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    s3://bucket/year=2024/month=03/day=13/users.csv<br>
+                    Query scans only 1 day = 1/100 = $0.005<br>
+                    Monthly cost: $0.15/day = $4.50/month<br>
+                    <strong>Savings: 99%!</strong>
+                </p>
+            </div>
+            
+            <h3>Mistake 2: Selecting All Columns</h3>
+            
+            <div class="config-box">
+                <h4>❌ Wrong: SELECT *</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    Scans all 100 columns<br>
+                    Data size: 100 GB scanned
+                </p>
+                
+                <h4>✅ Right: SELECT specific columns</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    SELECT id, name, email (only 3 columns)<br>
+                    Data size: 3 GB scanned<br>
+                    <strong>Savings: 97%!</strong>
+                </p>
+            </div>
+            
+            <h3>Mistake 3: Not Using Compression</h3>
+            
+            <div class="config-box">
+                <h4>❌ Wrong: CSV format</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    Uncompressed: 100 GB<br>
+                    Cost per query: $0.50
+                </p>
+                
+                <h4>✅ Right: Parquet format</h4>
+                <p style="color: #555; margin: 10px 0;">
+                    Compressed: 10 GB (10% size)<br>
+                    Cost per query: $0.05<br>
+                    <strong>Savings: 90%!</strong>
+                </p>
+            </div>
+        </div>
+        
+        </div>
+        <div id="tab-best" class="tab-panel">
+        <!-- Section 10: Best Practices & Checklist -->
+        <div class="section">
+            <h2>✅ Athena Best Practices Checklist</h2>
+            
+            <div class="checklist">
+                <li>Always partition data (by date, region, customer)</li>
+                <li>Use Parquet or ORC format (not CSV)</li>
+                <li>Create Glue Catalog for automatic schema detection</li>
+                <li>Select only needed columns in queries</li>
+                <li>Add WHERE clauses to filter early</li>
+                <li>Use LIMIT for testing (before full scans)</li>
+                <li>Enable query result caching (ResultReuseByAgeConfiguration)</li>
+                <li>Set up workgroups for team management</li>
+                <li>Enable encryption for results in S3</li>
+                <li>Monitor data scanned vs results returned</li>
+                <li>Use Athena Preview features carefully</li>
+                <li>Archive old logs to Glacier (cheaper storage)</li>
+                <li>Set up CloudWatch alarms for query costs</li>
+                <li>Document table schemas in Glue Catalog</li>
+                <li>Periodically clean up old query results from S3</li>
+            </div>
+        </div>
+        
+        <div class="completion-card">
+          <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+          <h3>You Now Have COMPLETE Understanding of AWS Athena!</h3>
+          <p>Complete architecture · Console UI setup · Full C# SDK · Configuration · Query optimization · Real-world examples · Cost savings · vs alternatives · Common mistakes · Best practices</p>
+          <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can run production-grade analytics queries on S3 data! 🚀</p>
+        </div>
+        </div><!-- close last panel -->
+    </div><!-- container -->
+
+
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
