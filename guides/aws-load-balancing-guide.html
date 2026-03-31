@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Load Balancing — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TAB NAV */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ── VISUAL FLOW DIAGRAMS ── */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.flow-row-arrow{display:flex;align-items:center;padding:0 4px;color:var(--border2);font-size:1.1rem;}
+
+/* node colors */
+.n-user{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.n-user .flow-node-title{color:var(--blue);}
+.n-aws{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-alb{background:var(--aws-l);border:1px solid rgba(212,135,42,.35);}
+.n-alb .flow-node-title{color:var(--aws);}
+.n-nlb{background:var(--purple-l);border:1px solid rgba(108,71,212,.25);}
+.n-nlb .flow-node-title{color:var(--purple);}
+.n-gwlb{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.n-gwlb .flow-node-title{color:var(--green);}
+.n-target{background:var(--green-l);border:1px solid rgba(42,122,90,.2);}
+.n-target .flow-node-title{color:var(--green);}
+.n-health{background:var(--surface);border:1px solid var(--border);}
+.n-health .flow-node-title{color:var(--text);}
+.n-rule{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);}
+.n-rule .flow-node-title{color:var(--blue);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+
+/* TYPE CARDS — colored border top */
+.type-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.type-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.type-card.alb::before{background:var(--aws);}
+.type-card.nlb::before{background:var(--purple);}
+.type-card.gwlb::before{background:var(--green);}
+.type-card h4{font-size:.9rem;font-weight:700;margin-bottom:4px;}
+.type-card.alb h4{color:var(--aws);}
+.type-card.nlb h4{color:var(--purple);}
+.type-card.gwlb h4{color:var(--green);}
+.type-card .badge{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:8px;}
+.type-card.alb .badge{background:var(--aws-l);color:var(--aws);}
+.type-card.nlb .badge{background:var(--purple-l);color:var(--purple);}
+.type-card.gwlb .badge{background:var(--green-l);color:var(--green);}
+.type-card p,.type-card li{color:var(--muted);font-size:.82rem;margin:0;}
+.type-card ul{padding-left:14px;margin-top:6px;}
+.type-card li{margin-bottom:2px;}
+
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:380px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .flow-row-arrow{display:none;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⚖️ <span>AWS Load Balancing</span> — Complete Guide</h1>
+  <p>ALB · NLB · GWLB · Routing Rules · Health Checks · Auto-Scaling · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is LB</button>
+  <button class="tab-btn" onclick="T('types',this)">Types (ALB/NLB/GWLB)</button>
+  <button class="tab-btn" onclick="T('alb',this)">ALB Deep Dive</button>
+  <button class="tab-btn" onclick="T('nlb',this)">NLB Deep Dive</button>
+  <button class="tab-btn" onclick="T('targets',this)">Target Groups</button>
+  <button class="tab-btn" onclick="T('health',this)">Health Checks</button>
+  <button class="tab-btn" onclick="T('rules',this)">Routing Rules</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 1 — WHAT IS LOAD BALANCING
+═══════════════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>⚖️ What is Load Balancing?</h2>
+  <p>A load balancer sits in front of your servers and distributes incoming traffic across multiple targets — so no single server gets overwhelmed.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>Think of a supermarket with 5 checkout lanes. A load balancer is the staff member at the entrance who directs each customer to the least busy lane — everyone gets served faster, no lane is overloaded.</p>
+  </div>
+
+  <!-- VISUAL FLOW: WITHOUT vs WITH -->
+  <h3>Without Load Balancer vs With Load Balancer</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-user" style="max-width:100%">
+        <div class="flow-node-title">❌ Without Load Balancer</div>
+        <ul class="flow-items">
+          <li>All 1000 users hit Server 1</li>
+          <li>Server 1 crashes under load</li>
+          <li>Server 2, 3, 4 sit idle</li>
+          <li>Users get 503 errors</li>
+          <li>Single point of failure</li>
+        </ul>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 8px;color:var(--border2);font-size:1.4rem;">→</div>
+      <div class="flow-node n-target" style="max-width:100%">
+        <div class="flow-node-title">✅ With Load Balancer</div>
+        <ul class="flow-items">
+          <li>1000 users hit the Load Balancer</li>
+          <li>LB spreads: 250 each to Servers 1–4</li>
+          <li>No server overwhelmed</li>
+          <li>Fast responses for all users</li>
+          <li>If one fails, LB routes away</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISUAL FLOW: HOW IT WORKS -->
+  <h3>How AWS Load Balancing Works</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Users / Clients</div>
+      <ul class="flow-items">
+        <li>Send requests to a single DNS name</li>
+        <li>e.g. myapp.com → resolves to Load Balancer IP</li>
+        <li>Never talk to your servers directly</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-alb">
+      <div class="flow-node-title">⚖️ AWS Load Balancer</div>
+      <ul class="flow-items">
+        <li>Receives all incoming traffic</li>
+        <li>Checks health of each target</li>
+        <li>Applies routing rules</li>
+        <li>Selects target using chosen algorithm</li>
+        <li>Forwards request to healthy target</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-target">
+      <div class="flow-node-title">🟢 Target Group (Your Servers)</div>
+      <ul class="flow-items">
+        <li>EC2 instances, ECS tasks, Lambda, IPs</li>
+        <li>Each target registers with the LB</li>
+        <li>Only healthy targets receive traffic</li>
+        <li>Response goes back through LB to user</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What AWS Load Balancing gives you</h3>
+  <div class="grid-3">
+    <div class="card"><h4>🔀 Traffic Distribution</h4><p>Spread load evenly across healthy targets</p></div>
+    <div class="card"><h4>💓 Health Monitoring</h4><p>Auto-removes unhealthy targets from rotation</p></div>
+    <div class="card"><h4>🔐 SSL/TLS Termination</h4><p>Handle HTTPS certificates centrally</p></div>
+    <div class="card"><h4>📈 Auto-Scaling Integration</h4><p>New instances register automatically</p></div>
+    <div class="card"><h4>🌍 Multi-AZ</h4><p>Spans availability zones for high availability</p></div>
+    <div class="card"><h4>📊 CloudWatch Metrics</h4><p>Request count, latency, errors built-in</p></div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 2 — TYPES
+═══════════════════════════════════════════ -->
+<div id="tab-types" class="tab-panel"><div class="section">
+  <h2>📦 Types of AWS Load Balancers</h2>
+  <p>AWS offers 3 load balancer types. Each is designed for a specific use case. Choosing the right one matters for performance and cost.</p>
+
+  <div class="grid-3">
+    <div class="type-card alb">
+      <h4>ALB</h4>
+      <span class="badge">Application</span>
+      <p>Layer 7 (HTTP/HTTPS). Understands web traffic. Routes based on URL path, headers, host.</p>
+      <ul><li>Best for web apps & APIs</li><li>WebSocket support</li><li>gRPC support</li></ul>
+    </div>
+    <div class="type-card nlb">
+      <h4>NLB</h4>
+      <span class="badge">Network</span>
+      <p>Layer 4 (TCP/UDP). Extremely fast. Static IP addresses. Ultra-low latency.</p>
+      <ul><li>Best for real-time apps</li><li>IoT, gaming, finance</li><li>Millions of req/sec</li></ul>
+    </div>
+    <div class="type-card gwlb">
+      <h4>GWLB</h4>
+      <span class="badge">Gateway</span>
+      <p>Layer 3 (IP). Routes traffic through 3rd-party security appliances.</p>
+      <ul><li>Best for firewalls & IDS</li><li>Network inspection</li><li>Security appliances</li></ul>
+    </div>
+  </div>
+
+  <!-- VISUAL FLOW: WHICH ONE TO CHOOSE -->
+  <h3>How to Choose — Decision Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">❓ What type of traffic?</div>
+      <ul class="flow-items">
+        <li>HTTP / HTTPS web traffic?</li>
+        <li>TCP / UDP raw network traffic?</li>
+        <li>Need security appliance inspection?</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-alb" style="max-width:100%">
+        <div class="flow-node-title">ALB ✅</div>
+        <ul class="flow-items">
+          <li>Web apps, REST APIs</li>
+          <li>Microservices routing</li>
+          <li>WebSocket, gRPC</li>
+          <li>Path/host-based routing</li>
+        </ul>
+      </div>
+      <div class="flow-node n-nlb" style="max-width:100%">
+        <div class="flow-node-title">NLB ✅</div>
+        <ul class="flow-items">
+          <li>Real-time, high throughput</li>
+          <li>IoT, gaming, VoIP</li>
+          <li>Need static IP</li>
+          <li>Ultra-low latency</li>
+        </ul>
+      </div>
+      <div class="flow-node n-gwlb" style="max-width:100%">
+        <div class="flow-node-title">GWLB ✅</div>
+        <ul class="flow-items">
+          <li>Firewall inspection</li>
+          <li>Intrusion detection</li>
+          <li>DDoS protection</li>
+          <li>Network monitoring</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Quick Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>ALB</th><th>NLB</th><th>GWLB</th></tr>
+    <tr><td><strong>OSI Layer</strong></td><td>Layer 7 (App)</td><td>Layer 4 (Transport)</td><td>Layer 3 (Network)</td></tr>
+    <tr><td><strong>Protocols</strong></td><td>HTTP, HTTPS, WebSocket, gRPC</td><td>TCP, UDP, TLS</td><td>IP</td></tr>
+    <tr><td><strong>Routing</strong></td><td>Path, host, header, query</td><td>IP + Port</td><td>All IP traffic</td></tr>
+    <tr><td><strong>Static IP</strong></td><td>❌ (DNS only)</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+    <tr><td><strong>Performance</strong></td><td>Fast</td><td>Ultra-fast</td><td>Fast</td></tr>
+    <tr><td><strong>Best for</strong></td><td>Web apps, APIs</td><td>Real-time, IoT</td><td>Security appliances</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 3 — ALB DEEP DIVE
+═══════════════════════════════════════════ -->
+<div id="tab-alb" class="tab-panel"><div class="section">
+  <h2>🌐 ALB — Application Load Balancer Deep Dive</h2>
+  <p>ALB is the most commonly used load balancer. It operates at Layer 7 and understands HTTP — meaning it can make smart routing decisions based on the content of requests.</p>
+
+  <!-- VISUAL FLOW: ALB REQUEST JOURNEY -->
+  <h3>ALB Request Journey</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Client Request</div>
+      <ul class="flow-items">
+        <li>GET https://myapp.com/api/orders</li>
+        <li>DNS resolves to ALB endpoint</li>
+        <li>TCP connection established to ALB</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-alb">
+      <div class="flow-node-title">⚖️ ALB — Listener (Port 443)</div>
+      <ul class="flow-items">
+        <li>SSL/TLS terminated here (HTTPS → HTTP internally)</li>
+        <li>Certificate managed by ACM (AWS Certificate Manager)</li>
+        <li>Evaluates listener rules top to bottom</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-rule">
+      <div class="flow-node-title">📋 Routing Rules Evaluated</div>
+      <ul class="flow-items">
+        <li>Rule 1: Path /api/* → Target Group: api-services</li>
+        <li>Rule 2: Path /admin/* → Target Group: admin-service</li>
+        <li>Rule 3: Host api.myapp.com → Target Group: api-v2</li>
+        <li>Default: → Target Group: web-frontend</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-target">
+      <div class="flow-node-title">🟢 Matched Target Group: api-services</div>
+      <ul class="flow-items">
+        <li>Round-robin: selects next healthy target</li>
+        <li>Forwards request to: EC2 instance / ECS task / Lambda</li>
+        <li>Target processes request and returns response</li>
+        <li>ALB returns response to client</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key ALB Features</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔀 Content-Based Routing</h4>
+      <ul>
+        <li>Path: /api/* → API servers</li>
+        <li>Host: admin.myapp.com → Admin servers</li>
+        <li>Header: X-Version: v2 → v2 servers</li>
+        <li>Query: ?env=staging → staging servers</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔐 SSL/TLS Termination</h4>
+      <ul>
+        <li>HTTPS handled at ALB level</li>
+        <li>Certificate from AWS ACM (free)</li>
+        <li>Backends use plain HTTP internally</li>
+        <li>Supports SNI — multiple certs per LB</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🧠 Sticky Sessions</h4>
+      <ul>
+        <li>Same user → same target every time</li>
+        <li>Uses a cookie (AWSALB)</li>
+        <li>Duration: 1 second to 7 days</li>
+        <li>Useful for stateful apps</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔁 Redirects & Fixed Responses</h4>
+      <ul>
+        <li>HTTP → HTTPS redirect (built-in)</li>
+        <li>301/302 redirects without a server</li>
+        <li>Return fixed JSON/HTML without backend</li>
+        <li>Maintenance page with no backend</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>✅ Use ALB when</h4>
+    <p>You're building a web app, REST API, microservices, or anything HTTP-based. It's the right choice for 90% of web workloads. ECS + ALB is the most common production pattern.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 4 — NLB DEEP DIVE
+═══════════════════════════════════════════ -->
+<div id="tab-nlb" class="tab-panel"><div class="section">
+  <h2>⚡ NLB — Network Load Balancer Deep Dive</h2>
+  <p>NLB operates at Layer 4 (TCP/UDP). It doesn't look at HTTP headers — it just forwards raw TCP/UDP packets at extreme speed. Designed for ultra-low latency and millions of requests per second.</p>
+
+  <!-- VISUAL FLOW: NLB REQUEST JOURNEY -->
+  <h3>NLB Request Journey</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Client</div>
+      <ul class="flow-items">
+        <li>TCP connection to 52.10.20.30:443 (static IP!)</li>
+        <li>NLB has fixed Elastic IP — doesn't change</li>
+        <li>Useful for whitelisting in firewalls</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-nlb">
+      <div class="flow-node-title">⚡ NLB — Layer 4 Forwarding</div>
+      <ul class="flow-items">
+        <li>Does NOT inspect HTTP content</li>
+        <li>Reads only: IP address + Port + Protocol</li>
+        <li>Hash-based routing (IP + port + protocol)</li>
+        <li>Same client always hits same target (natural stickiness)</li>
+        <li>Forwards in microseconds — no overhead</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-target">
+      <div class="flow-node-title">🟢 Target (EC2 / ECS / IP)</div>
+      <ul class="flow-items">
+        <li>Receives original client IP (no X-Forwarded-For needed)</li>
+        <li>Direct TCP connection — lowest possible latency</li>
+        <li>Can handle millions of simultaneous connections</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>NLB vs ALB — When to use which</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Use ALB</th><th>Use NLB</th></tr>
+    <tr><td>REST API or web app</td><td>✅</td><td>—</td></tr>
+    <tr><td>Need path-based routing</td><td>✅</td><td>—</td></tr>
+    <tr><td>Real-time game server</td><td>—</td><td>✅</td></tr>
+    <tr><td>IoT device connections</td><td>—</td><td>✅</td></tr>
+    <tr><td>Need static IP for firewall</td><td>—</td><td>✅</td></tr>
+    <tr><td>Financial trading (sub-ms latency)</td><td>—</td><td>✅</td></tr>
+    <tr><td>WebSocket for chat app</td><td>✅</td><td>—</td></tr>
+    <tr><td>gRPC microservices</td><td>✅</td><td>—</td></tr>
+    <tr><td>UDP streaming / VoIP</td><td>—</td><td>✅</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ NLB does NOT support</h4>
+    <p>Path-based routing · Header-based routing · SSL termination (unless TLS listener) · HTTP redirects · Fixed responses · WAF integration. If you need any of these — use ALB instead.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 5 — TARGET GROUPS
+═══════════════════════════════════════════ -->
+<div id="tab-targets" class="tab-panel"><div class="section">
+  <h2>🎯 Target Groups — Everything Explained</h2>
+  <p>A Target Group is a collection of targets (servers) that your load balancer routes traffic to. One LB can have many target groups — each serving a different purpose.</p>
+
+  <!-- VISUAL FLOW: TARGET GROUP ARCHITECTURE -->
+  <h3>Target Group Architecture</h3>
+  <div class="flow">
+    <div class="flow-node n-alb">
+      <div class="flow-node-title">⚖️ ALB — single entry point</div>
+      <ul class="flow-items">
+        <li>One DNS name for all traffic</li>
+        <li>Multiple listeners (port 80, 443)</li>
+        <li>Routes to different target groups based on rules</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-target" style="max-width:100%">
+        <div class="flow-node-title">TG: api-service</div>
+        <ul class="flow-items">
+          <li>Rule: /api/*</li>
+          <li>3 × ECS tasks</li>
+          <li>Port 5000</li>
+        </ul>
+      </div>
+      <div class="flow-node n-rule" style="max-width:100%">
+        <div class="flow-node-title">TG: frontend</div>
+        <ul class="flow-items">
+          <li>Rule: /* (default)</li>
+          <li>2 × EC2 instances</li>
+          <li>Port 80</li>
+        </ul>
+      </div>
+      <div class="flow-node n-health" style="max-width:100%">
+        <div class="flow-node-title">TG: admin</div>
+        <ul class="flow-items">
+          <li>Rule: /admin/*</li>
+          <li>1 × Lambda function</li>
+          <li>N/A</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Target Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🖥️ Instance (EC2)</h4>
+      <p>Register EC2 by instance ID. Traffic goes to the instance's primary IP. Auto-scaling groups register automatically.</p>
+    </div>
+    <div class="card">
+      <h4>🐳 IP Address</h4>
+      <p>Register any private IP (ECS Fargate tasks, on-premises servers). Required for Fargate since tasks don't have instance IDs.</p>
+    </div>
+    <div class="card">
+      <h4>λ Lambda</h4>
+      <p>ALB can invoke Lambda directly. Great for serverless APIs. ALB converts HTTP to Lambda event format automatically.</p>
+    </div>
+    <div class="card">
+      <h4>⚖️ ALB (nested)</h4>
+      <p>NLB can forward to an ALB. Useful when you need static IP (NLB) + smart routing (ALB) together.</p>
+    </div>
+  </div>
+
+  <h3>Load Balancing Algorithms</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔄 Round Robin (Default — ALB)</h4>
+      <p>Requests distributed equally in order: Target 1 → Target 2 → Target 3 → Target 1...<br>Best when all targets have equal capacity.</p>
+    </div>
+    <div class="card">
+      <h4>🔗 Least Outstanding Requests (ALB)</h4>
+      <p>Send to target with fewest in-flight requests.<br>Best when targets have varying response times.</p>
+    </div>
+    <div class="card">
+      <h4>#️⃣ Flow Hash (NLB)</h4>
+      <p>Hash of IP + port + protocol → same client always hits same target.<br>Provides natural stickiness for TCP connections.</p>
+    </div>
+    <div class="card">
+      <h4>⚖️ Weighted (ALB)</h4>
+      <p>Target A gets 90% traffic, Target B gets 10%.<br>Perfect for canary deployments — test new version with small traffic.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 6 — HEALTH CHECKS
+═══════════════════════════════════════════ -->
+<div id="tab-health" class="tab-panel"><div class="section">
+  <h2>💓 Health Checks — How LB Monitors Targets</h2>
+  <p>The load balancer continuously checks if each target is healthy. Unhealthy targets are automatically removed from rotation — users never hit a broken server.</p>
+
+  <!-- VISUAL FLOW: HEALTH CHECK CYCLE -->
+  <h3>Health Check Cycle</h3>
+  <div class="flow">
+    <div class="flow-node n-alb">
+      <div class="flow-node-title">⚖️ ALB — Health Check Scheduler</div>
+      <ul class="flow-items">
+        <li>Every 30 seconds (configurable): 5–300s</li>
+        <li>Sends GET /health to each target</li>
+        <li>Waits for response within timeout (5s default)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-target" style="max-width:100%">
+        <div class="flow-node-title">✅ Healthy Response</div>
+        <ul class="flow-items">
+          <li>Returns HTTP 200</li>
+          <li>Within 5 seconds</li>
+          <li>Stays in rotation</li>
+          <li>Counter resets to 0</li>
+        </ul>
+      </div>
+      <div class="flow-node" style="max-width:100%;background:var(--red-l);border:1px solid rgba(176,42,55,.25);border-radius:var(--r);padding:12px 16px;">
+        <div class="flow-node-title" style="color:var(--red);font-weight:700;font-size:.88rem;margin-bottom:6px;">❌ Unhealthy Response</div>
+        <ul class="flow-items">
+          <li>Timeout or non-200 status</li>
+          <li>Fail count: 1 of 3</li>
+          <li>After 3 consecutive fails</li>
+          <li>Marked UNHEALTHY</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-health">
+      <div class="flow-node-title">🔄 Unhealthy Target Handling</div>
+      <ul class="flow-items">
+        <li>Immediately removed from rotation</li>
+        <li>New requests only go to healthy targets</li>
+        <li>Health checks continue every 30s</li>
+        <li>After 5 consecutive passes → HEALTHY → back in rotation</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Health Check Configuration</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚙️ Key Settings</h4>
+      <ul>
+        <li><strong>Protocol:</strong> HTTP / HTTPS / TCP</li>
+        <li><strong>Path:</strong> /health (or /ping, /status)</li>
+        <li><strong>Port:</strong> traffic port or override</li>
+        <li><strong>Interval:</strong> 5–300 seconds</li>
+        <li><strong>Timeout:</strong> 2–120 seconds</li>
+        <li><strong>Healthy threshold:</strong> 2–10 successes</li>
+        <li><strong>Unhealthy threshold:</strong> 2–10 failures</li>
+        <li><strong>Success codes:</strong> 200, 200-299, 301</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💡 Best Health Check Endpoint</h4>
+      <ul>
+        <li>Return 200 only when fully ready</li>
+        <li>Check database connectivity</li>
+        <li>Check cache connectivity</li>
+        <li>Check dependent services</li>
+        <li>Return 503 during startup</li>
+        <li>Return 503 during graceful shutdown</li>
+        <li>Respond fast — under 1 second</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>C# Health Check Endpoint</h3>
+  <div class="code-block">
+    <span class="code-label">HealthController.cs</span>
+    <pre><span class="kw">using</span> Microsoft.AspNetCore.Mvc;
+
+[<span class="tp">ApiController</span>]
+[<span class="tp">Route</span>(<span class="str">"health"</span>)]
+<span class="kw">public class</span> <span class="tp">HealthController</span> : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IDbConnection</span> _db;
+
+    <span class="kw">public</span> <span class="tp">HealthController</span>(<span class="tp">IDbConnection</span> db) => _db = db;
+
+    [<span class="tp">HttpGet</span>]
+    <span class="kw">public async</span> <span class="tp">IActionResult</span> <span class="fn">GetHealth</span>()
+    {
+        <span class="kw">try</span>
+        {
+            <span class="cm">// Check DB is reachable</span>
+            <span class="kw">await</span> _db.<span class="fn">QueryAsync</span>(<span class="str">"SELECT 1"</span>);
+
+            <span class="kw">return</span> <span class="fn">Ok</span>(<span class="kw">new</span> {
+                status  = <span class="str">"healthy"</span>,
+                time    = <span class="tp">DateTime</span>.UtcNow,
+                version = <span class="str">"1.0.0"</span>
+            });
+        }
+        <span class="kw">catch</span>
+        {
+            <span class="cm">// Return 503 — LB removes this target</span>
+            <span class="kw">return</span> <span class="fn">StatusCode</span>(<span class="num">503</span>, <span class="kw">new</span> { status = <span class="str">"unhealthy"</span> });
+        }
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 7 — ROUTING RULES
+═══════════════════════════════════════════ -->
+<div id="tab-rules" class="tab-panel"><div class="section">
+  <h2>📋 Routing Rules — Smart Traffic Distribution</h2>
+  <p>ALB evaluates listener rules in priority order (1 = highest priority). The first rule that matches decides where the request goes.</p>
+
+  <!-- VISUAL FLOW: RULES ENGINE -->
+  <h3>How Rules Are Evaluated</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📨 Incoming Request</div>
+      <ul class="flow-items">
+        <li>POST https://myapp.com/api/v2/orders</li>
+        <li>Header: X-Platform: mobile</li>
+        <li>Query: ?env=staging</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-rule">
+      <div class="flow-node-title">🔍 Rule Priority 1 — Check first</div>
+      <ul class="flow-items">
+        <li>Condition: Path = /api/v2/* AND Header X-Platform = mobile</li>
+        <li>Match? YES ✅</li>
+        <li>Action: Forward → Target Group: mobile-api-v2</li>
+        <li>Rule evaluation stops here</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-target">
+      <div class="flow-node-title">🟢 Forwarded to: mobile-api-v2</div>
+      <ul class="flow-items">
+        <li>Optimized mobile API service</li>
+        <li>Request processed and response returned</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Rule Condition Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🗂️ Path Pattern</h4>
+      <ul>
+        <li><code>/api/*</code> → API service</li>
+        <li><code>/admin/*</code> → Admin service</li>
+        <li><code>/static/*</code> → S3 / CDN</li>
+        <li><code>*.jpg</code> → Image service</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌐 Host Header</h4>
+      <ul>
+        <li><code>api.myapp.com</code> → API servers</li>
+        <li><code>admin.myapp.com</code> → Admin servers</li>
+        <li><code>*.myapp.com</code> → wildcard match</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📋 HTTP Header</h4>
+      <ul>
+        <li><code>X-Version: v2</code> → v2 servers</li>
+        <li><code>Accept-Language: fr</code> → French service</li>
+        <li><code>Authorization: *</code> → Auth required</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔍 Query String</h4>
+      <ul>
+        <li><code>?env=staging</code> → staging TG</li>
+        <li><code>?version=2</code> → v2 TG</li>
+        <li><code>?canary=true</code> → canary TG</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Rule Actions</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>➡️ Forward</h4>
+      <p>Send to a target group. Can be weighted for canary: 90% to TG-v1, 10% to TG-v2.</p>
+    </div>
+    <div class="card">
+      <h4>↪️ Redirect</h4>
+      <p>HTTP → HTTPS redirect. 301 or 302. Change host, path, port, or protocol.</p>
+    </div>
+    <div class="card">
+      <h4>📝 Fixed Response</h4>
+      <p>Return a static response (200, 404, 503) without hitting any backend. Useful for maintenance pages.</p>
+    </div>
+    <div class="card">
+      <h4>🔐 Authenticate (OIDC/Cognito)</h4>
+      <p>ALB can handle authentication via Cognito or OIDC — your app doesn't need auth code.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 8 — C# SDK
+═══════════════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Create and Manage Load Balancers</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.ElasticLoadBalancingV2
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>Create ALB + Target Group + Listener</h3>
+  <div class="code-block">
+    <span class="code-label">LoadBalancerService.cs</span>
+    <pre><span class="kw">using</span> Amazon.ElasticLoadBalancingV2;
+<span class="kw">using</span> Amazon.ElasticLoadBalancingV2.Model;
+
+<span class="kw">public class</span> <span class="tp">LoadBalancerService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonElasticLoadBalancingV2</span> _elb;
+
+    <span class="kw">public</span> <span class="tp">LoadBalancerService</span>(<span class="tp">IAmazonElasticLoadBalancingV2</span> elb)
+        => _elb = elb;
+
+    <span class="cm">// Step 1: Create ALB</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateAlbAsync</span>()
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _elb.<span class="fn">CreateLoadBalancerAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateLoadBalancerRequest</span>
+        {
+            Name    = <span class="str">"my-alb"</span>,
+            Subnets = [<span class="str">"subnet-abc1"</span>, <span class="str">"subnet-abc2"</span>], <span class="cm">// 2 AZs!</span>
+            SecurityGroups = [<span class="str">"sg-abc123"</span>],
+            Scheme  = <span class="tp">LoadBalancerSchemeEnum</span>.InternetFacing,
+            Type    = <span class="tp">LoadBalancerTypeEnum</span>.Application,
+            IpAddressType = <span class="tp">IpAddressTypeEnum</span>.Ipv4
+        });
+        <span class="kw">return</span> response.LoadBalancers[<span class="num">0</span>].LoadBalancerArn;
+    }
+
+    <span class="cm">// Step 2: Create Target Group</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateTargetGroupAsync</span>(<span class="tp">string</span> vpcId)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _elb.<span class="fn">CreateTargetGroupAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateTargetGroupRequest</span>
+        {
+            Name             = <span class="str">"api-targets"</span>,
+            Protocol         = <span class="tp">ProtocolEnum</span>.HTTP,
+            Port             = <span class="num">80</span>,
+            VpcId            = vpcId,
+            TargetType       = <span class="tp">TargetTypeEnum</span>.Ip, <span class="cm">// for ECS Fargate</span>
+            <span class="cm">// Health check settings</span>
+            HealthCheckPath              = <span class="str">"/health"</span>,
+            HealthCheckIntervalSeconds   = <span class="num">30</span>,
+            HealthCheckTimeoutSeconds    = <span class="num">5</span>,
+            HealthyThresholdCount        = <span class="num">2</span>,
+            UnhealthyThresholdCount      = <span class="num">3</span>,
+            Matcher = <span class="kw">new</span> <span class="tp">Matcher</span> { HttpCode = <span class="str">"200"</span> }
+        });
+        <span class="kw">return</span> response.TargetGroups[<span class="num">0</span>].TargetGroupArn;
+    }
+
+    <span class="cm">// Step 3: Create HTTPS Listener with redirect + routing rules</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CreateListenerAsync</span>(
+        <span class="tp">string</span> albArn, <span class="tp">string</span> targetGroupArn, <span class="tp">string</span> certArn)
+    {
+        <span class="kw">await</span> _elb.<span class="fn">CreateListenerAsync</span>(<span class="kw">new</span> <span class="tp">CreateListenerRequest</span>
+        {
+            LoadBalancerArn = albArn,
+            Protocol        = <span class="tp">ProtocolEnum</span>.HTTPS,
+            Port            = <span class="num">443</span>,
+            Certificates    = [<span class="kw">new</span> <span class="tp">Certificate</span>
+                { CertificateArn = certArn }],
+            DefaultActions  = [<span class="kw">new</span> <span class="tp">Action</span>
+            {
+                Type           = <span class="tp">ActionTypeEnum</span>.Forward,
+                TargetGroupArn = targetGroupArn
+            }]
+        });
+    }
+
+    <span class="cm">// Register ECS task as target</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RegisterTargetAsync</span>(
+        <span class="tp">string</span> targetGroupArn, <span class="tp">string</span> ip, <span class="tp">int</span> port)
+    {
+        <span class="kw">await</span> _elb.<span class="fn">RegisterTargetsAsync</span>(<span class="kw">new</span> <span class="tp">RegisterTargetsRequest</span>
+        {
+            TargetGroupArn = targetGroupArn,
+            Targets = [<span class="kw">new</span> <span class="tp">TargetDescription</span>
+            {
+                Id   = ip,   <span class="cm">// ECS task private IP</span>
+                Port = port
+            }]
+        });
+    }
+}</pre>
+  </div>
+
+  <h3>Add Routing Rule (path-based)</h3>
+  <div class="code-block">
+    <pre><span class="cm">// Add rule: /api/* → api-target-group (priority 10)</span>
+<span class="kw">await</span> _elb.<span class="fn">CreateRuleAsync</span>(<span class="kw">new</span> <span class="tp">CreateRuleRequest</span>
+{
+    ListenerArn = listenerArn,
+    Priority    = <span class="num">10</span>,
+    Conditions  = [<span class="kw">new</span> <span class="tp">RuleCondition</span>
+    {
+        Field  = <span class="str">"path-pattern"</span>,
+        Values = [<span class="str">"/api/*"</span>]
+    }],
+    Actions = [<span class="kw">new</span> <span class="tp">Action</span>
+    {
+        Type           = <span class="tp">ActionTypeEnum</span>.Forward,
+        TargetGroupArn = apiTargetGroupArn
+    }]
+});</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonElasticLoadBalancingV2</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">LoadBalancerService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab — completion card here)
+═══════════════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Checklist</h2>
+
+  <h3>Architecture</h3>
+  <ul class="checklist">
+    <li>Always deploy ALB/NLB across at least 2 Availability Zones</li>
+    <li>Put the Load Balancer in public subnets, targets in private subnets</li>
+    <li>Use separate security groups for LB and targets</li>
+    <li>Enable deletion protection on production load balancers</li>
+    <li>Use ACM (AWS Certificate Manager) for free SSL certificates</li>
+    <li>Enable HTTP → HTTPS redirect on port 80 listener</li>
+  </ul>
+
+  <h3>Health Checks</h3>
+  <ul class="checklist">
+    <li>Create a dedicated /health endpoint — never use / (root)</li>
+    <li>Health endpoint must check real dependencies (DB, cache)</li>
+    <li>Return 503 during app startup — not 200</li>
+    <li>Return 503 during graceful shutdown to drain connections</li>
+    <li>Set unhealthy threshold to 3 (not 2) to avoid flapping</li>
+    <li>Set health check interval to 30s — 10s is usually too aggressive</li>
+  </ul>
+
+  <h3>Performance & Cost</h3>
+  <ul class="checklist">
+    <li>Enable ALB access logs to S3 — helps debug production issues</li>
+    <li>Use connection draining (deregistration delay) — default 300s is fine</li>
+    <li>Enable cross-zone load balancing for even distribution</li>
+    <li>Use weighted routing for canary deployments — not blue-green</li>
+    <li>Monitor RequestCount, TargetResponseTime, HTTPCode_ELB_5XX in CloudWatch</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Attach AWS WAF to ALB — protect against common web attacks</li>
+    <li>Use security group on ALB: allow 80/443 from internet only</li>
+    <li>Use security group on targets: allow traffic from ALB SG only</li>
+    <li>Enable sticky sessions only when truly needed — stateless is better</li>
+    <li>Use HTTPS between ALB and targets for end-to-end encryption</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="warn">
+    <h4>⚠️ Top mistakes</h4>
+    <p>
+    ❌ Single AZ deployment → whole app down if AZ fails<br>
+    ❌ Targets in public subnets → unnecessary security risk<br>
+    ❌ Using / as health check path → always 200, hides real issues<br>
+    ❌ Too low health check interval → false positives, instability<br>
+    ❌ Same security group for LB and targets → no isolation<br>
+    ❌ Forgetting connection draining → requests dropped during deploys<br>
+    ❌ No ALB access logs → blind in production when something breaks
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS Load Balancing!</h3>
+    <p>What is LB · ALB vs NLB vs GWLB · ALB deep dive · NLB deep dive · Target groups · Health checks with C# · Routing rules · Full C# SDK · Best practices & security</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can build highly available, scalable applications on AWS! 🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
