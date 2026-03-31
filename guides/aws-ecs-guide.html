@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon ECS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:18px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+/* FLOW */
+.flow-diagram{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:500px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;}
+.flow-node-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-node-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-node-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:5px 0;color:var(--border2);font-size:1.3rem;}
+.node-ecr{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.node-ecr .flow-node-title{color:var(--blue);}
+.node-taskdef{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.node-taskdef .flow-node-title{color:var(--aws);}
+.node-service{background:var(--surface);border:1px solid var(--border);}
+.node-service .flow-node-title{color:var(--text);}
+.node-tasks{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.node-tasks .flow-node-title{color:var(--green);}
+.node-alb{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);}
+.node-alb .flow-node-title{color:var(--blue);}
+.node-scale{background:#fff5e0;border:1px solid rgba(212,135,42,.3);}
+.node-scale .flow-node-title{color:#a06010;}
+.node-deploy{background:var(--green-l);border:1px solid rgba(42,122,90,.2);}
+.node-deploy .flow-node-title{color:var(--green);}
+.node-users{background:var(--surface);border:1px solid var(--border);}
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-number{background:var(--aws);color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:700;flex-shrink:0;}
+.step-content{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-content h4{color:var(--aws);margin-bottom:5px;font-size:.88rem;}
+.step-content p{color:var(--muted);font-size:.83rem;margin:0;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:14px 0;}
+.icon-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(110px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+/* INFO BOXES */
+.tip-box{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip-box h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip-box p{color:var(--muted);font-size:.83rem;margin:0;}
+.warning-box{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warning-box h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warning-box p{color:var(--muted);font-size:.83rem;margin:0;}
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:400px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+/* COMPLETION */
+.completion-card{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion-card h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion-card p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .feature-grid,.icon-grid{grid-template-columns:repeat(2,1fr);}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🚀 <span>Amazon ECS</span> — Complete Deep Dive</h1>
+  <p>Architecture · Task Definitions · Services · Clusters · C# SDK · Auto-Scaling · Best Practices</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="showTab('what',this)">What is ECS</button>
+  <button class="tab-btn" onclick="showTab('arch',this)">Architecture</button>
+  <button class="tab-btn" onclick="showTab('components',this)">Core Components</button>
+  <button class="tab-btn" onclick="showTab('launch',this)">Launch Types</button>
+  <button class="tab-btn" onclick="showTab('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="showTab('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="showTab('scaling',this)">Auto-Scaling</button>
+  <button class="tab-btn" onclick="showTab('deploy',this)">Deployments</button>
+  <button class="tab-btn" onclick="showTab('best',this)">Best Practices</button>
+</div></div>
+
+<!-- TAB 1 -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🚀 What is Amazon ECS?</h2>
+  <p><strong>ECS = Elastic Container Service.</strong> A fully managed AWS service to run, scale, and orchestrate Docker containers — without managing the underlying servers yourself.</p>
+  <div class="tip-box">
+    <h4>💡 Simple Analogy</h4>
+    <p>ECS is like a concert conductor. Your Docker containers are the musicians. ECS tells each one what to play, when to start, how many to add during a busy show, and replaces anyone who stops.</p>
+  </div>
+  <h3>ECS vs Alternatives</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Option</th><th>What it is</th><th>Best for</th><th>Limitation</th></tr>
+    <tr><td><strong>Raw EC2</strong></td><td>Plain virtual servers</td><td>Full control</td><td>You manage everything</td></tr>
+    <tr><td><strong>Lambda</strong></td><td>Serverless functions</td><td>Short tasks</td><td>15 min limit, no long-running</td></tr>
+    <tr><td><strong>Kubernetes</strong></td><td>Container orchestration</td><td>Large scale</td><td>Very steep learning curve</td></tr>
+    <tr><td><strong>ECS ✅</strong></td><td>Managed containers</td><td>Most apps!</td><td>AWS-specific only</td></tr>
+  </table></div>
+  <h3>What ECS gives you</h3>
+  <div class="icon-grid">
+    <div class="icon-item"><span class="emoji">🐳</span><h4>Container Orchestration</h4><p>Run Docker at scale</p></div>
+    <div class="icon-item"><span class="emoji">📈</span><h4>Auto-Scaling</h4><p>Up and down automatically</p></div>
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>Load Balancing</h4><p>Built-in ALB integration</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Zero-Downtime Deploy</h4><p>Rolling deployments</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>IAM Security</h4><p>Fine-grained permissions</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>CloudWatch Logs</h4><p>Built-in monitoring</p></div>
+  </div>
+</div></div>
+
+<!-- TAB 2 -->
+<div id="tab-arch" class="tab-panel"><div class="section">
+  <h2>🏗️ ECS Architecture — Complete Flow</h2>
+  <p>From your Docker image all the way to users receiving a response:</p>
+  <div class="flow-diagram">
+    <div class="flow-node node-ecr">
+      <div class="flow-node-title">📦 Step 1 — Docker Image in ECR</div>
+      <ul class="flow-node-items">
+        <li>App packaged as Docker image and pushed to Amazon ECR</li>
+        <li>Tagged with version: myapi:v1.0 (~50–500 MB)</li>
+        <li>Contains app code + runtime + all dependencies</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-taskdef">
+      <div class="flow-node-title">📋 Step 2 — Task Definition (Blueprint)</div>
+      <ul class="flow-node-items">
+        <li>JSON config: CPU 0.25 vCPU, Memory 512 MB, Port 80</li>
+        <li>Environment variables, IAM roles, CloudWatch logging</li>
+        <li>Health check endpoint: GET /health</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-service">
+      <div class="flow-node-title">⚙️ Step 3 — ECS Service (Manager)</div>
+      <ul class="flow-node-items">
+        <li>Desired count: 5 tasks always running</li>
+        <li>Launch type: Fargate (serverless)</li>
+        <li>Connected to ALB for load balancing</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-tasks">
+      <div class="flow-node-title">🟢 Step 4 — Tasks Running (Live Containers)</div>
+      <ul class="flow-node-items">
+        <li>Task 1: Running at 10.0.1.10</li>
+        <li>Task 2: Running at 10.0.1.11</li>
+        <li>Tasks 3–5: Running on separate private IPs</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-alb">
+      <div class="flow-node-title">⚖️ Step 5 — ALB Health Checks & Traffic</div>
+      <ul class="flow-node-items">
+        <li>ALB pings each task: GET /health</li>
+        <li>All healthy → distributes traffic across all 5</li>
+        <li>Users get response in ~100ms</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-scale">
+      <div class="flow-node-title">📈 Step 6 — Auto-Scaling</div>
+      <ul class="flow-node-items">
+        <li>CPU rises to 85% → target is 70% → add 2 tasks</li>
+        <li>New tasks pass health checks → added to ALB</li>
+        <li>CPU drops to 72% → removes 2 tasks → back to 5</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-deploy">
+      <div class="flow-node-title">🔄 Step 7 — Rolling Deployment (Zero Downtime)</div>
+      <ul class="flow-node-items">
+        <li>New image myapi:v2 → ECS creates 2 v2 tasks</li>
+        <li>v2 passes health checks → removes 2 v1 tasks</li>
+        <li>Repeats: 5→7→5→3→5→1→5 — no downtime!</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node node-users">
+      <div class="flow-node-title">👤 Users Access Your App</div>
+      <ul class="flow-node-items">
+        <li>http://myapp.com → ALB → 5 healthy tasks</li>
+        <li>Fast, reliable, scalable, always available ✅</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+<!-- TAB 3 -->
+<div id="tab-components" class="tab-panel"><div class="section">
+  <h2>🧩 5 Core Components — Everything Explained</h2>
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Docker Image (from ECR)</h4>
+      <p><strong>What:</strong> Blueprint for your container<br>
+      <strong>Contains:</strong> App code + runtime + all dependencies<br>
+      <strong>Stored in:</strong> Amazon ECR (Elastic Container Registry)<br>
+      <strong>Size:</strong> Typically 50–500 MB<br>
+      <strong>Pulled when:</strong> ECS starts a new task</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Task Definition (JSON Blueprint)</h4>
+      <p><strong>What:</strong> JSON config describing how to run your container<br>
+      <strong>Defines:</strong> Image URI, CPU, Memory, ports, env vars, secrets, logging, IAM roles, health check<br>
+      <strong>Versioned:</strong> myapp:1 → myapp:2 → myapp:3 (immutable)<br>
+      <strong>Can include:</strong> Multiple containers (sidecar pattern)</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Task (Running Container Instance)</h4>
+      <p><strong>Lifecycle:</strong> PROVISIONING → PENDING → ACTIVATING → RUNNING → STOPPING → STOPPED<br>
+      <strong>Gets:</strong> Unique private IP + hostname<br>
+      <strong>Logs:</strong> Sent to CloudWatch automatically<br>
+      <strong>If it fails:</strong> ECS service replaces it automatically</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Service (Task Manager)</h4>
+      <p><strong>What:</strong> Keeps your desired number of tasks always running<br>
+      <strong>Auto-Scaling:</strong> Target Tracking, Step Scaling, Scheduled<br>
+      <strong>Load Balancer:</strong> ALB, NLB, or CLB integration<br>
+      <strong>Deployments:</strong> Rolling, Blue-Green, Canary<br>
+      <strong>Service Discovery:</strong> DNS-based via AWS Cloud Map</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+      <h4>Cluster (Infrastructure Group)</h4>
+      <p><strong>What:</strong> Logical group of tasks and services<br>
+      <strong>Launch types:</strong> Fargate (serverless) or EC2 (you manage)<br>
+      <strong>Networking:</strong> Lives inside your VPC — subnets + security groups<br>
+      <strong>Best practice:</strong> Separate cluster per environment (dev/staging/prod)</p>
+    </div>
+  </div>
+</div></div>
+
+<!-- TAB 4 -->
+<div id="tab-launch" class="tab-panel"><div class="section">
+  <h2>🎯 Launch Types — Fargate vs EC2</h2>
+  <div class="tip-box">
+    <h4>✅ TL;DR — Use Fargate for 90% of apps</h4>
+    <p>Unless you need GPUs, very large memory, or specific compliance requirements — Fargate is the right choice. AWS manages everything, you just define what to run.</p>
+  </div>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Fargate ✅ Recommended</th><th>EC2 (Advanced)</th></tr>
+    <tr><td><strong>Server Management</strong></td><td>ZERO — AWS handles all</td><td>You manage OS, patches</td></tr>
+    <tr><td><strong>Infrastructure</strong></td><td>Invisible — AWS provides</td><td>You provide EC2 instances</td></tr>
+    <tr><td><strong>Scaling</strong></td><td>Automatic — set desired count</td><td>Manual or complex auto-scaling</td></tr>
+    <tr><td><strong>Pricing</strong></td><td>Per task (vCPU-hour + GB-hour)</td><td>Per EC2 instance (24/7 cost)</td></tr>
+    <tr><td><strong>Idle Cost</strong></td><td>ZERO — pay only when running</td><td>EC2 costs even when idle</td></tr>
+    <tr><td><strong>Startup Time</strong></td><td>~30 seconds</td><td>Depends on EC2 readiness</td></tr>
+    <tr><td><strong>Max Memory</strong></td><td>30 GB per task</td><td>EC2 instance dependent</td></tr>
+    <tr><td><strong>GPU Support</strong></td><td>❌ Not supported</td><td>✅ Supported</td></tr>
+    <tr><td><strong>Best For</strong></td><td>APIs, microservices, web apps</td><td>GPU workloads, large memory</td></tr>
+  </table></div>
+  <h3>Fargate Pricing Example</h3>
+  <div class="card">
+    <h4>💰 Cost Calculation — 5 tasks running 24/7</h4>
+    <p>Task: 0.25 vCPU + 512 MB RAM per task, 30 days<br><br>
+    vCPU: 0.25 × $0.04048/hr × 720 hrs = <strong>$7.29 per task</strong><br>
+    Memory: 0.5 GB × $0.004445/GB/hr × 720 hrs = <strong>$1.60 per task</strong><br>
+    <strong>Per task: ~$8.89/month → 5 tasks = ~$44.45/month</strong></p>
+  </div>
+</div></div>
+
+<!-- TAB 5 -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Step by Step</h2>
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Push Docker Image to ECR</h4>
+      <p>AWS Console → ECR → Create repository → name: <code>myapi</code><br>
+      Click repo → View push commands → run the 4 commands shown<br>
+      <code>docker build -t myapi .</code><br>
+      <code>docker push [account].dkr.ecr.[region].amazonaws.com/myapi:latest</code></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Create Task Definition</h4>
+      <p>ECS → Task Definitions → Create new → Fargate<br>
+      Family name: <code>myapi</code> | CPU: <code>0.25 vCPU</code> | Memory: <code>0.5 GB</code><br>
+      Add container → image URI from ECR → port 80<br>
+      Add env vars → CloudWatch logging → Create</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Create Cluster</h4>
+      <p>ECS → Clusters → Create cluster<br>
+      Name: <code>production-cluster</code><br>
+      Infrastructure: <strong>AWS Fargate (serverless)</strong> ← choose this<br>
+      Click Create — takes ~30 seconds</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">4</div>
+    <div class="step-content">
+      <h4>Create Service</h4>
+      <p>Cluster → Services → Create<br>
+      Task definition: <code>myapi:1</code> | Desired tasks: <code>2</code><br>
+      Launch type: Fargate | Platform: LATEST<br>
+      VPC → subnets → security group (allow port 80)<br>
+      Load balancer: ALB → Create service</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">5</div>
+    <div class="step-content">
+      <h4>Verify Deployment</h4>
+      <p>ECS → Clusters → production-cluster → Services → myapi<br>
+      Tasks tab → wait for Status: <strong>RUNNING</strong> (~1-2 min)<br>
+      Copy ALB DNS name → paste in browser → your app is live! 🎉</p>
+    </div>
+  </div>
+</div></div>
+
+<!-- TAB 6 -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete Implementation</h2>
+  <h3>Install NuGet Package</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.ECS
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>ECS Service Class</h3>
+  <div class="code-block">
+    <span class="code-label">EcsService.cs</span>
+    <pre><span class="kw">using</span> Amazon.ECS;
+<span class="kw">using</span> Amazon.ECS.Model;
+
+<span class="kw">public class</span> <span class="tp">EcsService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonECS</span> _ecs;
+
+    <span class="kw">public</span> <span class="tp">EcsService</span>(<span class="tp">IAmazonECS</span> ecs) => _ecs = ecs;
+
+    <span class="cm">// Run a one-off task (e.g. background job)</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">RunTaskAsync</span>(
+        <span class="tp">string</span> cluster, <span class="tp">string</span> taskDefinition)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _ecs.<span class="fn">RunTaskAsync</span>(<span class="kw">new</span> <span class="tp">RunTaskRequest</span>
+        {
+            Cluster        = cluster,
+            TaskDefinition = taskDefinition,
+            LaunchType     = <span class="tp">LaunchType</span>.FARGATE,
+            Count          = <span class="num">1</span>,
+            NetworkConfiguration = <span class="kw">new</span> <span class="tp">NetworkConfiguration</span>
+            {
+                AwsvpcConfiguration = <span class="kw">new</span> <span class="tp">AwsVpcConfiguration</span>
+                {
+                    Subnets        = [<span class="str">"subnet-abc123"</span>],
+                    SecurityGroups = [<span class="str">"sg-abc123"</span>],
+                    AssignPublicIp = <span class="tp">AssignPublicIp</span>.ENABLED
+                }
+            }
+        });
+        <span class="kw">return</span> response.Tasks[<span class="num">0</span>].TaskArn;
+    }
+
+    <span class="cm">// List all running tasks in a cluster</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">ListRunningTasksAsync</span>(<span class="tp">string</span> cluster)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _ecs.<span class="fn">ListTasksAsync</span>(<span class="kw">new</span> <span class="tp">ListTasksRequest</span>
+        {
+            Cluster       = cluster,
+            DesiredStatus = <span class="str">"RUNNING"</span>
+        });
+        <span class="kw">return</span> response.TaskArns;
+    }
+
+    <span class="cm">// Deploy new version — rolling update</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeployNewVersionAsync</span>(
+        <span class="tp">string</span> cluster, <span class="tp">string</span> service, <span class="tp">string</span> newTaskDef)
+    {
+        <span class="kw">await</span> _ecs.<span class="fn">UpdateServiceAsync</span>(<span class="kw">new</span> <span class="tp">UpdateServiceRequest</span>
+        {
+            Cluster            = cluster,
+            Service            = service,
+            TaskDefinition     = newTaskDef,
+            ForceNewDeployment = <span class="kw">true</span>
+        });
+    }
+
+    <span class="cm">// Scale service up or down</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ScaleServiceAsync</span>(
+        <span class="tp">string</span> cluster, <span class="tp">string</span> service, <span class="tp">int</span> desiredCount)
+    {
+        <span class="kw">await</span> _ecs.<span class="fn">UpdateServiceAsync</span>(<span class="kw">new</span> <span class="tp">UpdateServiceRequest</span>
+        {
+            Cluster      = cluster,
+            Service      = service,
+            DesiredCount = desiredCount
+        });
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI (Program.cs)</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonECS</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">EcsService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+<!-- TAB 7 -->
+<div id="tab-scaling" class="tab-panel"><div class="section">
+  <h2>📈 Auto-Scaling — Scale Automatically</h2>
+  <div class="step">
+    <div class="step-number">1</div>
+    <div class="step-content">
+      <h4>Target Tracking (Most Common)</h4>
+      <p>Set a target metric — ECS keeps it there automatically<br>
+      Example: Keep average CPU at 70%<br>
+      CPU &gt; 70% → ECS adds tasks | CPU &lt; 70% → ECS removes tasks<br>
+      Also works with: Memory utilization, ALB requests per target</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">2</div>
+    <div class="step-content">
+      <h4>Step Scaling (Rules-Based)</h4>
+      <p>Define rules for specific thresholds:<br>
+      CPU 70–80% → add 1 task<br>
+      CPU 80–90% → add 2 tasks<br>
+      CPU 90%+ → add 4 tasks<br>
+      Good for predictable, non-linear traffic patterns</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-number">3</div>
+    <div class="step-content">
+      <h4>Scheduled Scaling (Time-Based)</h4>
+      <p>Pre-scale based on known traffic times:<br>
+      9am Mon–Fri → scale to 10 tasks<br>
+      6pm Mon–Fri → scale to 3 tasks<br>
+      Great for business-hours traffic patterns</p>
+    </div>
+  </div>
+
+  <h3>C# Auto-Scaling Setup</h3>
+  <div class="code-block">
+    <pre><span class="kw">using</span> Amazon.ApplicationAutoScaling;
+<span class="kw">using</span> Amazon.ApplicationAutoScaling.Model;
+
+<span class="cm">// Step 1: Register scalable target</span>
+<span class="kw">await</span> autoScaling.<span class="fn">RegisterScalableTargetAsync</span>(<span class="kw">new</span>
+    <span class="tp">RegisterScalableTargetRequest</span>
+{
+    ServiceNamespace  = <span class="tp">ServiceNamespace</span>.Ecs,
+    ResourceId        = <span class="str">"service/production-cluster/myapi"</span>,
+    ScalableDimension = <span class="tp">ScalableDimension</span>.EcsServiceDesiredCount,
+    MinCapacity       = <span class="num">2</span>,
+    MaxCapacity       = <span class="num">20</span>
+});
+
+<span class="cm">// Step 2: Target tracking — keep CPU at 70%</span>
+<span class="kw">await</span> autoScaling.<span class="fn">PutScalingPolicyAsync</span>(<span class="kw">new</span> <span class="tp">PutScalingPolicyRequest</span>
+{
+    PolicyName        = <span class="str">"cpu-70-percent"</span>,
+    PolicyType        = <span class="tp">PolicyType</span>.TargetTrackingScaling,
+    ResourceId        = <span class="str">"service/production-cluster/myapi"</span>,
+    ScalableDimension = <span class="tp">ScalableDimension</span>.EcsServiceDesiredCount,
+    ServiceNamespace  = <span class="tp">ServiceNamespace</span>.Ecs,
+    TargetTrackingScalingPolicyConfiguration = <span class="kw">new</span>
+        <span class="tp">TargetTrackingScalingPolicyConfiguration</span>
+    {
+        TargetValue = <span class="num">70.0</span>,
+        PredefinedMetricSpecification = <span class="kw">new</span> <span class="tp">PredefinedMetricSpecification</span>
+        {
+            PredefinedMetricType =
+                <span class="tp">MetricType</span>.ECSServiceAverageCPUUtilization
+        },
+        ScaleInCooldown  = <span class="num">300</span>,
+        ScaleOutCooldown = <span class="num">60</span>
+    }
+});</pre>
+  </div>
+</div></div>
+
+<!-- TAB 8 -->
+<div id="tab-deploy" class="tab-panel"><div class="section">
+  <h2>🔄 Deployment Strategies</h2>
+
+  <h3>Rolling Update (Default)</h3>
+  <div class="card">
+    <h4>How it works</h4>
+    <p>ECS replaces tasks gradually — old and new run simultaneously during deployment<br><br>
+    Example with 5 tasks:<br>
+    <code>5 v1 → 7 (5v1+2v2) → 5 (3v1+2v2) → 5 (1v1+4v2) → 5 v2</code><br><br>
+    ✅ Zero downtime &nbsp;|&nbsp; ✅ Simple &nbsp;|&nbsp; ✅ Default choice<br>
+    ⚠️ Both versions run simultaneously during deployment</p>
+  </div>
+
+  <h3>Blue-Green Deployment</h3>
+  <div class="card">
+    <h4>How it works</h4>
+    <p>Two complete environments — Blue (current) and Green (new):<br><br>
+    1. Deploy v2 to Green (same size as Blue)<br>
+    2. Health check Green fully<br>
+    3. Switch ALB from Blue → Green (instant!)<br>
+    4. Keep Blue running 10 min as rollback safety<br>
+    5. Terminate Blue after confirmation<br><br>
+    ✅ Instant rollback &nbsp;|&nbsp; ✅ Clean cutover &nbsp;|&nbsp; ⚠️ 2x cost during transition</p>
+  </div>
+
+  <h3>Canary Deployment</h3>
+  <div class="card">
+    <h4>How it works</h4>
+    <p>Route a small % of real traffic to v2, monitor, gradually increase:<br><br>
+    5% v2 → monitor errors → 20% v2 → monitor → 100% v2<br><br>
+    ✅ Safest — catch issues with real traffic<br>
+    ✅ Easy rollback at any step &nbsp;|&nbsp; ⚠️ More complex to configure</p>
+  </div>
+
+  <h3>Rollback in C#</h3>
+  <div class="code-block"><pre><span class="cm">// Roll back to previous task definition version</span>
+<span class="kw">await</span> _ecs.<span class="fn">UpdateServiceAsync</span>(<span class="kw">new</span> <span class="tp">UpdateServiceRequest</span>
+{
+    Cluster            = <span class="str">"production-cluster"</span>,
+    Service            = <span class="str">"myapi"</span>,
+    TaskDefinition     = <span class="str">"myapi:5"</span>, <span class="cm">// previous stable version</span>
+    ForceNewDeployment = <span class="kw">true</span>
+});</pre></div>
+</div></div>
+
+<!-- TAB 9 — LAST TAB with completion card -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Checklist</h2>
+
+  <h3>Infrastructure</h3>
+  <ul class="checklist">
+    <li>Use Fargate unless you need GPUs or very large memory</li>
+    <li>Always define health checks in task definition (/health endpoint)</li>
+    <li>Put ALB in public subnet, tasks in private subnet</li>
+    <li>Use separate clusters per environment (dev/staging/prod)</li>
+    <li>Enable Container Insights for CloudWatch metrics</li>
+  </ul>
+
+  <h3>Task Definitions</h3>
+  <ul class="checklist">
+    <li>Never hardcode secrets — use AWS Secrets Manager or SSM</li>
+    <li>Set CPU and memory limits — never leave unlimited</li>
+    <li>Always configure CloudWatch logging for every container</li>
+    <li>Pin your Docker image version — never use :latest in production</li>
+    <li>Separate execution role (ECR pull) and task role (app permissions)</li>
+  </ul>
+
+  <h3>Scaling & Performance</h3>
+  <ul class="checklist">
+    <li>Set minimum 2 tasks for high availability across AZs</li>
+    <li>Start with target tracking at 70% CPU — tune from real data</li>
+    <li>Scale-in cooldown longer than scale-out (300s vs 60s)</li>
+    <li>Use Spot Fargate for non-critical workloads — save up to 70%</li>
+  </ul>
+
+  <h3>Deployments</h3>
+  <ul class="checklist">
+    <li>Enable deployment circuit breaker — auto rollback on failure</li>
+    <li>Tag all images with git commit SHA for full traceability</li>
+    <li>Test in staging with production-like task sizes first</li>
+    <li>Never deploy on Friday afternoon 😄</li>
+  </ul>
+
+  <div class="warning-box">
+    <h4>⚠️ Top Mistakes to Avoid</h4>
+    <p>
+    ❌ Using :latest image tag in production (no rollback traceability)<br>
+    ❌ Not setting health checks → tasks start but fail silently<br>
+    ❌ Too little memory → tasks crash with OOMKilled error<br>
+    ❌ Forgetting IAM task role → app can't access S3, DynamoDB<br>
+    ❌ Not enabling deployment circuit breaker → bad deploy loops forever
+    </p>
+  </div>
+
+  <div class="completion-card">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon ECS!</h3>
+    <p>What is ECS · Complete architecture flow · 5 core components · Fargate vs EC2 · Console setup · Full C# SDK · Auto-scaling (3 types) · Rolling / Blue-Green / Canary deployments · Best practices & common mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can manage containerized applications at scale on AWS! 🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
