@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS VPC — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+/* FLOW DIAGRAMS */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-internet{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.n-internet .flow-node-title{color:var(--blue);}
+.n-igw{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.n-igw .flow-node-title{color:var(--aws);}
+.n-public{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.n-public .flow-node-title{color:var(--green);}
+.n-private{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);}
+.n-private .flow-node-title{color:var(--purple);}
+.n-nat{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);}
+.n-nat .flow-node-title{color:var(--aws);}
+.n-db{background:var(--surface);border:1px solid var(--border);}
+.n-sg{background:var(--green-l);border:1px solid rgba(42,122,90,.2);}
+.n-sg .flow-node-title{color:var(--green);}
+.n-bad{background:var(--red-l);border:1px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+/* CONSOLE STEPS — UI-based setting look */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aws);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step,.console-step-header{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🏗️ <span>AWS VPC</span> — Complete Guide</h1>
+  <p>Virtual Private Cloud · Subnets · Security Groups · NAT Gateway · C# SDK · Console Setup</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is VPC</button>
+  <button class="tab-btn" onclick="T('components',this)">Components</button>
+  <button class="tab-btn" onclick="T('subnets',this)">Subnets</button>
+  <button class="tab-btn" onclick="T('security',this)">Security</button>
+  <button class="tab-btn" onclick="T('nat',this)">NAT Gateway</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 1 — WHAT IS VPC
+═══════════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🏗️ What is AWS VPC?</h2>
+  <p><strong>VPC = Virtual Private Cloud.</strong> Your own private isolated network inside AWS. You control everything — IP ranges, subnets, routing, and security.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>VPC is your private neighborhood inside AWS city. You own the houses (EC2), the streets (subnets), the gates (security groups), and the fence around the whole thing. Only people YOU invite can enter.</p>
+  </div>
+
+  <!-- FLOW: WITHOUT vs WITH VPC -->
+  <h3>Without VPC vs With VPC</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title" style="color:var(--red);">❌ Without VPC</div>
+        <ul class="flow-items">
+          <li>Servers in AWS shared network</li>
+          <li>Anyone with access can reach them</li>
+          <li>No IP control — AWS assigns</li>
+          <li>No isolation between customers</li>
+          <li>Security relies only on instance firewalls</li>
+        </ul>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;color:var(--border2);font-size:1.2rem;">→</div>
+      <div class="flow-node n-public" style="max-width:100%">
+        <div class="flow-node-title">✅ With VPC</div>
+        <ul class="flow-items">
+          <li>Your own private network in AWS</li>
+          <li>You define IP ranges (10.0.0.0/16)</li>
+          <li>Full isolation from other customers</li>
+          <li>Multiple security layers</li>
+          <li>Connect to on-premises via VPN</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: VPC OVERVIEW -->
+  <h3>VPC Architecture Overview</h3>
+  <div class="flow">
+    <div class="flow-node n-internet">
+      <div class="flow-node-title">🌍 Internet</div>
+      <ul class="flow-items">
+        <li>Public users, external services</li>
+        <li>Cannot directly reach private resources</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-igw">
+      <div class="flow-node-title">🚪 Internet Gateway (IGW)</div>
+      <ul class="flow-items">
+        <li>The only door between internet and your VPC</li>
+        <li>Attached to VPC — one per VPC</li>
+        <li>Only public subnets route traffic through it</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-public">
+      <div class="flow-node-title">🟢 Public Subnet (10.0.1.0/24)</div>
+      <ul class="flow-items">
+        <li>ALB, NAT Gateway, Bastion host live here</li>
+        <li>Route table: 0.0.0.0/0 → IGW</li>
+        <li>Instances can have public IPs</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-private">
+      <div class="flow-node-title">🔐 Private Subnet (10.0.11.0/24)</div>
+      <ul class="flow-items">
+        <li>App servers, ECS tasks live here</li>
+        <li>Route table: 0.0.0.0/0 → NAT Gateway</li>
+        <li>No public IP — not directly reachable</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-db">
+      <div class="flow-node-title">🗄️ DB Subnet (10.0.21.0/24)</div>
+      <ul class="flow-items">
+        <li>RDS, ElastiCache — most restricted</li>
+        <li>No route to internet at all</li>
+        <li>Only accessible from app subnet</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Why You Need VPC</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Isolation</h4><p>Your network separate from others</p></div>
+    <div class="icon-item"><span class="emoji">🎯</span><h4>Control</h4><p>You define IP ranges, routes, security</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Security</h4><p>Multiple layers of protection</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Performance</h4><p>Low latency within VPC</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Multi-AZ</h4><p>Span availability zones</p></div>
+    <div class="icon-item"><span class="emoji">💼</span><h4>Compliance</h4><p>Meet enterprise governance needs</p></div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 2 — COMPONENTS
+═══════════════════════════════════════ -->
+<div id="tab-components" class="tab-panel"><div class="section">
+  <h2>🧩 VPC Components — The Building Blocks</h2>
+  <p>A VPC is made of 8 key components working together to create your private network.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>VPC (Virtual Private Cloud)</h4>
+      <p>The container for your entire private network.<br>
+      <strong>CIDR block:</strong> <code>10.0.0.0/16</code> = 65,536 IP addresses<br>
+      <strong>Rule:</strong> Cannot be changed after creation — plan carefully!<br>
+      <strong>Scope:</strong> Spans all AZs in a region</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Subnet</h4>
+      <p>A division of the VPC into smaller networks. Each subnet lives in ONE availability zone.<br>
+      <code>10.0.1.0/24</code> = 256 IPs (251 usable — AWS reserves 5)<br>
+      <strong>Types:</strong> Public (internet-facing) or Private (internal only)</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Internet Gateway (IGW)</h4>
+      <p>The only door between your VPC and the public internet.<br>
+      <strong>Attach:</strong> One IGW per VPC<br>
+      <strong>Used by:</strong> Public subnets only (via route table)<br>
+      <strong>Cost:</strong> Free — you pay for data transfer only</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Route Table</h4>
+      <p>Rules that tell traffic where to go. Every subnet must be associated with a route table.<br>
+      Public route: <code>0.0.0.0/0 → igw-xxxx</code><br>
+      Private route: <code>0.0.0.0/0 → nat-xxxx</code><br>
+      Local route (always): <code>10.0.0.0/16 → local</code></p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Security Group</h4>
+      <p>Virtual firewall for your EC2 instances and ECS tasks.<br>
+      <strong>Stateful:</strong> Return traffic automatically allowed<br>
+      <strong>Default:</strong> Deny all inbound, allow all outbound<br>
+      <strong>Rules:</strong> Allow only — cannot deny specific IPs</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <h4>Network ACL (NACL)</h4>
+      <p>Firewall at the subnet level — optional extra layer.<br>
+      <strong>Stateless:</strong> Must define both inbound AND outbound<br>
+      <strong>Default:</strong> Allow all (unlike security groups)<br>
+      <strong>Use for:</strong> Blocking specific IPs, DDoS protection</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <h4>NAT Gateway</h4>
+      <p>Lets private instances reach the internet (for updates, APIs) without being reachable from internet.<br>
+      <strong>Placed in:</strong> Public subnet<br>
+      <strong>Cost:</strong> ~$0.045/hour + data processed</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <h4>VPC Endpoints</h4>
+      <p>Connect to AWS services (S3, DynamoDB, SQS) without going through the internet — faster and cheaper.<br>
+      <strong>Gateway endpoint:</strong> S3, DynamoDB (free!)<br>
+      <strong>Interface endpoint:</strong> Most other AWS services</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 3 — SUBNETS
+═══════════════════════════════════════ -->
+<div id="tab-subnets" class="tab-panel"><div class="section">
+  <h2>📍 Subnets — Dividing Your VPC</h2>
+  <p>Subnets divide your VPC into smaller isolated networks. Each subnet lives in exactly one Availability Zone.</p>
+
+  <!-- FLOW: PUBLIC vs PRIVATE -->
+  <h3>Public vs Private Subnet Flow</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-public" style="max-width:100%">
+        <div class="flow-node-title">🌐 Public Subnet</div>
+        <ul class="flow-items">
+          <li>Route to Internet Gateway</li>
+          <li>Instances can get public IPs</li>
+          <li>Direct internet access in/out</li>
+          <li>For: ALB, NAT GW, Bastion</li>
+          <li>Example: 10.0.1.0/24</li>
+        </ul>
+      </div>
+      <div class="flow-node n-private" style="max-width:100%">
+        <div class="flow-node-title">🔐 Private Subnet</div>
+        <ul class="flow-items">
+          <li>Route to NAT Gateway only</li>
+          <li>No public IP assigned</li>
+          <li>Can reach internet via NAT</li>
+          <li>For: App servers, ECS tasks</li>
+          <li>Example: 10.0.11.0/24</li>
+        </ul>
+      </div>
+      <div class="flow-node n-db" style="max-width:100%">
+        <div class="flow-node-title">🗄️ DB Subnet</div>
+        <ul class="flow-items">
+          <li>No route to internet at all</li>
+          <li>Most isolated</li>
+          <li>Only reachable from app subnet</li>
+          <li>For: RDS, ElastiCache, Redis</li>
+          <li>Example: 10.0.21.0/24</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: MULTI-AZ DESIGN -->
+  <h3>Production Multi-AZ Subnet Design</h3>
+  <div class="card">
+    <h4>🏗️ VPC: 10.0.0.0/16 — spanning 2 Availability Zones</h4>
+    <div class="flow" style="margin:8px 0 0;">
+      <div class="flow-row">
+        <div class="flow-node n-public" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">Public — AZ-1a</div>
+          <ul class="flow-items"><li>10.0.1.0/24 (256 IPs)</li><li>ALB, NAT GW here</li></ul>
+        </div>
+        <div class="flow-node n-public" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">Public — AZ-1b</div>
+          <ul class="flow-items"><li>10.0.2.0/24 (256 IPs)</li><li>ALB, NAT GW here</li></ul>
+        </div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-row">
+        <div class="flow-node n-private" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">App — AZ-1a</div>
+          <ul class="flow-items"><li>10.0.11.0/24</li><li>ECS tasks, EC2</li></ul>
+        </div>
+        <div class="flow-node n-private" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">App — AZ-1b</div>
+          <ul class="flow-items"><li>10.0.12.0/24</li><li>ECS tasks, EC2</li></ul>
+        </div>
+      </div>
+      <div class="flow-arrow">↓</div>
+      <div class="flow-row">
+        <div class="flow-node n-db" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">DB — AZ-1a</div>
+          <ul class="flow-items"><li>10.0.21.0/24</li><li>RDS primary</li></ul>
+        </div>
+        <div class="flow-node n-db" style="max-width:100%;padding:10px 12px;">
+          <div class="flow-node-title" style="font-size:.8rem;">DB — AZ-1b</div>
+          <ul class="flow-items"><li>10.0.22.0/24</li><li>RDS standby</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 CIDR Planning Tip</h4>
+    <p>Start with <code>/16</code> for the VPC (65k IPs) and <code>/24</code> for subnets (256 IPs). Leave big gaps between subnets — you can't change the VPC CIDR later! Leave room between 10.0.1.x and 10.0.11.x for future subnets.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 4 — SECURITY
+═══════════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🛡️ Security Groups & Network ACLs</h2>
+  <p>AWS VPC has two layers of firewalls. Understanding both is critical for production security.</p>
+
+  <!-- FLOW: 2 LAYERS OF SECURITY -->
+  <h3>Two Layers of Protection</h3>
+  <div class="flow">
+    <div class="flow-node n-internet">
+      <div class="flow-node-title">🌍 Internet Traffic</div>
+      <ul class="flow-items">
+        <li>Incoming request to your app</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-nat">
+      <div class="flow-node-title">🚪 Layer 1: Network ACL (Subnet boundary)</div>
+      <ul class="flow-items">
+        <li>Checked when traffic enters/leaves subnet</li>
+        <li>Stateless — must define both directions</li>
+        <li>Can ALLOW and DENY</li>
+        <li>Rules evaluated by number (lowest first)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-sg">
+      <div class="flow-node-title">🛡️ Layer 2: Security Group (Instance boundary)</div>
+      <ul class="flow-items">
+        <li>Checked when traffic reaches EC2/ECS</li>
+        <li>Stateful — return traffic auto allowed</li>
+        <li>Allow rules only — cannot deny specific IPs</li>
+        <li>Multiple SGs per instance allowed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-public">
+      <div class="flow-node-title">✅ Your Application Receives Request</div>
+      <ul class="flow-items">
+        <li>Only traffic that passed BOTH layers gets through</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Security Groups — Deep Dive</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌐 ALB Security Group</h4>
+      <ul>
+        <li>Inbound: 80 from 0.0.0.0/0</li>
+        <li>Inbound: 443 from 0.0.0.0/0</li>
+        <li>Outbound: All to App SG</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚙️ App Server Security Group</h4>
+      <ul>
+        <li>Inbound: 5000 from ALB SG only</li>
+        <li>Inbound: 22 from Bastion SG only</li>
+        <li>Outbound: 443 to 0.0.0.0/0 (APIs)</li>
+        <li>Outbound: 5432 to DB SG</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🗄️ Database Security Group</h4>
+      <ul>
+        <li>Inbound: 5432 from App SG ONLY</li>
+        <li>Nothing else inbound — ever!</li>
+        <li>Outbound: None needed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💡 Security Group Chaining</h4>
+      <p>Instead of IP ranges, reference other security groups as source. ALB SG → App SG → DB SG. Much safer than IP-based rules — automatically updates when instances scale.</p>
+    </div>
+  </div>
+
+  <h3>Security Groups vs Network ACLs</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Security Group</th><th>Network ACL</th></tr>
+    <tr><td><strong>Level</strong></td><td>Instance / ENI</td><td>Subnet boundary</td></tr>
+    <tr><td><strong>Default</strong></td><td>Deny all inbound</td><td>Allow all</td></tr>
+    <tr><td><strong>Stateful</strong></td><td>✅ Yes — return auto-allowed</td><td>❌ No — define both ways</td></tr>
+    <tr><td><strong>Rule types</strong></td><td>Allow only</td><td>Allow AND Deny</td></tr>
+    <tr><td><strong>Rule evaluation</strong></td><td>All rules evaluated</td><td>Lowest number first</td></tr>
+    <tr><td><strong>Use for</strong></td><td>Most security rules</td><td>Block IPs, DDoS protection</td></tr>
+    <tr><td><strong>Multiple per instance</strong></td><td>✅ Yes (up to 5)</td><td>One per subnet</td></tr>
+  </table></div>
+
+  <div class="danger">
+    <h4>⚠️ Never do these</h4>
+    <p>
+    ❌ Open port 3306/5432 to <code>0.0.0.0/0</code> — database exposed to internet!<br>
+    ❌ Open port 22 (SSH) to <code>0.0.0.0/0</code> — brute force attacks guaranteed<br>
+    ❌ Allow all traffic (<code>0.0.0.0/0</code> all ports) — defeats the whole point
+    </p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 5 — NAT GATEWAY
+═══════════════════════════════════════ -->
+<div id="tab-nat" class="tab-panel"><div class="section">
+  <h2>🌐 NAT Gateway — Private Internet Access</h2>
+  <p>NAT (Network Address Translation) Gateway lets private instances reach the internet for outbound traffic — without exposing them to inbound connections from the internet.</p>
+
+  <!-- FLOW: HOW NAT WORKS -->
+  <h3>How NAT Gateway Works</h3>
+  <div class="flow">
+    <div class="flow-node n-private">
+      <div class="flow-node-title">🔐 Private Instance (10.0.11.50)</div>
+      <ul class="flow-items">
+        <li>Needs to call external API or download updates</li>
+        <li>Sends packet to: 8.8.8.8 (Google DNS)</li>
+        <li>Source IP: 10.0.11.50 (private — unreachable!)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-nat">
+      <div class="flow-node-title">🔄 NAT Gateway (in Public Subnet)</div>
+      <ul class="flow-items">
+        <li>Intercepts the outbound request</li>
+        <li>Replaces source IP: 10.0.11.50 → 52.1.1.100 (Elastic IP)</li>
+        <li>Records the translation in NAT table</li>
+        <li>Sends packet to internet with public IP</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-internet">
+      <div class="flow-node-title">🌍 Internet (8.8.8.8)</div>
+      <ul class="flow-items">
+        <li>Sees request from 52.1.1.100 (NAT's public IP)</li>
+        <li>Has no idea 10.0.11.50 exists</li>
+        <li>Responds to 52.1.1.100</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-nat">
+      <div class="flow-node-title">🔄 NAT Gateway — Response Return</div>
+      <ul class="flow-items">
+        <li>Receives response at 52.1.1.100</li>
+        <li>Looks up NAT table: this belongs to 10.0.11.50</li>
+        <li>Translates back: 52.1.1.100 → 10.0.11.50</li>
+        <li>Forwards to private instance</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-private">
+      <div class="flow-node-title">✅ Private Instance Gets Response</div>
+      <ul class="flow-items">
+        <li>Downloaded updates, called external API — success!</li>
+        <li>Internet never knew the private IP existed</li>
+        <li>Internet CANNOT initiate a connection to private instance</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>NAT Gateway vs NAT Instance</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>NAT Gateway ✅</th><th>NAT Instance (old)</th></tr>
+    <tr><td><strong>Management</strong></td><td>AWS fully manages it</td><td>You manage EC2 instance</td></tr>
+    <tr><td><strong>Availability</strong></td><td>Highly available in AZ</td><td>Single point of failure</td></tr>
+    <tr><td><strong>Performance</strong></td><td>Up to 45 Gbps</td><td>Limited by EC2 size</td></tr>
+    <tr><td><strong>Patching</strong></td><td>AWS handles</td><td>You patch the OS</td></tr>
+    <tr><td><strong>Cost</strong></td><td>$0.045/hr + $0.045/GB</td><td>EC2 + EIP cost</td></tr>
+    <tr><td><strong>Use in production</strong></td><td>✅ Always</td><td>❌ Avoid</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>💰 NAT Gateway Cost Tip</h4>
+    <p>For dev/test environments, you can share one NAT Gateway across all private subnets in the same AZ to save cost. In production, use one NAT Gateway per AZ for high availability. Also use VPC Endpoints for S3/DynamoDB — free and faster than NAT!</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 6 — CONSOLE SETUP
+═══════════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ AWS Console Setup — Step by Step</h2>
+  <p>Here's exactly how to create a production-ready VPC from the AWS Console, including every field and setting you need to configure.</p>
+
+  <!-- STEP 1: CREATE VPC -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create the VPC</div>
+      <div class="console-step-path">VPC → Your VPCs → Create VPC</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Resources to create</div>
+        <div class="console-field-value">VPC only</div>
+        <div class="console-field-hint">Choose "VPC only" — we'll add subnets manually for full control</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Name tag</div>
+        <div class="console-field-value">production-vpc</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">IPv4 CIDR block</div>
+        <div class="console-field-value">10.0.0.0/16</div>
+        <div class="console-field-hint">This gives you 65,536 IP addresses. Cannot be changed later!</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">IPv6 CIDR block</div>
+        <div class="console-field-value">No IPv6 CIDR block</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Tenancy</div>
+        <div class="console-field-value">Default</div>
+        <div class="console-field-hint">Dedicated costs much more — use Default unless compliance requires it</div>
+      </div>
+      <div class="console-note">Click <strong>Create VPC</strong>. Takes ~5 seconds.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: INTERNET GATEWAY -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create & Attach Internet Gateway</div>
+      <div class="console-step-path">VPC → Internet Gateways → Create</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Name tag</div>
+        <div class="console-field-value">production-igw</div>
+      </div>
+      <div class="console-note">After creating: Select the IGW → Actions → <strong>Attach to VPC</strong> → select production-vpc → Attach</div>
+    </div>
+  </div>
+
+  <!-- STEP 3: SUBNETS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Create Subnets (repeat for each)</div>
+      <div class="console-step-path">VPC → Subnets → Create subnet</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">VPC ID</div>
+        <div class="console-field-value">production-vpc</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Subnet name → AZ → CIDR (create 6 subnets)</div>
+        <div class="console-field-value">public-1a → us-east-1a → 10.0.1.0/24</div>
+        <div class="console-field-value">public-1b → us-east-1b → 10.0.2.0/24</div>
+        <div class="console-field-value">app-1a → us-east-1a → 10.0.11.0/24</div>
+        <div class="console-field-value">app-1b → us-east-1b → 10.0.12.0/24</div>
+        <div class="console-field-value">db-1a → us-east-1a → 10.0.21.0/24</div>
+        <div class="console-field-value">db-1b → us-east-1b → 10.0.22.0/24</div>
+      </div>
+      <div class="console-note">After creating public subnets: Select each → Actions → <strong>Edit subnet settings</strong> → Enable auto-assign public IPv4 → Save</div>
+    </div>
+  </div>
+
+  <!-- STEP 4: ROUTE TABLES -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create Route Tables</div>
+      <div class="console-step-path">VPC → Route Tables → Create route table</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Public Route Table</div>
+        <div class="console-field-value">Name: public-rt | VPC: production-vpc</div>
+        <div class="console-field-hint">After creating → Routes tab → Edit routes → Add route: 0.0.0.0/0 → production-igw</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Private Route Table</div>
+        <div class="console-field-value">Name: private-rt | VPC: production-vpc</div>
+        <div class="console-field-hint">After NAT Gateway is created → Add route: 0.0.0.0/0 → NAT Gateway</div>
+      </div>
+      <div class="console-note">Then: Subnet Associations tab → Edit → associate public subnets with public-rt, private/db subnets with private-rt</div>
+    </div>
+  </div>
+
+  <!-- STEP 5: NAT GATEWAY -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Create NAT Gateway</div>
+      <div class="console-step-path">VPC → NAT Gateways → Create NAT gateway</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">production-nat-1a</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Subnet</div>
+        <div class="console-field-value">public-1a</div>
+        <div class="console-field-hint">Must be in a PUBLIC subnet — not private!</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Connectivity type</div>
+        <div class="console-field-value">Public</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Elastic IP allocation ID</div>
+        <div class="console-field-value">Allocate Elastic IP (click button)</div>
+        <div class="console-field-hint">This is the public IP the NAT will use. Takes ~60s to become Available.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 6: SECURITY GROUPS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Create Security Groups</div>
+      <div class="console-step-path">EC2 → Security Groups → Create security group</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">ALB Security Group</div>
+        <div class="console-field-value">Name: alb-sg | VPC: production-vpc</div>
+        <div class="console-field-hint">Inbound: HTTP 80 from 0.0.0.0/0 | HTTPS 443 from 0.0.0.0/0</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">App Security Group</div>
+        <div class="console-field-value">Name: app-sg | VPC: production-vpc</div>
+        <div class="console-field-hint">Inbound: Custom TCP 5000 from Source: alb-sg (select the SG, not an IP!)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">DB Security Group</div>
+        <div class="console-field-value">Name: db-sg | VPC: production-vpc</div>
+        <div class="console-field-hint">Inbound: PostgreSQL 5432 from Source: app-sg only. Nothing else!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 7: VPC FLOW LOGS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <div class="console-step-title">Enable VPC Flow Logs (Monitoring)</div>
+      <div class="console-step-path">VPC → Your VPCs → Select VPC → Flow Logs tab</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Filter</div>
+        <div class="console-field-value">All (captures accepted and rejected traffic)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Destination</div>
+        <div class="console-field-value">Send to CloudWatch Logs</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Log group name</div>
+        <div class="console-field-value">/aws/vpc/flowlogs/production-vpc</div>
+      </div>
+      <div class="console-note">VPC Flow Logs record all network traffic. Essential for debugging and security auditing in production.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 7 — C# SDK
+═══════════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Create & Manage VPC Resources</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.EC2
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>Create VPC + Subnet + IGW</h3>
+  <div class="code-block">
+    <span class="code-label">VpcService.cs</span>
+    <pre><span class="kw">using</span> Amazon.EC2;
+<span class="kw">using</span> Amazon.EC2.Model;
+
+<span class="kw">public class</span> <span class="tp">VpcService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonEC2</span> _ec2;
+
+    <span class="kw">public</span> <span class="tp">VpcService</span>(<span class="tp">IAmazonEC2</span> ec2) => _ec2 = ec2;
+
+    <span class="cm">// Step 1: Create VPC</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateVpcAsync</span>()
+    {
+        <span class="kw">var</span> vpc = <span class="kw">await</span> _ec2.<span class="fn">CreateVpcAsync</span>(<span class="kw">new</span> <span class="tp">CreateVpcRequest</span>
+        {
+            CidrBlock = <span class="str">"10.0.0.0/16"</span>
+        });
+
+        <span class="cm">// Tag it with a name</span>
+        <span class="kw">await</span> _ec2.<span class="fn">CreateTagsAsync</span>(<span class="kw">new</span> <span class="tp">CreateTagsRequest</span>
+        {
+            Resources = [vpc.Vpc.VpcId],
+            Tags = [<span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Name"</span>, Value = <span class="str">"production-vpc"</span> }]
+        });
+
+        <span class="kw">return</span> vpc.Vpc.VpcId;
+    }
+
+    <span class="cm">// Step 2: Create Subnet</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateSubnetAsync</span>(
+        <span class="tp">string</span> vpcId, <span class="tp">string</span> cidr, <span class="tp">string</span> az, <span class="tp">string</span> name)
+    {
+        <span class="kw">var</span> subnet = <span class="kw">await</span> _ec2.<span class="fn">CreateSubnetAsync</span>(<span class="kw">new</span> <span class="tp">CreateSubnetRequest</span>
+        {
+            VpcId            = vpcId,
+            CidrBlock        = cidr,
+            AvailabilityZone = az
+        });
+
+        <span class="kw">await</span> _ec2.<span class="fn">CreateTagsAsync</span>(<span class="kw">new</span> <span class="tp">CreateTagsRequest</span>
+        {
+            Resources = [subnet.Subnet.SubnetId],
+            Tags = [<span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Name"</span>, Value = name }]
+        });
+
+        <span class="kw">return</span> subnet.Subnet.SubnetId;
+    }
+
+    <span class="cm">// Step 3: Create and attach Internet Gateway</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateAndAttachIgwAsync</span>(<span class="tp">string</span> vpcId)
+    {
+        <span class="kw">var</span> igw = <span class="kw">await</span> _ec2.<span class="fn">CreateInternetGatewayAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateInternetGatewayRequest</span>());
+
+        <span class="kw">await</span> _ec2.<span class="fn">AttachInternetGatewayAsync</span>(<span class="kw">new</span> <span class="tp">AttachInternetGatewayRequest</span>
+        {
+            InternetGatewayId = igw.InternetGateway.InternetGatewayId,
+            VpcId             = vpcId
+        });
+
+        <span class="kw">return</span> igw.InternetGateway.InternetGatewayId;
+    }
+}</pre>
+  </div>
+
+  <h3>Create Security Group with Rules</h3>
+  <div class="code-block">
+    <pre><span class="cm">// Create security group</span>
+<span class="kw">var</span> sg = <span class="kw">await</span> _ec2.<span class="fn">CreateSecurityGroupAsync</span>(<span class="kw">new</span> <span class="tp">CreateSecurityGroupRequest</span>
+{
+    GroupName   = <span class="str">"app-sg"</span>,
+    Description = <span class="str">"App server security group"</span>,
+    VpcId       = vpcId
+});
+
+<span class="cm">// Add inbound rule: allow port 5000 from ALB SG</span>
+<span class="kw">await</span> _ec2.<span class="fn">AuthorizeSecurityGroupIngressAsync</span>(<span class="kw">new</span>
+    <span class="tp">AuthorizeSecurityGroupIngressRequest</span>
+{
+    GroupId = sg.GroupId,
+    IpPermissions = [<span class="kw">new</span> <span class="tp">IpPermission</span>
+    {
+        IpProtocol = <span class="str">"tcp"</span>,
+        FromPort   = <span class="num">5000</span>,
+        ToPort     = <span class="num">5000</span>,
+        <span class="cm">// Reference ALB SG instead of IP — best practice!</span>
+        UserIdGroupPairs = [<span class="kw">new</span> <span class="tp">UserIdGroupPair</span>
+        {
+            GroupId = albSecurityGroupId
+        }]
+    }]
+});</pre>
+  </div>
+
+  <h3>Describe VPC Resources</h3>
+  <div class="code-block">
+    <pre><span class="cm">// List all subnets in a VPC</span>
+<span class="kw">var</span> subnets = <span class="kw">await</span> _ec2.<span class="fn">DescribeSubnetsAsync</span>(<span class="kw">new</span> <span class="tp">DescribeSubnetsRequest</span>
+{
+    Filters = [<span class="kw">new</span> <span class="tp">Filter</span>
+    {
+        Name   = <span class="str">"vpc-id"</span>,
+        Values = [vpcId]
+    }]
+});
+
+<span class="kw">foreach</span> (<span class="kw">var</span> subnet <span class="kw">in</span> subnets.Subnets)
+{
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Subnet: {subnet.SubnetId} | CIDR: {subnet.CidrBlock} | AZ: {subnet.AvailabilityZone}"</span>);
+}</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonEC2</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">VpcService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 8 — BEST PRACTICES (last tab)
+═══════════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Network Design</h3>
+  <ul class="checklist">
+    <li>Plan CIDR blocks before creating — you cannot change VPC CIDR later</li>
+    <li>Use <code>10.0.0.0/16</code> for VPC and <code>/24</code> for subnets — standard and easy</li>
+    <li>Always use at least 2 Availability Zones for high availability</li>
+    <li>Separate subnets for each tier: web, app, database</li>
+    <li>Leave IP gaps between subnets — room for future growth</li>
+    <li>Use descriptive names: <code>public-us-east-1a</code>, <code>app-us-east-1a</code></li>
+    <li>Enable VPC Flow Logs from day one — invaluable for debugging</li>
+    <li>Use VPC Endpoints for S3 and DynamoDB — free and faster than NAT</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Default deny — allow only ports that are actually needed</li>
+    <li>Use security group references (not IP ranges) where possible</li>
+    <li>Databases ALWAYS in private subnets — no exceptions</li>
+    <li>Port 22 (SSH) should NEVER be open to 0.0.0.0/0</li>
+    <li>Use Bastion host or AWS Systems Manager Session Manager for SSH access</li>
+    <li>Regularly audit security group rules — remove unused ones</li>
+    <li>Enable GuardDuty for threat detection using VPC flow logs</li>
+  </ul>
+
+  <h3>Cost Optimization</h3>
+  <ul class="checklist">
+    <li>Share one NAT Gateway across AZ for dev/test (one per AZ for prod)</li>
+    <li>Use VPC Endpoints for S3/DynamoDB — eliminates NAT data cost</li>
+    <li>Monitor NAT Gateway bandwidth — unexpected spikes cost money</li>
+    <li>Remove unused Elastic IPs — they cost money even when unattached</li>
+    <li>Use VPC Peering instead of internet for cross-VPC traffic</li>
+    <li>Clean up unused subnets, route tables, and ENIs</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top VPC Mistakes</h4>
+    <p>
+    ❌ <strong>Database in public subnet</strong> — database must always be private<br>
+    ❌ <strong>DB port open to 0.0.0.0/0</strong> — only app SG should reach the DB<br>
+    ❌ <strong>Single AZ deployment</strong> — one AZ failure brings down everything<br>
+    ❌ <strong>Overlapping CIDR ranges</strong> — breaks VPC peering and VPN routing<br>
+    ❌ <strong>No NAT for private instances</strong> — they can't download updates<br>
+    ❌ <strong>Not enabling Flow Logs</strong> — blind when diagnosing network issues<br>
+    ❌ <strong>Using default VPC in production</strong> — poor security defaults, no isolation
+    </p>
+  </div>
+
+  <h3>Quick Start Checklist — Creating Your First VPC</h3>
+  <ul class="checklist">
+    <li>Create VPC with 10.0.0.0/16 CIDR</li>
+    <li>Create 6 subnets (2 public, 2 app private, 2 DB private) across 2 AZs</li>
+    <li>Create Internet Gateway and attach to VPC</li>
+    <li>Create public route table → add route 0.0.0.0/0 → IGW</li>
+    <li>Create NAT Gateway in public subnet with Elastic IP</li>
+    <li>Create private route table → add route 0.0.0.0/0 → NAT GW</li>
+    <li>Associate subnets with correct route tables</li>
+    <li>Create security groups (ALB SG, App SG, DB SG) with proper rules</li>
+    <li>Enable auto-assign public IP on public subnets</li>
+    <li>Enable VPC Flow Logs to CloudWatch</li>
+    <li>Test connectivity end-to-end</li>
+  </ul>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS VPC!</h3>
+    <p>What is VPC · Architecture overview · 8 core components · Subnet design (3-tier multi-AZ) · Security groups vs NACLs · NAT Gateway flow · Full AWS Console setup (every field!) · Complete C# SDK · Best practices & common mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can design secure, scalable AWS networks from scratch! 🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
