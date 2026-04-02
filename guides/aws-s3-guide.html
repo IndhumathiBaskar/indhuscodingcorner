@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS S3 — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+/* FLOW */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-user{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.n-user .flow-node-title{color:var(--blue);}
+.n-s3{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.n-s3 .flow-node-title{color:var(--aws);}
+.n-green{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-surface{background:var(--surface);border:1px solid var(--border);}
+.n-bad{background:var(--red-l);border:1px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+/* CONSOLE STEPS */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aws);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🪣 <span>AWS S3</span> — Complete Guide</h1>
+  <p>Simple Storage Service · Buckets · Objects · Security · Versioning · Lifecycle · C# SDK · Console Setup</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is S3</button>
+  <button class="tab-btn" onclick="T('concepts',this)">Core Concepts</button>
+  <button class="tab-btn" onclick="T('storage',this)">Storage Classes</button>
+  <button class="tab-btn" onclick="T('security',this)">Security & Access</button>
+  <button class="tab-btn" onclick="T('versioning',this)">Versioning</button>
+  <button class="tab-btn" onclick="T('lifecycle',this)">Lifecycle Policies</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 1 — WHAT IS S3
+═══════════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🪣 What is AWS S3?</h2>
+  <p><strong>S3 = Simple Storage Service.</strong> Infinitely scalable object storage in the cloud. Store any file — images, videos, backups, logs, CSVs, HTML pages — and access them from anywhere.</p>
+
+  <div class="tip">
+    <h4>💡 Simple Analogy</h4>
+    <p>S3 is like Google Drive for your applications. A <strong>Bucket</strong> is a folder. An <strong>Object</strong> is a file. You can store unlimited files, each up to 5 TB. You pay only for what you use.</p>
+  </div>
+
+  <!-- FLOW: WHAT S3 DOES -->
+  <h3>How S3 Works — Overview</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Your Application / User</div>
+      <ul class="flow-items">
+        <li>Upload a file (PUT request)</li>
+        <li>Download a file (GET request)</li>
+        <li>Delete a file (DELETE request)</li>
+        <li>List files (LIST request)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-s3">
+      <div class="flow-node-title">🪣 S3 Bucket</div>
+      <ul class="flow-items">
+        <li>Globally unique name (e.g. mycompany-prod-uploads)</li>
+        <li>Tied to a specific AWS region</li>
+        <li>Access controlled by bucket policy + IAM</li>
+        <li>Stores unlimited objects (files)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">📄 S3 Object (File)</div>
+      <ul class="flow-items">
+        <li>Key: the full "path" — e.g. uploads/2025/photo.jpg</li>
+        <li>Value: the actual file bytes</li>
+        <li>Metadata: content-type, custom tags</li>
+        <li>Max size: 5 TB per object</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">🌍 Access via HTTPS</div>
+      <ul class="flow-items">
+        <li>Direct URL: https://bucket.s3.region.amazonaws.com/key</li>
+        <li>Pre-signed URL: time-limited secure access</li>
+        <li>CloudFront CDN: fast global delivery</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What S3 is used for</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🖼️</span><h4>Image / File Uploads</h4><p>User photos, attachments, media</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Backups</h4><p>Database dumps, app backups</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Data Lake</h4><p>Logs, CSVs, Parquet files for analytics</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Static Website</h4><p>Host HTML, CSS, JS directly</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Software Distribution</h4><p>Share builds, Docker layers</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Logs & Audit</h4><p>ALB logs, CloudTrail, VPC flow logs</p></div>
+  </div>
+
+  <h3>S3 Key Facts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📐 Limits</h4>
+      <ul>
+        <li>Max object size: <strong>5 TB</strong></li>
+        <li>Max single upload: 5 GB (use multipart for larger)</li>
+        <li>Unlimited objects per bucket</li>
+        <li>Unlimited buckets per account (default 100)</li>
+        <li>Bucket names: globally unique across ALL AWS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💰 Pricing Model</h4>
+      <ul>
+        <li>Pay per GB stored per month</li>
+        <li>Pay per request (GET, PUT, LIST)</li>
+        <li>Pay per GB data transferred out</li>
+        <li>No charge for inbound transfers</li>
+        <li>No charge for S3 → EC2 same region</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 2 — CORE CONCEPTS
+═══════════════════════════════════════ -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🧩 Core Concepts — Buckets, Objects, Keys</h2>
+
+  <!-- FLOW: BUCKET STRUCTURE -->
+  <h3>S3 Structure Visualised</h3>
+  <div class="flow">
+    <div class="flow-node n-s3">
+      <div class="flow-node-title">🪣 Bucket: mycompany-prod (ap-south-1)</div>
+      <ul class="flow-items">
+        <li>Globally unique name</li>
+        <li>Region-specific (data stays in your region)</li>
+        <li>Holds all your objects (files)</li>
+        <li>One set of permissions, versioning, lifecycle rules</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">📁 "Folder": uploads/</div>
+        <ul class="flow-items">
+          <li>uploads/2025/jan/photo.jpg</li>
+          <li>uploads/2025/feb/doc.pdf</li>
+          <li>(not real folders — just key prefixes)</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">📁 "Folder": backups/</div>
+        <ul class="flow-items">
+          <li>backups/daily/2025-01-01.zip</li>
+          <li>backups/weekly/2025-W01.zip</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">📄 Object: uploads/2025/jan/photo.jpg</div>
+      <ul class="flow-items">
+        <li>Key (full path): <code>uploads/2025/jan/photo.jpg</code></li>
+        <li>Value: actual file bytes (2.4 MB JPEG)</li>
+        <li>ETag: MD5 hash for integrity check</li>
+        <li>Metadata: ContentType=image/jpeg, custom tags</li>
+        <li>Version ID: abc123 (if versioning enabled)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Concepts Explained</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Bucket Name Rules</h4>
+      <p>3–63 characters · lowercase letters, numbers, hyphens only · no underscores · must start with letter or number · globally unique across ALL of AWS · cannot be changed after creation</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Object Key = Full Path</h4>
+      <p>There are no real folders in S3. Everything is a flat key-value store. <code>uploads/2025/photo.jpg</code> is just a key with slashes. The console displays them as folders for convenience.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Eventual Consistency</h4>
+      <p>S3 is strongly consistent for new objects (since 2020). After a PUT, subsequent GETs always return the latest version. After a DELETE, subsequent GETs will return 404.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Pre-Signed URLs</h4>
+      <p>Generate a temporary URL that allows someone to download or upload a specific object — without giving them AWS credentials. Expires after a set time (e.g. 15 minutes). Essential for secure file sharing.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Multipart Upload</h4>
+      <p>For files larger than 100 MB, split into parts and upload in parallel. Faster, more reliable — if one part fails, retry only that part. Required for files over 5 GB. AWS SDK handles this automatically.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 3 — STORAGE CLASSES
+═══════════════════════════════════════ -->
+<div id="tab-storage" class="tab-panel"><div class="section">
+  <h2>📦 Storage Classes — Choose the Right Tier</h2>
+  <p>S3 offers different storage classes with different cost/availability tradeoffs. Choosing the right one can save significant money.</p>
+
+  <!-- FLOW: STORAGE CLASS DECISION -->
+  <h3>How to Choose a Storage Class</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">❓ How often do you access this data?</div>
+      <ul class="flow-items">
+        <li>Frequently? → Standard</li>
+        <li>Monthly? → Standard-IA or One Zone-IA</li>
+        <li>Rarely (once a year)? → Glacier</li>
+        <li>Almost never? → Glacier Deep Archive</li>
+        <li>Unpredictable? → Intelligent-Tiering</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-s3" style="max-width:100%">
+        <div class="flow-node-title">🟠 Standard</div>
+        <ul class="flow-items">
+          <li>Frequent access</li>
+          <li>Highest availability 99.99%</li>
+          <li>Most expensive storage</li>
+          <li>No retrieval fee</li>
+          <li>Use: app files, uploads</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">🟢 Standard-IA</div>
+        <ul class="flow-items">
+          <li>Infrequent access</li>
+          <li>Availability 99.9%</li>
+          <li>30% cheaper storage</li>
+          <li>Retrieval fee per GB</li>
+          <li>Use: backups, logs</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">🔵 Glacier</div>
+        <ul class="flow-items">
+          <li>Archive — rare access</li>
+          <li>Retrieval: 1 min–12 hrs</li>
+          <li>80% cheaper than Standard</li>
+          <li>Min 90-day storage</li>
+          <li>Use: compliance archives</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Full Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Class</th><th>Use Case</th><th>Availability</th><th>Cost</th><th>Retrieval</th></tr>
+    <tr><td><strong>Standard</strong></td><td>Frequent access</td><td>99.99%</td><td>$$$$</td><td>Instant</td></tr>
+    <tr><td><strong>Intelligent-Tiering</strong></td><td>Unknown pattern</td><td>99.9%</td><td>$$$ + monitoring fee</td><td>Instant</td></tr>
+    <tr><td><strong>Standard-IA</strong></td><td>Monthly access</td><td>99.9%</td><td>$$ + retrieval</td><td>Instant</td></tr>
+    <tr><td><strong>One Zone-IA</strong></td><td>Recreatable data</td><td>99.5%</td><td>$ + retrieval</td><td>Instant</td></tr>
+    <tr><td><strong>Glacier Instant</strong></td><td>Quarterly access</td><td>99.9%</td><td>$ + retrieval</td><td>Instant</td></tr>
+    <tr><td><strong>Glacier Flexible</strong></td><td>Yearly access</td><td>99.9%</td><td>¢ + retrieval</td><td>1 min–12 hrs</td></tr>
+    <tr><td><strong>Glacier Deep Archive</strong></td><td>Legal/compliance</td><td>99.9%</td><td>¢¢ + retrieval</td><td>12–48 hrs</td></tr>
+  </table></div>
+
+  <div class="success">
+    <h4>💰 Cost Saving Rule of Thumb</h4>
+    <p>Use Standard for anything your app actively reads. Use Standard-IA for backups older than 30 days. Use Glacier for anything older than 90 days you keep for compliance. Use Lifecycle Policies to move data automatically (next tab).</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 4 — SECURITY & ACCESS
+═══════════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Security & Access Control</h2>
+  <p>S3 has multiple layers of access control. Understanding all of them is critical — misconfigured S3 buckets are one of the most common causes of data breaches.</p>
+
+  <!-- FLOW: ACCESS CONTROL LAYERS -->
+  <h3>How S3 Access is Evaluated</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Request Arrives (GET /bucket/key)</div>
+      <ul class="flow-items">
+        <li>Who is making the request? (IAM identity or anonymous)</li>
+        <li>What action? (GetObject, PutObject, DeleteObject)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-s3">
+      <div class="flow-node-title">🔒 Check 1: Block Public Access Settings</div>
+      <ul class="flow-items">
+        <li>Account-level AND bucket-level settings</li>
+        <li>If "Block all public access" = ON → no public access ever</li>
+        <li>This overrides everything else — the master switch</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Check 2: IAM Policy (for authenticated users)</div>
+      <ul class="flow-items">
+        <li>Does this IAM user/role have s3:GetObject permission?</li>
+        <li>Attached to the user, group, or role</li>
+        <li>Can grant or deny access to specific buckets/keys</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">📋 Check 3: Bucket Policy (resource-based)</div>
+      <ul class="flow-items">
+        <li>JSON policy attached to the bucket itself</li>
+        <li>Can grant access to other AWS accounts, services</li>
+        <li>Can grant public access (if Block Public Access is OFF)</li>
+        <li>Evaluated alongside IAM policy</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">🔑 Check 4: Object ACL (legacy)</div>
+      <ul class="flow-items">
+        <li>Per-object access control list</li>
+        <li>Mostly replaced by bucket policies — avoid using</li>
+        <li>Can make individual objects public (but bucket policy preferred)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Bucket Policy Examples</h3>
+  <div class="code-block">
+    <span class="code-label">Allow specific IAM role to read all objects</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: {
+      <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::123456789:role/MyAppRole"</span>
+    },
+    <span class="str">"Action"</span>: [<span class="str">"s3:GetObject"</span>, <span class="str">"s3:ListBucket"</span>],
+    <span class="str">"Resource"</span>: [
+      <span class="str">"arn:aws:s3:::my-bucket"</span>,
+      <span class="str">"arn:aws:s3:::my-bucket/*"</span>
+    ]
+  }]
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">Enforce HTTPS only (deny HTTP)</span>
+    <pre>{
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+    <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+    <span class="str">"Action"</span>: <span class="str">"s3:*"</span>,
+    <span class="str">"Resource"</span>: [<span class="str">"arn:aws:s3:::my-bucket/*"</span>],
+    <span class="str">"Condition"</span>: {
+      <span class="str">"Bool"</span>: { <span class="str">"aws:SecureTransport"</span>: <span class="str">"false"</span> }
+    }
+  }]
+}</pre>
+  </div>
+
+  <h3>Encryption</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔒 Server-Side Encryption (SSE)</h4>
+      <ul>
+        <li><strong>SSE-S3:</strong> AWS manages keys (free, default)</li>
+        <li><strong>SSE-KMS:</strong> Your KMS key (audit trail, extra cost)</li>
+        <li><strong>SSE-C:</strong> You provide the key per request</li>
+        <li>Enabled per bucket — encrypts all new objects</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔑 Client-Side Encryption</h4>
+      <ul>
+        <li>Encrypt before uploading to S3</li>
+        <li>S3 stores already-encrypted data</li>
+        <li>AWS never sees the plaintext</li>
+        <li>Use when compliance requires it</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="danger">
+    <h4>⚠️ Most common S3 security mistake</h4>
+    <p>
+    ❌ Turning off "Block Public Access" without a specific reason<br>
+    ❌ Bucket policy with <code>"Principal": "*"</code> and no conditions<br>
+    ❌ Storing AWS credentials in S3 (use IAM roles instead!)<br>
+    ❌ Not enabling server-side encryption on sensitive data buckets
+    </p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 5 — VERSIONING
+═══════════════════════════════════════ -->
+<div id="tab-versioning" class="tab-panel"><div class="section">
+  <h2>🔄 Versioning — Keep Every Version</h2>
+  <p>When versioning is enabled, S3 keeps every version of every object. Overwriting or deleting a file doesn't lose the old one — it creates a new version.</p>
+
+  <!-- FLOW: VERSIONING LIFECYCLE -->
+  <h3>How Versioning Works</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📤 Upload: photo.jpg (Version 1)</div>
+      <ul class="flow-items">
+        <li>Key: uploads/photo.jpg</li>
+        <li>Version ID: abc111 ← current version</li>
+        <li>S3 stores this as the latest</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-s3">
+      <div class="flow-node-title">📤 Upload same key again (Version 2)</div>
+      <ul class="flow-items">
+        <li>Key: uploads/photo.jpg (same key!)</li>
+        <li>New Version ID: xyz222 ← now the current</li>
+        <li>Version abc111 still exists — not deleted!</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🗑️ Delete photo.jpg</div>
+      <ul class="flow-items">
+        <li>S3 adds a "Delete Marker" (not a real delete!)</li>
+        <li>GET photo.jpg → 404 (latest is delete marker)</li>
+        <li>GET photo.jpg?versionId=xyz222 → still works! ✅</li>
+        <li>Delete the marker to restore the file</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">🗂️ Version History in S3</div>
+      <ul class="flow-items">
+        <li>Delete marker (current)</li>
+        <li>Version xyz222 (still exists)</li>
+        <li>Version abc111 (still exists)</li>
+        <li>Delete the marker → xyz222 becomes current again</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 When to enable versioning</h4>
+    <p>Enable versioning on any bucket where accidental deletion or overwrites would be a problem — user uploads, config files, important documents. Combine with lifecycle policies to auto-delete old versions after 30 days to control cost.</p>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Versioning and cost</h4>
+    <p>Every version is stored and billed separately. A 10 MB file with 100 versions = 1 GB of storage. Always pair versioning with a lifecycle rule to expire old versions.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 6 — LIFECYCLE POLICIES
+═══════════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>♻️ Lifecycle Policies — Automate Storage Management</h2>
+  <p>Lifecycle rules automatically transition objects between storage classes or delete them after a set time. Set once, runs forever — saves money without manual work.</p>
+
+  <!-- FLOW: LIFECYCLE JOURNEY -->
+  <h3>Typical Lifecycle Journey</h3>
+  <div class="flow">
+    <div class="flow-node n-s3">
+      <div class="flow-node-title">📤 Day 0 — Object Created</div>
+      <ul class="flow-items">
+        <li>Storage class: Standard</li>
+        <li>Actively used by the application</li>
+        <li>Cost: $$$$</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ After 30 days</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">📦 Day 30 — Transition to Standard-IA</div>
+      <ul class="flow-items">
+        <li>Still accessible instantly</li>
+        <li>30% cheaper than Standard</li>
+        <li>Good for backups, old logs</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ After 90 days</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🧊 Day 90 — Transition to Glacier</div>
+      <ul class="flow-items">
+        <li>Retrieval takes minutes to hours</li>
+        <li>80% cheaper than Standard</li>
+        <li>Good for compliance archives</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ After 365 days</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">🗑️ Day 365 — Permanently Deleted</div>
+      <ul class="flow-items">
+        <li>Object and all versions deleted</li>
+        <li>No more storage cost</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common Lifecycle Rule Examples</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📸 User Upload Photos</h4>
+      <ul>
+        <li>Day 0: Standard (active use)</li>
+        <li>Day 90: Standard-IA</li>
+        <li>Day 365: Glacier</li>
+        <li>Day 730: Delete</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💾 Daily Database Backups</h4>
+      <ul>
+        <li>Day 0: Standard</li>
+        <li>Day 30: Standard-IA</li>
+        <li>Day 90: Glacier</li>
+        <li>Day 180: Delete old backups</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📋 Application Logs</h4>
+      <ul>
+        <li>Day 0: Standard</li>
+        <li>Day 7: Standard-IA</li>
+        <li>Day 30: Delete</li>
+        <li>(Logs rarely needed after 30 days)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔢 Versioned Objects</h4>
+      <ul>
+        <li>Keep current version: Standard</li>
+        <li>Previous versions after 30d: IA</li>
+        <li>Previous versions after 90d: Glacier</li>
+        <li>Previous versions after 365d: Delete</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+═══════════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ AWS Console Setup — Every Field Explained</h2>
+  <p>How to create a production-ready S3 bucket from the AWS Console with all the right settings.</p>
+
+  <!-- STEP 1: CREATE BUCKET -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create the Bucket</div>
+      <div class="console-step-path">S3 → Buckets → Create bucket</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Bucket name</div>
+        <div class="console-field-value">mycompany-prod-uploads</div>
+        <div class="console-field-hint">Must be globally unique. Use format: company-environment-purpose. No uppercase, no underscores.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">AWS Region</div>
+        <div class="console-field-value">ap-south-1 (Asia Pacific — Mumbai)</div>
+        <div class="console-field-hint">Choose closest to your users. Data stays in this region. Cannot be changed after creation.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Object Ownership</div>
+        <div class="console-field-value">ACLs disabled (Recommended)</div>
+        <div class="console-field-hint">Use bucket policies instead of ACLs. Simpler and more secure.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: BLOCK PUBLIC ACCESS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Block Public Access Settings</div>
+      <div class="console-step-path">Same page → Block Public Access section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Block all public access</div>
+        <div class="console-field-value">✅ ON (checked) — default</div>
+        <div class="console-field-hint">Keep ON for most buckets. Turn OFF only if hosting a public static website.</div>
+      </div>
+      <div class="console-note">⚠️ If you need to make specific objects public later, use pre-signed URLs instead of turning this off.</div>
+    </div>
+  </div>
+
+  <!-- STEP 3: VERSIONING -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Versioning</div>
+      <div class="console-step-path">Same page → Bucket Versioning section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Bucket Versioning</div>
+        <div class="console-field-value">Enable</div>
+        <div class="console-field-hint">Recommended for user uploads. Protects against accidental deletes. Add lifecycle rule to expire old versions.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: ENCRYPTION -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Default Encryption</div>
+      <div class="console-step-path">Same page → Default encryption section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Encryption type</div>
+        <div class="console-field-value">Server-side encryption with Amazon S3 managed keys (SSE-S3)</div>
+        <div class="console-field-hint">Free. All new objects automatically encrypted. Use SSE-KMS if you need audit trail of key usage.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Bucket Key</div>
+        <div class="console-field-value">Enable</div>
+        <div class="console-field-hint">Reduces KMS API calls (and cost) if using SSE-KMS. Always enable this.</div>
+      </div>
+      <div class="console-note">Click <strong>Create bucket</strong>. Bucket is created instantly.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5: LIFECYCLE RULE -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Create Lifecycle Rule</div>
+      <div class="console-step-path">Bucket → Management tab → Lifecycle rules → Create lifecycle rule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Lifecycle rule name</div>
+        <div class="console-field-value">transition-to-ia-then-glacier</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Rule scope</div>
+        <div class="console-field-value">Apply to all objects in the bucket</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Lifecycle rule actions</div>
+        <div class="console-field-value">✅ Transition current versions of objects between storage classes</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Transitions</div>
+        <div class="console-field-value">Day 30 → Standard-IA</div>
+        <div class="console-field-value">Day 90 → Glacier Flexible Retrieval</div>
+      </div>
+      <div class="console-note">Click <strong>Create rule</strong>. S3 will automatically move objects on schedule.</div>
+    </div>
+  </div>
+
+  <!-- STEP 6: BUCKET POLICY -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Set Bucket Policy</div>
+      <div class="console-step-path">Bucket → Permissions tab → Bucket policy → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Bucket policy (JSON)</div>
+        <div class="console-field-value">Paste your JSON policy here</div>
+        <div class="console-field-hint">Use Policy Generator (button on page) to build policy visually, then copy JSON.</div>
+      </div>
+      <div class="console-note">Best practice: Grant access to specific IAM roles (your app's EC2/ECS role) using Principal ARN — not to "*" (everyone).</div>
+    </div>
+  </div>
+
+  <!-- STEP 7: CORS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <div class="console-step-title">CORS Configuration (if needed)</div>
+      <div class="console-step-path">Bucket → Permissions tab → Cross-origin resource sharing (CORS) → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">CORS rules (JSON)</div>
+        <div class="console-field-value">Required only if browser JavaScript directly uploads to S3</div>
+      </div>
+      <div class="console-note">Example: Allow PUT from your frontend domain for direct browser uploads using pre-signed URLs.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 8 — C# SDK
+═══════════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete S3 Operations</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.S3
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>S3 Service — All Operations</h3>
+  <div class="code-block">
+    <span class="code-label">S3Service.cs</span>
+    <pre><span class="kw">using</span> Amazon.S3;
+<span class="kw">using</span> Amazon.S3.Model;
+
+<span class="kw">public class</span> <span class="tp">S3Service</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonS3</span> _s3;
+    <span class="kw">private const string</span> Bucket = <span class="str">"mycompany-prod-uploads"</span>;
+
+    <span class="kw">public</span> <span class="tp">S3Service</span>(<span class="tp">IAmazonS3</span> s3) => _s3 = s3;
+
+    <span class="cm">// ── UPLOAD a file ─────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">UploadAsync</span>(
+        <span class="tp">string</span> key, <span class="tp">Stream</span> fileStream, <span class="tp">string</span> contentType)
+    {
+        <span class="kw">await</span> _s3.<span class="fn">PutObjectAsync</span>(<span class="kw">new</span> <span class="tp">PutObjectRequest</span>
+        {
+            BucketName  = Bucket,
+            Key         = key,          <span class="cm">// e.g. "uploads/2025/photo.jpg"</span>
+            InputStream = fileStream,
+            ContentType = contentType,  <span class="cm">// e.g. "image/jpeg"</span>
+            ServerSideEncryptionMethod =
+                <span class="tp">ServerSideEncryptionMethod</span>.AES256
+        });
+    }
+
+    <span class="cm">// ── DOWNLOAD a file ───────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Stream</span>&gt; <span class="fn">DownloadAsync</span>(<span class="tp">string</span> key)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _s3.<span class="fn">GetObjectAsync</span>(<span class="kw">new</span> <span class="tp">GetObjectRequest</span>
+        {
+            BucketName = Bucket,
+            Key        = key
+        });
+        <span class="kw">return</span> response.ResponseStream;
+    }
+
+    <span class="cm">// ── DELETE a file ─────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeleteAsync</span>(<span class="tp">string</span> key)
+    {
+        <span class="kw">await</span> _s3.<span class="fn">DeleteObjectAsync</span>(<span class="kw">new</span> <span class="tp">DeleteObjectRequest</span>
+        {
+            BucketName = Bucket,
+            Key        = key
+        });
+    }
+
+    <span class="cm">// ── LIST files with a prefix ──────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">ListFilesAsync</span>(<span class="tp">string</span> prefix)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _s3.<span class="fn">ListObjectsV2Async</span>(
+            <span class="kw">new</span> <span class="tp">ListObjectsV2Request</span>
+        {
+            BucketName = Bucket,
+            Prefix     = prefix <span class="cm">// e.g. "uploads/2025/"</span>
+        });
+        <span class="kw">return</span> response.S3Objects
+            .<span class="fn">Select</span>(o => o.Key)
+            .<span class="fn">ToList</span>();
+    }
+
+    <span class="cm">// ── PRE-SIGNED URL (time-limited access) ──────</span>
+    <span class="kw">public</span> <span class="tp">string</span> <span class="fn">GeneratePresignedUrl</span>(
+        <span class="tp">string</span> key, <span class="tp">int</span> expiryMinutes = <span class="num">15</span>)
+    {
+        <span class="kw">return</span> _s3.<span class="fn">GetPreSignedURL</span>(<span class="kw">new</span> <span class="tp">GetPreSignedUrlRequest</span>
+        {
+            BucketName = Bucket,
+            Key        = key,
+            Expires    = <span class="tp">DateTime</span>.UtcNow
+                .<span class="fn">AddMinutes</span>(expiryMinutes),
+            Protocol   = <span class="tp">Protocol</span>.HTTPS
+        });
+    }
+
+    <span class="cm">// ── PRE-SIGNED URL for UPLOAD (browser upload) ─</span>
+    <span class="kw">public</span> <span class="tp">string</span> <span class="fn">GenerateUploadUrl</span>(
+        <span class="tp">string</span> key, <span class="tp">string</span> contentType, <span class="tp">int</span> expiryMinutes = <span class="num">10</span>)
+    {
+        <span class="kw">return</span> _s3.<span class="fn">GetPreSignedURL</span>(<span class="kw">new</span> <span class="tp">GetPreSignedUrlRequest</span>
+        {
+            BucketName  = Bucket,
+            Key         = key,
+            Verb        = <span class="tp">HttpVerb</span>.PUT,
+            ContentType = contentType,
+            Expires     = <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddMinutes</span>(expiryMinutes)
+        });
+    }
+}</pre>
+  </div>
+
+  <h3>Multipart Upload (Large Files)</h3>
+  <div class="code-block">
+    <pre><span class="kw">using</span> Amazon.S3.Transfer;
+
+<span class="cm">// TransferUtility handles multipart automatically</span>
+<span class="kw">var</span> transferUtility = <span class="kw">new</span> <span class="tp">TransferUtility</span>(_s3);
+
+<span class="kw">await</span> transferUtility.<span class="fn">UploadAsync</span>(<span class="kw">new</span> <span class="tp">TransferUtilityUploadRequest</span>
+{
+    BucketName   = Bucket,
+    Key          = <span class="str">"large-files/video.mp4"</span>,
+    FilePath     = <span class="str">"/tmp/video.mp4"</span>,
+    ContentType  = <span class="str">"video/mp4"</span>,
+    PartSize     = <span class="num">10</span> * <span class="num">1024</span> * <span class="num">1024</span>, <span class="cm">// 10 MB parts</span>
+    ServerSideEncryptionMethod =
+        <span class="tp">ServerSideEncryptionMethod</span>.AES256
+});</pre>
+  </div>
+
+  <h3>Register in DI (Program.cs)</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonS3</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">S3Service</span>&gt;();</pre>
+  </div>
+
+  <h3>appsettings.json</h3>
+  <div class="code-block">
+    <pre>{
+  <span class="str">"AWS"</span>: {
+    <span class="str">"Region"</span>: <span class="str">"ap-south-1"</span>,
+    <span class="str">"Profile"</span>: <span class="str">"default"</span>  <span class="cm">// or use IAM role on EC2/ECS</span>
+  }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 9 — BEST PRACTICES (last)
+═══════════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Always keep "Block Public Access" ON unless you have a specific reason</li>
+    <li>Use IAM roles for EC2/ECS — never hardcode access keys</li>
+    <li>Grant least privilege — only the actions the app actually needs</li>
+    <li>Enable default encryption (SSE-S3) on every bucket</li>
+    <li>Use pre-signed URLs to share files — not public bucket access</li>
+    <li>Enable S3 server access logging for audit trail</li>
+    <li>Use bucket policies with specific Principal ARN (not "*")</li>
+    <li>Enable MFA Delete on critical buckets to prevent accidental deletion</li>
+  </ul>
+
+  <h3>Performance & Cost</h3>
+  <ul class="checklist">
+    <li>Use multipart upload for files larger than 100 MB</li>
+    <li>Use S3 Transfer Acceleration for global users (pays extra)</li>
+    <li>Use CloudFront CDN in front of S3 for frequently accessed static files</li>
+    <li>Use lifecycle rules to auto-transition to cheaper storage classes</li>
+    <li>Enable Intelligent-Tiering for objects with unknown access patterns</li>
+    <li>Use S3 Inventory to find and clean up old/unused objects</li>
+    <li>Prefix your keys randomly (or by date) for performance at scale</li>
+  </ul>
+
+  <h3>Application Design</h3>
+  <ul class="checklist">
+    <li>Never store files on EC2 instance disk — use S3 for all file storage</li>
+    <li>Use pre-signed PUT URLs for browser-direct uploads (no server proxy needed)</li>
+    <li>Store the S3 key in your database, not the full URL (URLs can change)</li>
+    <li>Enable versioning on all buckets that hold user content</li>
+    <li>Add CORS rules only when browsers upload directly to S3</li>
+    <li>Use S3 Event Notifications to trigger Lambda on new uploads</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top S3 Mistakes</h4>
+    <p>
+    ❌ <strong>Public bucket without reason</strong> — data breach waiting to happen<br>
+    ❌ <strong>Hardcoded AWS keys in app code</strong> — use IAM roles instead<br>
+    ❌ <strong>No lifecycle rules + versioning</strong> — storage costs grow forever<br>
+    ❌ <strong>Storing full S3 URL in DB</strong> — breaks if region or bucket changes<br>
+    ❌ <strong>Uploading all files with same key prefix</strong> — performance bottleneck<br>
+    ❌ <strong>No server access logging</strong> — blind during security incidents<br>
+    ❌ <strong>Forgetting to set ContentType</strong> — browser downloads instead of displays
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS S3!</h3>
+    <p>What is S3 · Buckets & Objects · Storage classes · Security layers & bucket policies · Versioning · Lifecycle policies · Full AWS Console setup (every field!) · Complete C# SDK · Pre-signed URLs · Multipart upload · Best practices</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can build secure, cost-efficient file storage for any application! 🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
