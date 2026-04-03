@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS IAM — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+/* FLOW */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-user{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.n-user .flow-node-title{color:var(--blue);}
+.n-aws{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-green{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-surface{background:var(--surface);border:1px solid var(--border);}
+.n-bad{background:var(--red-l);border:1px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+/* CONSOLE STEPS */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aws);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔐 <span>AWS IAM</span> — Complete Guide</h1>
+  <p>Identity and Access Management · Users · Roles · Policies · MFA · Console Setup · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is IAM</button>
+  <button class="tab-btn" onclick="T('components',this)">Core Components</button>
+  <button class="tab-btn" onclick="T('policies',this)">Policies</button>
+  <button class="tab-btn" onclick="T('roles',this)">Roles</button>
+  <button class="tab-btn" onclick="T('auth',this)">How Auth Works</button>
+  <button class="tab-btn" onclick="T('mfa',this)">MFA & Security</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 1 — WHAT IS IAM
+═══════════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🔐 What is AWS IAM?</h2>
+  <p><strong>IAM = Identity and Access Management.</strong> The AWS service that controls WHO can do WHAT in your AWS account. Every API call in AWS goes through IAM first.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>IAM is like a company's access card system. Each employee (User) gets a card with specific permissions. Contractors (Roles) get temporary badges. The security rules (Policies) define which doors each card can open. The front desk (AWS) checks every card before letting anyone through.</p>
+  </div>
+
+  <!-- FLOW: WITHOUT vs WITH IAM -->
+  <h3>Without IAM vs With IAM</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Without IAM (root only)</div>
+        <ul class="flow-items">
+          <li>One account with full power</li>
+          <li>If credentials leaked — everything gone</li>
+          <li>Can't track who did what</li>
+          <li>Everyone shares the same access</li>
+          <li>No audit trail</li>
+        </ul>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;color:var(--border2);font-size:1.2rem;">→</div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ With IAM</div>
+        <ul class="flow-items">
+          <li>Each person has their own identity</li>
+          <li>Least privilege — only what they need</li>
+          <li>Full audit trail (CloudTrail)</li>
+          <li>Temporary credentials for apps</li>
+          <li>MFA for critical operations</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: IAM OVERVIEW -->
+  <h3>IAM Overview — How It All Connects</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Identity (Who are you?)</div>
+      <ul class="flow-items">
+        <li>IAM User — a person with username + password</li>
+        <li>IAM Role — assumed by services, apps, or users temporarily</li>
+        <li>IAM Group — collection of users with shared policies</li>
+        <li>Federated Identity — SSO / external identity provider</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📋 Policy (What can you do?)</div>
+      <ul class="flow-items">
+        <li>JSON document defining Allow / Deny rules</li>
+        <li>Specifies: Actions, Resources, Conditions</li>
+        <li>Attached to Users, Groups, or Roles</li>
+        <li>AWS evaluates all attached policies together</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔒 Authorization Decision</div>
+      <ul class="flow-items">
+        <li>Explicit Deny anywhere? → DENIED immediately</li>
+        <li>Explicit Allow found? → ALLOWED</li>
+        <li>No match? → DENIED (default deny)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ AWS Service Action Executed</div>
+      <ul class="flow-items">
+        <li>s3:GetObject, ec2:StartInstances, rds:CreateDBInstance...</li>
+        <li>Logged in CloudTrail for full audit trail</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What IAM gives you</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">👥</span><h4>User Management</h4><p>Individual identities per person</p></div>
+    <div class="icon-item"><span class="emoji">🎭</span><h4>Roles</h4><p>Temporary credentials for apps</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Fine-grained Policies</h4><p>Control any AWS action</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>MFA</h4><p>Extra security layer</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Audit Trail</h4><p>Every action logged</p></div>
+    <div class="icon-item"><span class="emoji">🆓</span><h4>Free Service</h4><p>No extra cost to use IAM</p></div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 2 — CORE COMPONENTS
+═══════════════════════════════════════ -->
+<div id="tab-components" class="tab-panel"><div class="section">
+  <h2>🧩 Core Components — Users, Groups, Roles</h2>
+
+  <!-- FLOW: COMPONENT RELATIONSHIPS -->
+  <h3>How Components Relate</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-user" style="max-width:100%">
+        <div class="flow-node-title">👤 IAM User</div>
+        <ul class="flow-items">
+          <li>A real person in your team</li>
+          <li>Has username + password</li>
+          <li>Optional: access keys for CLI/SDK</li>
+          <li>Gets policies directly or via group</li>
+        </ul>
+      </div>
+      <div class="flow-node n-surface" style="max-width:100%">
+        <div class="flow-node-title">👥 IAM Group</div>
+        <ul class="flow-items">
+          <li>Collection of IAM Users</li>
+          <li>Attach policies to group → all users inherit</li>
+          <li>e.g. Developers, DBAdmins, ReadOnly</li>
+          <li>A user can be in multiple groups</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-aws" style="max-width:100%">
+        <div class="flow-node-title">🎭 IAM Role</div>
+        <ul class="flow-items">
+          <li>Like a user — but for services/apps</li>
+          <li>No password — temporary credentials</li>
+          <li>Assumed by EC2, ECS, Lambda, etc.</li>
+          <li>Also for cross-account access</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">📋 IAM Policy</div>
+        <ul class="flow-items">
+          <li>JSON rules: Allow/Deny actions</li>
+          <li>Attached to users, groups, or roles</li>
+          <li>AWS managed or customer managed</li>
+          <li>Can be reused across identities</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>IAM User — Deep Dive</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Console Access</h4>
+      <p>Username + password for AWS Management Console login.<br>
+      URL: <code>https://[account-id].signin.aws.amazon.com/console</code><br>
+      Enforce password policies — min length, complexity, rotation.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Programmatic Access (Access Keys)</h4>
+      <p>Access Key ID + Secret Access Key for CLI/SDK use.<br>
+      <strong>Best practice:</strong> Use roles instead of access keys wherever possible.<br>
+      Never commit access keys to Git — rotate immediately if exposed.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>IAM Group — Smart Team Management</h4>
+      <p>Create groups like: <code>Developers</code>, <code>DBAdmins</code>, <code>ReadOnly</code>, <code>DevOps</code><br>
+      Attach policies to groups — not individual users.<br>
+      New team member joins → add to group → they instantly get correct access.</p>
+    </div>
+  </div>
+
+  <h3>IAM Role vs IAM User — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Use IAM User</th><th>Use IAM Role</th></tr>
+    <tr><td>Human developer needs console access</td><td>✅</td><td>—</td></tr>
+    <tr><td>EC2 app needs to read from S3</td><td>❌ Never</td><td>✅ Instance Role</td></tr>
+    <tr><td>ECS task needs DynamoDB access</td><td>❌ Never</td><td>✅ Task Role</td></tr>
+    <tr><td>Lambda function needs SES access</td><td>❌ Never</td><td>✅ Execution Role</td></tr>
+    <tr><td>CI/CD pipeline needs to deploy</td><td>⚠️ Avoid</td><td>✅ Deployment Role</td></tr>
+    <tr><td>Cross-account access</td><td>❌</td><td>✅ Cross-account Role</td></tr>
+    <tr><td>Third party audit access</td><td>—</td><td>✅ Role with External ID</td></tr>
+  </table></div>
+
+  <div class="danger">
+    <h4>⚠️ Root Account Rule</h4>
+    <p>Never use the root account for day-to-day work. Create an IAM admin user immediately after creating your AWS account. Enable MFA on root. Lock away the root credentials — treat them like a nuclear launch key.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 3 — POLICIES
+═══════════════════════════════════════ -->
+<div id="tab-policies" class="tab-panel"><div class="section">
+  <h2>📋 IAM Policies — Who Can Do What</h2>
+  <p>Policies are JSON documents that define what actions are allowed or denied on which AWS resources. They are the heart of IAM.</p>
+
+  <h3>Policy Structure</h3>
+  <div class="code-block">
+    <span class="code-label">Policy JSON structure</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,      <span class="cm">// always this date string</span>
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowS3ReadOnly"</span>, <span class="cm">// optional label</span>
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,         <span class="cm">// Allow or Deny</span>
+      <span class="str">"Action"</span>: [             <span class="cm">// what actions?</span>
+        <span class="str">"s3:GetObject"</span>,
+        <span class="str">"s3:ListBucket"</span>
+      ],
+      <span class="str">"Resource"</span>: [           <span class="cm">// which resources?</span>
+        <span class="str">"arn:aws:s3:::my-bucket"</span>,
+        <span class="str">"arn:aws:s3:::my-bucket/*"</span>
+      ],
+      <span class="str">"Condition"</span>: {          <span class="cm">// optional extra conditions</span>
+        <span class="str">"StringEquals"</span>: {
+          <span class="str">"s3:prefix"</span>: <span class="str">"uploads/"</span>
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+
+  <!-- FLOW: POLICY EVALUATION -->
+  <h3>How Policy Evaluation Works</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📨 API Request Arrives</div>
+      <ul class="flow-items">
+        <li>Identity: arn:aws:iam::123:user/indhu</li>
+        <li>Action: s3:DeleteObject</li>
+        <li>Resource: arn:aws:s3:::prod-bucket/file.pdf</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">🔴 Check 1: Any explicit DENY?</div>
+      <ul class="flow-items">
+        <li>Scan ALL attached policies for Deny statements</li>
+        <li>If ANY policy denies this action → STOP → DENIED</li>
+        <li>Explicit Deny ALWAYS wins — overrides everything</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🟠 Check 2: Any explicit ALLOW?</div>
+      <ul class="flow-items">
+        <li>Scan all policies for matching Allow</li>
+        <li>Must match: Action + Resource + Conditions all together</li>
+        <li>If found → ALLOWED ✅</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">🔴 Default: DENIED</div>
+      <ul class="flow-items">
+        <li>No explicit Allow found = DENIED</li>
+        <li>AWS is deny-by-default — never guess-allows</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Policy Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🏢 AWS Managed Policies</h4>
+      <ul>
+        <li>Pre-built by AWS — ready to use</li>
+        <li>Examples: AmazonS3ReadOnlyAccess, AdministratorAccess</li>
+        <li>AWS updates them when new services launch</li>
+        <li>Good starting point — but often too broad</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✍️ Customer Managed Policies</h4>
+      <ul>
+        <li>You create and manage them</li>
+        <li>Precise — grant exactly what's needed</li>
+        <li>Reusable across users, groups, roles</li>
+        <li>Version controlled — rollback if needed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📌 Inline Policies</h4>
+      <ul>
+        <li>Embedded directly in a user, group, or role</li>
+        <li>Deleted when the identity is deleted</li>
+        <li>Not reusable — use sparingly</li>
+        <li>Good for one-off specific permissions</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏢 Service Control Policies (SCP)</h4>
+      <ul>
+        <li>For AWS Organizations — account-level guardrails</li>
+        <li>Even admins can't exceed SCP limits</li>
+        <li>e.g. "No one can create resources outside us-east-1"</li>
+        <li>Don't grant permissions — they restrict them</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Real Policy Examples</h3>
+  <div class="code-block">
+    <span class="code-label">Allow ECS task to read from S3 and write to DynamoDB</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"ReadFromS3"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: [<span class="str">"s3:GetObject"</span>, <span class="str">"s3:ListBucket"</span>],
+      <span class="str">"Resource"</span>: [
+        <span class="str">"arn:aws:s3:::mycompany-prod-uploads"</span>,
+        <span class="str">"arn:aws:s3:::mycompany-prod-uploads/*"</span>
+      ]
+    },
+    {
+      <span class="str">"Sid"</span>: <span class="str">"WriteToDynamo"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: [
+        <span class="str">"dynamodb:PutItem"</span>,
+        <span class="str">"dynamodb:UpdateItem"</span>,
+        <span class="str">"dynamodb:GetItem"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"arn:aws:dynamodb:ap-south-1:123:table/Orders"</span>
+    }
+  ]
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 4 — ROLES
+═══════════════════════════════════════ -->
+<div id="tab-roles" class="tab-panel"><div class="section">
+  <h2>🎭 IAM Roles — The Right Way for Apps</h2>
+  <p>Roles are the most important IAM concept for applications. Instead of hardcoding credentials, your app assumes a role and gets temporary credentials automatically.</p>
+
+  <!-- FLOW: HOW ROLES WORK -->
+  <h3>How Role Assumption Works</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🖥️ EC2 Instance / ECS Task starts</div>
+      <ul class="flow-items">
+        <li>Has an IAM Role attached (e.g. my-app-role)</li>
+        <li>AWS automatically provides credentials via metadata service</li>
+        <li>URL: http://169.254.169.254/latest/meta-data/iam/security-credentials/</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔑 AWS STS (Security Token Service)</div>
+      <ul class="flow-items">
+        <li>Issues temporary credentials for the role</li>
+        <li>AccessKeyId + SecretAccessKey + SessionToken</li>
+        <li>Expires in 1–12 hours (auto-rotated!)</li>
+        <li>Your app SDK picks these up automatically</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ App Makes AWS API Call</div>
+      <ul class="flow-items">
+        <li>SDK uses the temp credentials automatically</li>
+        <li>No hardcoded keys — ever!</li>
+        <li>If credentials expire, SDK auto-refreshes them</li>
+        <li>Credentials never stored anywhere insecure</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Trust Policy — Who Can Assume This Role</h3>
+  <p>Every role has two policies: a <strong>Trust Policy</strong> (who can assume it) and a <strong>Permission Policy</strong> (what they can do once they assume it).</p>
+
+  <div class="code-block">
+    <span class="code-label">Trust Policy — Allow EC2 to assume this role</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: {
+      <span class="str">"Service"</span>: <span class="str">"ec2.amazonaws.com"</span>
+    },
+    <span class="str">"Action"</span>: <span class="str">"sts:AssumeRole"</span>
+  }]
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">Trust Policy — Allow ECS tasks to assume this role</span>
+    <pre>{
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: {
+      <span class="str">"Service"</span>: <span class="str">"ecs-tasks.amazonaws.com"</span>
+    },
+    <span class="str">"Action"</span>: <span class="str">"sts:AssumeRole"</span>
+  }]
+}</pre>
+  </div>
+
+  <h3>Common Role Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🖥️ EC2 Instance Role</h4>
+      <ul>
+        <li>Attached to EC2 instance profile</li>
+        <li>App code uses SDK — credentials auto-provided</li>
+        <li>Rotate automatically every few hours</li>
+        <li>No access keys needed — ever</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🐳 ECS Task Role</h4>
+      <ul>
+        <li>Per-task permissions (not per host)</li>
+        <li>Different tasks can have different roles</li>
+        <li>Defined in task definition</li>
+        <li>Best practice for microservices</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>λ Lambda Execution Role</h4>
+      <ul>
+        <li>Lambda needs this to run at all</li>
+        <li>Must include CloudWatch Logs permission</li>
+        <li>Add permissions for what Lambda accesses</li>
+        <li>One role per Lambda function</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔁 Cross-Account Role</h4>
+      <ul>
+        <li>Account A assumes role in Account B</li>
+        <li>Trust policy allows Account A's ARN</li>
+        <li>Add External ID for 3rd-party security</li>
+        <li>Used for auditors, partners, CI/CD</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 5 — HOW AUTH WORKS
+═══════════════════════════════════════ -->
+<div id="tab-auth" class="tab-panel"><div class="section">
+  <h2>🔒 How IAM Authentication Works End to End</h2>
+
+  <!-- FLOW: HUMAN LOGIN -->
+  <h3>Human User — Console Login Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Developer opens AWS Console</div>
+      <ul class="flow-items">
+        <li>Goes to: https://[account].signin.aws.amazon.com/console</li>
+        <li>Enters: IAM username + password</li>
+        <li>If MFA enabled: enters 6-digit code from app</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔐 AWS IAM Validates Credentials</div>
+      <ul class="flow-items">
+        <li>Checks username + password hash</li>
+        <li>Verifies MFA token (if enabled)</li>
+        <li>Creates a session token (valid 12 hours)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Console Access Granted</div>
+      <ul class="flow-items">
+        <li>Developer sees only services their policies allow</li>
+        <li>Every action they take is checked against IAM policies</li>
+        <li>Every action is logged in CloudTrail</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: APP/SERVICE AUTH -->
+  <h3>Application / Service — SDK Auth Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🖥️ ECS Task starts with IAM Role attached</div>
+      <ul class="flow-items">
+        <li>Role: my-api-task-role</li>
+        <li>Permissions: read S3, write DynamoDB</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔑 AWS SDK requests credentials from metadata</div>
+      <ul class="flow-items">
+        <li>SDK auto-calls: http://169.254.169.254/... (ECS credential endpoint)</li>
+        <li>Gets: AccessKeyId + SecretKey + SessionToken + Expiry</li>
+        <li>Caches them in memory until near expiry</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-surface">
+      <div class="flow-node-title">📤 App calls AWS API (e.g. S3 GetObject)</div>
+      <ul class="flow-items">
+        <li>SDK signs the request with temp credentials (SigV4 signing)</li>
+        <li>Sends signed HTTP request to AWS</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ AWS validates + executes</div>
+      <ul class="flow-items">
+        <li>Verifies signature using credentials</li>
+        <li>Checks IAM policies allow this action</li>
+        <li>Executes S3 GetObject → returns file</li>
+        <li>Logs to CloudTrail</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Credential Provider Chain (SDK Order)</h3>
+  <p>The AWS SDK checks for credentials in this order — first match wins:</p>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Environment Variables</h4>
+      <p><code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_SESSION_TOKEN</code></p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>AWS Credentials File</h4>
+      <p><code>~/.aws/credentials</code> — set by <code>aws configure</code> command on local machine</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>AWS Config File</h4>
+      <p><code>~/.aws/config</code> — profile-based configuration</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>EC2/ECS Instance Metadata (Roles) ← Production</h4>
+      <p>Automatically provided when an IAM Role is attached. No configuration needed. This is the correct approach in production.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 6 — MFA & SECURITY
+═══════════════════════════════════════ -->
+<div id="tab-mfa" class="tab-panel"><div class="section">
+  <h2>🛡️ MFA & Account Security</h2>
+  <p>Multi-Factor Authentication (MFA) adds a second layer of security beyond username and password. Even if your password is stolen, without the MFA device the attacker cannot log in.</p>
+
+  <!-- FLOW: MFA LOGIN -->
+  <h3>MFA Login Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 User enters username + password</div>
+      <ul class="flow-items">
+        <li>First factor — something you KNOW</li>
+        <li>Password submitted to AWS</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📱 AWS prompts for MFA code</div>
+      <ul class="flow-items">
+        <li>User opens Authenticator app (Google Auth, Authy)</li>
+        <li>Gets a 6-digit time-based code (changes every 30s)</li>
+        <li>Second factor — something you HAVE</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Access Granted</div>
+      <ul class="flow-items">
+        <li>Both factors validated successfully</li>
+        <li>Even if password leaked → still protected</li>
+        <li>Attacker would need your physical device too</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>MFA Device Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📱 Virtual MFA (Most Common)</h4>
+      <ul>
+        <li>App on your phone: Google Authenticator, Authy, Microsoft Authenticator</li>
+        <li>Generates 6-digit TOTP code every 30 seconds</li>
+        <li>Free — no hardware needed</li>
+        <li>Recommended for all IAM users</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔑 Hardware MFA (FIDO/U2F)</h4>
+      <ul>
+        <li>Physical USB key: YubiKey</li>
+        <li>Tap the key to authenticate</li>
+        <li>Phishing-resistant — best security</li>
+        <li>Recommended for root and admin accounts</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Enforce MFA with Policy Condition</h3>
+  <div class="code-block">
+    <span class="code-label">Deny all actions if MFA not used</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Sid"</span>: <span class="str">"DenyWithoutMFA"</span>,
+    <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+    <span class="str">"Action"</span>: <span class="str">"*"</span>,
+    <span class="str">"Resource"</span>: <span class="str">"*"</span>,
+    <span class="str">"Condition"</span>: {
+      <span class="str">"BoolIfExists"</span>: {
+        <span class="str">"aws:MultiFactorAuthPresent"</span>: <span class="str">"false"</span>
+      }
+    }
+  }]
+}</pre>
+  </div>
+
+  <h3>Access Key Security</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Access Key Best Practices</h4>
+      <ul>
+        <li>Never commit keys to Git — ever</li>
+        <li>Rotate keys every 90 days</li>
+        <li>Use IAM roles instead wherever possible</li>
+        <li>Delete unused keys immediately</li>
+        <li>Use separate keys per environment</li>
+        <li>Enable GuardDuty to detect key misuse</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚨 If Keys Are Exposed</h4>
+      <ul>
+        <li>Deactivate the key IMMEDIATELY</li>
+        <li>Check CloudTrail for what was accessed</li>
+        <li>Rotate all affected credentials</li>
+        <li>Review resources for unauthorized changes</li>
+        <li>Delete the compromised key</li>
+        <li>Create new key from scratch</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+═══════════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ AWS Console Setup — Step by Step</h2>
+  <p>How to set up IAM properly for a new AWS account — every field, every setting explained.</p>
+
+  <!-- STEP 1: ENABLE MFA ON ROOT -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Enable MFA on Root Account (Do First!)</div>
+      <div class="console-step-path">Account menu → Security credentials → MFA</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">MFA Device type</div>
+        <div class="console-field-value">Authenticator app (Virtual MFA)</div>
+        <div class="console-field-hint">Install Google Authenticator or Authy on your phone first.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Device name</div>
+        <div class="console-field-value">root-mfa-device</div>
+      </div>
+      <div class="console-note">Scan the QR code with your authenticator app. Enter two consecutive 6-digit codes to confirm. Store the backup codes safely — losing root MFA is very painful to recover from.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: CREATE ADMIN USER -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create Your IAM Admin User</div>
+      <div class="console-step-path">IAM → Users → Create user</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">User name</div>
+        <div class="console-field-value">indhu-admin</div>
+        <div class="console-field-hint">Use real name — this creates accountability in audit logs.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Provide user access to the AWS Management Console</div>
+        <div class="console-field-value">✅ Checked</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Console password</div>
+        <div class="console-field-value">Custom password (set a strong one)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Users must create a new password at next sign-in</div>
+        <div class="console-field-value">☐ Unchecked (since you're setting for yourself)</div>
+      </div>
+      <div class="console-note">Next → Set permissions → Attach policies directly → search and select <strong>AdministratorAccess</strong> → Create user. From now on, log in as this IAM user — not root.</div>
+    </div>
+  </div>
+
+  <!-- STEP 3: CREATE A GROUP -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Create Developer Group</div>
+      <div class="console-step-path">IAM → User groups → Create group</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">User group name</div>
+        <div class="console-field-value">Developers</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Attach permissions policies</div>
+        <div class="console-field-value">AmazonS3ReadOnlyAccess</div>
+        <div class="console-field-value">AmazonDynamoDBFullAccess</div>
+        <div class="console-field-value">CloudWatchReadOnlyAccess</div>
+        <div class="console-field-hint">Choose policies that match what developers actually need — not AdministratorAccess.</div>
+      </div>
+      <div class="console-note">Click <strong>Create group</strong>. Now add users to this group instead of attaching policies to individual users.</div>
+    </div>
+  </div>
+
+  <!-- STEP 4: CREATE ROLE FOR ECS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create IAM Role for ECS Task</div>
+      <div class="console-step-path">IAM → Roles → Create role</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Trusted entity type</div>
+        <div class="console-field-value">AWS service</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Use case</div>
+        <div class="console-field-value">Elastic Container Service → Elastic Container Service Task</div>
+        <div class="console-field-hint">This sets the trust policy to allow ECS tasks to assume this role.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Permissions policies</div>
+        <div class="console-field-value">AmazonS3ReadOnlyAccess (or your custom policy)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Role name</div>
+        <div class="console-field-value">my-api-ecs-task-role</div>
+        <div class="console-field-hint">Use descriptive names: [app]-[environment]-[service]-role</div>
+      </div>
+      <div class="console-note">Click <strong>Create role</strong>. Now reference this role ARN in your ECS task definition under "Task role".</div>
+    </div>
+  </div>
+
+  <!-- STEP 5: CREATE CUSTOM POLICY -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Create Custom Policy (Least Privilege)</div>
+      <div class="console-step-path">IAM → Policies → Create policy</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Policy editor</div>
+        <div class="console-field-value">JSON (switch to JSON tab for precision)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Policy name</div>
+        <div class="console-field-value">MyAppS3ReadDynamoWrite</div>
+        <div class="console-field-hint">Describe exactly what the policy does — be specific.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Description</div>
+        <div class="console-field-value">Allows read from prod-uploads S3 and write to Orders DynamoDB table</div>
+      </div>
+      <div class="console-note">Use the Visual editor to build policies if you're not comfortable with JSON — it has dropdowns for service, actions, and resources.</div>
+    </div>
+  </div>
+
+  <!-- STEP 6: ENABLE MFA FOR IAM USER -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Enable MFA for Your IAM User</div>
+      <div class="console-step-path">IAM → Users → [your user] → Security credentials → MFA</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Assign MFA device → Device name</div>
+        <div class="console-field-value">indhu-admin-mfa</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">MFA device type</div>
+        <div class="console-field-value">Authenticator app</div>
+        <div class="console-field-hint">Scan QR code with Google Authenticator / Authy. Enter two consecutive codes to confirm setup.</div>
+      </div>
+      <div class="console-note">Enable MFA for ALL IAM users who have console access — especially admins.</div>
+    </div>
+  </div>
+
+  <!-- STEP 7: SET PASSWORD POLICY -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <div class="console-step-title">Set Account Password Policy</div>
+      <div class="console-step-path">IAM → Account settings → Password policy → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Minimum password length</div>
+        <div class="console-field-value">14</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Require uppercase, lowercase, numbers, symbols</div>
+        <div class="console-field-value">✅ All checked</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Password expiry (days)</div>
+        <div class="console-field-value">90</div>
+        <div class="console-field-hint">Forces password rotation every 90 days — good security hygiene.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Prevent password reuse</div>
+        <div class="console-field-value">5 (remember last 5 passwords)</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 8 — C# SDK
+═══════════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — IAM Operations</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.IdentityManagement
+Install-Package AWSSDK.SecurityToken
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>IAM Service — Create Users, Roles, Policies</h3>
+  <div class="code-block">
+    <span class="code-label">IamService.cs</span>
+    <pre><span class="kw">using</span> Amazon.IdentityManagement;
+<span class="kw">using</span> Amazon.IdentityManagement.Model;
+
+<span class="kw">public class</span> <span class="tp">IamService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonIdentityManagementService</span> _iam;
+
+    <span class="kw">public</span> <span class="tp">IamService</span>(<span class="tp">IAmazonIdentityManagementService</span> iam)
+        => _iam = iam;
+
+    <span class="cm">// ── Create IAM User ───────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateUserAsync</span>(<span class="tp">string</span> userName)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _iam.<span class="fn">CreateUserAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateUserRequest</span> { UserName = userName });
+        <span class="kw">return</span> response.User.Arn;
+    }
+
+    <span class="cm">// ── Attach Policy to User ─────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">AttachPolicyToUserAsync</span>(
+        <span class="tp">string</span> userName, <span class="tp">string</span> policyArn)
+    {
+        <span class="kw">await</span> _iam.<span class="fn">AttachUserPolicyAsync</span>(
+            <span class="kw">new</span> <span class="tp">AttachUserPolicyRequest</span>
+        {
+            UserName  = userName,
+            PolicyArn = policyArn
+            <span class="cm">// e.g. "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"</span>
+        });
+    }
+
+    <span class="cm">// ── Create IAM Role ───────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateRoleAsync</span>(
+        <span class="tp">string</span> roleName, <span class="tp">string</span> trustPolicyJson)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _iam.<span class="fn">CreateRoleAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateRoleRequest</span>
+        {
+            RoleName                 = roleName,
+            AssumeRolePolicyDocument = trustPolicyJson
+        });
+        <span class="kw">return</span> response.Role.Arn;
+    }
+
+    <span class="cm">// ── Create Custom Policy ──────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreatePolicyAsync</span>(
+        <span class="tp">string</span> policyName, <span class="tp">string</span> policyJson)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _iam.<span class="fn">CreatePolicyAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreatePolicyRequest</span>
+        {
+            PolicyName     = policyName,
+            PolicyDocument = policyJson,
+            Description    = <span class="str">"Custom policy for my application"</span>
+        });
+        <span class="kw">return</span> response.Policy.Arn;
+    }
+
+    <span class="cm">// ── Add User to Group ─────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">AddUserToGroupAsync</span>(
+        <span class="tp">string</span> userName, <span class="tp">string</span> groupName)
+    {
+        <span class="kw">await</span> _iam.<span class="fn">AddUserToGroupAsync</span>(
+            <span class="kw">new</span> <span class="tp">AddUserToGroupRequest</span>
+        {
+            UserName  = userName,
+            GroupName = groupName
+        });
+    }
+
+    <span class="cm">// ── List all Users ────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">ListUsersAsync</span>()
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _iam.<span class="fn">ListUsersAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListUsersRequest</span>());
+        <span class="kw">return</span> response.Users
+            .<span class="fn">Select</span>(u => u.UserName)
+            .<span class="fn">ToList</span>();
+    }
+}</pre>
+  </div>
+
+  <h3>Assume a Role (STS — Cross-Account)</h3>
+  <div class="code-block">
+    <span class="code-label">StsService.cs</span>
+    <pre><span class="kw">using</span> Amazon.SecurityToken;
+<span class="kw">using</span> Amazon.SecurityToken.Model;
+
+<span class="kw">public class</span> <span class="tp">StsService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSecurityTokenService</span> _sts;
+
+    <span class="kw">public</span> <span class="tp">StsService</span>(<span class="tp">IAmazonSecurityTokenService</span> sts)
+        => _sts = sts;
+
+    <span class="cm">// Assume a role and get temp credentials</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Credentials</span>&gt; <span class="fn">AssumeRoleAsync</span>(
+        <span class="tp">string</span> roleArn, <span class="tp">string</span> sessionName)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _sts.<span class="fn">AssumeRoleAsync</span>(
+            <span class="kw">new</span> <span class="tp">AssumeRoleRequest</span>
+        {
+            RoleArn         = roleArn,
+            RoleSessionName = sessionName,
+            DurationSeconds = <span class="num">3600</span> <span class="cm">// 1 hour</span>
+        });
+        <span class="kw">return</span> response.Credentials;
+        <span class="cm">// Returns: AccessKeyId, SecretAccessKey,</span>
+        <span class="cm">//          SessionToken, Expiration</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI (Program.cs)</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonIdentityManagementService</span>&gt;();
+builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonSecurityTokenService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">IamService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">StsService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+═══════════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Users & Access</h3>
+  <ul class="checklist">
+    <li>Never use the root account for daily work — create IAM admin user immediately</li>
+    <li>Enable MFA on root account AND all IAM users with console access</li>
+    <li>One IAM user per person — never share credentials</li>
+    <li>Use IAM Groups to manage permissions — not individual user policies</li>
+    <li>Delete or deactivate unused IAM users promptly</li>
+    <li>Review IAM users and access keys quarterly</li>
+  </ul>
+
+  <h3>Roles & Applications</h3>
+  <ul class="checklist">
+    <li>Always use IAM Roles for EC2, ECS, Lambda — never access keys in app code</li>
+    <li>Use separate roles per service — don't share one role for all apps</li>
+    <li>Use ECS Task Role (not Execution Role) for app permissions to AWS services</li>
+    <li>Set the shortest practical session duration on roles</li>
+    <li>Use resource-based policies alongside IAM for extra security</li>
+  </ul>
+
+  <h3>Policies — Least Privilege</h3>
+  <ul class="checklist">
+    <li>Start with minimal permissions — add more only when actually needed</li>
+    <li>Specify exact resource ARNs — avoid using wildcard "*" for resources</li>
+    <li>Never use AdministratorAccess for application roles</li>
+    <li>Use AWS managed policies as starting point — refine to custom</li>
+    <li>Use IAM Access Analyzer to find over-permissive policies</li>
+    <li>Test policies with IAM Policy Simulator before deploying</li>
+  </ul>
+
+  <h3>Access Keys</h3>
+  <ul class="checklist">
+    <li>Never hardcode access keys in code — use roles or environment variables</li>
+    <li>Never commit access keys to Git — use git-secrets or pre-commit hooks</li>
+    <li>Rotate access keys every 90 days</li>
+    <li>Delete unused access keys immediately — not just deactivate</li>
+    <li>Use AWS Secrets Manager for any credentials your app needs</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top IAM Mistakes</h4>
+    <p>
+    ❌ <strong>Using root account for daily work</strong> — one breach = everything lost<br>
+    ❌ <strong>Hardcoding access keys in application code</strong> — use IAM roles<br>
+    ❌ <strong>Committing AWS credentials to Git</strong> — GitHub scans for this, attackers do too<br>
+    ❌ <strong>Wildcard resources in policies</strong> — <code>"Resource": "*"</code> is too broad<br>
+    ❌ <strong>Sharing IAM users between people</strong> — no individual accountability<br>
+    ❌ <strong>Not enabling MFA</strong> — password leaks are common<br>
+    ❌ <strong>Not rotating access keys</strong> — old keys increase breach window<br>
+    ❌ <strong>One role for all microservices</strong> — blast radius too large if compromised
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS IAM!</h3>
+    <p>What is IAM · Users, Groups, Roles · Policy structure & evaluation · Role assumption & STS · How auth works end-to-end · MFA & account security · Full AWS Console setup (every field!) · Complete C# SDK · Least privilege best practices</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can secure your AWS account and build applications the right way! 🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
