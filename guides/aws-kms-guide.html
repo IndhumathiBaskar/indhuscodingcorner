@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS KMS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+.header{background:linear-gradient(135deg,#faf9f7,#f0ebe3,#e8dfd4);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+/* FLOW */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-user{background:var(--blue-l);border:1px solid rgba(42,90,154,.25);}
+.n-user .flow-node-title{color:var(--blue);}
+.n-aws{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-green{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-surface{background:var(--surface);border:1px solid var(--border);}
+.n-bad{background:var(--red-l);border:1px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+/* CONSOLE STEPS */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aws);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🔑 <span>AWS KMS</span> — Complete Guide</h1>
+  <p>Key Management Service · CMKs · Encryption · Key Policies · Key Rotation · Console Setup · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is KMS</button>
+  <button class="tab-btn" onclick="T('keys',this)">Key Types</button>
+  <button class="tab-btn" onclick="T('encrypt',this)">Encrypt & Decrypt</button>
+  <button class="tab-btn" onclick="T('envelope',this)">Envelope Encryption</button>
+  <button class="tab-btn" onclick="T('policy',this)">Key Policies</button>
+  <button class="tab-btn" onclick="T('rotation',this)">Key Rotation</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 1 — WHAT IS KMS
+═══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🔑 What is AWS KMS?</h2>
+  <p><strong>KMS = Key Management Service.</strong> A fully managed AWS service that creates, stores, and controls cryptographic keys used to encrypt your data. You never see the raw key material — KMS keeps it locked away and only uses it when you explicitly request an operation.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>KMS is like a bank vault for your encryption keys. You don't carry the vault key with you — you go to the bank (KMS), prove who you are (IAM), and the bank performs the operation (encrypt/decrypt) for you. The key never leaves the vault.</p>
+  </div>
+
+  <!-- FLOW: WITHOUT vs WITH KMS -->
+  <h3>Without KMS vs With KMS</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Without KMS</div>
+        <ul class="flow-items">
+          <li>You manage encryption keys yourself</li>
+          <li>Keys stored alongside data — risky!</li>
+          <li>Key rotation is manual and error-prone</li>
+          <li>No audit trail — who used the key?</li>
+          <li>If key is lost → data unrecoverable</li>
+          <li>Compliance nightmare</li>
+        </ul>
+      </div>
+      <div style="display:flex;align-items:center;padding:0 6px;color:var(--border2);font-size:1.2rem;">→</div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ With KMS</div>
+        <ul class="flow-items">
+          <li>AWS stores keys in HSMs (tamper-proof)</li>
+          <li>Keys never leave KMS unencrypted</li>
+          <li>Automatic annual key rotation</li>
+          <li>Every use logged in CloudTrail</li>
+          <li>IAM controls who can use which key</li>
+          <li>Meets FIPS 140-2 compliance</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: KMS OVERVIEW -->
+  <h3>KMS Architecture Overview</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 Your Application / AWS Service</div>
+      <ul class="flow-items">
+        <li>Wants to encrypt or decrypt data</li>
+        <li>Calls KMS API with the key ARN</li>
+        <li>Must have IAM permission to use the key</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔑 AWS KMS Service</div>
+      <ul class="flow-items">
+        <li>Validates caller identity via IAM</li>
+        <li>Checks key policy allows this operation</li>
+        <li>Performs encrypt/decrypt inside HSM</li>
+        <li>Logs every API call to CloudTrail</li>
+        <li>Returns result — key never exposed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🏛️ Hardware Security Module (HSM)</div>
+      <ul class="flow-items">
+        <li>Physical tamper-proof hardware</li>
+        <li>Keys exist ONLY inside the HSM</li>
+        <li>Validated to FIPS 140-2 Level 3</li>
+        <li>Cannot be exported or accessed directly</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Encrypted / Decrypted Data Returned</div>
+      <ul class="flow-items">
+        <li>Ciphertext (encrypted) or plaintext (decrypted) returned</li>
+        <li>Audit record written to CloudTrail automatically</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What KMS integrates with</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🪣</span><h4>S3</h4><p>SSE-KMS for object encryption</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>RDS</h4><p>Database encryption at rest</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>DynamoDB</h4><p>Table encryption</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Secrets Manager</h4><p>Encrypt secrets at rest</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>EBS</h4><p>Disk encryption for EC2</p></div>
+    <div class="icon-item"><span class="emoji">🐳</span><h4>ECR</h4><p>Container image encryption</p></div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 2 — KEY TYPES
+═══════════════════════════════════ -->
+<div id="tab-keys" class="tab-panel"><div class="section">
+  <h2>🗝️ KMS Key Types — Choosing the Right One</h2>
+  <p>KMS offers different key types depending on who controls the key material and how it's managed.</p>
+
+  <!-- FLOW: KEY TYPES OVERVIEW -->
+  <h3>Key Types at a Glance</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-aws" style="max-width:100%">
+        <div class="flow-node-title">🟠 AWS Managed Keys</div>
+        <ul class="flow-items">
+          <li>Created and managed by AWS services</li>
+          <li>Free to use (no monthly charge)</li>
+          <li>Named: aws/s3, aws/rds, aws/ebs</li>
+          <li>Auto-rotated every year</li>
+          <li>Cannot customize key policy</li>
+          <li>Good for: quick start, basic needs</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">🔵 Customer Managed Keys (CMK)</div>
+        <ul class="flow-items">
+          <li>You create and control them</li>
+          <li>$1/month per key + API charges</li>
+          <li>Full key policy control</li>
+          <li>Cross-account sharing possible</li>
+          <li>Custom rotation schedule</li>
+          <li>Good for: production, compliance</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🟢 AWS CloudHSM Keys (Your Own HSM)</div>
+      <ul class="flow-items">
+        <li>You own a dedicated physical HSM in AWS</li>
+        <li>Full control over key material</li>
+        <li>Most expensive — dedicated hardware</li>
+        <li>Required for: government, highest compliance needs</li>
+        <li>Good for: FIPS 140-2 Level 3 strict requirements</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>CMK Key Material Origin</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🏭 KMS Generated (Default)</h4>
+      <ul>
+        <li>AWS generates key material inside HSM</li>
+        <li>Key never leaves AWS infrastructure</li>
+        <li>Simplest option — recommended for most</li>
+        <li>Supports automatic rotation</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📥 External Key Material (BYOK)</h4>
+      <ul>
+        <li>You generate key material yourself</li>
+        <li>Import it into KMS</li>
+        <li>BYOK = Bring Your Own Key</li>
+        <li>You can expire/delete it anytime</li>
+        <li>No automatic rotation supported</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔧 Asymmetric Keys</h4>
+      <ul>
+        <li>RSA or ECC key pairs</li>
+        <li>Public key can be downloaded</li>
+        <li>Private key never leaves KMS</li>
+        <li>Use for: digital signing, TLS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔁 Symmetric Keys (AES-256)</h4>
+      <ul>
+        <li>Default — same key encrypts and decrypts</li>
+        <li>Used by all AWS service integrations</li>
+        <li>Never leaves KMS — most secure</li>
+        <li>Use for: data encryption at rest</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>AWS Managed vs Customer Managed — Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>AWS Managed Key</th><th>Customer Managed Key</th></tr>
+    <tr><td><strong>Cost</strong></td><td>Free</td><td>$1/month + API charges</td></tr>
+    <tr><td><strong>Created by</strong></td><td>AWS automatically</td><td>You (manually)</td></tr>
+    <tr><td><strong>Key policy</strong></td><td>AWS controlled</td><td>You control fully</td></tr>
+    <tr><td><strong>Cross-account</strong></td><td>❌ No</td><td>✅ Yes</td></tr>
+    <tr><td><strong>Rotation</strong></td><td>Every 3 years (auto)</td><td>Every year (auto or manual)</td></tr>
+    <tr><td><strong>Audit</strong></td><td>CloudTrail</td><td>CloudTrail</td></tr>
+    <tr><td><strong>Delete</strong></td><td>Cannot delete manually</td><td>Schedule deletion (7–30 days)</td></tr>
+    <tr><td><strong>Best for</strong></td><td>Simple encryption, quick start</td><td>Production, compliance, sharing</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 3 — ENCRYPT & DECRYPT
+═══════════════════════════════════ -->
+<div id="tab-encrypt" class="tab-panel"><div class="section">
+  <h2>🔒 Encrypt & Decrypt — How It Works</h2>
+  <p>KMS uses symmetric AES-256 encryption by default. You never handle the key — you hand data to KMS and get back ciphertext (or plaintext).</p>
+
+  <!-- FLOW: ENCRYPT -->
+  <h3>Encryption Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📤 App wants to encrypt sensitive data</div>
+      <ul class="flow-items">
+        <li>Plaintext: "CardNumber=4111111111111111"</li>
+        <li>Calls KMS Encrypt API with key ARN</li>
+        <li>Max direct encrypt size: 4 KB</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔑 KMS validates and encrypts</div>
+      <ul class="flow-items">
+        <li>Checks caller has kms:Encrypt permission</li>
+        <li>Retrieves CMK from HSM</li>
+        <li>Encrypts data inside HSM using AES-256-GCM</li>
+        <li>Logs operation to CloudTrail</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Ciphertext returned to app</div>
+      <ul class="flow-items">
+        <li>Base64-encoded ciphertext blob</li>
+        <li>Contains: encrypted data + key ARN metadata</li>
+        <li>Store this in database — safe even if stolen</li>
+        <li>Only KMS with the right key can decrypt it</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: DECRYPT -->
+  <h3>Decryption Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📥 App needs to read sensitive data</div>
+      <ul class="flow-items">
+        <li>Retrieves ciphertext blob from database</li>
+        <li>Calls KMS Decrypt API (no key ARN needed — it's embedded in blob)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔑 KMS validates and decrypts</div>
+      <ul class="flow-items">
+        <li>Checks caller has kms:Decrypt permission</li>
+        <li>Extracts key ARN from ciphertext metadata</li>
+        <li>Retrieves CMK from HSM</li>
+        <li>Decrypts data inside HSM</li>
+        <li>Logs to CloudTrail</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Plaintext returned to app</div>
+      <ul class="flow-items">
+        <li>"CardNumber=4111111111111111" returned</li>
+        <li>Plaintext only lives in memory — never persisted</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Encryption Context — Extra Security Layer</h3>
+  <div class="card">
+    <h4>🔏 What is Encryption Context?</h4>
+    <p>An optional key-value map you provide during encryption. KMS cryptographically binds this context to the ciphertext. Decryption MUST provide the exact same context — or it fails.<br><br>
+    Example: <code>{ "userId": "usr_123", "purpose": "payment" }</code><br><br>
+    <strong>Why use it:</strong> Prevents a ciphertext from user A being decrypted in the context of user B. Adds binding between encrypted data and its intended use. Also included in CloudTrail logs for richer audit trails.</p>
+  </div>
+
+  <div class="tip">
+    <h4>💡 4 KB limit — what about larger data?</h4>
+    <p>KMS direct encrypt/decrypt is limited to 4 KB. For larger data (files, documents, blobs), use <strong>Envelope Encryption</strong> — the next tab explains this pattern in detail.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 4 — ENVELOPE ENCRYPTION
+═══════════════════════════════════ -->
+<div id="tab-envelope" class="tab-panel"><div class="section">
+  <h2>📦 Envelope Encryption — For Large Data</h2>
+  <p>Envelope encryption solves the 4 KB KMS limit. Instead of encrypting data with KMS directly, you generate a <strong>Data Encryption Key (DEK)</strong> from KMS, use it to encrypt your large data locally, then let KMS encrypt the DEK itself.</p>
+
+  <div class="tip">
+    <h4>💡 Analogy</h4>
+    <p>Put your letter (data) in a lockbox (DEK encryption). Then put the lockbox key inside a bank vault (KMS encrypts the DEK). To read your letter: open the vault (KMS decrypt), get the lockbox key (plaintext DEK), open the lockbox (decrypt data).</p>
+  </div>
+
+  <!-- FLOW: ENVELOPE ENCRYPT -->
+  <h3>Envelope Encryption — Encrypt Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📤 App wants to encrypt a 50 MB file</div>
+      <ul class="flow-items">
+        <li>File is too large for direct KMS encrypt (4 KB limit)</li>
+        <li>Step 1: Call KMS GenerateDataKey with your CMK ARN</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔑 KMS generates a Data Encryption Key (DEK)</div>
+      <ul class="flow-items">
+        <li>Returns TWO things:</li>
+        <li>① Plaintext DEK — use this to encrypt your file</li>
+        <li>② Encrypted DEK — store this alongside your file</li>
+        <li>Logs the GenerateDataKey call to CloudTrail</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">⚡ App encrypts file locally (fast — no KMS call)</div>
+      <ul class="flow-items">
+        <li>Use plaintext DEK to encrypt 50 MB file with AES-256</li>
+        <li>This happens in memory — no network call to KMS</li>
+        <li>Immediately discard plaintext DEK from memory</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Store two things</div>
+      <ul class="flow-items">
+        <li>Encrypted file → S3 or database</li>
+        <li>Encrypted DEK → alongside the encrypted file</li>
+        <li>Plaintext DEK → GONE from memory (never stored!)</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: ENVELOPE DECRYPT -->
+  <h3>Envelope Encryption — Decrypt Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📥 App needs to read the 50 MB file</div>
+      <ul class="flow-items">
+        <li>Retrieves encrypted file + encrypted DEK from storage</li>
+        <li>Step 1: Call KMS Decrypt with the encrypted DEK</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔑 KMS decrypts the DEK</div>
+      <ul class="flow-items">
+        <li>Checks caller has kms:Decrypt permission</li>
+        <li>Returns plaintext DEK (just the key — tiny!)</li>
+        <li>Only ONE KMS API call regardless of file size</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">⚡ App decrypts file locally</div>
+      <ul class="flow-items">
+        <li>Use plaintext DEK to decrypt file in memory</li>
+        <li>Fast — no more KMS calls needed</li>
+        <li>Discard plaintext DEK after use</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Plaintext file available in memory</div>
+      <ul class="flow-items">
+        <li>50 MB file decrypted and usable</li>
+        <li>Only 1 KMS API call regardless of file size</li>
+        <li>Massively more efficient than direct KMS encryption</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Why Envelope Encryption is the Right Pattern</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Benefits</h4>
+      <ul>
+        <li>No size limit — encrypt files of any size</li>
+        <li>Fast — local encryption after getting DEK</li>
+        <li>Low KMS cost — one call per file operation</li>
+        <li>Key isolation — each file has its own DEK</li>
+        <li>CMK never touches your data directly</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔐 Security Properties</h4>
+      <ul>
+        <li>CMK compromise doesn't expose all data</li>
+        <li>Each file encrypted with unique DEK</li>
+        <li>Plaintext DEK only exists in memory briefly</li>
+        <li>Re-encrypting just means new DEK per file</li>
+        <li>AWS SDK Encryption Client uses this automatically</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 5 — KEY POLICIES
+═══════════════════════════════════ -->
+<div id="tab-policy" class="tab-panel"><div class="section">
+  <h2>📋 Key Policies — Controlling Key Access</h2>
+  <p>Every KMS key has a key policy — a JSON document that controls who can use and manage the key. Unlike IAM policies, a key policy is <strong>required</strong> — without one, nobody can use the key.</p>
+
+  <!-- FLOW: POLICY EVALUATION -->
+  <h3>KMS Access Control — Two Layers</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📨 Request: ECS task calls kms:Decrypt</div>
+      <ul class="flow-items">
+        <li>Identity: arn:aws:iam::123:role/my-api-task-role</li>
+        <li>Action: kms:Decrypt on key arn:aws:kms:...</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔒 Check 1: Key Policy</div>
+      <ul class="flow-items">
+        <li>Does the key policy allow this identity?</li>
+        <li>Key policy MUST explicitly allow — no default inheritance</li>
+        <li>If key policy denies → BLOCKED immediately</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">✅ Check 2: IAM Policy</div>
+      <ul class="flow-items">
+        <li>Does the role's IAM policy allow kms:Decrypt?</li>
+        <li>Both key policy AND IAM must allow — not just one</li>
+        <li>If both allow → operation proceeds</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🔑 Decryption performed inside HSM</div>
+      <ul class="flow-items">
+        <li>Logged to CloudTrail</li>
+        <li>Plaintext returned to caller</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Policy Examples</h3>
+  <div class="code-block">
+    <span class="code-label">Default key policy — enable IAM to manage access</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"EnableRootAccountAccess"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::123456789:root"</span>
+      },
+      <span class="str">"Action"</span>: <span class="str">"kms:*"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>
+    },
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowAppRoleToUseKey"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::123456789:role/my-api-task-role"</span>
+      },
+      <span class="str">"Action"</span>: [
+        <span class="str">"kms:Decrypt"</span>,
+        <span class="str">"kms:GenerateDataKey"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>Key Policy Permissions — Who Gets What</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔧 Key Administrators</h4>
+      <ul>
+        <li>kms:Create*, kms:Describe*</li>
+        <li>kms:Enable*, kms:Disable*</li>
+        <li>kms:Get*, kms:Delete*, kms:List*</li>
+        <li>kms:Put*, kms:Update*, kms:Revoke*</li>
+        <li>kms:ScheduleKeyDeletion, kms:CancelKeyDeletion</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Key Users (App Roles)</h4>
+      <ul>
+        <li>kms:Encrypt</li>
+        <li>kms:Decrypt</li>
+        <li>kms:ReEncrypt*</li>
+        <li>kms:GenerateDataKey*</li>
+        <li>kms:DescribeKey</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Key Policy vs IAM Policy — Both Required</h4>
+    <p>Unlike S3 or other resources where IAM alone can grant access, KMS requires BOTH the key policy AND IAM policy to allow an operation. If either one denies — access is blocked. This two-factor authorization is a feature, not a bug.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 6 — KEY ROTATION
+═══════════════════════════════════ -->
+<div id="tab-rotation" class="tab-panel"><div class="section">
+  <h2>🔄 Key Rotation — Staying Secure Over Time</h2>
+  <p>Key rotation means periodically replacing the underlying cryptographic material of a key. Old data remains decryptable — KMS keeps old key versions internally.</p>
+
+  <!-- FLOW: HOW ROTATION WORKS -->
+  <h3>How Automatic Rotation Works</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📅 Year 1 — Key Created</div>
+      <ul class="flow-items">
+        <li>CMK arn:aws:kms:...:key/abc-123 created</li>
+        <li>Key material version 1 (KM-v1) inside HSM</li>
+        <li>All new encryptions use KM-v1</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ 365 days later</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔄 Year 2 — Automatic Rotation</div>
+      <ul class="flow-items">
+        <li>AWS generates new key material: KM-v2</li>
+        <li>Key ARN stays the same — no app changes needed!</li>
+        <li>KM-v1 is retained inside HSM (not deleted)</li>
+        <li>All new encryptions use KM-v2</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Old data still decryptable</div>
+      <ul class="flow-items">
+        <li>Ciphertext encrypted with KM-v1 → decrypts using KM-v1</li>
+        <li>Ciphertext encrypted with KM-v2 → decrypts using KM-v2</li>
+        <li>KMS automatically uses the right version</li>
+        <li>Your app code needs zero changes</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Rotation Options</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔁 Automatic Rotation (Recommended)</h4>
+      <ul>
+        <li>Enable once — runs every year forever</li>
+        <li>AWS manages everything — zero effort</li>
+        <li>Key ARN never changes</li>
+        <li>Only for AWS-generated symmetric CMKs</li>
+        <li>Old versions kept for decryption</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✋ Manual Rotation</h4>
+      <ul>
+        <li>Create a brand new CMK</li>
+        <li>Update all references to use new ARN</li>
+        <li>Re-encrypt data with new key</li>
+        <li>Required for: asymmetric keys, BYOK</li>
+        <li>More control, more work</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Automatic Rotation</th><th>Manual Rotation</th></tr>
+    <tr><td><strong>Frequency</strong></td><td>Every 365 days</td><td>Whenever you need</td></tr>
+    <tr><td><strong>Key ARN</strong></td><td>Stays the same ✅</td><td>New ARN (update apps)</td></tr>
+    <tr><td><strong>Old data</strong></td><td>Automatically decryptable</td><td>Must re-encrypt or keep old key</td></tr>
+    <tr><td><strong>Effort</strong></td><td>Zero — set and forget</td><td>Manual process</td></tr>
+    <tr><td><strong>Supported</strong></td><td>Symmetric CMK only</td><td>All key types</td></tr>
+    <tr><td><strong>Recommended</strong></td><td>✅ Yes — always enable</td><td>Only when necessary</td></tr>
+  </table></div>
+
+  <div class="success">
+    <h4>✅ Best Practice</h4>
+    <p>Always enable automatic rotation on all Customer Managed Keys. It costs nothing extra, requires no code changes, and reduces the risk of key compromise over time. It's a one-checkbox decision with no downside.</p>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+═══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ AWS Console Setup — Every Field Explained</h2>
+  <p>How to create and configure a production-ready KMS key from the AWS Console.</p>
+
+  <!-- STEP 1: CREATE CMK -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create a Customer Managed Key (CMK)</div>
+      <div class="console-step-path">KMS → Customer managed keys → Create key</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Key type</div>
+        <div class="console-field-value">Symmetric</div>
+        <div class="console-field-hint">Use Symmetric (AES-256) for data encryption. Choose Asymmetric only for digital signing or TLS.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Key usage</div>
+        <div class="console-field-value">Encrypt and decrypt</div>
+        <div class="console-field-hint">Select "Sign and verify" only for asymmetric keys used in signing workflows.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Key material origin</div>
+        <div class="console-field-value">KMS (AWS generates the key material)</div>
+        <div class="console-field-hint">Choose "External" only if compliance requires BYOK. For most apps, KMS-generated is simpler and safer.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Regionality</div>
+        <div class="console-field-value">Single-Region key</div>
+        <div class="console-field-hint">Use Multi-Region only if you need to decrypt in multiple regions (e.g. disaster recovery).</div>
+      </div>
+      <div class="console-note">Click <strong>Next</strong> to proceed to labels.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2: LABELS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Add Labels (Alias & Description)</div>
+      <div class="console-step-path">Same wizard → Add labels step</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Alias</div>
+        <div class="console-field-value">alias/myapp-prod-encryption</div>
+        <div class="console-field-hint">Always add an alias — it's much easier to reference than the full key ARN. Format: alias/[app]-[env]-[purpose]</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Description</div>
+        <div class="console-field-value">Encrypts sensitive customer data for MyApp production environment</div>
+        <div class="console-field-hint">Be specific — helps when reviewing keys months later.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Tags</div>
+        <div class="console-field-value">Environment=production | App=myapp | Team=backend</div>
+        <div class="console-field-hint">Tags help with cost allocation and finding keys in the console.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: KEY ADMINISTRATORS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Set Key Administrators</div>
+      <div class="console-step-path">Same wizard → Define key administrative permissions</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Key administrators</div>
+        <div class="console-field-value">Search and select your IAM admin user or role</div>
+        <div class="console-field-hint">Administrators can manage the key (update policy, schedule deletion) but cannot use it to encrypt/decrypt by default.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Allow key administrators to delete this key</div>
+        <div class="console-field-value">☐ Unchecked (recommended for production)</div>
+        <div class="console-field-hint">Only check this if you explicitly need admins to be able to schedule key deletion. Leaving it unchecked prevents accidental deletion.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: KEY USERS -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Set Key Users (App Access)</div>
+      <div class="console-step-path">Same wizard → Define key usage permissions</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Key users</div>
+        <div class="console-field-value">Search and select your app's IAM role (e.g. my-api-ecs-task-role)</div>
+        <div class="console-field-hint">Key users can encrypt/decrypt with this key. These are your application roles — not human users.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Other AWS accounts</div>
+        <div class="console-field-value">Leave blank unless cross-account access is needed</div>
+        <div class="console-field-hint">Enter account ID only if another AWS account needs to use this key (e.g. a partner or separate dev account).</div>
+      </div>
+      <div class="console-note">Click <strong>Next</strong> → Review the generated key policy JSON → Click <strong>Finish</strong>. Key is created immediately.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5: ENABLE ROTATION -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable Automatic Key Rotation</div>
+      <div class="console-step-path">KMS → Customer managed keys → [your key] → Key rotation tab</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Automatically rotate this KMS key every year</div>
+        <div class="console-field-value">✅ Checked (Enable)</div>
+        <div class="console-field-hint">Always enable this for production keys. Free, automatic, and requires no code changes.</div>
+      </div>
+      <div class="console-note">Click <strong>Save</strong>. Rotation will happen automatically on the key's anniversary each year.</div>
+    </div>
+  </div>
+
+  <!-- STEP 6: USE WITH S3 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Use Your Key with S3 (SSE-KMS)</div>
+      <div class="console-step-path">S3 → Bucket → Properties → Default encryption → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Server-side encryption</div>
+        <div class="console-field-value">Enable</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption type</div>
+        <div class="console-field-value">AWS Key Management Service key (SSE-KMS)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">AWS KMS key</div>
+        <div class="console-field-value">Choose from your AWS KMS keys → select alias/myapp-prod-encryption</div>
+        <div class="console-field-hint">All new objects uploaded to this bucket will be encrypted using your CMK automatically.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Bucket Key</div>
+        <div class="console-field-value">Enable</div>
+        <div class="console-field-hint">Reduces KMS API calls and cost by caching the key at bucket level. Always enable this.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 8 — C# SDK
+═══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete KMS Operations</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.KeyManagementService
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>KMS Service — Encrypt, Decrypt, Data Keys</h3>
+  <div class="code-block">
+    <span class="code-label">KmsService.cs</span>
+    <pre><span class="kw">using</span> Amazon.KeyManagementService;
+<span class="kw">using</span> Amazon.KeyManagementService.Model;
+
+<span class="kw">public class</span> <span class="tp">KmsService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonKeyManagementService</span> _kms;
+    <span class="kw">private const string</span> KeyId = <span class="str">"alias/myapp-prod-encryption"</span>;
+
+    <span class="kw">public</span> <span class="tp">KmsService</span>(<span class="tp">IAmazonKeyManagementService</span> kms)
+        => _kms = kms;
+
+    <span class="cm">// ── Direct Encrypt (max 4 KB) ─────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">EncryptAsync</span>(
+        <span class="tp">string</span> plaintext,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? context = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> plaintextBytes = <span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(plaintext);
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _kms.<span class="fn">EncryptAsync</span>(<span class="kw">new</span> <span class="tp">EncryptRequest</span>
+        {
+            KeyId             = KeyId,
+            Plaintext         = <span class="kw">new</span> <span class="tp">MemoryStream</span>(plaintextBytes),
+            EncryptionContext = context  <span class="cm">// optional extra binding</span>
+        });
+
+        <span class="kw">return</span> <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(
+            response.CiphertextBlob.<span class="fn">ToArray</span>());
+    }
+
+    <span class="cm">// ── Direct Decrypt ────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">DecryptAsync</span>(
+        <span class="tp">string</span> ciphertextBase64,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? context = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> ciphertextBytes = <span class="tp">Convert</span>.<span class="fn">FromBase64String</span>(ciphertextBase64);
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _kms.<span class="fn">DecryptAsync</span>(<span class="kw">new</span> <span class="tp">DecryptRequest</span>
+        {
+            CiphertextBlob    = <span class="kw">new</span> <span class="tp">MemoryStream</span>(ciphertextBytes),
+            EncryptionContext = context
+        });
+
+        <span class="kw">return</span> <span class="tp">Encoding</span>.UTF8.<span class="fn">GetString</span>(
+            response.Plaintext.<span class="fn">ToArray</span>());
+    }
+
+    <span class="cm">// ── Generate Data Key (Envelope Encryption) ───</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;(<span class="tp">byte</span>[] PlaintextKey, <span class="tp">byte</span>[] EncryptedKey)&gt;
+        <span class="fn">GenerateDataKeyAsync</span>()
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _kms.<span class="fn">GenerateDataKeyAsync</span>(
+            <span class="kw">new</span> <span class="tp">GenerateDataKeyRequest</span>
+        {
+            KeyId   = KeyId,
+            KeySpec = <span class="tp">DataKeySpec</span>.AES_256
+        });
+
+        <span class="kw">return</span> (
+            response.Plaintext.<span class="fn">ToArray</span>(),     <span class="cm">// use → then discard!</span>
+            response.CiphertextBlob.<span class="fn">ToArray</span>() <span class="cm">// store with your data</span>
+        );
+    }
+}</pre>
+  </div>
+
+  <h3>Envelope Encryption — Full Example</h3>
+  <div class="code-block">
+    <span class="code-label">EnvelopeEncryptionExample.cs</span>
+    <pre><span class="kw">using</span> System.Security.Cryptography;
+
+<span class="kw">public class</span> <span class="tp">EnvelopeEncryptionService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">KmsService</span> _kms;
+
+    <span class="kw">public</span> <span class="tp">EnvelopeEncryptionService</span>(<span class="tp">KmsService</span> kms)
+        => _kms = kms;
+
+    <span class="cm">// ENCRYPT a large payload</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">EncryptedPayload</span>&gt; <span class="fn">EncryptLargeAsync</span>(
+        <span class="tp">byte</span>[] data)
+    {
+        <span class="cm">// Step 1: Get data key from KMS</span>
+        <span class="kw">var</span> (plaintextDek, encryptedDek) =
+            <span class="kw">await</span> _kms.<span class="fn">GenerateDataKeyAsync</span>();
+
+        <span class="kw">try</span>
+        {
+            <span class="cm">// Step 2: Encrypt data locally using DEK</span>
+            <span class="kw">using var</span> aes = <span class="tp">Aes</span>.<span class="fn">Create</span>();
+            aes.Key = plaintextDek;
+            aes.GenerateIV();
+
+            <span class="kw">using var</span> ms = <span class="kw">new</span> <span class="tp">MemoryStream</span>();
+            <span class="kw">using</span> (<span class="kw">var</span> cs = <span class="kw">new</span> <span class="tp">CryptoStream</span>(
+                ms, aes.<span class="fn">CreateEncryptor</span>(), <span class="tp">CryptoStreamMode</span>.Write))
+            {
+                <span class="kw">await</span> cs.<span class="fn">WriteAsync</span>(data);
+            }
+
+            <span class="kw">return new</span> <span class="tp">EncryptedPayload</span>
+            {
+                EncryptedData = ms.<span class="fn">ToArray</span>(),
+                EncryptedDek  = encryptedDek,  <span class="cm">// store this!</span>
+                Iv            = aes.IV
+            };
+        }
+        <span class="kw">finally</span>
+        {
+            <span class="cm">// Step 3: Always clear plaintext DEK!</span>
+            <span class="tp">Array</span>.<span class="fn">Clear</span>(plaintextDek, <span class="num">0</span>, plaintextDek.Length);
+        }
+    }
+
+    <span class="cm">// DECRYPT a large payload</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">byte</span>[]&gt; <span class="fn">DecryptLargeAsync</span>(
+        <span class="tp">EncryptedPayload</span> payload)
+    {
+        <span class="cm">// Step 1: Ask KMS to decrypt the DEK</span>
+        <span class="kw">var</span> decryptResp = <span class="kw">await</span> _kms.<span class="fn">DecryptAsync</span>(
+            <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(payload.EncryptedDek));
+        <span class="kw">var</span> plaintextDek = <span class="tp">Convert</span>.<span class="fn">FromBase64String</span>(decryptResp);
+
+        <span class="kw">try</span>
+        {
+            <span class="cm">// Step 2: Decrypt data locally</span>
+            <span class="kw">using var</span> aes = <span class="tp">Aes</span>.<span class="fn">Create</span>();
+            aes.Key = plaintextDek;
+            aes.IV  = payload.Iv;
+
+            <span class="kw">using var</span> ms = <span class="kw">new</span> <span class="tp">MemoryStream</span>(payload.EncryptedData);
+            <span class="kw">using var</span> cs = <span class="kw">new</span> <span class="tp">CryptoStream</span>(
+                ms, aes.<span class="fn">CreateDecryptor</span>(), <span class="tp">CryptoStreamMode</span>.Read);
+            <span class="kw">using var</span> result = <span class="kw">new</span> <span class="tp">MemoryStream</span>();
+            <span class="kw">await</span> cs.<span class="fn">CopyToAsync</span>(result);
+            <span class="kw">return</span> result.<span class="fn">ToArray</span>();
+        }
+        <span class="kw">finally</span>
+        {
+            <span class="tp">Array</span>.<span class="fn">Clear</span>(plaintextDek, <span class="num">0</span>, plaintextDek.Length);
+        }
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">EncryptedPayload</span>(
+    <span class="tp">byte</span>[] EncryptedData,
+    <span class="tp">byte</span>[] EncryptedDek,
+    <span class="tp">byte</span>[] Iv);</pre>
+  </div>
+
+  <h3>Register in DI (Program.cs)</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonKeyManagementService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">KmsService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">EnvelopeEncryptionService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ═══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+═══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Key Management</h3>
+  <ul class="checklist">
+    <li>Always enable automatic rotation on all Customer Managed Keys</li>
+    <li>Use one CMK per application and environment — don't share keys across apps</li>
+    <li>Always add a meaningful alias — never reference just the key ARN in code</li>
+    <li>Add descriptive tags: App, Environment, Team, Purpose</li>
+    <li>Set the deletion waiting period to 30 days — gives time to recover mistakes</li>
+    <li>Never delete a key unless you're certain no data is encrypted with it</li>
+  </ul>
+
+  <h3>Access Control</h3>
+  <ul class="checklist">
+    <li>Use separate key administrators and key users — not the same role</li>
+    <li>Grant kms:Decrypt and kms:GenerateDataKey only — not kms:*</li>
+    <li>Always use encryption context for sensitive operations</li>
+    <li>Use resource-based key policies rather than IAM policies alone</li>
+    <li>Regularly review key policies — remove unused principals</li>
+    <li>Never grant kms:* to application roles — admin permission in app is wrong</li>
+  </ul>
+
+  <h3>Encryption Patterns</h3>
+  <ul class="checklist">
+    <li>Use envelope encryption for data larger than 4 KB — always</li>
+    <li>Always immediately clear plaintext DEK from memory after use</li>
+    <li>Use encryption context to bind ciphertext to its intended use</li>
+    <li>Enable SSE-KMS on all S3 buckets with sensitive data</li>
+    <li>Enable KMS encryption on RDS, DynamoDB, EBS, ECR</li>
+    <li>Use Bucket Key on S3 to reduce KMS API call costs</li>
+  </ul>
+
+  <h3>Monitoring & Audit</h3>
+  <ul class="checklist">
+    <li>Enable CloudTrail in all regions to capture KMS API calls</li>
+    <li>Set CloudWatch alarms on unusually high kms:Decrypt call rates</li>
+    <li>Alert on kms:ScheduleKeyDeletion events — someone is deleting a key!</li>
+    <li>Review CloudTrail logs for unexpected kms:Decrypt from unknown principals</li>
+    <li>Use AWS Config rules to detect CMKs without rotation enabled</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top KMS Mistakes</h4>
+    <p>
+    ❌ <strong>Deleting a CMK with encrypted data</strong> — that data is gone forever<br>
+    ❌ <strong>Sharing one CMK across all apps</strong> — blast radius too large if compromised<br>
+    ❌ <strong>Not enabling key rotation</strong> — increases risk of long-term key compromise<br>
+    ❌ <strong>Using direct encrypt for large files</strong> — hits 4 KB limit, use envelope encryption<br>
+    ❌ <strong>Not clearing plaintext DEK from memory</strong> — key exposed in memory dump<br>
+    ❌ <strong>Granting kms:* to app roles</strong> — apps should use keys, not manage them<br>
+    ❌ <strong>No encryption context</strong> — ciphertext can be replayed in wrong context<br>
+    ❌ <strong>Hardcoding key ARN</strong> — use alias so rotation doesn't break your code
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS KMS!</h3>
+    <p>What is KMS · Key types (AWS managed vs CMK) · Encrypt & Decrypt flow · Envelope Encryption pattern · Key policies (two-layer auth) · Key rotation (auto vs manual) · Full AWS Console setup (every field!) · Complete C# SDK with envelope encryption · Best practices & common mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can secure your data with production-grade encryption on AWS! 🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
