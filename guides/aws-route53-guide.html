@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Route 53 — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --teal:#1a7a7a;--teal-l:#d4f0f0;
+  --orange:#c96a2a;--orange-l:#fde8d4;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+
+/* ── HEADER — globe / air traffic controller ── */
+.header{
+  background:linear-gradient(135deg,#f7f4ef 0%,#eee8dc 40%,#e4d8c4 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{
+  content:'🌍';position:absolute;left:-20px;top:-20px;
+  font-size:10rem;opacity:.04;pointer-events:none;user-select:none;
+}
+.header::after{
+  content:'✈️';position:absolute;right:10px;bottom:-10px;
+  font-size:6rem;opacity:.04;pointer-events:none;user-select:none;
+}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aws);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aws-l);color:var(--aws);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aws-l);letter-spacing:-.01em;}
+.section h3{color:var(--aws);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ DNS RESOLUTION VISUAL — the star of the show ══ */
+.dns-journey{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.dns-journey-title{background:linear-gradient(90deg,var(--aws-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.dns-step-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);}
+.dns-step-row:last-child{border-bottom:none;}
+.dns-step-num{background:var(--aws);color:#fff;width:36px;min-width:36px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.dns-step-num.green{background:var(--green);}
+.dns-step-num.blue{background:var(--blue);}
+.dns-step-num.purple{background:var(--purple);}
+.dns-step-num.teal{background:var(--teal);}
+.dns-step-body{padding:10px 14px;flex:1;}
+.dns-step-who{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:2px;display:flex;align-items:center;gap:6px;}
+.dns-step-what{font-size:.77rem;color:var(--muted);}
+.dns-step-mono{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--aws);background:var(--aws-l);padding:2px 7px;border-radius:3px;margin-top:3px;display:inline-block;}
+.dns-step-time{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);padding:10px 10px;text-align:right;min-width:50px;display:flex;align-items:center;justify-content:flex-end;}
+
+/* ══ ROUTING POLICY CARDS ══ */
+.policy-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;margin:14px 0;}
+.policy-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;cursor:default;transition:transform .2s,box-shadow .2s;}
+.policy-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);}
+.policy-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.policy-card.p-simple::before{background:var(--blue);}
+.policy-card.p-failover::before{background:var(--red);}
+.policy-card.p-weighted::before{background:var(--aws);}
+.policy-card.p-latency::before{background:var(--green);}
+.policy-card.p-geo::before{background:var(--purple);}
+.policy-card.p-geoprox::before{background:var(--teal);}
+.policy-card.p-multivalue::before{background:var(--orange);}
+.policy-card.p-ip::before{background:var(--blue);}
+.policy-card h4{font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.policy-card .badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.p-simple .badge{background:var(--blue-l);color:var(--blue);}
+.p-failover .badge{background:var(--red-l);color:var(--red);}
+.p-weighted .badge{background:var(--aws-l);color:var(--aws);}
+.p-latency .badge{background:var(--green-l);color:var(--green);}
+.p-geo .badge{background:var(--purple-l);color:var(--purple);}
+.p-geoprox .badge{background:var(--teal-l);color:var(--teal);}
+.p-multivalue .badge{background:var(--orange-l);color:var(--orange);}
+.p-ip .badge{background:var(--blue-l);color:var(--blue);}
+.policy-card p{font-size:.75rem;color:var(--muted);}
+
+/* ══ GLOBE ROUTING MAP — visual traffic routing ══ */
+.globe-map{background:linear-gradient(135deg,#f0ebe0,#e8dfc8);border:1px solid var(--border);border-radius:var(--r);padding:clamp(1rem,3vw,1.5rem);margin:16px 0;position:relative;overflow:hidden;}
+.globe-map::before{content:'🌐';position:absolute;right:-10px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.globe-map h4{color:var(--aws);font-weight:700;font-size:.88rem;margin-bottom:12px;display:flex;align-items:center;gap:7px;}
+.region-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap;}
+.region-row:last-child{margin-bottom:0;}
+.region-flag{font-size:1.2rem;flex-shrink:0;}
+.region-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text2);width:90px;flex-shrink:0;}
+.region-bar-wrap{flex:1;height:8px;background:var(--border);border-radius:100px;overflow:hidden;min-width:60px;}
+.region-bar{height:100%;border-radius:100px;transition:width .4s ease;}
+.bar-blue{background:var(--blue);}
+.bar-green{background:var(--green);}
+.bar-aws{background:var(--aws);}
+.bar-purple{background:var(--purple);}
+.bar-teal{background:var(--teal);}
+.region-pct{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);width:35px;text-align:right;flex-shrink:0;}
+.region-endpoint{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);flex-shrink:0;}
+
+/* ══ HEALTH CHECK PULSE ══ */
+.health-dashboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+.health-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);text-align:center;}
+.health-status{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;}
+.health-status.healthy{background:var(--green);box-shadow:0 0 0 3px rgba(42,122,90,.15);}
+.health-status.unhealthy{background:var(--red);box-shadow:0 0 0 3px rgba(176,42,55,.15);}
+.health-status.degraded{background:var(--aws);box-shadow:0 0 0 3px rgba(212,135,42,.15);}
+.health-card h5{font-size:.75rem;font-weight:700;color:var(--text);margin-bottom:3px;display:flex;align-items:center;justify-content:center;}
+.health-card .metric{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;margin:4px 0;}
+.metric.green{color:var(--green);}
+.metric.red{color:var(--red);}
+.metric.aws{color:var(--aws);}
+.health-card .sub{font-size:.65rem;color:var(--muted);}
+
+/* ══ RECORD TYPE TABLE — special design ══ */
+.record-type-list{margin:14px 0;}
+.record-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:8px 0;overflow:hidden;box-shadow:var(--sh);}
+.record-item-header{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface);}
+.record-type-badge{font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;color:#fff;padding:3px 10px;border-radius:4px;flex-shrink:0;}
+.rt-a{background:var(--blue);}
+.rt-aaaa{background:var(--purple);}
+.rt-cname{background:var(--aws);}
+.rt-alias{background:var(--green);}
+.rt-mx{background:var(--teal);}
+.rt-txt{background:var(--orange);}
+.rt-ns{background:#5a5a5a;}
+.rt-soa{background:#7a4a2a;}
+.record-item-name{font-weight:700;font-size:.84rem;color:var(--text);}
+.record-item-use{font-size:.72rem;color:var(--muted);margin-left:auto;}
+.record-item-body{padding:8px 14px 10px;}
+.record-example{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--aws);background:var(--aws-l);padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:4px;}
+.record-desc{font-size:.78rem;color:var(--muted);}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aws);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-user{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-user .flow-node-title{color:var(--blue);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-surface{background:var(--surface);border:1.5px solid var(--border2);}
+.n-bad{background:var(--red-l);border:1.5px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aws);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aws);}
+.step-body h4{color:var(--aws);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aws);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aws);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aws);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+
+/* INFO BOXES */
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--aws);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--aws);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(212,135,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aws);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--aws-l),var(--green-l));border:1px solid rgba(212,135,42,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.policy-grid,.health-dashboard{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .region-endpoint{display:none;}
+  .dns-step-time{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🌍 <span>Amazon Route 53</span> — Complete Guide</h1>
+  <p>DNS · Routing Policies · Health Checks · Failover · Traffic Control · Domain Registration · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is Route 53</button>
+  <button class="tab-btn" onclick="T('dns',this)">DNS Resolution</button>
+  <button class="tab-btn" onclick="T('records',this)">Record Types</button>
+  <button class="tab-btn" onclick="T('routing',this)">Routing Policies</button>
+  <button class="tab-btn" onclick="T('health',this)">Health Checks</button>
+  <button class="tab-btn" onclick="T('failover',this)">Failover</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS ROUTE 53
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🌍 What is Amazon Route 53?</h2>
+  <p><strong>Route 53</strong> is AWS's highly available, globally distributed DNS (Domain Name System) service. It translates human-readable domain names (<code>myapp.com</code>) into IP addresses, and intelligently routes traffic using configurable policies — based on latency, geography, health, or weights.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>Route 53 is like a global air traffic control system. When you say "I want to go to Tokyo" (visit myapp.com), the controller (Route 53) checks the weather (health checks), finds the fastest runway (lowest latency server), and routes your flight (DNS query) to the best destination — automatically avoiding closed runways (unhealthy endpoints). The name "Route 53" comes from port 53 — the port DNS operates on.</p>
+  </div>
+
+  <!-- WHAT R53 DOES -->
+  <h3>Route 53's Three Core Functions</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h4>🌐 Domain Registration</h4>
+      <p>Buy and manage domain names directly in AWS. No third-party registrar needed. Auto-renewal available.</p>
+    </div>
+    <div class="card">
+      <h4>📖 DNS Service</h4>
+      <p>Host DNS records for your domain. Map myapp.com → your ALB, EC2, S3, or any IP. Globally distributed DNS servers.</p>
+    </div>
+    <div class="card">
+      <h4>❤️ Health Checking</h4>
+      <p>Continuously monitor endpoints. Automatically route away from unhealthy targets. Failover in seconds.</p>
+    </div>
+  </div>
+
+  <h3>Key facts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Performance</h4>
+      <ul>
+        <li>100% SLA uptime — AWS guarantees this</li>
+        <li>DNS servers on every AWS edge location globally</li>
+        <li>Latency as low as ~1ms for cached responses</li>
+        <li>Anycast routing — closest server always responds</li>
+        <li>Handles hundreds of millions of queries per second</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💰 Pricing</h4>
+      <ul>
+        <li>Hosted zone: $0.50/month per zone</li>
+        <li>DNS queries: $0.40 per million (first 1B)</li>
+        <li>Health checks: $0.50/month per endpoint</li>
+        <li>Domain registration: $9–$14/year (.com)</li>
+        <li>Alias queries to AWS resources: FREE</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What Route 53 integrates with</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>ALB / NLB</h4><p>Alias records — free queries</p></div>
+    <div class="icon-item"><span class="emoji">🌩️</span><h4>CloudFront</h4><p>CDN distribution endpoints</p></div>
+    <div class="icon-item"><span class="emoji">🪣</span><h4>S3 Static Sites</h4><p>Alias to S3 website endpoint</p></div>
+    <div class="icon-item"><span class="emoji">🚪</span><h4>API Gateway</h4><p>Custom domain alias</p></div>
+    <div class="icon-item"><span class="emoji">📧</span><h4>SES Email</h4><p>MX records for email routing</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>ACM Certificates</h4><p>DNS validation records</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — DNS RESOLUTION
+══════════════════════════════════ -->
+<div id="tab-dns" class="tab-panel"><div class="section">
+  <h2>🔍 DNS Resolution — The Full Journey</h2>
+  <p>When you type <code>myapp.com</code> in a browser, a DNS resolution chain fires. This entire process typically takes <strong>20–120ms</strong> on first lookup. Subsequent lookups are milliseconds thanks to caching.</p>
+
+  <!-- DNS JOURNEY VISUAL -->
+  <h3>Complete DNS Resolution Journey</h3>
+  <div class="dns-journey">
+    <div class="dns-journey-title">🗺️ Typing myapp.com → Browser shows the page</div>
+    <div class="dns-step-row">
+      <div class="dns-step-num">1</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">💻 Browser Cache</div>
+        <div class="dns-step-what">Check local browser DNS cache. Visited before? Return immediately.</div>
+        <div class="dns-step-mono">CACHE MISS → continue</div>
+      </div>
+      <div class="dns-step-time">~0ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num">2</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">🖥️ OS Resolver Cache</div>
+        <div class="dns-step-what">Check OS-level DNS cache (/etc/hosts, Windows DNS cache). Fast local lookup.</div>
+        <div class="dns-step-mono">CACHE MISS → continue</div>
+      </div>
+      <div class="dns-step-time">~0ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num blue">3</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">🔄 ISP Recursive Resolver (your ISP)</div>
+        <div class="dns-step-what">Your ISP's DNS resolver receives the query. Checks its own cache — often a hit here for popular domains.</div>
+        <div class="dns-step-mono">Ask: "Who handles .com?"</div>
+      </div>
+      <div class="dns-step-time">~5ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num blue">4</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">🌍 Root Name Servers (13 clusters worldwide)</div>
+        <div class="dns-step-what">The internet's top-level DNS. Responds: "For .com, ask the .com TLD servers."</div>
+        <div class="dns-step-mono">.com → 192.5.6.30 (TLD servers)</div>
+      </div>
+      <div class="dns-step-time">~20ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num blue">5</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">📋 .com TLD Name Servers (Verisign)</div>
+        <div class="dns-step-what">Knows which name servers handle myapp.com specifically. Returns the NS records.</div>
+        <div class="dns-step-mono">myapp.com NS → ns-123.awsdns-45.com</div>
+      </div>
+      <div class="dns-step-time">~30ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num green">6</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">🌍 Route 53 Authoritative Name Server</div>
+        <div class="dns-step-what">Route 53 IS the authoritative DNS for myapp.com. Applies routing policy. Returns the IP. Applies your routing rules (latency, geo, weighted, etc.).</div>
+        <div class="dns-step-mono">myapp.com A → 52.66.100.200</div>
+      </div>
+      <div class="dns-step-time">~50ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num green">7</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">🔄 Resolver caches + returns to browser</div>
+        <div class="dns-step-what">ISP resolver caches the result for TTL seconds (e.g. 60s). Browser gets the IP.</div>
+        <div class="dns-step-mono">IP: 52.66.100.200 cached for 60s</div>
+      </div>
+      <div class="dns-step-time">~55ms</div>
+    </div>
+    <div class="dns-step-row">
+      <div class="dns-step-num" style="background:var(--teal)">8</div>
+      <div class="dns-step-body">
+        <div class="dns-step-who">✅ Browser connects to 52.66.100.200</div>
+        <div class="dns-step-what">TCP connection → TLS handshake → HTTP request sent. Your app responds. Page loads!</div>
+        <div class="dns-step-mono">GET / HTTP/2 → 200 OK 🎉</div>
+      </div>
+      <div class="dns-step-time">~80ms</div>
+    </div>
+  </div>
+
+  <h3>TTL — Time to Live (The Caching Knob)</h3>
+  <div class="card">
+    <h4>⏱️ How TTL affects your DNS</h4>
+    <p>Every DNS record has a TTL (seconds). Once a resolver caches the record, it won't ask Route 53 again until TTL expires. Choosing the right TTL is a trade-off:<br><br>
+    <strong>Low TTL (30–60s):</strong> Changes propagate fast (failover in &lt; 1 min). More DNS queries → higher cost + load on Route 53.<br>
+    <strong>High TTL (300–3600s):</strong> Fewer queries → cheaper. But changes take longer to propagate. Failover may take minutes.<br><br>
+    <strong>Best practice:</strong> Set TTL to 60s normally. Before a planned change (migration, IP swap), lower to 30s a day in advance. After change completes, raise back to 300s.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — RECORD TYPES
+══════════════════════════════════ -->
+<div id="tab-records" class="tab-panel"><div class="section">
+  <h2>📋 DNS Record Types — Every One Explained</h2>
+  <p>DNS records are instructions stored in Route 53. Each record type serves a specific purpose. Understanding which to use is fundamental to DNS configuration.</p>
+
+  <div class="record-type-list">
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-a">A</span>
+        <span class="record-item-name">Address Record</span>
+        <span class="record-item-use">Domain → IPv4</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com → 52.66.100.200</div>
+        <p class="record-desc">Maps a domain name to an IPv4 address. The most common record. Use for EC2 instances, on-premises servers, or any IPv4 endpoint.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-aaaa">AAAA</span>
+        <span class="record-item-name">IPv6 Address Record</span>
+        <span class="record-item-use">Domain → IPv6</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com → 2600:1f18:a0:b900::1</div>
+        <p class="record-desc">Maps a domain to an IPv6 address. Create alongside A record for dual-stack support. Required for modern IPv6-capable networks.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-cname">CNAME</span>
+        <span class="record-item-name">Canonical Name</span>
+        <span class="record-item-use">Name → another name</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">www.myapp.com → myapp.com</div>
+        <p class="record-desc">Points one domain name to another. Browser resolves the target further. <strong>Cannot be used at zone apex</strong> (myapp.com itself — use ALIAS instead). Use for subdomains pointing to CloudFront, etc.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-alias">ALIAS</span>
+        <span class="record-item-name">AWS Alias Record ✅</span>
+        <span class="record-item-use">Name → AWS resource (FREE)</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com → my-alb-123.ap-south-1.elb.amazonaws.com</div>
+        <p class="record-desc"><strong>AWS-specific extension</strong> — not a standard DNS type. Works at zone apex unlike CNAME. Queries to AWS resources (ALB, CloudFront, S3, API GW) are FREE. IP auto-updates when AWS resource IP changes. Always prefer ALIAS over CNAME for AWS resources.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-mx">MX</span>
+        <span class="record-item-name">Mail Exchange</span>
+        <span class="record-item-use">Email routing</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com MX 10 → mail.myapp.com</div>
+        <p class="record-desc">Tells email servers where to deliver email for your domain. Priority number (lower = higher priority). Multiple MX records = redundant mail servers.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-txt">TXT</span>
+        <span class="record-item-name">Text Record</span>
+        <span class="record-item-use">Verification + SPF/DKIM</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com TXT → "v=spf1 include:amazonses.com ~all"</div>
+        <p class="record-desc">Stores arbitrary text. Common uses: domain ownership verification (Google, ACM), SPF records for email anti-spam, DKIM signatures, DMARC policies.</p>
+      </div>
+    </div>
+
+    <div class="record-item">
+      <div class="record-item-header">
+        <span class="record-type-badge rt-ns">NS</span>
+        <span class="record-item-name">Name Server</span>
+        <span class="record-item-use">Which DNS servers handle this domain</span>
+      </div>
+      <div class="record-item-body">
+        <div class="record-example">myapp.com NS → ns-123.awsdns-45.com</div>
+        <p class="record-desc">Delegates a domain (or subdomain) to specific name servers. Route 53 assigns 4 NS records per hosted zone. Register these at your domain registrar so the internet knows Route 53 handles your DNS.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tip">
+    <h4>💡 ALIAS vs CNAME — Rule of thumb</h4>
+    <p>For AWS resources → always use <strong>ALIAS</strong> (free, works at apex, auto-updates IPs). For external services (Heroku, Netlify, etc.) → use <strong>CNAME</strong>. Never use a raw A record pointing to an AWS service IP — those IPs change!</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — ROUTING POLICIES
+══════════════════════════════════ -->
+<div id="tab-routing" class="tab-panel"><div class="section">
+  <h2>🚦 Routing Policies — Smart Traffic Control</h2>
+  <p>Route 53's routing policies decide <em>which</em> record to return when multiple exist for the same domain. This is what makes Route 53 more than just DNS — it's an intelligent global traffic manager.</p>
+
+  <!-- POLICY CARDS -->
+  <div class="policy-grid">
+    <div class="policy-card p-simple">
+      <div class="badge">SIMPLE</div>
+      <h4>Simple</h4>
+      <p>One record, one answer. No intelligence. Use for single-server setups.</p>
+    </div>
+    <div class="policy-card p-weighted">
+      <div class="badge">WEIGHTED</div>
+      <h4>Weighted</h4>
+      <p>Split traffic by percentage. 90% v1, 10% v2. Perfect for canary deploys.</p>
+    </div>
+    <div class="policy-card p-latency">
+      <div class="badge">LATENCY</div>
+      <h4>Latency</h4>
+      <p>Route to lowest latency AWS region. User in India → Mumbai. User in US → Virginia.</p>
+    </div>
+    <div class="policy-card p-failover">
+      <div class="badge">FAILOVER</div>
+      <h4>Failover</h4>
+      <p>Active/standby. Primary healthy? Route there. Primary down? Auto-switch to secondary.</p>
+    </div>
+    <div class="policy-card p-geo">
+      <div class="badge">GEOLOCATION</div>
+      <h4>Geolocation</h4>
+      <p>Route by user's country/continent. India → Mumbai endpoint. EU → Frankfurt.</p>
+    </div>
+    <div class="policy-card p-geoprox">
+      <div class="badge">GEO-PROXIMITY</div>
+      <h4>Geoproximity</h4>
+      <p>Route by physical distance. Bias slider lets you expand/shrink a region's zone of influence.</p>
+    </div>
+    <div class="policy-card p-multivalue">
+      <div class="badge">MULTI-VALUE</div>
+      <h4>Multi-Value</h4>
+      <p>Return up to 8 healthy IPs. Client picks one. Poor man's load balancer at DNS level.</p>
+    </div>
+    <div class="policy-card p-ip">
+      <div class="badge">IP-BASED</div>
+      <h4>IP-Based</h4>
+      <p>Route based on client's IP CIDR range. Office IPs → dev endpoint. Other IPs → prod.</p>
+    </div>
+  </div>
+
+  <!-- WEIGHTED VISUAL -->
+  <h3>Weighted Routing — Canary Deployment in Action</h3>
+  <div class="globe-map">
+    <h4>🎯 Deploying v2 — gradual traffic shift</h4>
+    <div class="region-row">
+      <span class="region-flag">🟢</span>
+      <span class="region-label">v1 (stable)</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-blue" style="width:90%"></div></div>
+      <span class="region-pct">90%</span>
+      <span class="region-endpoint">api-v1.myapp.com → ALB-v1</span>
+    </div>
+    <div class="region-row">
+      <span class="region-flag">🔵</span>
+      <span class="region-label">v2 (canary)</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-aws" style="width:10%"></div></div>
+      <span class="region-pct">10%</span>
+      <span class="region-endpoint">api-v1.myapp.com → ALB-v2</span>
+    </div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:10px;">Same domain name — two records with different weights. Route 53 randomly selects proportionally. Monitor v2 errors → if good, adjust to 50/50 → then 100% v2.</p>
+  </div>
+
+  <!-- LATENCY VISUAL -->
+  <h3>Latency Routing — Global User Experience</h3>
+  <div class="globe-map">
+    <h4>⚡ Users automatically routed to fastest region</h4>
+    <div class="region-row">
+      <span class="region-flag">🇮🇳</span>
+      <span class="region-label">India</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-green" style="width:95%"></div></div>
+      <span class="region-pct">~12ms</span>
+      <span class="region-endpoint">ap-south-1 Mumbai</span>
+    </div>
+    <div class="region-row">
+      <span class="region-flag">🇸🇬</span>
+      <span class="region-label">Singapore</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-green" style="width:85%"></div></div>
+      <span class="region-pct">~35ms</span>
+      <span class="region-endpoint">ap-southeast-1</span>
+    </div>
+    <div class="region-row">
+      <span class="region-flag">🇺🇸</span>
+      <span class="region-label">US East</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-blue" style="width:70%"></div></div>
+      <span class="region-pct">~180ms</span>
+      <span class="region-endpoint">us-east-1 Virginia</span>
+    </div>
+    <div class="region-row">
+      <span class="region-flag">🇩🇪</span>
+      <span class="region-label">Europe</span>
+      <div class="region-bar-wrap"><div class="region-bar bar-purple" style="width:65%"></div></div>
+      <span class="region-pct">~220ms</span>
+      <span class="region-endpoint">eu-central-1 Frankfurt</span>
+    </div>
+    <p style="font-size:.72rem;color:var(--muted);margin-top:10px;">Route 53 measures latency from each region to AWS endpoints. A user in India querying myapp.com gets Mumbai's IP. A user in Germany gets Frankfurt's IP. Same domain — best experience everywhere.</p>
+  </div>
+
+  <!-- ROUTING DECISION FLOW -->
+  <h3>How Route 53 Decides Which Record to Return</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">📡 DNS Query arrives at Route 53</div>
+      <ul class="flow-items">
+        <li>Query: myapp.com (type A)</li>
+        <li>Source: resolver at 103.10.x.x (India)</li>
+        <li>Route 53 identifies the hosted zone</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📋 Route 53 evaluates routing policy</div>
+      <ul class="flow-items">
+        <li>Multiple records for myapp.com exist</li>
+        <li>Policy: LATENCY — find lowest latency region for caller's IP</li>
+        <li>Caller IP maps to India (ap-south-1)</li>
+        <li>Check health of ap-south-1 endpoint → HEALTHY ✓</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Returns Mumbai ALB IP</div>
+      <ul class="flow-items">
+        <li>A record: 52.66.100.200 (Mumbai ALB)</li>
+        <li>TTL: 60 seconds</li>
+        <li>Resolver caches and returns to browser</li>
+        <li>User connects to closest, fastest endpoint</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — HEALTH CHECKS
+══════════════════════════════════ -->
+<div id="tab-health" class="tab-panel"><div class="section">
+  <h2>💓 Health Checks — Monitoring Your Endpoints</h2>
+  <p>Route 53 health checkers are distributed globally. They continuously probe your endpoints and mark them healthy or unhealthy. When combined with routing policies, unhealthy endpoints are automatically removed from DNS responses.</p>
+
+  <!-- HEALTH DASHBOARD -->
+  <h3>Health Check Dashboard — Live View</h3>
+  <div class="health-dashboard">
+    <div class="health-card">
+      <h5><span class="health-status healthy"></span>Mumbai (Primary)</h5>
+      <div class="metric green">99.98%</div>
+      <div class="sub">Uptime (30 days) · 12ms avg</div>
+    </div>
+    <div class="health-card">
+      <h5><span class="health-status healthy"></span>Singapore</h5>
+      <div class="metric green">99.95%</div>
+      <div class="sub">Uptime (30 days) · 38ms avg</div>
+    </div>
+    <div class="health-card">
+      <h5><span class="health-status unhealthy"></span>Frankfurt</h5>
+      <div class="metric red">FAIL</div>
+      <div class="sub">503 since 14:32 · 3 checks failed</div>
+    </div>
+    <div class="health-card">
+      <h5><span class="health-status degraded"></span>US East</h5>
+      <div class="metric aws">DEGRADED</div>
+      <div class="sub">High latency · 892ms avg</div>
+    </div>
+  </div>
+
+  <!-- FLOW: HEALTH CHECK CYCLE -->
+  <h3>How Health Checks Work</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📡 Route 53 Health Checkers (15+ global locations)</div>
+      <ul class="flow-items">
+        <li>Probes from: us-east-1, eu-west-1, ap-southeast-1, ap-northeast-1...</li>
+        <li>Every 10 or 30 seconds (configurable)</li>
+        <li>Each checker independently validates your endpoint</li>
+        <li>Majority rules — if most checkers report fail → UNHEALTHY</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ Healthy Response</div>
+        <ul class="flow-items">
+          <li>HTTP 200 within timeout</li>
+          <li>Response body check (optional)</li>
+          <li>Stay in DNS rotation</li>
+          <li>Counter: 3 consecutive passes needed</li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">🔴 Unhealthy Response</div>
+        <ul class="flow-items">
+          <li>Timeout, connection refused, non-2xx</li>
+          <li>After 3 consecutive failures → UNHEALTHY</li>
+          <li>Removed from DNS responses automatically</li>
+          <li>Failover kicks in if configured</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓ When endpoint recovers</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🔄 Auto-Recovery</div>
+      <ul class="flow-items">
+        <li>After 3 consecutive healthy checks → HEALTHY again</li>
+        <li>Automatically added back to DNS rotation</li>
+        <li>CloudWatch alarm triggered for ops team notification</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Health Check Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌐 Endpoint Health Check</h4>
+      <ul>
+        <li>HTTP, HTTPS, or TCP probe</li>
+        <li>Specify: IP/domain, port, path (/health), protocol</li>
+        <li>Optional: match string in response body</li>
+        <li>Optional: request interval (10s or 30s)</li>
+        <li>Failure threshold: 1–10 consecutive failures</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Calculated Health Check</h4>
+      <ul>
+        <li>Combines results of multiple child health checks</li>
+        <li>Logic: AND (all must pass) or OR (any must pass)</li>
+        <li>Use for: "healthy only if DB + API + cache all pass"</li>
+        <li>Parent health check = composite view</li>
+        <li>Trigger failover based on combined status</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📈 CloudWatch Alarm Health Check</h4>
+      <ul>
+        <li>Health based on a CloudWatch alarm state</li>
+        <li>"Healthy" = alarm is OK state</li>
+        <li>Use for: ECS CPU, RDS connections, Lambda errors</li>
+        <li>Failover when service degrades — not just crashes</li>
+        <li>Protects against partial failures</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚙️ Health Check for Private Resources</h4>
+      <ul>
+        <li>Route 53 checkers are outside your VPC</li>
+        <li>Private resources not directly reachable</li>
+        <li>Solution: CloudWatch metric → Alarm → HC</li>
+        <li>EC2 pushes metrics → alarm when unhealthy</li>
+        <li>Health check reads the alarm state</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — FAILOVER
+══════════════════════════════════ -->
+<div id="tab-failover" class="tab-panel"><div class="section">
+  <h2>🔄 Failover — Automatic Disaster Recovery</h2>
+  <p>Route 53 failover routing automatically redirects traffic from an unhealthy primary endpoint to a healthy secondary — usually within 60 seconds of detecting a failure.</p>
+
+  <!-- FLOW: NORMAL OPERATION -->
+  <h3>Normal Operation — Primary Healthy</h3>
+  <div class="flow">
+    <div class="flow-node n-user">
+      <div class="flow-node-title">👤 User queries myapp.com</div>
+      <ul class="flow-items">
+        <li>Route 53 receives the DNS query</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🛡️ Route 53 checks health</div>
+      <ul class="flow-items">
+        <li>Primary record (ap-south-1 Mumbai): HEALTHY ✓</li>
+        <li>Returns primary endpoint IP</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Traffic → Mumbai (Primary)</div>
+      <ul class="flow-items">
+        <li>All users routed to Mumbai region</li>
+        <li>Singapore (secondary) receives zero traffic</li>
+        <li>Health check probing both continuously</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: FAILOVER EVENT -->
+  <h3>Failover Event — Primary Goes Down</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">💥 Mumbai (Primary) — FAILURE</div>
+      <ul class="flow-items">
+        <li>AZ outage / deployment failure / DDoS</li>
+        <li>Health check: GET /health → 503 Service Unavailable</li>
+        <li>Failure 1 of 3 threshold...</li>
+        <li>Failure 2 of 3...</li>
+        <li>Failure 3 of 3 → marked UNHEALTHY</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ ~30–60 seconds</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔄 Route 53 activates failover</div>
+      <ul class="flow-items">
+        <li>Primary record: UNHEALTHY — stop returning it</li>
+        <li>Secondary record (Singapore): HEALTHY ✓</li>
+        <li>DNS response switches to Singapore IP</li>
+        <li>SNS alert fires to ops team</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Traffic → Singapore (Secondary)</div>
+      <ul class="flow-items">
+        <li>New DNS queries return Singapore IP</li>
+        <li>Existing connections (cached TTL) reconnect naturally</li>
+        <li>Users experience brief disruption (TTL expiry time)</li>
+        <li>Lower TTL (30s) = faster failover perception</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ When Mumbai recovers</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🔁 Automatic Failback</div>
+      <ul class="flow-items">
+        <li>3 consecutive health check passes → Mumbai HEALTHY</li>
+        <li>Route 53 automatically restores primary routing</li>
+        <li>Traffic gradually shifts back as TTL expires</li>
+        <li>No manual intervention required</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Active-Passive vs Active-Active</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😴 Active-Passive (Failover Policy)</h4>
+      <ul>
+        <li>Primary: handles ALL traffic normally</li>
+        <li>Secondary: idle, receives zero traffic</li>
+        <li>Secondary activates ONLY on primary failure</li>
+        <li>Secondary can be smaller (standby capacity)</li>
+        <li>Use for: DR, simple HA setups</li>
+        <li>Route 53 routing: Failover policy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Active-Active (Weighted/Latency + HC)</h4>
+      <ul>
+        <li>All endpoints handle traffic simultaneously</li>
+        <li>Load spread across multiple regions/AZs</li>
+        <li>If one fails: Route 53 stops returning its IP</li>
+        <li>Remaining healthy endpoints absorb traffic</li>
+        <li>Use for: global apps, high throughput</li>
+        <li>Route 53 routing: Weighted or Latency + health checks</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="success">
+    <h4>🎯 Failover in numbers</h4>
+    <p>Health check interval: 10s · Failure threshold: 3 · Time to detect failure: ~30s · DNS TTL: 30–60s · Total failover time: <strong>60–90 seconds</strong> from failure to full traffic shift. This is why low TTL matters during critical operations.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+  <p>Setting up a complete production DNS configuration: hosted zone, records, health checks, and failover routing.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create a Hosted Zone</div>
+      <div class="console-step-path">Route 53 → Hosted zones → Create hosted zone</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Domain name</div>
+        <div class="console-field-value">myapp.com</div>
+        <div class="console-field-hint">Enter your exact domain. If you registered elsewhere, you'll need to update the NS records at your registrar after creation.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Type</div>
+        <div class="console-field-value">Public hosted zone</div>
+        <div class="console-field-hint">Public = accessible from internet. Private = only accessible within your VPC (for internal services). Choose Public for any internet-facing app.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Tags</div>
+        <div class="console-field-value">App=myapp | Environment=prod | Team=backend</div>
+      </div>
+      <div class="console-note">After creation: copy the 4 NS record values (e.g. ns-123.awsdns-45.com). Go to your domain registrar → update nameservers to these 4 values. Propagation takes 24–48 hours.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create ALIAS Record (for ALB)</div>
+      <div class="console-step-path">Hosted zone → Create record</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Record name</div>
+        <div class="console-field-value">(leave blank for root domain) or www</div>
+        <div class="console-field-hint">Leave blank to create record for myapp.com itself. Type "www" for www.myapp.com.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Record type</div>
+        <div class="console-field-value">A — Routes traffic to an IPv4 address and some AWS resources</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Alias toggle</div>
+        <div class="console-field-value">✅ Enable Alias</div>
+        <div class="console-field-hint">Enabling Alias changes the value field to select an AWS resource instead of entering an IP. Alias queries to AWS resources are FREE.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Route traffic to</div>
+        <div class="console-field-value">Alias to Application and Classic Load Balancer</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Region</div>
+        <div class="console-field-value">ap-south-1 (Asia Pacific Mumbai)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Load balancer</div>
+        <div class="console-field-value">Select your ALB from the dropdown</div>
+        <div class="console-field-hint">Route 53 shows only ALBs in the selected region. If yours isn't showing, check you selected the right region.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Routing policy</div>
+        <div class="console-field-value">Simple routing</div>
+      </div>
+      <div class="console-note">Click <strong>Create records</strong>. Test immediately: dig myapp.com or nslookup myapp.com from terminal.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Create Health Check for Primary</div>
+      <div class="console-step-path">Route 53 → Health checks → Create health check</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">myapp-prod-primary-hc</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">What to monitor</div>
+        <div class="console-field-value">Endpoint</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Specify endpoint by</div>
+        <div class="console-field-value">Domain name</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Protocol</div>
+        <div class="console-field-value">HTTPS</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Domain name</div>
+        <div class="console-field-value">myapp.com</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Port</div>
+        <div class="console-field-value">443</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Path</div>
+        <div class="console-field-value">/health</div>
+        <div class="console-field-hint">Use a dedicated health endpoint that checks DB connectivity, not just the root path. Return 200 only when fully healthy.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Request interval</div>
+        <div class="console-field-value">Fast (10 seconds)</div>
+        <div class="console-field-hint">Fast = 10s, Standard = 30s. Fast costs more but detects failures in ~30s instead of ~90s.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Failure threshold</div>
+        <div class="console-field-value">3</div>
+        <div class="console-field-hint">3 consecutive failures before marking unhealthy. Prevents flapping on transient errors.</div>
+      </div>
+      <div class="console-note">Enable: "Notify when health check status changes" → add SNS topic for alerts.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create Failover Records</div>
+      <div class="console-step-path">Hosted zone → Create record (do twice — primary + secondary)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Record name</div>
+        <div class="console-field-value">(blank — for myapp.com root)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Routing policy</div>
+        <div class="console-field-value">Failover</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Failover record type (first record)</div>
+        <div class="console-field-value">Primary</div>
+        <div class="console-field-hint">Point to Mumbai ALB. Attach the health check you just created. This record is only returned when health check passes.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Failover record type (second record)</div>
+        <div class="console-field-value">Secondary</div>
+        <div class="console-field-hint">Point to Singapore ALB. No health check required (it's the fallback). Always returned when primary is unhealthy.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Record ID</div>
+        <div class="console-field-value">primary-mumbai / secondary-singapore</div>
+        <div class="console-field-hint">Must be unique within the same name + type combination. Descriptive names help debugging.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Test Failover</div>
+      <div class="console-step-path">Route 53 → Health checks → [your HC] → Actions → Edit → temporarily fail</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Test method</div>
+        <div class="console-field-value">Change health check path to /nonexistent (will return 404)</div>
+        <div class="console-field-hint">Wait ~30–60s → run nslookup myapp.com → should now return Singapore IP. Then restore path to /health.</div>
+      </div>
+      <div class="console-note">Also test with: aws route53 get-health-check-status --health-check-id [id] — shows current checker results from all global locations.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Manage Route 53 Programmatically</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.Route53
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>Route 53 Service — Complete Operations</h3>
+  <div class="code-block">
+    <span class="code-label">Route53Service.cs</span>
+    <pre><span class="kw">using</span> Amazon.Route53;
+<span class="kw">using</span> Amazon.Route53.Model;
+
+<span class="kw">public class</span> <span class="tp">Route53Service</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonRoute53</span> _r53;
+
+    <span class="kw">public</span> <span class="tp">Route53Service</span>(<span class="tp">IAmazonRoute53</span> r53) => _r53 = r53;
+
+    <span class="cm">// ── Create / Update a DNS record ──────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">UpsertRecordAsync</span>(
+        <span class="tp">string</span> hostedZoneId,
+        <span class="tp">string</span> name,           <span class="cm">// e.g. "api.myapp.com."</span>
+        <span class="tp">string</span> ip,             <span class="cm">// e.g. "52.66.100.200"</span>
+        <span class="tp">int</span>    ttl = <span class="num">60</span>)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _r53.<span class="fn">ChangeResourceRecordSetsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ChangeResourceRecordSetsRequest</span>
+        {
+            HostedZoneId = hostedZoneId,
+            ChangeBatch  = <span class="kw">new</span> <span class="tp">ChangeBatch</span>
+            {
+                Comment = <span class="str">$"Upsert {name} at {DateTime.UtcNow:O}"</span>,
+                Changes = [<span class="kw">new</span> <span class="tp">Change</span>
+                {
+                    Action            = <span class="tp">ChangeAction</span>.UPSERT,
+                    ResourceRecordSet = <span class="kw">new</span> <span class="tp">ResourceRecordSet</span>
+                    {
+                        Name = name,
+                        Type = <span class="tp">RRType</span>.A,
+                        TTL  = ttl,
+                        ResourceRecords = [<span class="kw">new</span> <span class="tp">ResourceRecord</span>
+                            { Value = ip }]
+                    }
+                }]
+            }
+        });
+        <span class="kw">return</span> response.ChangeInfo.Id;
+    }
+
+    <span class="cm">// ── Create ALIAS record pointing to ALB ────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateAliasRecordAsync</span>(
+        <span class="tp">string</span> hostedZoneId,
+        <span class="tp">string</span> name,
+        <span class="tp">string</span> albDnsName,
+        <span class="tp">string</span> albHostedZoneId)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _r53.<span class="fn">ChangeResourceRecordSetsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ChangeResourceRecordSetsRequest</span>
+        {
+            HostedZoneId = hostedZoneId,
+            ChangeBatch  = <span class="kw">new</span> <span class="tp">ChangeBatch</span>
+            {
+                Changes = [<span class="kw">new</span> <span class="tp">Change</span>
+                {
+                    Action            = <span class="tp">ChangeAction</span>.UPSERT,
+                    ResourceRecordSet = <span class="kw">new</span> <span class="tp">ResourceRecordSet</span>
+                    {
+                        Name = name,
+                        Type = <span class="tp">RRType</span>.A,
+                        <span class="cm">// ALIAS — no TTL needed</span>
+                        AliasTarget = <span class="kw">new</span> <span class="tp">AliasTarget</span>
+                        {
+                            DNSName              = albDnsName,
+                            HostedZoneId         = albHostedZoneId,
+                            EvaluateTargetHealth = <span class="kw">true</span>
+                        }
+                    }
+                }]
+            }
+        });
+        <span class="kw">return</span> response.ChangeInfo.Id;
+    }
+
+    <span class="cm">// ── Create Weighted records (canary deploy) ────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CreateWeightedRecordsAsync</span>(
+        <span class="tp">string</span> hostedZoneId,
+        <span class="tp">string</span> name,
+        <span class="tp">string</span> ipV1, <span class="tp">int</span> weightV1,
+        <span class="tp">string</span> ipV2, <span class="tp">int</span> weightV2)
+    {
+        <span class="kw">await</span> _r53.<span class="fn">ChangeResourceRecordSetsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ChangeResourceRecordSetsRequest</span>
+        {
+            HostedZoneId = hostedZoneId,
+            ChangeBatch  = <span class="kw">new</span> <span class="tp">ChangeBatch</span>
+            {
+                Changes = [
+                    <span class="kw">new</span> <span class="tp">Change</span>
+                    {
+                        Action = <span class="tp">ChangeAction</span>.UPSERT,
+                        ResourceRecordSet = <span class="kw">new</span> <span class="tp">ResourceRecordSet</span>
+                        {
+                            Name            = name,
+                            Type            = <span class="tp">RRType</span>.A,
+                            SetIdentifier   = <span class="str">"v1-stable"</span>,
+                            Weight          = weightV1, <span class="cm">// e.g. 90</span>
+                            TTL             = <span class="num">60</span>,
+                            ResourceRecords = [<span class="kw">new</span> <span class="tp">ResourceRecord</span>
+                                { Value = ipV1 }]
+                        }
+                    },
+                    <span class="kw">new</span> <span class="tp">Change</span>
+                    {
+                        Action = <span class="tp">ChangeAction</span>.UPSERT,
+                        ResourceRecordSet = <span class="kw">new</span> <span class="tp">ResourceRecordSet</span>
+                        {
+                            Name            = name,
+                            Type            = <span class="tp">RRType</span>.A,
+                            SetIdentifier   = <span class="str">"v2-canary"</span>,
+                            Weight          = weightV2, <span class="cm">// e.g. 10</span>
+                            TTL             = <span class="num">60</span>,
+                            ResourceRecords = [<span class="kw">new</span> <span class="tp">ResourceRecord</span>
+                                { Value = ipV2 }]
+                        }
+                    }
+                ]
+            }
+        });
+    }
+
+    <span class="cm">// ── Get health check status ────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">GetHealthCheckStatusAsync</span>(
+        <span class="tp">string</span> healthCheckId)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _r53.<span class="fn">GetHealthCheckStatusAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetHealthCheckStatusRequest</span>
+        {
+            HealthCheckId = healthCheckId
+        });
+
+        <span class="kw">var</span> passing = response.HealthCheckObservations
+            .<span class="fn">Count</span>(o => o.StatusReport.Status
+                .<span class="fn">StartsWith</span>(<span class="str">"Success"</span>));
+        <span class="kw">return</span> passing >= <span class="num">6</span> ? <span class="str">"HEALTHY"</span> : <span class="str">"UNHEALTHY"</span>;
+    }
+
+    <span class="cm">// ── Wait for DNS change to propagate ──────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">WaitForChangeAsync</span>(<span class="tp">string</span> changeId)
+    {
+        <span class="tp">ChangeStatus</span> status;
+        <span class="kw">do</span>
+        {
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>));
+            <span class="kw">var</span> resp = <span class="kw">await</span> _r53.<span class="fn">GetChangeAsync</span>(
+                <span class="kw">new</span> <span class="tp">GetChangeRequest</span> { Id = changeId });
+            status = resp.ChangeInfo.Status;
+        }
+        <span class="kw">while</span> (status == <span class="tp">ChangeStatus</span>.PENDING);
+        <span class="cm">// Status: PENDING → INSYNC (usually &lt;60s)</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonRoute53</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">Route53Service</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>DNS Records</h3>
+  <ul class="checklist">
+    <li>Always use ALIAS records for AWS resources (ALB, CloudFront, S3) — free + auto IP updates</li>
+    <li>Never use raw A records pointing to AWS service IPs — they change without notice</li>
+    <li>Use CNAME only for external services (Heroku, Netlify) where ALIAS isn't possible</li>
+    <li>Add both A (IPv4) and AAAA (IPv6) records for modern dual-stack support</li>
+    <li>Set TTL to 60s normally — lower to 30s before planned IP changes, restore after</li>
+    <li>Always add trailing dot in CLI/SDK record names: <code>myapp.com.</code> (not myapp.com)</li>
+  </ul>
+
+  <h3>Routing Policies</h3>
+  <ul class="checklist">
+    <li>Use Latency routing for global apps — users automatically reach the closest region</li>
+    <li>Use Weighted routing for canary deploys — start at 5% before going 100%</li>
+    <li>Always attach health checks to weighted/latency/failover records</li>
+    <li>Use Failover policy for disaster recovery — don't build this manually</li>
+    <li>Use Geolocation to serve region-specific content or comply with data residency laws</li>
+    <li>Set a default Geolocation record — handles countries not explicitly listed</li>
+  </ul>
+
+  <h3>Health Checks</h3>
+  <ul class="checklist">
+    <li>Use /health endpoint that checks dependencies (DB, cache) — not just HTTP 200</li>
+    <li>Fast health checks (10s) for critical production routes worth the extra $0.10/month</li>
+    <li>Use calculated health checks for complex "healthy only when all services pass"</li>
+    <li>Enable SNS notifications on health check state change — never miss a failover</li>
+    <li>For private resources: use CloudWatch alarm health checks (not direct endpoint)</li>
+    <li>Test failover manually before you need it — lower TTL, fail the HC, verify switch</li>
+  </ul>
+
+  <h3>Operations</h3>
+  <ul class="checklist">
+    <li>Use meaningful record IDs for weighted/latency records — aids debugging</li>
+    <li>Tag all health checks with App and Environment</li>
+    <li>Keep hosted zone per environment (myapp.com for prod, dev.myapp.com for dev)</li>
+    <li>Use private hosted zones for internal service discovery in VPC</li>
+    <li>Export hosted zone records before any migration — backup your DNS</li>
+    <li>Use Route 53 Resolver for hybrid cloud DNS resolution to on-premises</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top Route 53 Mistakes</h4>
+    <p>
+    ❌ <strong>High TTL before migration</strong> — stuck with old IP for hours during cutover<br>
+    ❌ <strong>A record pointing to ALB IP</strong> — ALB IPs change, your site breaks silently<br>
+    ❌ <strong>No health checks on failover records</strong> — failover never triggers<br>
+    ❌ <strong>CNAME at zone apex</strong> — DNS spec violation, most resolvers reject it<br>
+    ❌ <strong>Not testing failover before production incident</strong> — first test under pressure<br>
+    ❌ <strong>Forgetting NS record update at registrar</strong> — hosted zone created but DNS still points elsewhere<br>
+    ❌ <strong>No default Geolocation record</strong> — unlisted countries get NXDOMAIN (site not found!)<br>
+    ❌ <strong>Deleting hosted zone with active records</strong> — cascades to site outage
+    </p>
+  </div>
+
+  <h3>Route 53 vs Other DNS Services</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Route 53</th><th>Cloudflare</th><th>GoDaddy DNS</th></tr>
+    <tr><td><strong>AWS integration</strong></td><td>✅ Native ALIAS records</td><td>Workarounds needed</td><td>❌</td></tr>
+    <tr><td><strong>Health checks</strong></td><td>✅ Built-in global</td><td>✅ Built-in</td><td>❌</td></tr>
+    <tr><td><strong>Routing policies</strong></td><td>✅ 8 types</td><td>✅ Load balancing</td><td>❌ Basic only</td></tr>
+    <tr><td><strong>Latency-based routing</strong></td><td>✅</td><td>✅</td><td>❌</td></tr>
+    <tr><td><strong>SLA</strong></td><td>100%</td><td>100%</td><td>No SLA</td></tr>
+    <tr><td><strong>Global anycast</strong></td><td>✅</td><td>✅ (larger network)</td><td>Limited</td></tr>
+    <tr><td><strong>Best for</strong></td><td>AWS-hosted apps</td><td>Cloudflare CDN users</td><td>Basic sites</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon Route 53!</h3>
+    <p>What is Route 53 · Complete DNS resolution journey (8 steps) · All record types (A, AAAA, CNAME, ALIAS, MX, TXT, NS) · All 8 routing policies with visual traffic maps · Health checks (endpoint, calculated, CloudWatch) · Active-passive and active-active failover · Full AWS Console setup (every field!) · Complete C# SDK (upsert, alias, weighted, health status, change waiter) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aws);">Now you can route the world's traffic to your applications intelligently! 🌍🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
