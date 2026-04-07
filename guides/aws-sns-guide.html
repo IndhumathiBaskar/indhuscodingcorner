@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon SNS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --rose:#9a2a5a;--rose-l:#f5dce8;
+  --orange:#c96a2a;--orange-l:#fde8d4;
+  --sns:#e05a1a;--sns-l:#fde8d8;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+
+/* ── HEADER — broadcast tower feel ── */
+.header{
+  background:linear-gradient(135deg,#faf6f0 0%,#f2e8d8 45%,#e8d8c0 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'📡';position:absolute;right:-10px;top:-15px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'📢';position:absolute;left:-5px;bottom:-10px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--sns);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--sns-l);color:var(--sns);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--sns-l);letter-spacing:-.01em;}
+.section h3{color:var(--sns);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ FANOUT VISUAL — the centrepiece ══ */
+.fanout{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.fanout-header{background:linear-gradient(90deg,var(--sns-l),var(--orange-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.fanout-body{padding:16px;}
+/* Publisher */
+.fanout-publisher{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.3);border-radius:var(--r);padding:10px 14px;text-align:center;max-width:200px;margin:0 auto 12px;}
+.fanout-publisher h5{color:var(--blue);font-size:.78rem;font-weight:700;margin-bottom:2px;}
+.fanout-publisher p{color:var(--muted);font-size:.68rem;}
+.fanout-pub-msg{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--blue);background:var(--blue-l);padding:2px 8px;border-radius:3px;display:inline-block;margin-top:3px;}
+/* SNS Topic centre */
+.fanout-center-wrap{display:flex;align-items:center;justify-content:center;margin:8px 0;}
+.fanout-arrow-down{width:2px;height:20px;background:linear-gradient(to bottom,var(--blue),var(--sns));margin:0 auto;}
+.fanout-topic{background:linear-gradient(135deg,var(--sns-l),var(--orange-l));border:2px solid rgba(224,90,26,.35);border-radius:var(--r);padding:12px 20px;text-align:center;max-width:220px;margin:0 auto;position:relative;}
+.fanout-topic h5{color:var(--sns);font-size:.84rem;font-weight:700;margin-bottom:3px;}
+.fanout-topic p{color:var(--text2);font-size:.7rem;}
+.fanout-topic-arn{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);margin-top:4px;display:block;}
+/* Fanout lines */
+.fanout-lines-wrap{position:relative;margin:8px 0 4px;}
+.fanout-vert-line{width:2px;height:16px;background:var(--sns);margin:0 auto;}
+.fanout-horiz{height:2px;background:linear-gradient(90deg,transparent,var(--sns),transparent);margin:0 16px;}
+.fanout-dots{display:flex;justify-content:space-around;margin-top:0;}
+.fanout-dot-line{display:flex;flex-direction:column;align-items:center;}
+.fanout-branch{width:2px;height:16px;background:var(--sns);}
+/* Subscriber cards */
+.fanout-subs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100px,100%),1fr));gap:8px;margin-top:4px;}
+.sub-card{border-radius:var(--r);padding:9px 8px;text-align:center;border:1.5px solid;}
+.sub-card h6{font-size:.7rem;font-weight:700;margin-bottom:2px;}
+.sub-card p{font-size:.62rem;color:var(--muted);}
+.sub-sqs{background:var(--orange-l);border-color:rgba(201,106,42,.3);}
+.sub-sqs h6{color:var(--orange);}
+.sub-lambda{background:var(--green-l);border-color:rgba(42,122,90,.25);}
+.sub-lambda h6{color:var(--green);}
+.sub-http{background:var(--blue-l);border-color:rgba(42,90,154,.25);}
+.sub-http h6{color:var(--blue);}
+.sub-email{background:var(--purple-l);border-color:rgba(108,71,212,.2);}
+.sub-email h6{color:var(--purple);}
+.sub-sms{background:var(--teal-l);border-color:rgba(26,122,106,.25);}
+.sub-sms h6{color:var(--teal);}
+.sub-firehose{background:var(--rose-l);border-color:rgba(154,42,90,.2);}
+.sub-firehose h6{color:var(--rose);}
+
+/* ══ MESSAGE ANATOMY CARD ══ */
+.msg-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.msg-card-header{background:var(--surface);padding:9px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:.8rem;color:var(--text);display:flex;align-items:center;gap:7px;}
+.msg-field{display:flex;align-items:baseline;gap:10px;padding:7px 14px;border-bottom:1px solid var(--surface);}
+.msg-field:last-child{border-bottom:none;}
+.msg-key{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;color:var(--sns);width:110px;flex-shrink:0;}
+.msg-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);flex:1;}
+.msg-note{font-size:.68rem;color:var(--muted);margin-left:auto;}
+
+/* ══ FILTER POLICY VISUAL ══ */
+.filter-demo{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.filter-demo-header{background:linear-gradient(90deg,var(--green-l),var(--teal-l));padding:9px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:.8rem;color:var(--text);display:flex;align-items:center;gap:7px;}
+.filter-row{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:10px;}
+.filter-row:last-child{border-bottom:none;}
+.filter-sub{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;width:130px;flex-shrink:0;}
+.filter-policy{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text2);flex:1;background:var(--surface);padding:3px 8px;border-radius:4px;}
+.filter-result{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:2px 8px;border-radius:3px;flex-shrink:0;}
+.filter-pass{background:var(--green-l);color:var(--green);}
+.filter-skip{background:var(--red-l);color:var(--red);}
+
+/* ══ DELIVERY STATUS TIMELINE ══ */
+.delivery-timeline{margin:14px 0;}
+.dl-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.dl-protocol{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;width:80px;flex-shrink:0;}
+.dl-bar-wrap{flex:1;height:8px;background:var(--surface);border-radius:100px;overflow:hidden;border:1px solid var(--border);}
+.dl-bar{height:100%;border-radius:100px;}
+.dl-rate{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);width:40px;text-align:right;flex-shrink:0;}
+.dl-note{font-size:.65rem;color:var(--muted);}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--sns);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pub{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-pub .flow-node-title{color:var(--blue);}
+.n-sns{background:var(--sns-l);border:1.5px solid rgba(224,90,26,.3);}
+.n-sns .flow-node-title{color:var(--sns);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-orange{background:var(--orange-l);border:1.5px solid rgba(201,106,42,.25);}
+.n-orange .flow-node-title{color:var(--orange);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid rgba(176,42,55,.2);}
+.n-bad .flow-node-title{color:var(--red);}
+.n-surface{background:var(--surface);border:1.5px solid var(--border2);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--sns);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--sns);}
+.step-body h4{color:var(--sns);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--sns);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--sns);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--sns);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid rgba(176,42,55,.2);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--sns);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--sns);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(224,90,26,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--sns);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--sns-l),var(--green-l));border:1px solid rgba(224,90,26,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.fanout-subs{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .msg-note{display:none;}
+  .dl-note{display:none;}
+  .filter-row{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📡 <span>Amazon SNS</span> — Complete Guide</h1>
+  <p>Simple Notification Service · Topics · Subscriptions · Fan-out · Filtering · FIFO · Dead-Letter Queues · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is SNS</button>
+  <button class="tab-btn" onclick="T('fanout',this)">Fan-out Pattern</button>
+  <button class="tab-btn" onclick="T('message',this)">Messages & Filtering</button>
+  <button class="tab-btn" onclick="T('types',this)">Topic Types</button>
+  <button class="tab-btn" onclick="T('delivery',this)">Delivery & Retry</button>
+  <button class="tab-btn" onclick="T('patterns',this)">Real-World Patterns</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS SNS
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>📡 What is Amazon SNS?</h2>
+  <p><strong>SNS = Simple Notification Service.</strong> A fully managed pub/sub messaging service. One publisher sends a single message to a Topic — SNS instantly delivers it to all subscribers simultaneously, across multiple protocols and endpoints.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>SNS is like a radio broadcast tower. When a radio station (publisher) transmits a signal (message), every radio tuned to that frequency (subscribers) receives it instantly — whether it's a car radio, a home stereo, or a phone app. The station doesn't know or care how many listeners there are. It just broadcasts. Each listener receives the same signal at the same time.</p>
+  </div>
+
+  <!-- WHAT SNS IS NOT -->
+  <h3>SNS vs SQS — The Fundamental Difference</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📡 SNS — Push (Broadcast)</h4>
+      <ul>
+        <li>Pub/Sub model — one → many</li>
+        <li>Message delivered IMMEDIATELY to all subscribers</li>
+        <li>Subscribers don't poll — SNS pushes to them</li>
+        <li>Message not stored — if delivery fails → retry or DLQ</li>
+        <li>Use when: multiple systems need same event</li>
+        <li>Think: broadcast, notification, fan-out</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📬 SQS — Pull (Queue)</h4>
+      <ul>
+        <li>Point-to-point — one → one consumer</li>
+        <li>Message sits in queue until consumer polls it</li>
+        <li>Consumer pulls at its own pace</li>
+        <li>Message stored up to 14 days</li>
+        <li>Use when: one system processes each message</li>
+        <li>Think: task queue, work queue, job queue</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Who can subscribe to SNS?</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📬</span><h4>SQS Queue</h4><p>Decouple + buffer messages. Most common subscriber.</p></div>
+    <div class="icon-item"><span class="emoji">λ</span><h4>Lambda Function</h4><p>Process messages serverlessly.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>HTTP/HTTPS</h4><p>Your own API webhook endpoint.</p></div>
+    <div class="icon-item"><span class="emoji">📧</span><h4>Email / Email-JSON</h4><p>Human alerts and notifications.</p></div>
+    <div class="icon-item"><span class="emoji">📱</span><h4>SMS</h4><p>Text messages to phone numbers.</p></div>
+    <div class="icon-item"><span class="emoji">📲</span><h4>Mobile Push</h4><p>iOS (APNs), Android (FCM) push.</p></div>
+    <div class="icon-item"><span class="emoji">🌊</span><h4>Kinesis Firehose</h4><p>Stream to S3, Redshift, OpenSearch.</p></div>
+    <div class="icon-item"><span class="emoji">🤖</span><h4>Amazon Chatbot</h4><p>Slack or Chime alerts.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>EventBridge</h4><p>Route to 200+ targets.</p></div>
+  </div>
+
+  <h3>Key SNS facts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Performance</h4>
+      <ul>
+        <li>Delivers to subscribers in milliseconds</li>
+        <li>No limit on number of subscribers per topic</li>
+        <li>Up to 10 million subscriptions per topic</li>
+        <li>Up to 100,000 topics per account</li>
+        <li>Standard: 30M messages/second throughput</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💰 Pricing</h4>
+      <ul>
+        <li>First 1M requests/month: FREE</li>
+        <li>SQS deliveries: $0.50 / million</li>
+        <li>Lambda deliveries: $0.50 / million</li>
+        <li>HTTP deliveries: $0.60 / million</li>
+        <li>SMS: varies by country ($0.00645 in India)</li>
+        <li>Email: $2.00 / 100,000</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — FAN-OUT PATTERN
+══════════════════════════════════ -->
+<div id="tab-fanout" class="tab-panel"><div class="section">
+  <h2>📡 The Fan-Out Pattern — One Message, Many Consumers</h2>
+  <p>Fan-out is SNS's killer feature. A single Publish call fans out to every subscriber simultaneously — decoupling the publisher from all consumers.</p>
+
+  <!-- FANOUT VISUAL -->
+  <h3>Live Fan-Out Diagram</h3>
+  <div class="fanout">
+    <div class="fanout-header">📡 OrderPlaced event — fans out to 6 subscribers instantly</div>
+    <div class="fanout-body">
+
+      <div class="fanout-publisher">
+        <h5>🛒 Order Service</h5>
+        <p>Publisher — knows nothing about subscribers</p>
+        <span class="fanout-pub-msg">Publish("order.placed", {orderId:"ORD-123"})</span>
+      </div>
+
+      <div class="fanout-arrow-down"></div>
+
+      <div class="fanout-topic">
+        <h5>📡 SNS Topic</h5>
+        <p>arn:aws:sns:ap-south-1:123:OrderEvents</p>
+        <span class="fanout-topic-arn">Delivery: parallel · All at once · ~ms latency</span>
+      </div>
+
+      <div class="fanout-lines-wrap">
+        <div class="fanout-vert-line"></div>
+        <div class="fanout-horiz"></div>
+        <div class="fanout-dots">
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+          <div class="fanout-dot-line"><div class="fanout-branch"></div></div>
+        </div>
+      </div>
+
+      <div class="fanout-subs">
+        <div class="sub-card sub-sqs">
+          <h6>📬 SQS Queue</h6>
+          <p>Inventory Service</p>
+        </div>
+        <div class="sub-card sub-lambda">
+          <h6>λ Lambda</h6>
+          <p>Email Confirmation</p>
+        </div>
+        <div class="sub-card sub-sqs">
+          <h6>📬 SQS Queue</h6>
+          <p>Analytics Pipeline</p>
+        </div>
+        <div class="sub-card sub-http">
+          <h6>🌐 HTTPS</h6>
+          <p>Partner Webhook</p>
+        </div>
+        <div class="sub-card sub-firehose">
+          <h6>🌊 Firehose</h6>
+          <p>→ S3 Data Lake</p>
+        </div>
+        <div class="sub-card sub-sms">
+          <h6>📱 SMS</h6>
+          <p>Ops Alert</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: WITHOUT FANOUT vs WITH -->
+  <h3>Without Fan-out vs With Fan-out</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Without SNS — tight coupling</div>
+        <ul class="flow-items">
+          <li>Order Service calls Inventory API directly</li>
+          <li>Order Service calls Email Service directly</li>
+          <li>Order Service calls Analytics API directly</li>
+          <li>Each new consumer: add more code to Order Service</li>
+          <li>Inventory Service down → Order Service fails</li>
+          <li>Order Service knows about ALL downstream systems</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ With SNS — loose coupling</div>
+        <ul class="flow-items">
+          <li>Order Service publishes to SNS Topic — done</li>
+          <li>All subscribers receive automatically</li>
+          <li>New consumer: add subscription — zero code change</li>
+          <li>Inventory Service down → SNS retries independently</li>
+          <li>Order Service knows NOTHING about consumers</li>
+          <li>Add or remove subscribers at any time</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- SNS + SQS COMBO -->
+  <h3>The SNS + SQS Combo — Best of Both Worlds</h3>
+  <div class="flow">
+    <div class="flow-node n-pub">
+      <div class="flow-node-title">📤 Order Service publishes once</div>
+      <ul class="flow-items">
+        <li>SNS topic: OrderPlaced</li>
+        <li>One publish call → SNS fans out</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ Fan-out to multiple SQS queues</div>
+    <div class="flow-row">
+      <div class="flow-node n-orange" style="max-width:100%">
+        <div class="flow-node-title">📬 Inventory Queue</div>
+        <ul class="flow-items">
+          <li>Message waits until Inventory Service polls</li>
+          <li>Service processes at its own pace</li>
+          <li>If service crashes → message stays in queue</li>
+          <li>Retries automatically</li>
+        </ul>
+      </div>
+      <div class="flow-node n-orange" style="max-width:100%">
+        <div class="flow-node-title">📬 Analytics Queue</div>
+        <ul class="flow-items">
+          <li>Independent queue for analytics</li>
+          <li>Analytics can be slow — doesn't block inventory</li>
+          <li>Different visibility timeout per queue</li>
+          <li>Scale consumers independently</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Perfect decoupling achieved</div>
+      <ul class="flow-items">
+        <li>SNS = instant fan-out broadcast</li>
+        <li>SQS = durable buffer per consumer</li>
+        <li>Each system scales and fails independently</li>
+        <li>No message lost if any consumer is down</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — MESSAGES & FILTERING
+══════════════════════════════════ -->
+<div id="tab-message" class="tab-panel"><div class="section">
+  <h2>📨 Messages, Attributes & Filtering</h2>
+  <p>Every SNS message has a body and optional message attributes. Subscribers can set filter policies so they only receive messages that match — avoiding unnecessary processing.</p>
+
+  <!-- MESSAGE ANATOMY -->
+  <h3>Anatomy of an SNS Message</h3>
+  <div class="msg-card">
+    <div class="msg-card-header">📨 SNS Message — full structure</div>
+    <div class="msg-field">
+      <span class="msg-key">MessageId</span>
+      <span class="msg-val">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>
+      <span class="msg-note">AWS-assigned unique ID</span>
+    </div>
+    <div class="msg-field">
+      <span class="msg-key">TopicArn</span>
+      <span class="msg-val">"arn:aws:sns:ap-south-1:123456789:OrderEvents"</span>
+      <span class="msg-note">Source topic</span>
+    </div>
+    <div class="msg-field">
+      <span class="msg-key">Subject</span>
+      <span class="msg-val">"OrderPlaced"</span>
+      <span class="msg-note">Optional — for email subscriptions</span>
+    </div>
+    <div class="msg-field">
+      <span class="msg-key">Message</span>
+      <span class="msg-val">{"orderId":"ORD-123","userId":"usr_456","amount":2499.00,"currency":"INR"}</span>
+      <span class="msg-note">Your payload — up to 256 KB</span>
+    </div>
+    <div class="msg-field">
+      <span class="msg-key">Timestamp</span>
+      <span class="msg-val">"2025-04-07T10:30:00.000Z"</span>
+      <span class="msg-note">When published</span>
+    </div>
+    <div class="msg-field">
+      <span class="msg-key">MessageAttributes</span>
+      <span class="msg-val">{"eventType":{"Type":"String","Value":"order.placed"}, "region":{"Type":"String","Value":"india"}, "amount":{"Type":"Number","Value":"2499"}}</span>
+      <span class="msg-note">Used for filtering ← key feature</span>
+    </div>
+  </div>
+
+  <!-- FILTER VISUAL -->
+  <h3>Message Filtering — Route Messages to Right Subscribers</h3>
+  <p>Without filtering: every subscriber receives every message — wasted processing. With filtering: each subscriber only receives messages matching its filter policy.</p>
+
+  <div class="filter-demo">
+    <div class="filter-demo-header">🔍 Topic: OrderEvents — Message attributes: eventType=order.placed, region=india, amount=2499</div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--orange);">📬 Inventory Queue</span>
+      <span class="filter-policy">{"eventType": ["order.placed", "order.cancelled"]}</span>
+      <span class="filter-result filter-pass">✅ DELIVER</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--green);">λ Email Lambda</span>
+      <span class="filter-policy">{"eventType": ["order.placed"], "region": ["india"]}</span>
+      <span class="filter-result filter-pass">✅ DELIVER</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--purple);">📬 EU Analytics</span>
+      <span class="filter-policy">{"region": ["europe", "uk", "germany"]}</span>
+      <span class="filter-result filter-skip">⛔ SKIP</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--teal);">📬 HighValue Queue</span>
+      <span class="filter-policy">{"amount": [{"numeric": [">=", 1000]}]}</span>
+      <span class="filter-result filter-pass">✅ DELIVER</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--rose);">📬 Refund Queue</span>
+      <span class="filter-policy">{"eventType": ["order.refunded"]}</span>
+      <span class="filter-result filter-skip">⛔ SKIP</span>
+    </div>
+    <div class="filter-row">
+      <span class="filter-sub" style="color:var(--blue);">🌐 Partner Hook</span>
+      <span class="filter-policy">(no filter policy — receives ALL messages)</span>
+      <span class="filter-result filter-pass">✅ DELIVER</span>
+    </div>
+  </div>
+
+  <h3>Filter Policy Operators</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔤 String Operators</h4>
+      <ul>
+        <li><code>["order.placed"]</code> — exact match</li>
+        <li><code>["order.placed", "order.cancelled"]</code> — OR match</li>
+        <li><code>[{"prefix": "order."}]</code> — starts with</li>
+        <li><code>[{"suffix": ".failed"}]</code> — ends with</li>
+        <li><code>[{"anything-but": "test"}]</code> — NOT match</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔢 Numeric Operators</h4>
+      <ul>
+        <li><code>[{"numeric": ["=", 100]}]</code> — equals</li>
+        <li><code>[{"numeric": [">", 1000]}]</code> — greater than</li>
+        <li><code>[{"numeric": [">=", 500, "<=", 5000]}]</code> — range</li>
+        <li><code>[{"exists": true}]</code> — attribute present</li>
+        <li><code>[{"exists": false}]</code> — attribute absent</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Filter policy — subscription vs message body</h4>
+    <p>Filters work on <strong>Message Attributes</strong> (metadata) — NOT on the message body (JSON payload). This is intentional: SNS can filter without parsing/deserializing the full message body, making filtering extremely fast and cheap. Always include routing-relevant data as message attributes, keep detailed payload in the message body.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — TOPIC TYPES
+══════════════════════════════════ -->
+<div id="tab-types" class="tab-panel"><div class="section">
+  <h2>📋 Topic Types — Standard vs FIFO</h2>
+  <p>SNS offers two topic types with fundamentally different delivery guarantees. Choosing the right one depends on whether message order and deduplication matter.</p>
+
+  <h3>Standard Topic vs FIFO Topic</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔶 Standard Topic (Default)</h4>
+      <ul>
+        <li>Throughput: nearly unlimited (30M+ msg/sec)</li>
+        <li>Delivery order: best-effort (may be out of order)</li>
+        <li>Delivery: at-least-once (may deliver duplicate)</li>
+        <li>Subscribers: SQS, Lambda, HTTP, Email, SMS, Push</li>
+        <li>Cost: lower</li>
+        <li>Use for: most event notifications, alerts, async workflows</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔷 FIFO Topic</h4>
+      <ul>
+        <li>Throughput: 300 messages/sec (3000 with batching)</li>
+        <li>Delivery order: strict FIFO per Message Group ID</li>
+        <li>Delivery: exactly-once (deduplication window: 5 min)</li>
+        <li>Subscribers: FIFO SQS queues ONLY</li>
+        <li>Cost: higher (~10× standard)</li>
+        <li>Use for: financial transactions, inventory updates, ordered workflows</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: WHEN FIFO MATTERS -->
+  <h3>When FIFO Order Matters — Stock Price Updates</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Standard — wrong order possible</div>
+        <ul class="flow-items">
+          <li>Published: AAPL=$180 → AAPL=$175 → AAPL=$182</li>
+          <li>Received: AAPL=$175 → AAPL=$182 → AAPL=$180 ❌</li>
+          <li>UI shows $180 as latest — wrong!</li>
+          <li>Financial decisions based on stale data</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ FIFO — guaranteed order</div>
+        <ul class="flow-items">
+          <li>Published: AAPL=$180 → AAPL=$175 → AAPL=$182</li>
+          <li>Received: AAPL=$180 → AAPL=$175 → AAPL=$182 ✓</li>
+          <li>UI always shows correct latest price</li>
+          <li>MessageGroupId: "AAPL" — all grouped together</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>FIFO — Key Concepts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🗂️ Message Group ID</h4>
+      <p>Groups related messages together. Within a group, FIFO order is guaranteed. Different groups can process in parallel. Example: OrderID as group → all events for one order are ordered. Different orders process simultaneously.</p>
+    </div>
+    <div class="card">
+      <h4>🔁 Deduplication ID</h4>
+      <p>5-minute deduplication window. If two messages with same ID are published within 5 minutes — second is dropped silently. Use for: idempotent republishing after network error. Option: content-based deduplication (SHA-256 of body).</p>
+    </div>
+  </div>
+
+  <h3>Message Sizes & Limits</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Standard</th><th>FIFO</th></tr>
+    <tr><td><strong>Max message size</strong></td><td>256 KB</td><td>256 KB</td></tr>
+    <tr><td><strong>Throughput</strong></td><td>Unlimited</td><td>300 msg/sec (3K batched)</td></tr>
+    <tr><td><strong>Delivery</strong></td><td>At-least-once</td><td>Exactly-once</td></tr>
+    <tr><td><strong>Order</strong></td><td>Best-effort</td><td>Strict FIFO per group</td></tr>
+    <tr><td><strong>Subscribers</strong></td><td>All types</td><td>FIFO SQS only</td></tr>
+    <tr><td><strong>Encryption</strong></td><td>Optional (KMS)</td><td>Optional (KMS)</td></tr>
+    <tr><td><strong>Large messages</strong></td><td>S3 extended client</td><td>S3 extended client</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Large message payload workaround</h4>
+    <p>SNS max is 256 KB. For larger payloads: publish the data to S3, then publish an SNS message containing the S3 URL. Subscribers fetch the full payload from S3. The <strong>SNS Extended Client Library</strong> for Java automates this — no official .NET version, but easy to implement manually in C#.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — DELIVERY & RETRY
+══════════════════════════════════ -->
+<div id="tab-delivery" class="tab-panel"><div class="section">
+  <h2>🔄 Delivery, Retry & Dead-Letter Queues</h2>
+  <p>SNS guarantees delivery attempts — not instant delivery. When a subscriber endpoint is unavailable, SNS retries with exponential backoff. If all retries fail, the message goes to a Dead-Letter Queue (DLQ).</p>
+
+  <!-- DELIVERY STATUS BARS -->
+  <h3>Delivery Reliability by Protocol</h3>
+  <div class="delivery-timeline">
+    <div class="dl-row">
+      <span class="dl-protocol" style="color:var(--orange);">SQS</span>
+      <div class="dl-bar-wrap"><div class="dl-bar" style="width:99%;background:linear-gradient(90deg,var(--green),var(--teal));"></div></div>
+      <span class="dl-rate">~100%</span>
+      <span class="dl-note">Most reliable — messages stored in SQS if SNS delivers successfully</span>
+    </div>
+    <div class="dl-row">
+      <span class="dl-protocol" style="color:var(--green);">Lambda</span>
+      <div class="dl-bar-wrap"><div class="dl-bar" style="width:99%;background:linear-gradient(90deg,var(--green),var(--teal));"></div></div>
+      <span class="dl-rate">~100%</span>
+      <span class="dl-note">Highly reliable — AWS manages invocation</span>
+    </div>
+    <div class="dl-row">
+      <span class="dl-protocol" style="color:var(--blue);">HTTP/S</span>
+      <div class="dl-bar-wrap"><div class="dl-bar" style="width:85%;background:linear-gradient(90deg,var(--blue),var(--purple));"></div></div>
+      <span class="dl-rate">~85%</span>
+      <span class="dl-note">Depends on your endpoint availability — use DLQ</span>
+    </div>
+    <div class="dl-row">
+      <span class="dl-protocol" style="color:var(--teal);">SMS</span>
+      <div class="dl-bar-wrap"><div class="dl-bar" style="width:90%;background:linear-gradient(90deg,var(--teal),var(--green));"></div></div>
+      <span class="dl-rate">~90%</span>
+      <span class="dl-note">Network carrier dependent — varies by country</span>
+    </div>
+    <div class="dl-row">
+      <span class="dl-protocol" style="color:var(--purple);">Email</span>
+      <div class="dl-bar-wrap"><div class="dl-bar" style="width:75%;background:linear-gradient(90deg,var(--purple),var(--rose));"></div></div>
+      <span class="dl-rate">~75%</span>
+      <span class="dl-note">Spam filters + invalid emails reduce delivery</span>
+    </div>
+  </div>
+
+  <!-- FLOW: RETRY POLICY -->
+  <h3>SNS Retry Policy — What Happens When Delivery Fails</h3>
+  <div class="flow">
+    <div class="flow-node n-sns">
+      <div class="flow-node-title">📡 SNS attempts delivery to HTTP endpoint</div>
+      <ul class="flow-items">
+        <li>Endpoint returns 5xx or times out</li>
+        <li>Delivery attempt 1 fails</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">⏳ Phase 1 — Immediate Retries</div>
+      <ul class="flow-items">
+        <li>3 immediate retries with no delay</li>
+        <li>Fast-fail scenario: endpoint may have just restarted</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">⏳ Phase 2 — Pre-Backoff Retries</div>
+      <ul class="flow-items">
+        <li>Short delays between retries (1–2 seconds)</li>
+        <li>Gives endpoint time to recover from brief outage</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">⏳ Phase 3 — Exponential Backoff</div>
+      <ul class="flow-items">
+        <li>Delays grow exponentially: 1s → 2s → 4s → 8s...</li>
+        <li>Maximum delay: 20 seconds between retries</li>
+        <li>Total retry window: up to 23 days</li>
+        <li>Configurable: min/max delay, backoff function</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ After all retries exhausted</div>
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">💀 No DLQ configured</div>
+        <ul class="flow-items">
+          <li>Message silently dropped</li>
+          <li>No recovery possible</li>
+          <li>Lost forever</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ DLQ configured</div>
+        <ul class="flow-items">
+          <li>Message sent to SQS Dead-Letter Queue</li>
+          <li>Inspect failed messages</li>
+          <li>Fix endpoint → redrive messages</li>
+          <li>Zero message loss</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Dead-Letter Queue (DLQ) Setup</h3>
+  <div class="card">
+    <h4>💡 How DLQ works with SNS</h4>
+    <p>Create an SQS queue as the DLQ. Attach it to the SNS <strong>subscription</strong> (not the topic). Each subscription can have its own DLQ — giving fine-grained failure handling per endpoint.<br><br>
+    When to inspect DLQ: set a CloudWatch alarm on <code>ApproximateNumberOfMessagesVisible</code> &gt; 0 → SNS alert → engineer investigates.<br><br>
+    After fixing the underlying issue: use SQS <strong>Dead-Letter Queue Redrive</strong> to replay all failed messages back through SNS automatically.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — REAL-WORLD PATTERNS
+══════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel"><div class="section">
+  <h2>🏗️ Real-World Patterns</h2>
+  <p>SNS appears in every serious AWS architecture. Here are the patterns you'll build in production.</p>
+
+  <!-- PATTERN 1: E-COMMERCE -->
+  <h3>Pattern 1 — E-Commerce Order Processing</h3>
+  <div class="flow">
+    <div class="flow-node n-pub">
+      <div class="flow-node-title">🛒 Customer places order → API publishes</div>
+      <ul class="flow-items">
+        <li>Message: OrderPlaced event with order details</li>
+        <li>Attributes: eventType=order.placed, region=india, amount=2499</li>
+        <li>Topic: arn:aws:sns:...:OrderEvents</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ Fan-out instantly</div>
+    <div class="flow-row">
+      <div class="flow-node n-orange" style="max-width:100%">
+        <div class="flow-node-title">📬 → Inventory SQS</div>
+        <ul class="flow-items">
+          <li>Reserve stock</li>
+          <li>Filter: order.placed only</li>
+          <li>Processes at own pace</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">λ → Email Lambda</div>
+        <ul class="flow-items">
+          <li>Send order confirmation</li>
+          <li>Filter: order.placed + region=india</li>
+          <li>Uses SES to send email</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">📬 → Analytics SQS</div>
+        <ul class="flow-items">
+          <li>Revenue tracking</li>
+          <li>No filter (all events)</li>
+          <li>Batch process nightly</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATTERN 2: MONITORING -->
+  <h3>Pattern 2 — Infrastructure Alerting</h3>
+  <div class="flow">
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">📊 CloudWatch Alarm fires (CPU > 90%)</div>
+      <ul class="flow-items">
+        <li>CloudWatch publishes to SNS Topic: AlarmTopic</li>
+        <li>Message: alarm name, state, reason, timestamp</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ Fan-out to ALL alert channels</div>
+    <div class="flow-row">
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">📧 Email</div>
+        <ul class="flow-items">
+          <li>On-call engineer email</li>
+          <li>Team distribution list</li>
+          <li>Instant human notification</li>
+        </ul>
+      </div>
+      <div class="flow-node n-teal" style="max-width:100%">
+        <div class="flow-node-title">📱 SMS</div>
+        <ul class="flow-items">
+          <li>On-call phone number</li>
+          <li>Even if email app closed</li>
+          <li>For P1 incidents</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">λ → Slack</div>
+        <ul class="flow-items">
+          <li>Lambda formats message</li>
+          <li>Posts to #alerts channel</li>
+          <li>Includes runbook link</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PATTERN 3: MICROSERVICES EVENT BUS -->
+  <h3>Pattern 3 — Microservices Event Bus</h3>
+  <div class="flow">
+    <div class="flow-node n-sns">
+      <div class="flow-node-title">📡 Central Event Bus (SNS Topic per domain)</div>
+      <ul class="flow-items">
+        <li>UserEvents topic: user.created, user.updated, user.deleted</li>
+        <li>OrderEvents topic: order.placed, order.shipped, order.cancelled</li>
+        <li>PaymentEvents topic: payment.success, payment.failed, payment.refunded</li>
+        <li>Each service publishes to its own topic</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">📬 Each service subscribes with filter to relevant topics</div>
+      <ul class="flow-items">
+        <li>Notification Service: subscribes to OrderEvents (order.placed) + UserEvents (user.created)</li>
+        <li>Fraud Service: subscribes to PaymentEvents (payment.success) + OrderEvents (order.placed)</li>
+        <li>Analytics: subscribes to ALL topics, no filters</li>
+        <li>Each via its own SQS queue → processes independently</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PATTERN 4: MOBILE PUSH -->
+  <h3>Pattern 4 — Mobile Push Notifications</h3>
+  <div class="flow">
+    <div class="flow-node n-pub">
+      <div class="flow-node-title">📱 User registers device token</div>
+      <ul class="flow-items">
+        <li>App gets FCM/APNs device token on install</li>
+        <li>Backend calls SNS: CreatePlatformEndpoint(token)</li>
+        <li>SNS creates an ARN per device</li>
+        <li>Store this ARN alongside the user in your DB</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ When you want to notify the user</div>
+    <div class="flow-node n-sns">
+      <div class="flow-node-title">📡 Option A: Direct publish to device ARN</div>
+      <ul class="flow-items">
+        <li>Publish directly to endpoint ARN (one specific device)</li>
+        <li>Good for: personal notifications (order shipped)</li>
+        <li>Fast — no topic routing needed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">OR</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">📡 Option B: Subscribe all devices to Topic</div>
+      <ul class="flow-items">
+        <li>Subscribe all device ARNs to a topic (e.g. "promotional")</li>
+        <li>Publish to topic → all devices receive instantly</li>
+        <li>Good for: broadcast (flash sale, new feature)</li>
+        <li>Scales to millions of devices with one Publish call</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+  <p>Creating an SNS Topic with SQS subscribers, filter policies, and DLQ — step by step.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create an SNS Topic</div>
+      <div class="console-step-path">SNS → Topics → Create topic</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Type</div>
+        <div class="console-field-value">Standard</div>
+        <div class="console-field-hint">Choose Standard for most use cases. Choose FIFO only when strict message ordering or exactly-once delivery is required. FIFO name must end in .fifo</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">OrderEvents</div>
+        <div class="console-field-hint">Use descriptive names reflecting the event domain. Avoid generic names like "Notifications". For FIFO: OrderEvents.fifo</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption (Server-side)</div>
+        <div class="console-field-value">✅ Enable — AWS managed key (aws/sns)</div>
+        <div class="console-field-hint">Always enable for production topics containing business data. Use custom CMK if cross-account or compliance requires it.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Access policy</div>
+        <div class="console-field-value">Basic — Only publisher role and topic owner</div>
+        <div class="console-field-hint">Start with basic — restricts who can publish. Switch to Advanced if cross-account publishing needed. Never use "everyone can publish" in production.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Delivery retry policy (HTTP)</div>
+        <div class="console-field-value">Default: 3 immediate → exponential backoff → 23 day max</div>
+        <div class="console-field-hint">Fine-tune the retry count, min/max delay for HTTP endpoints based on your endpoint's recovery time characteristics.</div>
+      </div>
+      <div class="console-note">Click <strong>Create topic</strong>. Copy the Topic ARN — you'll need it when setting up publishers.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create SQS Queue for Fan-Out</div>
+      <div class="console-step-path">SQS → Create queue (do this before subscribing)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Type</div>
+        <div class="console-field-value">Standard</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">InventoryService-OrderEvents-Queue</div>
+        <div class="console-field-hint">Name it: Consumer-Topic-Queue. Makes it clear which service owns it and which topic it receives from.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Visibility timeout</div>
+        <div class="console-field-value">30 seconds (or 6× your Lambda/consumer timeout)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Dead-letter queue</div>
+        <div class="console-field-value">✅ Enable — create a separate DLQ queue first</div>
+        <div class="console-field-hint">Recommend: max 3–5 receives before moving to DLQ. Set CloudWatch alarm on DLQ depth > 0.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Access policy — CRITICAL</div>
+        <div class="console-field-value">Add permission: Allow SNS topic ARN to send messages to this queue</div>
+        <div class="console-field-hint">Without this, SNS cannot deliver messages to SQS. Add a statement: Principal=sns.amazonaws.com, Action=sqs:SendMessage, Condition: ArnEquals aws:SourceArn = your-topic-arn</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Subscribe SQS Queue to SNS Topic</div>
+      <div class="console-step-path">SNS → Topics → [your topic] → Create subscription</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Protocol</div>
+        <div class="console-field-value">Amazon SQS</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Endpoint</div>
+        <div class="console-field-value">arn:aws:sqs:ap-south-1:123456789:InventoryService-OrderEvents-Queue</div>
+        <div class="console-field-hint">Paste your SQS queue ARN. If cross-account, the SQS queue must allow SNS to send messages in its access policy.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Enable raw message delivery</div>
+        <div class="console-field-value">✅ Enable (recommended for SQS → Lambda processing)</div>
+        <div class="console-field-hint">With raw delivery: SQS message body = your original SNS message body (clean JSON). Without: SQS message body = wrapped SNS envelope JSON. Enable raw delivery when your consumer just needs the payload, not SNS metadata.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Subscription filter policy</div>
+        <div class="console-field-value">{"eventType": ["order.placed", "order.cancelled"]}</div>
+        <div class="console-field-hint">JSON filter on message attributes. This subscription only receives order.placed and order.cancelled messages — ignoring shipment events etc.</div>
+      </div>
+      <div class="console-note">Subscription is active immediately. Test by publishing a message to the topic with matching attributes — verify it appears in the SQS queue.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Subscribe Lambda to SNS Topic</div>
+      <div class="console-step-path">SNS → Topics → [your topic] → Create subscription</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Protocol</div>
+        <div class="console-field-value">AWS Lambda</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Endpoint</div>
+        <div class="console-field-value">arn:aws:lambda:ap-south-1:123:function:SendOrderEmail</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Filter policy</div>
+        <div class="console-field-value">{"eventType": ["order.placed"], "region": ["india"]}</div>
+        <div class="console-field-hint">Lambda only invoked for India order.placed events. Saves cost — Lambda not invoked for irrelevant messages.</div>
+      </div>
+      <div class="console-note">SNS automatically adds permission to invoke the Lambda. Check Lambda → Configuration → Permissions → Resource-based policy to verify.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable Delivery Status Logging</div>
+      <div class="console-step-path">SNS → Topics → [your topic] → Edit → Delivery status logging</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Protocol to log</div>
+        <div class="console-field-value">AWS Lambda, Amazon SQS</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Success sample rate</div>
+        <div class="console-field-value">5 (log 5% of successful deliveries)</div>
+        <div class="console-field-hint">100% logging is expensive at scale. 5% gives a statistical sample. Set to 100% during debugging.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Failure logging</div>
+        <div class="console-field-value">100% (always log failures)</div>
+        <div class="console-field-hint">Always log all failures — you need to know about every delivery problem. Logs go to CloudWatch Logs.</div>
+      </div>
+      <div class="console-note">Logs appear in CloudWatch under /aws/sns/[region]/[account]/[topic]. Create a metric filter for "status=FAILURE" → alarm → SNS alert to your team.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete SNS Implementation</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.SimpleNotificationService
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>SNS Service — Publish, Subscribe, Manage</h3>
+  <div class="code-block">
+    <span class="code-label">SnsService.cs</span>
+    <pre><span class="kw">using</span> Amazon.SimpleNotificationService;
+<span class="kw">using</span> Amazon.SimpleNotificationService.Model;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">SnsService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSimpleNotificationService</span> _sns;
+
+    <span class="kw">public</span> <span class="tp">SnsService</span>(<span class="tp">IAmazonSimpleNotificationService</span> sns)
+        => _sns = sns;
+
+    <span class="cm">// ── Publish a message with attributes (for filtering) ─</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">PublishAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> topicArn,
+        <span class="tp">T</span>      payload,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? attributes = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">PublishRequest</span>
+        {
+            TopicArn = topicArn,
+            Message  = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload)
+        };
+
+        <span class="cm">// Add message attributes for filter policies</span>
+        <span class="kw">if</span> (attributes != <span class="kw">null</span>)
+        {
+            <span class="kw">foreach</span> (<span class="kw">var</span> (key, value) <span class="kw">in</span> attributes)
+            {
+                request.MessageAttributes[key] =
+                    <span class="kw">new</span> <span class="tp">MessageAttributeValue</span>
+                    {
+                        DataType    = <span class="str">"String"</span>,
+                        StringValue = value
+                    };
+            }
+        }
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _sns.<span class="fn">PublishAsync</span>(request);
+        <span class="kw">return</span> response.MessageId;
+    }
+
+    <span class="cm">// ── Publish with numeric attribute (for numeric filters) ─</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">PublishOrderAsync</span>(
+        <span class="tp">string</span> topicArn, <span class="tp">OrderPlacedEvent</span> order)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _sns.<span class="fn">PublishAsync</span>(<span class="kw">new</span> <span class="tp">PublishRequest</span>
+        {
+            TopicArn = topicArn,
+            Message  = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(order),
+            MessageAttributes = <span class="kw">new</span>()
+            {
+                [<span class="str">"eventType"</span>] = <span class="kw">new</span> <span class="tp">MessageAttributeValue</span>
+                {
+                    DataType = <span class="str">"String"</span>,
+                    StringValue = <span class="str">"order.placed"</span>
+                },
+                [<span class="str">"region"</span>] = <span class="kw">new</span> <span class="tp">MessageAttributeValue</span>
+                {
+                    DataType = <span class="str">"String"</span>,
+                    StringValue = order.Region
+                },
+                [<span class="str">"amount"</span>] = <span class="kw">new</span> <span class="tp">MessageAttributeValue</span>
+                {
+                    DataType    = <span class="str">"Number"</span>, <span class="cm">// for numeric filters</span>
+                    StringValue = order.Amount.<span class="fn">ToString</span>(<span class="str">"F2"</span>)
+                }
+            }
+        });
+        <span class="kw">return</span> response.MessageId;
+    }
+
+    <span class="cm">// ── Batch publish (up to 10 messages) ─────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PublishBatchResponse</span>&gt; <span class="fn">PublishBatchAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> topicArn,
+        <span class="tp">IEnumerable</span>&lt;<span class="tp">T</span>&gt; payloads)
+    {
+        <span class="kw">var</span> entries = payloads
+            .<span class="fn">Select</span>((p, i) => <span class="kw">new</span> <span class="tp">PublishBatchRequestEntry</span>
+            {
+                Id      = i.<span class="fn">ToString</span>(), <span class="cm">// unique within batch</span>
+                Message = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(p)
+            })
+            .<span class="fn">ToList</span>();
+
+        <span class="kw">return await</span> _sns.<span class="fn">PublishBatchAsync</span>(
+            <span class="kw">new</span> <span class="tp">PublishBatchRequest</span>
+        {
+            TopicArn                 = topicArn,
+            PublishBatchRequestEntries = entries
+        });
+    }
+
+    <span class="cm">// ── Subscribe SQS queue to topic ──────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">SubscribeSqsAsync</span>(
+        <span class="tp">string</span> topicArn,
+        <span class="tp">string</span> sqsArn,
+        <span class="tp">string</span>? filterPolicyJson = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _sns.<span class="fn">SubscribeAsync</span>(
+            <span class="kw">new</span> <span class="tp">SubscribeRequest</span>
+        {
+            TopicArn = topicArn,
+            Protocol = <span class="str">"sqs"</span>,
+            Endpoint = sqsArn,
+            Attributes = filterPolicyJson != <span class="kw">null</span>
+                ? <span class="kw">new</span>()
+                {
+                    [<span class="str">"FilterPolicy"</span>]           = filterPolicyJson,
+                    [<span class="str">"RawMessageDelivery"</span>]      = <span class="str">"true"</span>
+                }
+                : <span class="kw">new</span>() { [<span class="str">"RawMessageDelivery"</span>] = <span class="str">"true"</span> }
+        });
+        <span class="kw">return</span> response.SubscriptionArn;
+    }
+
+    <span class="cm">// ── List all subscriptions for a topic ────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Subscription</span>&gt;&gt;
+        <span class="fn">ListSubscriptionsAsync</span>(<span class="tp">string</span> topicArn)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _sns
+            .<span class="fn">ListSubscriptionsByTopicAsync</span>(topicArn);
+        <span class="kw">return</span> response.Subscriptions;
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">OrderPlacedEvent</span>(
+    <span class="tp">string</span>  OrderId,
+    <span class="tp">string</span>  UserId,
+    <span class="tp">decimal</span> Amount,
+    <span class="tp">string</span>  Currency,
+    <span class="tp">string</span>  Region);</pre>
+  </div>
+
+  <h3>Lambda Handler — Receiving SNS Messages</h3>
+  <div class="code-block">
+    <span class="code-label">SnsMessageHandler.cs — Lambda triggered by SNS</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.SNSEvents;
+<span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">OrderEmailHandler</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">SNSEvent</span> snsEvent, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="kw">foreach</span> (<span class="kw">var</span> record <span class="kw">in</span> snsEvent.Records)
+        {
+            <span class="kw">var</span> snsMsg = record.Sns;
+
+            ctx.Logger.<span class="fn">LogInformation</span>(
+                <span class="str">$"MessageId: {snsMsg.MessageId}"</span>);
+
+            <span class="cm">// If raw delivery is OFF — message is wrapped</span>
+            <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>
+                .<span class="fn">Deserialize</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;(snsMsg.Message);
+
+            <span class="cm">// Read message attributes</span>
+            <span class="kw">var</span> eventType = snsMsg.MessageAttributes
+                .<span class="fn">GetValueOrDefault</span>(<span class="str">"eventType"</span>)?.Value;
+
+            <span class="cm">// Process</span>
+            <span class="kw">await</span> <span class="fn">SendConfirmationEmailAsync</span>(order!);
+        }
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">SendConfirmationEmailAsync</span>(
+        <span class="tp">OrderPlacedEvent</span> order)
+    {
+        <span class="cm">// Use SES to send email...</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>; <span class="cm">// placeholder</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonSimpleNotificationService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">SnsService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Topic Design</h3>
+  <ul class="checklist">
+    <li>Create one topic per event domain — OrderEvents, UserEvents, PaymentEvents (not one giant "Events" topic)</li>
+    <li>Name topics descriptively: service-entity-action pattern (OrderService-OrderEvents)</li>
+    <li>Enable server-side encryption (KMS) on all production topics</li>
+    <li>Choose FIFO only when ordering truly matters — it has lower throughput limits and higher cost</li>
+    <li>Use message attributes for routing metadata — keep business payload in the message body</li>
+    <li>Enable delivery status logging for Lambda and SQS subscribers from day one</li>
+  </ul>
+
+  <h3>Subscriptions & Filtering</h3>
+  <ul class="checklist">
+    <li>Always use filter policies — avoid subscribers receiving irrelevant messages</li>
+    <li>Enable Raw Message Delivery for SQS subscribers — cleaner payload, no SNS envelope unwrapping</li>
+    <li>Configure DLQ on every subscription — never lose messages silently</li>
+    <li>Set CloudWatch alarm on DLQ depth > 0 — get alerted immediately on delivery failures</li>
+    <li>Set SQS queue access policy to allow SNS — common mistake: subscription created but delivery denied</li>
+    <li>Test filter policies by publishing with different attributes — verify routing before production</li>
+  </ul>
+
+  <h3>Publishing</h3>
+  <ul class="checklist">
+    <li>Use batch publish (up to 10 messages) to reduce API calls and cost</li>
+    <li>Include a timestamp and correlationId in every message for distributed tracing</li>
+    <li>For messages > 256 KB: store payload in S3, publish S3 URL in SNS message</li>
+    <li>Use idempotent message designs — subscribers should handle duplicate delivery gracefully</li>
+    <li>Set a MessageDeduplicationId on FIFO publishes to prevent duplicates on retry</li>
+    <li>Never put secrets or PII in message attributes — they appear in delivery logs</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top SNS Mistakes</h4>
+    <p>
+    ❌ <strong>No DLQ on subscriptions</strong> — failed messages disappear silently after retries<br>
+    ❌ <strong>SQS queue missing SNS publish permission</strong> — subscription shows confirmed but messages never arrive<br>
+    ❌ <strong>Not using filter policies</strong> — every subscriber processes every message (expensive + slow)<br>
+    ❌ <strong>Using SNS for request/response</strong> — SNS is fire-and-forget, not for synchronous responses<br>
+    ❌ <strong>Putting payload in message attributes</strong> — max 256 bytes per attribute, use message body<br>
+    ❌ <strong>One giant topic for all events</strong> — hard to manage, filter, and secure per event type<br>
+    ❌ <strong>Not enabling raw delivery for SQS</strong> — consumers receive wrapped SNS envelope, not payload<br>
+    ❌ <strong>Using email subscriptions in production flows</strong> — email is for humans, not reliable machine-to-machine
+    </p>
+  </div>
+
+  <h3>SNS vs SQS vs EventBridge — Choosing the Right Tool</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>Use</th></tr>
+    <tr><td>One event → many consumers simultaneously</td><td><strong>SNS ✅</strong></td></tr>
+    <tr><td>Queue tasks for a single worker to process</td><td><strong>SQS ✅</strong></td></tr>
+    <tr><td>Fan-out + durable buffering per consumer</td><td><strong>SNS + SQS ✅</strong></td></tr>
+    <tr><td>Route events to 200+ AWS services by content</td><td><strong>EventBridge ✅</strong></td></tr>
+    <tr><td>Send alerts to humans (email/SMS/Slack)</td><td><strong>SNS ✅</strong></td></tr>
+    <tr><td>Guaranteed ordered processing</td><td><strong>SNS FIFO + SQS FIFO ✅</strong></td></tr>
+    <tr><td>Event replay / reprocess history</td><td><strong>Kinesis / EventBridge Archive ✅</strong></td></tr>
+    <tr><td>Mobile push to millions of devices</td><td><strong>SNS Mobile Push ✅</strong></td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon SNS!</h3>
+    <p>What is SNS · SNS vs SQS difference · Fan-out pattern with live diagram · Message anatomy &amp; attributes · Filtering with all operators · Standard vs FIFO topics · Delivery, retry &amp; dead-letter queues · All real-world patterns (e-commerce, alerting, event bus, mobile push) · Full AWS Console setup (every field!) · Complete C# SDK · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--sns);">One message, infinite reach — broadcast to the world! 📡🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
