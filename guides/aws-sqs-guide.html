@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon SQS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.2);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --sqs:#1a7a9a;--sqs-l:#d4eef8;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;padding:0;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#f0f6fa 0%,#e0eef5 45%,#cce0ec 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'📬';position:absolute;right:-10px;top:-15px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'⏳';position:absolute;left:-5px;bottom:-10px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--sqs);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--sqs-l);color:var(--sqs);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--sqs-l);letter-spacing:-.01em;}
+.section h3{color:var(--sqs);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ QUEUE LANE VISUAL — the showpiece ══ */
+.queue-lane{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.queue-lane-header{background:linear-gradient(90deg,var(--sqs-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.queue-lane-body{padding:16px;}
+.queue-track{display:flex;align-items:center;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
+.queue-producer{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.3);border-radius:var(--r);padding:10px 12px;text-align:center;min-width:90px;flex-shrink:0;}
+.queue-producer h5{color:var(--blue);font-size:.72rem;font-weight:700;margin-bottom:2px;}
+.queue-producer p{color:var(--muted);font-size:.62rem;}
+.queue-into{color:var(--border2);font-size:1.4rem;flex-shrink:0;}
+/* The queue itself */
+.queue-box{background:var(--surface);border:2px solid rgba(26,122,154,.3);border-radius:var(--r);padding:8px 6px;display:flex;align-items:center;gap:4px;flex:1;min-width:200px;position:relative;}
+.queue-box-label{position:absolute;top:-10px;left:8px;background:var(--sqs);color:#fff;font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:1px 7px;border-radius:3px;}
+/* Message pills in queue */
+.msg-pill{border-radius:5px;padding:6px 8px;text-align:center;min-width:44px;flex-shrink:0;box-shadow:var(--sh);}
+.msg-pill h6{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;margin-bottom:1px;}
+.msg-pill p{font-size:.55rem;color:var(--muted);}
+.msg-visible{background:var(--green-l);border:1px solid rgba(42,122,90,.3);}
+.msg-visible h6{color:var(--green);}
+.msg-inflight{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);}
+.msg-inflight h6{color:var(--aws);}
+.msg-delayed{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);}
+.msg-delayed h6{color:var(--purple);}
+.msg-dlq{background:var(--red-l);border:1px solid var(--red-b);}
+.msg-dlq h6{color:var(--red);}
+.queue-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:.68rem;color:var(--muted);}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+
+/* ══ VISIBILITY CLOCK ══ */
+.vis-clock{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.vis-clock-header{background:linear-gradient(90deg,var(--aws-l),var(--sqs-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.vis-phases{display:flex;align-items:stretch;overflow-x:auto;}
+.vis-phase{flex:1;min-width:120px;padding:12px 14px;border-right:1px solid var(--border);position:relative;}
+.vis-phase:last-child{border-right:none;}
+.vis-phase-num{background:var(--sqs);color:#fff;width:22px;height:22px;border-radius:50%;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:7px;}
+.vis-phase-num.orange{background:var(--aws);}
+.vis-phase-num.green{background:var(--green);}
+.vis-phase-num.red{background:var(--red);}
+.vis-phase-num.purple{background:var(--purple);}
+.vis-phase h5{font-size:.76rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.vis-phase p{font-size:.7rem;color:var(--muted);}
+.vis-phase .time{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--sqs);margin-top:4px;display:block;}
+
+/* ══ DLQ JOURNEY ══ */
+.dlq-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);}
+.dlq-row:last-child{border-bottom:none;}
+.dlq-attempt{background:var(--red-l);border:1px solid var(--red-b);border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--red);padding:2px 8px;flex-shrink:0;min-width:70px;text-align:center;}
+.dlq-arrow{color:var(--border2);font-size:1.1rem;flex-shrink:0;}
+.dlq-what{font-size:.75rem;color:var(--text2);flex:1;}
+.dlq-time{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);flex-shrink:0;}
+
+/* ══ POLLING COMPARISON ══ */
+.polling-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:12px;margin:14px 0;}
+.polling-card{border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.polling-card-head{padding:10px 14px;font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:7px;}
+.short-head{background:var(--red-l);border:1px solid var(--red-b);}
+.short-head h4{color:var(--red);font-size:.82rem;}
+.long-head{background:var(--green-l);border:1px solid rgba(42,122,90,.25);}
+.long-head h4{color:var(--green);font-size:.82rem;}
+.polling-card-body{background:var(--card);border:1px solid var(--border);border-top:none;padding:12px 14px;}
+.polling-card-body li{color:var(--muted);font-size:.8rem;margin-bottom:4px;padding-left:14px;position:relative;list-style:none;}
+.polling-card-body li::before{content:"›";position:absolute;left:0;color:var(--sqs);}
+
+/* ══ CONSUMER SCALING VISUAL ══ */
+.scale-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.scale-row{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);}
+.scale-row:last-child{border-bottom:none;}
+.scale-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;width:90px;flex-shrink:0;color:var(--muted);}
+.scale-msgs{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--sqs);width:80px;flex-shrink:0;}
+.scale-consumers{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
+.consumer-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.c-active{background:var(--green-l);border:1px solid rgba(42,122,90,.3);color:var(--green);}
+.c-idle{background:var(--surface);border:1px solid var(--border);color:var(--muted);}
+.scale-tip{font-size:.68rem;color:var(--muted);margin-left:auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--sqs);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-prod{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-prod .flow-node-title{color:var(--blue);}
+.n-sqs{background:var(--sqs-l);border:1.5px solid rgba(26,122,154,.3);}
+.n-sqs .flow-node-title{color:var(--sqs);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.n-surface{background:var(--surface);border:1.5px solid var(--border2);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--sqs);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--sqs);}
+.step-body h4{color:var(--sqs);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--sqs);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--sqs);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--sqs);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--sqs);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--sqs);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(26,122,154,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--sqs);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--sqs-l),var(--green-l));border:1px solid rgba(26,122,154,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.polling-grid{grid-template-columns:1fr;}
+  .flow-row,.vis-phases{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .scale-tip{display:none;}
+  .queue-track{flex-wrap:wrap;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📬 <span>Amazon SQS</span> — Complete Guide</h1>
+  <p>Simple Queue Service · Visibility Timeout · Dead-Letter Queues · FIFO · Long Polling · Consumer Scaling · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is SQS</button>
+  <button class="tab-btn" onclick="T('lifecycle',this)">Message Lifecycle</button>
+  <button class="tab-btn" onclick="T('visibility',this)">Visibility Timeout</button>
+  <button class="tab-btn" onclick="T('dlq',this)">Dead-Letter Queues</button>
+  <button class="tab-btn" onclick="T('types',this)">Standard vs FIFO</button>
+  <button class="tab-btn" onclick="T('polling',this)">Polling & Consumers</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS SQS
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>📬 What is Amazon SQS?</h2>
+  <p><strong>SQS = Simple Queue Service.</strong> A fully managed message queue that decouples producers (who send work) from consumers (who process work). The queue stores messages durably — up to 14 days — until a consumer is ready to process them. If the consumer crashes mid-process, the message reappears and gets retried automatically.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy</h4>
+    <p>SQS is like a post office's sorting room. Letters (messages) arrive and sit in sorted trays (queues). Postal workers (consumers) pick up one letter at a time, sign for it (visibility timeout starts), deliver it, and mark it done (delete it). If a worker goes home sick mid-delivery (consumer crash), the unsigned letter reappears in the tray after a timeout and another worker picks it up. Letters that repeatedly fail delivery go to a separate "problem tray" (Dead-Letter Queue).</p>
+  </div>
+
+  <!-- LIVE QUEUE VISUAL -->
+  <h3>A Queue in Action — Right Now</h3>
+  <div class="queue-lane">
+    <div class="queue-lane-header">📬 OrderProcessingQueue — snapshot at this moment</div>
+    <div class="queue-lane-body">
+      <div class="queue-track">
+        <div class="queue-producer">
+          <h5>🛒 Order API</h5>
+          <p>Sends 200 orders/min</p>
+        </div>
+        <div class="queue-into">→</div>
+        <div class="queue-box">
+          <span class="queue-box-label">SQS Queue</span>
+          <div class="msg-pill msg-visible">
+            <h6>MSG-1</h6><p>Visible</p>
+          </div>
+          <div class="msg-pill msg-visible">
+            <h6>MSG-2</h6><p>Visible</p>
+          </div>
+          <div class="msg-pill msg-inflight">
+            <h6>MSG-3</h6><p>In-Flight</p>
+          </div>
+          <div class="msg-pill msg-visible">
+            <h6>MSG-4</h6><p>Visible</p>
+          </div>
+          <div class="msg-pill msg-delayed">
+            <h6>MSG-5</h6><p>Delayed</p>
+          </div>
+          <div class="msg-pill msg-inflight">
+            <h6>MSG-6</h6><p>In-Flight</p>
+          </div>
+          <div class="msg-pill msg-visible">
+            <h6>MSG-7</h6><p>Visible</p>
+          </div>
+        </div>
+        <div class="queue-into">→</div>
+        <div class="queue-producer" style="background:var(--green-l);border-color:rgba(42,122,90,.3);">
+          <h5 style="color:var(--green);">⚙️ Workers</h5>
+          <p>3 ECS tasks polling</p>
+        </div>
+      </div>
+      <div class="queue-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green);"></div>Visible — available to consumers</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--aws);"></div>In-Flight — locked by a consumer</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--purple);"></div>Delayed — not yet visible</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red);"></div>Dead-letter — failed repeatedly</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Why SQS? The Problems It Solves</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😓 Without SQS — tight coupling</h4>
+      <ul>
+        <li>Order API calls Inventory Service directly (synchronous)</li>
+        <li>Inventory down → order fails immediately</li>
+        <li>Traffic spike → Inventory overwhelmed</li>
+        <li>Slow processing → Order API times out</li>
+        <li>No retry — failed = gone</li>
+        <li>Both services must be up simultaneously</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ With SQS — loose coupling</h4>
+      <ul>
+        <li>Order API sends to queue → responds instantly to user</li>
+        <li>Inventory down → messages wait safely in queue</li>
+        <li>Traffic spike → queue absorbs the burst</li>
+        <li>Slow processing → queue buffers, no timeouts</li>
+        <li>Consumer crash → message reappears, retried</li>
+        <li>Services operate completely independently</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>SQS key limits & facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📏</span><h4>Max message size</h4><p>256 KB (use S3 Extended for larger)</p></div>
+    <div class="icon-item"><span class="emoji">🗓️</span><h4>Max retention</h4><p>14 days (default 4 days)</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Throughput</h4><p>Standard: unlimited · FIFO: 300/sec</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Batch size</h4><p>Up to 10 messages per receive call</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Delay queue</h4><p>Up to 15 min delivery delay</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Cost</h4><p>First 1M requests/month FREE</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — MESSAGE LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>🔄 Message Lifecycle — Birth to Deletion</h2>
+  <p>Every message in SQS goes through a precise lifecycle. Understanding each state is crucial for debugging and building reliable systems.</p>
+
+  <!-- FULL LIFECYCLE FLOW -->
+  <h3>The Complete Message Journey</h3>
+  <div class="flow">
+    <div class="flow-node n-prod">
+      <div class="flow-node-title">📤 Step 1 — Producer Sends Message</div>
+      <ul class="flow-items">
+        <li>Producer calls <code>SendMessage</code> API</li>
+        <li>Message body: up to 256 KB (JSON, XML, text)</li>
+        <li>Optional: MessageAttributes, DelaySeconds, DeduplicationId (FIFO)</li>
+        <li>SQS returns: MessageId — unique identifier</li>
+        <li>Producer's job is done — fire and forget</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-sqs">
+      <div class="flow-node-title">📬 Step 2 — Message Sits in Queue (VISIBLE)</div>
+      <ul class="flow-items">
+        <li>Message stored durably across multiple AZs</li>
+        <li>Status: VISIBLE — available to be received</li>
+        <li>Waits here until a consumer polls the queue</li>
+        <li>If DelaySeconds set → DELAYED first, then VISIBLE</li>
+        <li>Retention clock starts ticking (default 4 days)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔒 Step 3 — Consumer Receives Message (IN-FLIGHT)</div>
+      <ul class="flow-items">
+        <li>Consumer calls <code>ReceiveMessage</code> API</li>
+        <li>SQS returns message + ReceiptHandle (unlock key)</li>
+        <li>Status: IN-FLIGHT — invisible to other consumers</li>
+        <li>Visibility timeout clock starts ticking</li>
+        <li>Only THIS consumer can see and delete it</li>
+        <li>Message NOT yet removed from queue!</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ Success Path</div>
+        <ul class="flow-items">
+          <li>Consumer processes message</li>
+          <li>Calls <code>DeleteMessage</code> with ReceiptHandle</li>
+          <li>Message PERMANENTLY removed from queue</li>
+          <li>Job complete — zero message loss risk</li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">⚠️ Failure Path</div>
+        <ul class="flow-items">
+          <li>Consumer crashes OR timeout expires</li>
+          <li>Message becomes VISIBLE again</li>
+          <li>Another consumer receives it</li>
+          <li>After maxReceiveCount → goes to DLQ</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Message Delay — Control When It Becomes Visible</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">⏰ Queue-Level Delay</div>
+        <ul class="flow-items">
+          <li>Set on the queue (0–900 seconds)</li>
+          <li>ALL messages delayed on arrival</li>
+          <li>Good for: batch jobs that should wait</li>
+          <li>Good for: scheduled retry systems</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">⏰ Per-Message Delay</div>
+        <ul class="flow-items">
+          <li>Set on individual SendMessage call</li>
+          <li>Overrides queue-level delay</li>
+          <li>Good for: "process this in 5 minutes"</li>
+          <li>Only works on Standard queues</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 "At-least-once" — what this really means</h4>
+    <p>SQS Standard guarantees <strong>at-least-once delivery</strong> — a message may occasionally be delivered more than once due to distributed system internals. Design your consumers to be <strong>idempotent</strong>: processing the same message twice should produce the same result. Track processed MessageIds in DynamoDB to detect and safely ignore duplicates.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — VISIBILITY TIMEOUT
+══════════════════════════════════ -->
+<div id="tab-visibility" class="tab-panel"><div class="section">
+  <h2>⏳ Visibility Timeout — The Safety Mechanism</h2>
+  <p>Visibility timeout is SQS's crash-recovery mechanism. When a consumer receives a message, it becomes invisible to others for the timeout duration. If the consumer doesn't delete it in time — the message reappears automatically, ready for another consumer.</p>
+
+  <div class="tip">
+    <h4>💡 Analogy</h4>
+    <p>Imagine picking up a parcel from a collection desk. You sign a collection slip (ReceiveMessage) — the parcel is marked "collected" (invisible) for 30 minutes. If you return and confirm delivery (DeleteMessage) → done. If you don't return in 30 minutes (crash / timeout) → the desk marks it uncollected again and gives it to the next person asking.</p>
+  </div>
+
+  <!-- VISIBILITY CLOCK VISUAL -->
+  <h3>Visibility Timeout Phases</h3>
+  <div class="vis-clock">
+    <div class="vis-clock-header">⏳ 30-second visibility timeout — what happens at each phase</div>
+    <div class="vis-phases">
+      <div class="vis-phase">
+        <div class="vis-phase-num">1</div>
+        <h5>VISIBLE</h5>
+        <p>Message in queue, waiting for a consumer to poll</p>
+        <span class="time">t=0s</span>
+      </div>
+      <div class="vis-phase">
+        <div class="vis-phase-num orange">2</div>
+        <h5>RECEIVED</h5>
+        <p>Consumer calls ReceiveMessage → message becomes invisible</p>
+        <span class="time">t=5s (poll)</span>
+      </div>
+      <div class="vis-phase">
+        <div class="vis-phase-num orange">3</div>
+        <h5>PROCESSING</h5>
+        <p>Consumer processes message. Visibility timer running.</p>
+        <span class="time">t=5–30s</span>
+      </div>
+      <div class="vis-phase">
+        <div class="vis-phase-num green">4a</div>
+        <h5>DELETED ✅</h5>
+        <p>Consumer calls DeleteMessage before timeout → permanently gone</p>
+        <span class="time">t=20s (success)</span>
+      </div>
+      <div class="vis-phase">
+        <div class="vis-phase-num red">4b</div>
+        <h5>REAPPEARS ⚠️</h5>
+        <p>Timeout expires OR consumer crashed → message VISIBLE again</p>
+        <span class="time">t=35s (timeout)</span>
+      </div>
+      <div class="vis-phase">
+        <div class="vis-phase-num purple">5</div>
+        <h5>EXTEND</h5>
+        <p>Long job? Call ChangeMessageVisibility to reset the clock</p>
+        <span class="time">any time before t=30s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: VISIBILITY TIMEOUT SCENARIOS -->
+  <h3>Three Visibility Timeout Scenarios</h3>
+  <div class="flow">
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Scenario 1 — Happy Path</div>
+      <ul class="flow-items">
+        <li>VisibilityTimeout: 30 seconds</li>
+        <li>Consumer receives message at t=0</li>
+        <li>Processes in 8 seconds</li>
+        <li>Calls DeleteMessage at t=8 → message gone forever</li>
+        <li>No risk of duplicate processing</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">⚠️ Scenario 2 — Processing Takes Longer Than Timeout</div>
+      <ul class="flow-items">
+        <li>VisibilityTimeout: 30 seconds</li>
+        <li>Processing takes 45 seconds (slow DB query)</li>
+        <li>At t=30, timeout expires — message REAPPEARS</li>
+        <li>Second consumer picks it up → DUPLICATE PROCESSING!</li>
+        <li>Fix: extend timeout at t=25 using ChangeMessageVisibility</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">💥 Scenario 3 — Consumer Crashes</div>
+      <ul class="flow-items">
+        <li>Consumer receives message, crashes at t=10</li>
+        <li>No DeleteMessage called</li>
+        <li>At t=30, timeout expires → message REAPPEARS ✅</li>
+        <li>Another healthy consumer picks it up and processes it</li>
+        <li>This is the built-in crash recovery — zero message loss</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Choosing the Right Visibility Timeout</h3>
+  <div class="card">
+    <h4>⚙️ Visibility Timeout = Maximum Processing Time × 1.5 (safety buffer)</h4>
+    <p>If your Lambda function timeout is 15 seconds → set visibility timeout to ~25 seconds<br>
+    If your ECS task processes in ~2 minutes → set visibility timeout to ~3 minutes<br><br>
+    <strong>Too short:</strong> messages reappear before processing finishes → duplicates<br>
+    <strong>Too long:</strong> crashed consumer's message is invisible for a long time → slower recovery<br><br>
+    <strong>Best practice for Lambda:</strong> set SQS visibility timeout to 6× the Lambda function timeout. This gives headroom for Lambda retries and batch processing.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — DEAD-LETTER QUEUES
+══════════════════════════════════ -->
+<div id="tab-dlq" class="tab-panel"><div class="section">
+  <h2>💀 Dead-Letter Queues — When Messages Fail Repeatedly</h2>
+  <p>Some messages will always fail — malformed data, a bug in the consumer, a downstream service that's permanently down. Without a DLQ these messages loop forever, blocking real messages. A DLQ catches them after N failures so you can inspect and fix them.</p>
+
+  <div class="tip">
+    <h4>💡 Analogy</h4>
+    <p>A DLQ is like a "return to sender" pile at the post office. If a letter has been attempted 3 times and keeps bouncing back (address invalid, nobody home repeatedly) — instead of attempting a 4th time, it goes to a special "undeliverable" tray where a supervisor can review it and decide what to do.</p>
+  </div>
+
+  <!-- DLQ JOURNEY VISUAL -->
+  <h3>Message Journey to the DLQ</h3>
+  <div class="queue-lane">
+    <div class="queue-lane-header">💀 maxReceiveCount = 3 — after 3 failures, message moves to DLQ</div>
+    <div class="queue-lane-body">
+      <div class="dlq-row">
+        <span class="dlq-attempt">Attempt 1</span>
+        <span class="dlq-arrow">→</span>
+        <span class="dlq-what">Consumer receives MSG-42 → tries to parse JSON → malformed data → throws exception → no DeleteMessage called</span>
+        <span class="dlq-time">t=0s</span>
+      </div>
+      <div class="dlq-row">
+        <span class="dlq-attempt">Reappears</span>
+        <span class="dlq-arrow">↻</span>
+        <span class="dlq-what">Visibility timeout expires (30s) → MSG-42 becomes visible again → ReceiveCount: 1 → 2</span>
+        <span class="dlq-time">t=30s</span>
+      </div>
+      <div class="dlq-row">
+        <span class="dlq-attempt">Attempt 2</span>
+        <span class="dlq-arrow">→</span>
+        <span class="dlq-what">Different consumer receives → same failure → exception → timeout again</span>
+        <span class="dlq-time">t=35s</span>
+      </div>
+      <div class="dlq-row">
+        <span class="dlq-attempt">Reappears</span>
+        <span class="dlq-arrow">↻</span>
+        <span class="dlq-what">Timeout expires again → ReceiveCount: 2 → 3</span>
+        <span class="dlq-time">t=65s</span>
+      </div>
+      <div class="dlq-row">
+        <span class="dlq-attempt">Attempt 3</span>
+        <span class="dlq-arrow">→</span>
+        <span class="dlq-what">Third consumer → same result → ReceiveCount reaches maxReceiveCount (3)</span>
+        <span class="dlq-time">t=70s</span>
+      </div>
+      <div class="dlq-row">
+        <span class="dlq-attempt" style="background:var(--red-l);color:var(--red);border-color:var(--red-b);">→ DLQ</span>
+        <span class="dlq-arrow">→</span>
+        <span class="dlq-what">SQS moves MSG-42 to Dead-Letter Queue automatically. Original queue stops seeing it. CloudWatch alarm fires.</span>
+        <span class="dlq-time">t=100s</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: WHAT TO DO WITH DLQ -->
+  <h3>What to Do When Messages Reach the DLQ</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">🔔 Step 1 — Alert fires (CloudWatch alarm)</div>
+      <ul class="flow-items">
+        <li>Alarm: DLQ ApproximateNumberOfMessagesVisible > 0</li>
+        <li>SNS alert → Slack / email → on-call engineer notified</li>
+        <li>Never ignore DLQ messages — each is a real failure</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">🔍 Step 2 — Investigate failed messages</div>
+      <ul class="flow-items">
+        <li>View DLQ messages in SQS console (or receive via SDK)</li>
+        <li>Check message body: is the data malformed?</li>
+        <li>Check CloudWatch Logs for consumer error at time of failure</li>
+        <li>Identify root cause: bug in consumer? Bad data? Downstream outage?</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🔧 Step 3 — Fix and Redrive</div>
+      <ul class="flow-items">
+        <li>Fix the consumer bug → deploy fix</li>
+        <li>Use SQS Dead-Letter Queue Redrive (console button)</li>
+        <li>Messages replayed back to source queue automatically</li>
+        <li>Consumer processes them successfully this time</li>
+        <li>Zero message loss — all recovered</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="success">
+    <h4>✅ DLQ configuration golden rule</h4>
+    <p>Set <code>maxReceiveCount</code> based on whether failures are transient (retry more) or permanent (retry less). For transient failures (network hiccup, temporary outage): set to 5–10. For permanent failures (bad data format): set to 3. Always pair every source queue with a DLQ — not optional in production.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — STANDARD vs FIFO
+══════════════════════════════════ -->
+<div id="tab-types" class="tab-panel"><div class="section">
+  <h2>🔀 Standard vs FIFO Queues</h2>
+  <p>SQS offers two fundamentally different queue types. Standard is the default — unlimited throughput but no order guarantee. FIFO guarantees strict order and exactly-once processing, but at a lower throughput cap.</p>
+
+  <h3>Side-by-Side Comparison</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔶 Standard Queue (Default)</h4>
+      <ul>
+        <li>Throughput: virtually unlimited</li>
+        <li>Order: best-effort — may be out of order</li>
+        <li>Delivery: at-least-once — duplicates possible</li>
+        <li>Use: most workloads, high-volume processing</li>
+        <li>Cost: lower</li>
+        <li>Good for: email notifications, log processing, batch jobs, analytics</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔷 FIFO Queue (name ends in .fifo)</h4>
+      <ul>
+        <li>Throughput: 300 msg/sec (3000 with batching)</li>
+        <li>Order: strict FIFO per MessageGroupId</li>
+        <li>Delivery: exactly-once within 5-minute dedup window</li>
+        <li>Use: financial transactions, inventory, sequential workflows</li>
+        <li>Cost: ~10% higher per million requests</li>
+        <li>Good for: payments, stock trading, order state machines</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: WHEN ORDER MATTERS -->
+  <h3>When Order Matters — Bank Transfer Example</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Standard — wrong order possible</div>
+        <ul class="flow-items">
+          <li>Sent: Deposit(+500) → Withdraw(-200) → Deposit(+100)</li>
+          <li>Received: Withdraw(-200) → Deposit(+500) → Deposit(+100)</li>
+          <li>Balance goes: $0 → -$200 (overdraft!) → $300 → $400</li>
+          <li>Overdraft fee incorrectly charged</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ FIFO — exact order guaranteed</div>
+        <ul class="flow-items">
+          <li>Sent: Deposit(+500) → Withdraw(-200) → Deposit(+100)</li>
+          <li>Received in exact same order</li>
+          <li>Balance: $0 → $500 → $300 → $400</li>
+          <li>Correct — no overdraft</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>FIFO Queue Concepts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🗂️ MessageGroupId — Parallelism Within FIFO</h4>
+      <p>FIFO doesn't mean ALL messages are strictly ordered globally — only within a group. Each unique MessageGroupId is its own ordered lane. Messages in different groups process in parallel.<br><br>
+      Example: use orderId as the group. All events for order-123 are ordered (placed → paid → shipped). Orders 123, 456, 789 process simultaneously.</p>
+    </div>
+    <div class="card">
+      <h4>🔁 MessageDeduplicationId</h4>
+      <p>Within a 5-minute window, any two messages with the same DeduplicationId → second is silently discarded.<br><br>
+      Use for: safe retries when you're unsure if the first publish succeeded. Set it to a hash of the message content, or use content-based deduplication (SHA-256 of body auto-generated by SQS).</p>
+    </div>
+  </div>
+
+  <h3>Standard vs FIFO — Full Decision Table</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>Standard</th><th>FIFO</th></tr>
+    <tr><td>Process a million image resizes/day</td><td>✅</td><td>Overkill</td></tr>
+    <tr><td>Bank account transactions</td><td>❌ Risk</td><td>✅</td></tr>
+    <tr><td>Send 10,000 emails/minute</td><td>✅</td><td>Too slow</td></tr>
+    <tr><td>Order state machine (placed→paid→shipped)</td><td>❌ May reorder</td><td>✅</td></tr>
+    <tr><td>Ingest clickstream analytics</td><td>✅</td><td>Unnecessary</td></tr>
+    <tr><td>Inventory stock updates (prevent oversell)</td><td>❌ Race conditions</td><td>✅</td></tr>
+    <tr><td>Lambda triggered by SNS (fan-out)</td><td>✅ via SNS+SQS</td><td>✅ via SNS FIFO + SQS FIFO</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — POLLING & CONSUMERS
+══════════════════════════════════ -->
+<div id="tab-polling" class="tab-panel"><div class="section">
+  <h2>🎯 Polling, Consumers & Scaling</h2>
+  <p>Consumers don't receive messages passively — they poll SQS for messages. How you poll and how many consumers you run dramatically affects cost, latency, and throughput.</p>
+
+  <!-- POLLING COMPARISON -->
+  <h3>Short Polling vs Long Polling</h3>
+  <div class="polling-grid">
+    <div class="polling-card">
+      <div class="polling-card-head short-head"><h4>⚡ Short Polling (Default)</h4></div>
+      <div class="polling-card-body">
+        <ul>
+          <li>WaitTimeSeconds = 0</li>
+          <li>SQS checks a subset of servers immediately</li>
+          <li>Returns instantly — even if queue is empty</li>
+          <li>Empty response = empty poll = wasted API call</li>
+          <li>1000 polls/hour on empty queue = $0.40 wasted</li>
+          <li>Higher CPU on consumer from constant looping</li>
+          <li><strong>Avoid unless you need sub-second latency</strong></li>
+        </ul>
+      </div>
+    </div>
+    <div class="polling-card">
+      <div class="polling-card-head long-head"><h4>✅ Long Polling (Recommended)</h4></div>
+      <div class="polling-card-body">
+        <ul>
+          <li>WaitTimeSeconds = 1–20 (set to 20)</li>
+          <li>SQS holds the connection open — waits for message</li>
+          <li>Returns as soon as a message arrives (or after 20s)</li>
+          <li>Dramatically fewer empty responses</li>
+          <li>Up to 95% reduction in empty poll costs</li>
+          <li>Lower CPU — consumer sleeps between messages</li>
+          <li><strong>Always use long polling in production</strong></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONSUMER SCALING VISUAL -->
+  <h3>Consumer Auto-Scaling — Match Workers to Queue Depth</h3>
+  <div class="scale-visual">
+    <div class="scale-row">
+      <span class="scale-label" style="color:var(--green);">Light load</span>
+      <span class="scale-msgs">12 msgs</span>
+      <div class="scale-consumers">
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-idle">W</div>
+        <div class="consumer-icon c-idle">W</div>
+        <div class="consumer-icon c-idle">W</div>
+        <div class="consumer-icon c-idle">W</div>
+      </div>
+      <span class="scale-tip">1 active / 4 idle — scale down</span>
+    </div>
+    <div class="scale-row">
+      <span class="scale-label" style="color:var(--aws);">Normal</span>
+      <span class="scale-msgs">380 msgs</span>
+      <div class="scale-consumers">
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-idle">W</div>
+        <div class="consumer-icon c-idle">W</div>
+      </div>
+      <span class="scale-tip">3 active / 2 idle — steady state</span>
+    </div>
+    <div class="scale-row">
+      <span class="scale-label" style="color:var(--red);">Spike</span>
+      <span class="scale-msgs">8,400 msgs</span>
+      <div class="scale-consumers">
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+        <div class="consumer-icon c-active">W</div>
+      </div>
+      <span class="scale-tip">10 workers — auto-scaled out</span>
+    </div>
+  </div>
+
+  <h3>Scaling Strategies</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Lambda (Serverless — easiest)</h4>
+      <ul>
+        <li>Lambda Event Source Mapping polls SQS automatically</li>
+        <li>Scales from 0 to 1000 concurrent workers instantly</li>
+        <li>Processes up to 10 messages per invocation (batch)</li>
+        <li>Failed batch: entire batch returned to queue (or partial)</li>
+        <li>Zero infrastructure management — just write the handler</li>
+        <li>Ideal for: variable, spiky workloads</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🐳 ECS / EC2 (Controlled scaling)</h4>
+      <ul>
+        <li>Containers poll SQS in a loop</li>
+        <li>Scale on CloudWatch metric: ApproximateNumberOfMessages</li>
+        <li>Target tracking: keep queue depth per consumer low</li>
+        <li>More control: long-running jobs, stateful processing</li>
+        <li>Better for: heavy jobs (&gt;15 min Lambda limit)</li>
+        <li>Ideal for: ML inference, video encoding, large file processing</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: LAMBDA + SQS -->
+  <h3>Lambda Event Source Mapping — How It Works</h3>
+  <div class="flow">
+    <div class="flow-node n-sqs">
+      <div class="flow-node-title">📬 SQS Queue has messages</div>
+      <ul class="flow-items">
+        <li>Lambda service polls on your behalf (long polling)</li>
+        <li>You never write polling code — Lambda handles it</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ Batch of up to 10 messages</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">λ Lambda invoked with a batch</div>
+      <ul class="flow-items">
+        <li>event.Records = array of up to 10 SQS messages</li>
+        <li>Process all records — return success or throw</li>
+        <li>Success: Lambda service deletes all messages automatically</li>
+        <li>Exception: entire batch returns to queue (at-least-once)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">💡 Partial Batch Response (ReportBatchItemFailures)</div>
+      <ul class="flow-items">
+        <li>Return only the failed messageIds in batchItemFailures</li>
+        <li>Successfully processed messages are deleted</li>
+        <li>Only failed messages return to queue</li>
+        <li>Avoids reprocessing already-successful messages</li>
+        <li>Always use this with Lambda + SQS in production</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+  <p>Creating a production-grade SQS queue with DLQ, encryption, and Lambda trigger — step by step.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create the Dead-Letter Queue First</div>
+      <div class="console-step-path">SQS → Create queue (DLQ)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Type</div>
+        <div class="console-field-value">Standard</div>
+        <div class="console-field-hint">Create DLQ first so you can reference it when creating the main queue. DLQ type must match source queue type.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">OrderProcessingQueue-DLQ</div>
+        <div class="console-field-hint">Convention: [SourceQueueName]-DLQ. Clear, obvious, easy to find when alerts fire at 3am.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Message retention period</div>
+        <div class="console-field-value">14 days</div>
+        <div class="console-field-hint">Set DLQ retention to maximum (14 days). Failed messages should survive long enough for investigation and redrive. Main queue can be shorter.</div>
+      </div>
+      <div class="console-note">Create this queue first. Copy its ARN — you'll need it in step 2.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create the Main Queue</div>
+      <div class="console-step-path">SQS → Create queue (source queue)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Type</div>
+        <div class="console-field-value">Standard (or FIFO for ordered processing)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">OrderProcessingQueue</div>
+        <div class="console-field-hint">For FIFO queues name MUST end with .fifo: OrderProcessingQueue.fifo</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Visibility timeout</div>
+        <div class="console-field-value">60 seconds</div>
+        <div class="console-field-hint">Set to 6× your Lambda timeout (if Lambda = 10s → 60s). For ECS: set to max expected processing time × 1.5. Wrong value = duplicate processing or slow recovery.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Message retention period</div>
+        <div class="console-field-value">4 days (default)</div>
+        <div class="console-field-hint">How long messages survive if not consumed. Default 4 days is reasonable. Increase if your consumer can be down for longer periods.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Delivery delay</div>
+        <div class="console-field-value">0 seconds</div>
+        <div class="console-field-hint">Non-zero delays all messages on arrival. Leave at 0 unless you intentionally want delayed processing (e.g. scheduled reminders).</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Maximum message size</div>
+        <div class="console-field-value">256 KB</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Receive message wait time</div>
+        <div class="console-field-value">20 seconds</div>
+        <div class="console-field-hint">ALWAYS set to 20 (maximum). Enables long polling by default — reduces empty receive calls by up to 95% → saves cost and CPU.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption (SSE)</div>
+        <div class="console-field-value">✅ Enable — Amazon SQS key (SSE-SQS) or KMS CMK</div>
+        <div class="console-field-hint">SSE-SQS is free and good for most cases. Use KMS CMK if you need cross-account access or key rotation control.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Configure Dead-Letter Queue on Main Queue</div>
+      <div class="console-step-path">Same form → Dead-letter queue section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Dead-letter queue</div>
+        <div class="console-field-value">✅ Enable</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Queue ARN</div>
+        <div class="console-field-value">arn:aws:sqs:ap-south-1:123:OrderProcessingQueue-DLQ</div>
+        <div class="console-field-hint">Paste the DLQ ARN from step 1. SQS validates it exists and is in the same region.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Maximum receives</div>
+        <div class="console-field-value">3</div>
+        <div class="console-field-hint">After 3 failed receives (ReceiveCount reaches 3), message moves to DLQ. For transient failures (network issues): use 5–10. For bugs that won't fix themselves: use 1–3.</div>
+      </div>
+      <div class="console-note">Click <strong>Create queue</strong>. Both queues are now configured.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Add Lambda Trigger</div>
+      <div class="console-step-path">SQS → [your queue] → Lambda triggers → Configure Lambda function trigger</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Lambda function</div>
+        <div class="console-field-value">OrderProcessorFunction</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Batch size</div>
+        <div class="console-field-value">10</div>
+        <div class="console-field-hint">Maximum messages per Lambda invocation. 10 = most cost-efficient. Lower (1) = simpler code, easier partial failure handling. Higher = fewer Lambda invocations but harder error isolation.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Batch window</div>
+        <div class="console-field-value">0 seconds</div>
+        <div class="console-field-hint">Wait up to N seconds to fill a batch before invoking Lambda. 0 = invoke immediately when any message arrives. Non-zero = wait to collect a fuller batch (better for bursty workloads).</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Report batch item failures</div>
+        <div class="console-field-value">✅ Enable</div>
+        <div class="console-field-hint">Allows Lambda to return partial success — only failed messages go back to queue. Without this: one bad message in a batch of 10 causes all 10 to retry.</div>
+      </div>
+      <div class="console-note">Lambda adds SQS permissions to its execution role automatically. Check Lambda → Configuration → Permissions to verify <strong>sqs:ReceiveMessage</strong>, <strong>sqs:DeleteMessage</strong>, <strong>sqs:GetQueueAttributes</strong> are present.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Set CloudWatch Alarms</div>
+      <div class="console-step-path">CloudWatch → Alarms → Create alarm</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Alarm 1 — DLQ depth</div>
+        <div class="console-field-value">Metric: ApproximateNumberOfMessagesVisible on DLQ > 0</div>
+        <div class="console-field-hint">Any message in DLQ = something is broken. Alert immediately. Action: SNS → email or Slack.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Alarm 2 — Queue depth growing</div>
+        <div class="console-field-value">Metric: ApproximateNumberOfMessagesVisible on main queue > 1000</div>
+        <div class="console-field-hint">Queue growing = consumers can't keep up. Time to scale up consumers. Action: trigger auto-scaling or alert team.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Alarm 3 — Message age</div>
+        <div class="console-field-value">Metric: ApproximateAgeOfOldestMessage > 300 seconds (5 min)</div>
+        <div class="console-field-hint">Messages sitting unprocessed too long = consumers are stuck or dead. Most important alarm for detecting silent consumer failures.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Production SQS Implementation</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.SQS
+Install-Package Amazon.Lambda.SQSEvents   <span class="cm">// for Lambda handler</span>
+Install-Package AWSSDK.Core</pre></div>
+
+  <h3>SQS Producer Service</h3>
+  <div class="code-block">
+    <span class="code-label">SqsProducerService.cs</span>
+    <pre><span class="kw">using</span> Amazon.SQS;
+<span class="kw">using</span> Amazon.SQS.Model;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">SqsProducerService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSQS</span> _sqs;
+
+    <span class="kw">public</span> <span class="tp">SqsProducerService</span>(<span class="tp">IAmazonSQS</span> sqs) => _sqs = sqs;
+
+    <span class="cm">// ── Send single message ────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">SendAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> queueUrl, <span class="tp">T</span> payload,
+        <span class="tp">int</span> delaySeconds = <span class="num">0</span>)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _sqs.<span class="fn">SendMessageAsync</span>(
+            <span class="kw">new</span> <span class="tp">SendMessageRequest</span>
+        {
+            QueueUrl     = queueUrl,
+            MessageBody  = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload),
+            DelaySeconds = delaySeconds
+        });
+        <span class="kw">return</span> response.MessageId;
+    }
+
+    <span class="cm">// ── Send batch (up to 10 — cheaper!) ──────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SendBatchAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> queueUrl, <span class="tp">IEnumerable</span>&lt;<span class="tp">T</span>&gt; payloads)
+    {
+        <span class="kw">var</span> entries = payloads
+            .<span class="fn">Select</span>((payload, i) =>
+                <span class="kw">new</span> <span class="tp">SendMessageBatchRequestEntry</span>
+                {
+                    Id          = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>(),
+                    MessageBody = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload)
+                })
+            .<span class="fn">ToList</span>();
+
+        <span class="cm">// SQS allows max 10 per batch call</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> chunk <span class="kw">in</span> entries.<span class="fn">Chunk</span>(<span class="num">10</span>))
+        {
+            <span class="kw">var</span> result = <span class="kw">await</span> _sqs.<span class="fn">SendMessageBatchAsync</span>(
+                <span class="kw">new</span> <span class="tp">SendMessageBatchRequest</span>
+            {
+                QueueUrl = queueUrl,
+                Entries  = chunk.<span class="fn">ToList</span>()
+            });
+
+            <span class="kw">if</span> (result.Failed.<span class="fn">Any</span>())
+                <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                    <span class="str">$"{result.Failed.Count} messages failed to send"</span>);
+        }
+    }
+
+    <span class="cm">// ── Send to FIFO queue ─────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">SendFifoAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span>  queueUrl,
+        <span class="tp">T</span>       payload,
+        <span class="tp">string</span>  messageGroupId,
+        <span class="tp">string</span>? deduplicationId = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">SendMessageRequest</span>
+        {
+            QueueUrl       = queueUrl,
+            MessageBody    = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload),
+            MessageGroupId = messageGroupId,
+        };
+
+        <span class="cm">// If null, SQS uses content-based deduplication</span>
+        <span class="kw">if</span> (deduplicationId != <span class="kw">null</span>)
+            request.MessageDeduplicationId = deduplicationId;
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _sqs.<span class="fn">SendMessageAsync</span>(request);
+        <span class="kw">return</span> response.MessageId;
+    }
+}</pre>
+  </div>
+
+  <h3>SQS Consumer Service (Long-Polling Loop)</h3>
+  <div class="code-block">
+    <span class="code-label">SqsConsumerService.cs — for ECS / EC2 consumers</span>
+    <pre><span class="kw">public class</span> <span class="tp">SqsConsumerService</span> : <span class="tp">BackgroundService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSQS</span> _sqs;
+    <span class="kw">private readonly</span> <span class="tp">string</span> _queueUrl;
+    <span class="kw">private readonly</span> <span class="tp">ILogger</span>&lt;<span class="tp">SqsConsumerService</span>&gt; _log;
+
+    <span class="kw">protected override async</span> <span class="tp">Task</span> <span class="fn">ExecuteAsync</span>(
+        <span class="tp">CancellationToken</span> stoppingToken)
+    {
+        <span class="kw">while</span> (!stoppingToken.IsCancellationRequested)
+        {
+            <span class="kw">var</span> response = <span class="kw">await</span> _sqs.<span class="fn">ReceiveMessageAsync</span>(
+                <span class="kw">new</span> <span class="tp">ReceiveMessageRequest</span>
+            {
+                QueueUrl            = _queueUrl,
+                MaxNumberOfMessages = <span class="num">10</span>,        <span class="cm">// batch of 10</span>
+                WaitTimeSeconds     = <span class="num">20</span>,        <span class="cm">// LONG POLLING!</span>
+                VisibilityTimeout   = <span class="num">60</span>,        <span class="cm">// 60s to process</span>
+                AttributeNames      = [<span class="str">"ApproximateReceiveCount"</span>]
+            }, stoppingToken);
+
+            <span class="kw">foreach</span> (<span class="kw">var</span> msg <span class="kw">in</span> response.Messages)
+            {
+                <span class="kw">try</span>
+                {
+                    <span class="kw">await</span> <span class="fn">ProcessMessageAsync</span>(msg, stoppingToken);
+
+                    <span class="cm">// SUCCESS: Delete message from queue</span>
+                    <span class="kw">await</span> _sqs.<span class="fn">DeleteMessageAsync</span>(
+                        _queueUrl, msg.ReceiptHandle, stoppingToken);
+                }
+                <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+                {
+                    _log.<span class="fn">LogError</span>(ex,
+                        <span class="str">"Failed to process message {Id}. Attempt {Count}."</span>,
+                        msg.MessageId,
+                        msg.Attributes.<span class="fn">GetValueOrDefault</span>(
+                            <span class="str">"ApproximateReceiveCount"</span>));
+
+                    <span class="cm">// Don't delete — let visibility timeout expire
+                    // Message will reappear for retry</span>
+                }
+            }
+        }
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">ProcessMessageAsync</span>(
+        <span class="tp">Message</span> msg, <span class="tp">CancellationToken</span> ct)
+    {
+        <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>
+            .<span class="fn">Deserialize</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;(msg.Body);
+
+        <span class="cm">// Do your business logic here...</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>Lambda Handler with Partial Batch Failure</h3>
+  <div class="code-block">
+    <span class="code-label">OrderProcessorLambda.cs — production pattern</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.SQSEvents;
+<span class="kw">using</span> Amazon.Lambda.Core;
+
+<span class="kw">public class</span> <span class="tp">OrderProcessorLambda</span>
+{
+    <span class="cm">// Returns SQSBatchResponse → enables partial batch failure</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">SQSBatchResponse</span>&gt; <span class="fn">HandleAsync</span>(
+        <span class="tp">SQSEvent</span> sqsEvent, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="kw">var</span> failures = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">SQSBatchResponse</span>.<span class="tp">BatchItemFailure</span>&gt;();
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> record <span class="kw">in</span> sqsEvent.Records)
+        {
+            <span class="kw">try</span>
+            {
+                ctx.Logger.<span class="fn">LogInformation</span>(
+                    <span class="str">$"Processing: {record.MessageId}"</span>);
+
+                <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>
+                    .<span class="fn">Deserialize</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;(record.Body);
+
+                <span class="kw">await</span> <span class="fn">ProcessOrderAsync</span>(order!);
+
+                <span class="cm">// Success — do NOT add to failures list</span>
+                <span class="cm">// Lambda will auto-delete this message</span>
+            }
+            <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+            {
+                ctx.Logger.<span class="fn">LogError</span>(ex,
+                    <span class="str">$"Failed message: {record.MessageId}"</span>);
+
+                <span class="cm">// Add to failures → this message goes back to queue</span>
+                <span class="cm">// Other messages in this batch are still deleted!</span>
+                failures.<span class="fn">Add</span>(<span class="kw">new</span>() {
+                    ItemIdentifier = record.MessageId });
+            }
+        }
+
+        <span class="kw">return new</span> <span class="tp">SQSBatchResponse</span>
+        {
+            BatchItemFailures = failures
+        };
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">ProcessOrderAsync</span>(<span class="tp">OrderPlacedEvent</span> order)
+    {
+        <span class="cm">// Reserve inventory, send confirmation, etc.</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>;
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">OrderPlacedEvent</span>(
+    <span class="tp">string</span> OrderId, <span class="tp">string</span> UserId, <span class="tp">decimal</span> Amount);</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonSQS</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">SqsProducerService</span>&gt;();
+builder.Services.<span class="fn">AddHostedService</span>&lt;<span class="tp">SqsConsumerService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Queue Configuration</h3>
+  <ul class="checklist">
+    <li>Always set WaitTimeSeconds to 20 — long polling reduces cost by up to 95%</li>
+    <li>Set visibility timeout to 6× Lambda timeout, or 1.5× max consumer processing time</li>
+    <li>Always create a DLQ for every source queue — no exceptions in production</li>
+    <li>Set DLQ retention to 14 days — give yourself time to investigate failures</li>
+    <li>Enable SSE encryption on all queues containing business or sensitive data</li>
+    <li>For FIFO: choose content-based deduplication unless you need custom deduplication IDs</li>
+  </ul>
+
+  <h3>Producer Best Practices</h3>
+  <ul class="checklist">
+    <li>Use batch send (up to 10 messages) — 10× fewer API calls, 10× cheaper</li>
+    <li>Include a correlationId and timestamp in every message body</li>
+    <li>Keep message body under 256 KB — for larger, store in S3 and send the URL</li>
+    <li>Design for idempotency — consumers may process the same message twice</li>
+    <li>Use per-message delay for scheduled processing instead of sleeping in your app</li>
+    <li>Validate message structure before sending — don't push bad data to the queue</li>
+  </ul>
+
+  <h3>Consumer Best Practices</h3>
+  <ul class="checklist">
+    <li>For Lambda: always return SQSBatchResponse with partial failure support</li>
+    <li>For ECS: run as BackgroundService with IHostedService for clean shutdown</li>
+    <li>Never delete the message before processing is complete — delete only on success</li>
+    <li>Use ChangeMessageVisibility to extend timeout for long-running jobs</li>
+    <li>Log the ApproximateReceiveCount — track how many times a message has been retried</li>
+    <li>Set CloudWatch alarm on DLQ depth AND message age — both are critical</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top SQS Mistakes</h4>
+    <p>
+    ❌ <strong>Short polling (WaitTimeSeconds = 0)</strong> — costs money on empty polls, wastes CPU<br>
+    ❌ <strong>Deleting message before processing</strong> — crash after delete = message lost forever<br>
+    ❌ <strong>Visibility timeout shorter than processing time</strong> — duplicate processing<br>
+    ❌ <strong>No DLQ configured</strong> — failed messages loop forever, blocking healthy messages<br>
+    ❌ <strong>Not using batch send/receive</strong> — paying 10× more API costs unnecessarily<br>
+    ❌ <strong>Lambda without partial batch failure</strong> — one bad message retries entire batch<br>
+    ❌ <strong>Not logging ReceiveCount</strong> — blind to which messages are repeatedly failing<br>
+    ❌ <strong>No CloudWatch alarm on message age</strong> — silent consumer death goes undetected for hours
+    </p>
+  </div>
+
+  <h3>SQS vs SNS vs EventBridge — The Full Picture</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Pattern</th><th>Use</th><th>Why</th></tr>
+    <tr><td>One service sends task to one worker</td><td><strong>SQS Standard</strong></td><td>Simple queue, durable, retries</td></tr>
+    <tr><td>Ordered financial transactions</td><td><strong>SQS FIFO</strong></td><td>Strict order + exactly-once</td></tr>
+    <tr><td>One event → many services notified</td><td><strong>SNS</strong></td><td>Fan-out to all subscribers</td></tr>
+    <tr><td>One event → many services + durable buffer</td><td><strong>SNS + SQS</strong></td><td>Fan-out + per-service queuing</td></tr>
+    <tr><td>Route events to 200+ AWS targets by content</td><td><strong>EventBridge</strong></td><td>Content-based routing engine</td></tr>
+    <tr><td>Worker pool processes jobs at own pace</td><td><strong>SQS</strong></td><td>Rate decoupling + burst absorption</td></tr>
+    <tr><td>Replay past events / audit history</td><td><strong>Kinesis</strong></td><td>SQS doesn't support replay</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon SQS!</h3>
+    <p>What is SQS · Complete message lifecycle (visible → in-flight → deleted/DLQ) · Visibility timeout with all 3 scenarios · Dead-letter queues with redrive · Standard vs FIFO with ordering examples · Long polling vs short polling · Consumer scaling (Lambda + ECS) · Partial batch failure pattern · Full AWS Console setup (every field!) · Production C# SDK (producer, ECS consumer, Lambda handler)</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--sqs);">Every message delivered, every failure recovered — build indestructible systems! 📬🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
