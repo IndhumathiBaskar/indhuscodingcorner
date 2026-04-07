@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Lambda — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.2);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --lam:#e8a020;--lam-l:#fdf3dc;--lam-d:#b07010;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#fdf8ef 0%,#f5e8c8 45%,#ecdab0 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'λ';position:absolute;right:10px;top:-10px;font-size:11rem;opacity:.05;font-family:'JetBrains Mono',monospace;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:5px;bottom:-10px;font-size:7rem;opacity:.05;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--lam-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--lam-l);color:var(--lam-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--lam-l);letter-spacing:-.01em;}
+.section h3{color:var(--lam-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ EXECUTION LIFECYCLE TIMELINE ══ */
+.exec-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.exec-timeline-header{background:linear-gradient(90deg,var(--lam-l),var(--aws-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.exec-phases{display:flex;align-items:stretch;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.exec-phase{padding:12px 14px;border-right:1px solid var(--border);min-width:110px;flex-shrink:0;}
+.exec-phase:last-child{border-right:none;}
+.exec-phase-num{width:22px;height:22px;border-radius:50%;font-size:.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:7px;color:#fff;}
+.exec-phase h5{font-size:.75rem;font-weight:700;color:var(--text);margin-bottom:4px;}
+.exec-phase p{font-size:.67rem;color:var(--muted);line-height:1.5;}
+.exec-phase .dur{font-family:'JetBrains Mono',monospace;font-size:.62rem;display:block;margin-top:5px;padding:2px 6px;border-radius:3px;}
+/* cold start phases */
+.phase-cold1{background:linear-gradient(135deg,#fce8d0,#fdf3dc);}
+.phase-cold1 .exec-phase-num{background:var(--red);}
+.phase-cold1 .dur{background:var(--red-l);color:var(--red);}
+.phase-cold2{background:linear-gradient(135deg,#fce8d0,#fdf3dc);}
+.phase-cold2 .exec-phase-num{background:#b05a10;}
+.phase-cold2 .dur{background:var(--aws-l);color:#b05a10;}
+.phase-cold3{background:linear-gradient(135deg,#fce8d0,#fdf3dc);}
+.phase-cold3 .exec-phase-num{background:var(--aws);}
+.phase-cold3 .dur{background:var(--aws-l);color:var(--aws);}
+.phase-handler{background:var(--green-l);}
+.phase-handler .exec-phase-num{background:var(--green);}
+.phase-handler .dur{background:var(--green-l);color:var(--green);}
+.phase-warm{background:var(--blue-l);}
+.phase-warm .exec-phase-num{background:var(--blue);}
+.phase-warm .dur{background:var(--blue-l);color:var(--blue);}
+
+/* ══ COLD vs WARM COMPARISON BAR ══ */
+.start-bars{margin:16px 0;}
+.start-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.start-label{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;width:80px;flex-shrink:0;}
+.start-label.cold{color:var(--red);}
+.start-label.warm{color:var(--green);}
+.start-track{flex:1;height:16px;background:var(--surface);border-radius:100px;overflow:hidden;border:1px solid var(--border);position:relative;}
+.start-fill{height:100%;border-radius:100px;display:flex;align-items:center;overflow:hidden;}
+.start-seg{height:100%;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.55rem;color:#fff;font-weight:700;white-space:nowrap;}
+.seg-init{background:var(--red);}
+.seg-runtime{background:#b05a10;}
+.seg-handler-cold{background:var(--green);}
+.seg-handler-warm{background:var(--green);}
+.start-total{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--muted);width:50px;text-align:right;flex-shrink:0;}
+
+/* ══ CONCURRENCY VISUAL ══ */
+.concurrency-map{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.concurrency-map-header{background:linear-gradient(90deg,var(--purple-l),var(--lam-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.conc-row{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:8px;}
+.conc-row:last-child{border-bottom:none;}
+.conc-event{font-size:.72rem;font-weight:700;width:80px;flex-shrink:0;}
+.conc-instances{display:flex;gap:4px;flex:1;flex-wrap:wrap;}
+.conc-box{width:28px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:700;flex-shrink:0;border:1.5px solid;}
+.conc-active{background:var(--green-l);border-color:rgba(42,122,90,.35);color:var(--green);}
+.conc-cold{background:var(--red-l);border-color:var(--red-b);color:var(--red);}
+.conc-warm{background:var(--blue-l);border-color:rgba(42,90,154,.3);color:var(--blue);}
+.conc-throttle{background:var(--surface);border-color:var(--border2);color:var(--muted);}
+.conc-note{font-size:.67rem;color:var(--muted);margin-left:auto;}
+
+/* ══ TRIGGER GRID ══ */
+.trigger-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;margin:14px 0;}
+.trigger-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+.trigger-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.trigger-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.tc-sync::before{background:var(--blue);}
+.tc-async::before{background:var(--green);}
+.tc-stream::before{background:var(--purple);}
+.trigger-card .t-type{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:3px;margin-bottom:6px;display:inline-block;}
+.tc-sync .t-type{background:var(--blue-l);color:var(--blue);}
+.tc-async .t-type{background:var(--green-l);color:var(--green);}
+.tc-stream .t-type{background:var(--purple-l);color:var(--purple);}
+.trigger-card h4{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.trigger-card p{font-size:.7rem;color:var(--muted);}
+
+/* ══ LAYER STACK ══ */
+.layer-stack{margin:16px 0;background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh-lg);}
+.layer-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);}
+.layer-item:last-child{border-bottom:none;}
+.layer-badge{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;text-align:center;min-width:55px;}
+.lb-fn{background:var(--lam-l);color:var(--lam-d);}
+.lb-dep{background:var(--blue-l);color:var(--blue);}
+.lb-shared{background:var(--green-l);color:var(--green);}
+.lb-ext{background:var(--purple-l);color:var(--purple);}
+.lb-runtime{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.layer-name{font-weight:700;font-size:.82rem;color:var(--text);flex:1;}
+.layer-desc{font-size:.72rem;color:var(--muted);}
+.layer-size{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);flex-shrink:0;}
+
+/* ══ MEMORY / PRICE TRADE-OFF ══ */
+.perf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:8px;margin:14px 0;}
+.perf-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.perf-card .mem{font-family:'JetBrains Mono',monospace;font-size:.88rem;font-weight:700;color:var(--lam-d);margin-bottom:3px;}
+.perf-card .time{font-size:.7rem;color:var(--green);margin-bottom:2px;}
+.perf-card .cost{font-size:.7rem;color:var(--aws);}
+.perf-card .note{font-size:.62rem;color:var(--muted);margin-top:3px;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--lam-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-trigger{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-trigger .flow-node-title{color:var(--blue);}
+.n-lam{background:var(--lam-l);border:1.5px solid rgba(232,160,32,.3);}
+.n-lam .flow-node-title{color:var(--lam-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.n-surface{background:var(--surface);border:1.5px solid var(--border2);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--lam-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--lam);}
+.step-body h4{color:var(--lam-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--lam-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--lam-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--lam);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--lam);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--lam);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(232,160,32,.12);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--lam-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--lam-l),var(--green-l));border:1px solid rgba(232,160,32,.25);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.trigger-grid,.perf-grid{grid-template-columns:1fr;}
+  .flow-row,.exec-phases{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .conc-note{display:none;}
+  .layer-size{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⚡ <span>AWS Lambda</span> — Complete Guide</h1>
+  <p>Serverless Functions · Cold Start · Concurrency · Triggers · Layers · Destinations · Pricing · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is Lambda</button>
+  <button class="tab-btn" onclick="T('lifecycle',this)">Execution Lifecycle</button>
+  <button class="tab-btn" onclick="T('coldstart',this)">Cold Start</button>
+  <button class="tab-btn" onclick="T('concurrency',this)">Concurrency</button>
+  <button class="tab-btn" onclick="T('triggers',this)">Triggers</button>
+  <button class="tab-btn" onclick="T('layers',this)">Layers & Config</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS LAMBDA
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>⚡ What is AWS Lambda?</h2>
+  <p><strong>Lambda</strong> is AWS's serverless compute service. You write a function, upload it, and Lambda runs it in response to events — no servers to provision, patch, or manage. You pay only for the milliseconds your code actually runs.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — The Vending Machine</h4>
+    <p>Lambda is like a vending machine. It sits idle, consuming almost nothing. Press a button (event arrives) → it springs to life, executes exactly one operation (dispenses your snack), and returns to idle. You pay per button press — not for the machine sitting there. Another person can press a different button simultaneously (concurrency). If 1000 people press buttons at once — 1000 operations run in parallel, automatically. No staff needed.</p>
+  </div>
+
+  <!-- BIG PICTURE FLOW -->
+  <h3>Lambda's Place in the AWS Ecosystem</h3>
+  <div class="flow">
+    <div class="flow-node n-trigger">
+      <div class="flow-node-title">📡 Event Source</div>
+      <ul class="flow-items">
+        <li>API Gateway HTTP request</li>
+        <li>S3 file upload</li>
+        <li>SQS message arrives</li>
+        <li>DynamoDB stream change</li>
+        <li>CloudWatch scheduled rule</li>
+        <li>SNS notification</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ triggers automatically</div>
+    <div class="flow-node n-lam">
+      <div class="flow-node-title">λ Lambda — Your Code Runs</div>
+      <ul class="flow-items">
+        <li>AWS provisions a micro-VM in milliseconds</li>
+        <li>Runs your handler function with the event payload</li>
+        <li>Access to VPC, IAM role, environment variables</li>
+        <li>Memory: 128 MB – 10,240 MB (CPU scales with memory)</li>
+        <li>Max duration: 15 minutes per invocation</li>
+        <li>Returns response (or writes to downstream service)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ then</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Result</div>
+      <ul class="flow-items">
+        <li>Response returned to caller (synchronous)</li>
+        <li>OR writes to SQS / DynamoDB / S3 (async)</li>
+        <li>Execution environment freezes</li>
+        <li>You are billed only for execution time (ms precision)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Why Lambda? Traditional vs Serverless</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🖥️ Traditional Server (EC2)</h4>
+      <ul>
+        <li>Pay 24/7 even at 0% CPU</li>
+        <li>Manually patch OS and runtime</li>
+        <li>Scale: provision new instances (minutes)</li>
+        <li>You manage: servers, OS, runtime, app</li>
+        <li>Capacity planning required upfront</li>
+        <li>Idle nights/weekends: still paying</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Lambda (Serverless)</h4>
+      <ul>
+        <li>Pay only for execution (per millisecond)</li>
+        <li>AWS patches everything below your code</li>
+        <li>Scale: 0 → 1,000 concurrent instantly</li>
+        <li>You manage: only your code</li>
+        <li>No capacity planning — auto-scales</li>
+        <li>Idle nights/weekends: $0.00</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Lambda limits at a glance</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Max timeout</h4><p>15 minutes per invocation</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Memory</h4><p>128 MB to 10,240 MB</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Package size</h4><p>50 MB (zip) · 250 MB (unzipped)</p></div>
+    <div class="icon-item"><span class="emoji">💡</span><h4>Free tier</h4><p>1M requests + 400,000 GB-sec/month</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Concurrency</h4><p>1,000 per region (soft limit)</p></div>
+    <div class="icon-item"><span class="emoji">📁</span><h4>/tmp storage</h4><p>512 MB – 10,240 MB ephemeral</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — EXECUTION LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>🔄 Execution Lifecycle — What Happens When Lambda Runs</h2>
+  <p>Every Lambda invocation goes through a precise lifecycle. Understanding each phase is critical for performance optimisation — especially what runs once vs what runs on every invocation.</p>
+
+  <!-- EXECUTION TIMELINE -->
+  <h3>Full Execution Timeline (Cold Start)</h3>
+  <div class="exec-timeline">
+    <div class="exec-timeline-header">λ First invocation — all phases execute (Cold Start)</div>
+    <div class="exec-phases">
+      <div class="exec-phase phase-cold1">
+        <div class="exec-phase-num">1</div>
+        <h5>INIT</h5>
+        <p>AWS downloads your deployment package. Provisions and starts a micro-VM (MicroVM / Firecracker).</p>
+        <span class="dur">~100–500ms</span>
+      </div>
+      <div class="exec-phase phase-cold2">
+        <div class="exec-phase-num">2</div>
+        <h5>RUNTIME</h5>
+        <p>Starts .NET runtime. Loads your assembly. Runs all static constructors and module initializers.</p>
+        <span class="dur">~200–800ms</span>
+      </div>
+      <div class="exec-phase phase-cold3">
+        <div class="exec-phase-num">3</div>
+        <h5>INIT CODE</h5>
+        <p>Runs your code OUTSIDE the handler. Connects to DB, creates HTTP clients, loads secrets, builds DI container.</p>
+        <span class="dur">~100–2000ms</span>
+      </div>
+      <div class="exec-phase phase-handler">
+        <div class="exec-phase-num">4</div>
+        <h5>HANDLER</h5>
+        <p>Your actual function logic runs. Processes the event. Returns the result.</p>
+        <span class="dur">Your code</span>
+      </div>
+      <div class="exec-phase phase-warm">
+        <div class="exec-phase-num">5</div>
+        <h5>FREEZE</h5>
+        <p>Execution environment paused. Kept warm for next invocation. Phases 1–3 skipped next time.</p>
+        <span class="dur">Reused ✅</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Init Code vs Handler Code — Critical Distinction</h3>
+  <div class="code-block">
+    <span class="code-label">Lambda execution model — what runs ONCE vs EVERY invocation</span>
+    <pre><span class="cm">// ═══════════════════════════════════════════════════════
+// INIT CODE — runs ONCE per container lifetime (cold start)
+// Place expensive operations here!
+// ═══════════════════════════════════════════════════════</span>
+
+<span class="kw">public class</span> <span class="tp">Function</span>
+{
+    <span class="cm">// These are created ONCE and reused across invocations</span>
+    <span class="kw">private static readonly</span> <span class="tp">HttpClient</span> _http =
+        <span class="kw">new</span> <span class="tp">HttpClient</span>(); <span class="cm">// ✅ Create once, reuse</span>
+
+    <span class="kw">private static readonly</span> <span class="tp">IConfiguration</span> _config;
+    <span class="kw">private static readonly</span> <span class="tp">IDatabaseService</span> _db;
+
+    <span class="cm">// Static constructor — runs once at cold start</span>
+    <span class="kw">static</span> <span class="tp">Function</span>()
+    {
+        _config = <span class="kw">new</span> <span class="tp">ConfigurationBuilder</span>()
+            .<span class="fn">AddEnvironmentVariables</span>()
+            .<span class="fn">Build</span>();
+
+        <span class="cm">// DB connection pooling — expensive, do it once</span>
+        _db = <span class="kw">new</span> <span class="tp">DatabaseService</span>(
+            _config[<span class="str">"DB_CONNECTION_STRING"</span>]!);
+    }
+
+    <span class="cm">// ═══════════════════════════════════════════════════════
+    // HANDLER — runs on EVERY invocation
+    // Keep this lean — reuse objects from init code above
+    // ═══════════════════════════════════════════════════════</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">FunctionHandler</span>(
+        <span class="tp">string</span> input, <span class="tp">ILambdaContext</span> context)
+    {
+        context.Logger.<span class="fn">LogInformation</span>(<span class="str">$"Input: {input}"</span>);
+
+        <span class="cm">// ✅ Reuses _http and _db from init code</span>
+        <span class="kw">var</span> result = <span class="kw">await</span> _db.<span class="fn">QueryAsync</span>(input);
+        <span class="kw">return</span> result;
+    }
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 The /tmp directory persists between warm invocations</h4>
+    <p>Files written to <code>/tmp</code> survive between warm invocations of the same container. Use this for caching: download a large model or config file on cold start, store it in <code>/tmp</code>, check if it exists on subsequent invocations. Available from 512 MB to 10 GB (configurable).</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — COLD START
+══════════════════════════════════ -->
+<div id="tab-coldstart" class="tab-panel"><div class="section">
+  <h2>🥶 Cold Start — The Latency Tax & How to Beat It</h2>
+  <p>A cold start happens when Lambda must initialise a new execution environment before running your function. It adds latency the first time and after periods of inactivity. Understanding it — and mitigating it — is one of the most important Lambda skills.</p>
+
+  <!-- COLD vs WARM BARS -->
+  <h3>Cold Start vs Warm Start — Visual Comparison</h3>
+  <div class="start-bars">
+    <div class="start-row">
+      <span class="start-label cold">Cold</span>
+      <div class="start-track">
+        <div class="start-fill">
+          <div class="start-seg seg-init" style="width:22%">Init</div>
+          <div class="start-seg seg-runtime" style="width:30%">Runtime</div>
+          <div class="start-seg seg-handler-cold" style="width:48%">Handler</div>
+        </div>
+      </div>
+      <span class="start-total">~800ms</span>
+    </div>
+    <div class="start-row">
+      <span class="start-label warm">Warm</span>
+      <div class="start-track">
+        <div class="start-fill">
+          <div class="start-seg seg-handler-warm" style="width:100%">Handler only</div>
+        </div>
+      </div>
+      <span class="start-total">~8ms</span>
+    </div>
+  </div>
+  <p style="font-size:.75rem;color:var(--muted);text-align:center;margin-top:-8px;">Cold start = Init + Runtime + Your init code + Handler. Warm = Handler only. 100× difference.</p>
+
+  <!-- FLOW: WHEN COLD START HAPPENS -->
+  <h3>When Does a Cold Start Happen?</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">🥶 Cold start triggers</div>
+        <ul class="flow-items">
+          <li>First invocation ever (new deployment)</li>
+          <li>No recent invocations (container expired)</li>
+          <li>Concurrent requests exceed warm containers</li>
+          <li>Deployment of new code version</li>
+          <li>Configuration change (env var, memory, etc.)</li>
+          <li>Lambda needs to scale up beyond current capacity</li>
+        </ul>
+      </div>
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">☀️ Warm — no cold start</div>
+        <ul class="flow-items">
+          <li>Same container handles another request</li>
+          <li>Recent invocation kept it warm</li>
+          <li>Provisioned concurrency pre-warmed it</li>
+          <li>Init code already ran — skipped</li>
+          <li>HTTP clients, DB connections reused</li>
+          <li>Typical API response: single-digit milliseconds</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Cold Start Duration by Runtime</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Runtime</th><th>Typical Cold Start</th><th>Notes</th></tr>
+    <tr><td><strong>.NET 8 (top-level statements)</strong></td><td>~200–400ms</td><td>Native AOT: &lt;100ms 🚀</td></tr>
+    <tr><td><strong>.NET 8 (class-based)</strong></td><td>~400–800ms</td><td>Improve with trimming + AOT</td></tr>
+    <tr><td><strong>Node.js 20</strong></td><td>~80–200ms</td><td>Fastest interpreted runtime</td></tr>
+    <tr><td><strong>Python 3.12</strong></td><td>~100–300ms</td><td>Fast, minimal dependencies help</td></tr>
+    <tr><td><strong>Java 21 (SnapStart)</strong></td><td>~200ms (with SnapStart)</td><td>Without: 1–5 seconds</td></tr>
+    <tr><td><strong>Go 1.x</strong></td><td>&lt;100ms</td><td>Compiled binary, minimal runtime</td></tr>
+  </table></div>
+
+  <h3>Mitigation Strategies</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔥 Provisioned Concurrency</h4>
+      <ul>
+        <li>Pre-initialises N execution environments</li>
+        <li>Always warm — zero cold start for those N instances</li>
+        <li>Extra cost: charged even when idle</li>
+        <li>Use for: latency-sensitive APIs, user-facing endpoints</li>
+        <li>Schedule: reduce at night using Application Auto Scaling</li>
+        <li>Set to: peak expected concurrent users</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Native AOT (.NET 8)</h4>
+      <ul>
+        <li>Compiles .NET to native binary at build time</li>
+        <li>No JIT at runtime → cold start &lt; 100ms</li>
+        <li>Smaller deployment package</li>
+        <li>Trade-off: no runtime reflection, longer build</li>
+        <li>Use for: latency-critical functions without complex reflection</li>
+        <li>SDK: Amazon.Lambda.RuntimeSupport AOT mode</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📦 Minimise Package Size</h4>
+      <ul>
+        <li>Smaller package → faster download → faster init</li>
+        <li>.NET: trim unused assemblies (PublishTrimmed=true)</li>
+        <li>Use Lambda Layers for shared dependencies</li>
+        <li>Avoid bundling unused NuGet packages</li>
+        <li>Target: keep deployment &lt; 10 MB</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏗️ Optimise Init Code</h4>
+      <ul>
+        <li>Lazy-load what you don't always need</li>
+        <li>Cache secrets in memory after first fetch</li>
+        <li>Use static readonly for reusable clients</li>
+        <li>Pre-warm DB connection in static constructor</li>
+        <li>Avoid synchronous I/O in init code</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — CONCURRENCY
+══════════════════════════════════ -->
+<div id="tab-concurrency" class="tab-panel"><div class="section">
+  <h2>🔢 Concurrency — Scaling Lambda</h2>
+  <p>Concurrency = number of requests Lambda handles at the same instant. Each concurrent invocation runs in its own isolated execution environment. Lambda scales automatically — but there are limits you must understand.</p>
+
+  <!-- CONCURRENCY VISUAL -->
+  <h3>Concurrency in Action — Over Time</h3>
+  <div class="concurrency-map">
+    <div class="concurrency-map-header">📊 Lambda scales execution environments as traffic increases</div>
+    <div class="conc-row">
+      <span class="conc-event" style="color:var(--green);">1 request</span>
+      <div class="conc-instances">
+        <div class="conc-box conc-warm">λ1</div>
+      </div>
+      <span class="conc-note">1 environment (warm from before)</span>
+    </div>
+    <div class="conc-row">
+      <span class="conc-event" style="color:var(--aws);">5 requests</span>
+      <div class="conc-instances">
+        <div class="conc-box conc-warm">λ1</div>
+        <div class="conc-box conc-cold">λ2</div>
+        <div class="conc-box conc-cold">λ3</div>
+        <div class="conc-box conc-cold">λ4</div>
+        <div class="conc-box conc-cold">λ5</div>
+      </div>
+      <span class="conc-note">1 warm + 4 cold started</span>
+    </div>
+    <div class="conc-row">
+      <span class="conc-event" style="color:var(--blue);">50 requests</span>
+      <div class="conc-instances">
+        <div class="conc-box conc-warm">λ1</div>
+        <div class="conc-box conc-warm">λ2</div>
+        <div class="conc-box conc-warm">λ3</div>
+        <div class="conc-box conc-warm">λ4</div>
+        <div class="conc-box conc-warm">λ5</div>
+        <div class="conc-box conc-cold">λ6</div>
+        <div class="conc-box conc-cold">λ7</div>
+        <div class="conc-box conc-cold">λ8</div>
+        <div class="conc-box conc-cold">…</div>
+      </div>
+      <span class="conc-note">5 reused + 45 new cold starts</span>
+    </div>
+    <div class="conc-row">
+      <span class="conc-event" style="color:var(--red);">1200 requests</span>
+      <div class="conc-instances">
+        <div class="conc-box conc-active">λ</div>
+        <div class="conc-box conc-active">λ</div>
+        <div class="conc-box conc-active">λ</div>
+        <div class="conc-box conc-active">…</div>
+        <div class="conc-box conc-throttle">✗</div>
+        <div class="conc-box conc-throttle">✗</div>
+        <div class="conc-box conc-throttle">✗</div>
+      </div>
+      <span class="conc-note">1000 limit hit → 200 throttled (429)</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 16px;">
+    <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted);">
+      <span style="width:12px;height:12px;border-radius:2px;background:var(--green-l);border:1px solid rgba(42,122,90,.35);display:inline-block;"></span>Warm (reused)
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted);">
+      <span style="width:12px;height:12px;border-radius:2px;background:var(--red-l);border:1px solid var(--red-b);display:inline-block;"></span>Cold start
+    </span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted);">
+      <span style="width:12px;height:12px;border-radius:2px;background:var(--surface);border:1px solid var(--border);display:inline-block;"></span>Throttled (429)
+    </span>
+  </div>
+
+  <h3>Three Concurrency Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔶 Unreserved Concurrency (Default)</h4>
+      <ul>
+        <li>Shared pool across all Lambda functions in region</li>
+        <li>Default: 1,000 concurrent (soft limit — raise via Support)</li>
+        <li>One "noisy" function can exhaust capacity for others</li>
+        <li>Use when: low-priority, batch jobs, internal tools</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔷 Reserved Concurrency</h4>
+      <ul>
+        <li>Guarantees N slots for this function exclusively</li>
+        <li>Also caps the function — it can never exceed N</li>
+        <li>Protects other functions from being starved</li>
+        <li>Protects downstream services from being overwhelmed</li>
+        <li>Use for: production APIs, rate-sensitive backends</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔥 Provisioned Concurrency</h4>
+      <ul>
+        <li>Pre-initialises N environments — always warm</li>
+        <li>Zero cold start for up to N concurrent requests</li>
+        <li>Beyond N → falls back to unreserved (cold starts)</li>
+        <li>Charged: per provisioned environment-hour</li>
+        <li>Use for: user-facing APIs with strict latency SLAs</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Burst Concurrency (Regional)</h4>
+      <ul>
+        <li>Initial burst: 500–3,000 (varies by region)</li>
+        <li>After burst limit: scales by 500/minute</li>
+        <li>Example: 500 → 1000 after 1 min → 1500 after 2 min</li>
+        <li>Sudden 10,000 request spike: most throttled initially</li>
+        <li>Mitigate: SQS buffer → controlled Lambda fan-out</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Concurrency and downstream systems</h4>
+    <p>Lambda scales to 1,000 concurrent easily. But your RDS database handles 100 connections max. Without Reserved Concurrency set to 50, a traffic spike can create 1,000 simultaneous DB connections → connection exhaustion → every Lambda invocation fails. Always set Reserved Concurrency to protect your downstream services.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — TRIGGERS
+══════════════════════════════════ -->
+<div id="tab-triggers" class="tab-panel"><div class="section">
+  <h2>📡 Triggers — What Can Invoke Lambda</h2>
+  <p>Lambda can be invoked by dozens of AWS services. Triggers fall into three invocation models: synchronous, asynchronous, and event source mappings (streams/queues).</p>
+
+  <h3>Invocation Models — The Critical Difference</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔵 Synchronous</h4>
+      <ul>
+        <li>Caller WAITS for Lambda to return a response</li>
+        <li>Errors must be handled by the caller</li>
+        <li>No built-in retry — caller decides</li>
+        <li>Example: API Gateway → Lambda → response to user</li>
+        <li>Use for: user-facing APIs, request/response patterns</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟢 Asynchronous</h4>
+      <ul>
+        <li>Caller fires and immediately returns (202 Accepted)</li>
+        <li>Lambda invokes in background, caller doesn't wait</li>
+        <li>Built-in retry: 2 retries on failure</li>
+        <li>Success/failure can route to SQS/SNS (Destinations)</li>
+        <li>Example: S3 event → Lambda processes file</li>
+        <li>Use for: background jobs, event-driven processing</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- TRIGGER GRID -->
+  <h3>All Trigger Sources</h3>
+  <div class="trigger-grid">
+    <div class="trigger-card tc-sync">
+      <div class="t-type">SYNC</div>
+      <h4>🚪 API Gateway</h4>
+      <p>REST and HTTP API calls. Lambda returns HTTP response directly.</p>
+    </div>
+    <div class="trigger-card tc-sync">
+      <div class="t-type">SYNC</div>
+      <h4>🌐 ALB</h4>
+      <p>Application Load Balancer as function URL alternative.</p>
+    </div>
+    <div class="trigger-card tc-sync">
+      <div class="t-type">SYNC</div>
+      <h4>🔗 Function URL</h4>
+      <p>Direct HTTPS endpoint for Lambda without API GW overhead.</p>
+    </div>
+    <div class="trigger-card tc-async">
+      <div class="t-type">ASYNC</div>
+      <h4>🪣 S3</h4>
+      <p>Object created/deleted events. Process uploads, generate thumbnails.</p>
+    </div>
+    <div class="trigger-card tc-async">
+      <div class="t-type">ASYNC</div>
+      <h4>📡 SNS</h4>
+      <p>Receive published messages. Part of fan-out architecture.</p>
+    </div>
+    <div class="trigger-card tc-async">
+      <div class="t-type">ASYNC</div>
+      <h4>📅 EventBridge</h4>
+      <p>Scheduled rules (cron), event patterns from 200+ sources.</p>
+    </div>
+    <div class="trigger-card tc-async">
+      <div class="t-type">ASYNC</div>
+      <h4>📧 SES</h4>
+      <p>Process incoming emails. Route, parse, or respond to email.</p>
+    </div>
+    <div class="trigger-card tc-stream">
+      <div class="t-type">STREAM</div>
+      <h4>📬 SQS</h4>
+      <p>Event Source Mapping. Lambda polls, batches, and processes messages.</p>
+    </div>
+    <div class="trigger-card tc-stream">
+      <div class="t-type">STREAM</div>
+      <h4>🌊 Kinesis</h4>
+      <p>Process data streams. Real-time analytics, IoT, clickstream.</p>
+    </div>
+    <div class="trigger-card tc-stream">
+      <div class="t-type">STREAM</div>
+      <h4>🗄️ DynamoDB</h4>
+      <p>Streams — react to table changes. Sync, replicate, audit trail.</p>
+    </div>
+    <div class="trigger-card tc-sync">
+      <div class="t-type">SYNC</div>
+      <h4>🔐 Cognito</h4>
+      <p>Auth triggers: pre-signup, post-confirm, pre-token generation.</p>
+    </div>
+    <div class="trigger-card tc-sync">
+      <div class="t-type">SYNC</div>
+      <h4>🛡️ WAF</h4>
+      <p>Custom request inspection. Add complex blocking logic to WAF.</p>
+    </div>
+  </div>
+
+  <!-- FLOW: ASYNC WITH DESTINATIONS -->
+  <h3>Async Destinations — Route Successes and Failures</h3>
+  <div class="flow">
+    <div class="flow-node n-trigger">
+      <div class="flow-node-title">🪣 S3 upload → async Lambda trigger</div>
+      <ul class="flow-items">
+        <li>S3 fires event → Lambda invoked asynchronously</li>
+        <li>S3 doesn't wait for Lambda response</li>
+        <li>Lambda retries up to 2 times on failure</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ On Success → Destination</div>
+        <ul class="flow-items">
+          <li>Send to SQS queue</li>
+          <li>OR publish to SNS topic</li>
+          <li>OR invoke another Lambda</li>
+          <li>OR send to EventBridge</li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ On Failure → Destination</div>
+        <ul class="flow-items">
+          <li>After 2 retries exhausted</li>
+          <li>Send to SQS DLQ</li>
+          <li>OR notify SNS (alert team)</li>
+          <li>OR route to error-handling Lambda</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Function URLs — the API Gateway alternative</h4>
+    <p>Lambda Function URLs give you a dedicated HTTPS endpoint without needing API Gateway. Simpler for single-function APIs, internal tools, or webhooks. They support both sync and streaming responses. IAM auth or no auth. Limitation: no API GW features (throttling, WAF, caching, custom domain without CloudFront).</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — LAYERS & CONFIG
+══════════════════════════════════ -->
+<div id="tab-layers" class="tab-panel"><div class="section">
+  <h2>📦 Layers, Memory, Pricing & Configuration</h2>
+
+  <!-- LAYER STACK VISUAL -->
+  <h3>What's Inside a Lambda Execution Environment</h3>
+  <div class="layer-stack">
+    <div class="layer-item">
+      <span class="layer-badge lb-fn">YOUR CODE</span>
+      <span class="layer-name">Your Function Package</span>
+      <span class="layer-desc">Handler code, business logic, your custom classes</span>
+      <span class="layer-size">~1–50 MB</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-badge lb-dep">LAYER 1</span>
+      <span class="layer-name">Application Dependencies</span>
+      <span class="layer-desc">NuGet packages: AWSSDK, Dapper, Newtonsoft, etc.</span>
+      <span class="layer-size">~20–80 MB</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-badge lb-shared">LAYER 2</span>
+      <span class="layer-name">Shared Utilities Layer</span>
+      <span class="layer-desc">Common code shared across multiple Lambda functions in your team</span>
+      <span class="layer-size">~5–20 MB</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-badge lb-ext">EXTENSION</span>
+      <span class="layer-name">Lambda Extensions</span>
+      <span class="layer-desc">DataDog agent, AppSignals, custom telemetry — run alongside handler</span>
+      <span class="layer-size">~10 MB</span>
+    </div>
+    <div class="layer-item">
+      <span class="layer-badge lb-runtime">RUNTIME</span>
+      <span class="layer-name">.NET 8 Runtime (AWS managed)</span>
+      <span class="layer-desc">Provided by AWS — you don't bundle this. Updated by AWS.</span>
+      <span class="layer-size">AWS managed</span>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Why use Layers?</h4>
+    <p>Layers separate dependencies from your function code. Benefits: faster deployments (only upload changed code, not 80 MB of NuGet packages), share common code across functions, separate update cycles (update dependencies independently from function), stay within the 250 MB unzipped package limit.</p>
+  </div>
+
+  <h3>Memory — The Performance & Cost Knob</h3>
+  <p>Lambda allocates CPU proportional to memory. More memory = faster execution = potentially lower cost per request (faster execution × higher price/ms = find the sweet spot).</p>
+
+  <div class="perf-grid">
+    <div class="perf-card">
+      <div class="mem">128 MB</div>
+      <div class="time">⏱ 4,200ms</div>
+      <div class="cost">💰 Cheapest/ms</div>
+      <div class="note">Slowest — minimal CPU</div>
+    </div>
+    <div class="perf-card">
+      <div class="mem">512 MB</div>
+      <div class="time">⏱ 1,200ms</div>
+      <div class="cost">💰 Moderate</div>
+      <div class="note">Common starting point</div>
+    </div>
+    <div class="perf-card">
+      <div class="mem">1,024 MB</div>
+      <div class="time">⏱ 620ms</div>
+      <div class="cost">💰 Similar cost</div>
+      <div class="note">Often cheapest overall ✅</div>
+    </div>
+    <div class="perf-card">
+      <div class="mem">3,008 MB</div>
+      <div class="time">⏱ 210ms</div>
+      <div class="cost">💰 Higher/ms</div>
+      <div class="note">CPU-intensive tasks</div>
+    </div>
+    <div class="perf-card">
+      <div class="mem">10,240 MB</div>
+      <div class="time">⏱ ~60ms</div>
+      <div class="cost">💰 Most/ms</div>
+      <div class="note">ML inference, heavy compute</div>
+    </div>
+  </div>
+
+  <div class="success">
+    <h4>✅ Use AWS Lambda Power Tuning tool</h4>
+    <p>An open-source step function that runs your Lambda at different memory settings and finds the optimal memory for your specific workload. Free to run. Run it before choosing memory in production — the optimal point is often surprisingly higher than 128 MB due to faster execution offsetting higher per-ms cost.</p>
+  </div>
+
+  <h3>Lambda Pricing Formula</h3>
+  <div class="code-block">
+    <span class="code-label">Lambda pricing calculation</span>
+    <pre><span class="cm">// Lambda pricing = Requests + Duration</span>
+
+<span class="cm">// 1. Request cost:</span>
+<span class="num">1,000,000</span> requests × $0.0000002 = $<span class="num">0.20</span>
+<span class="cm">// First 1M requests per month: FREE</span>
+
+<span class="cm">// 2. Duration cost:</span>
+<span class="cm">// Price per GB-second = $0.0000166667</span>
+<span class="cm">// GB-second = (memory in MB / 1024) × duration in seconds</span>
+
+<span class="cm">// Example: 128 MB, 200ms, 1M invocations</span>
+GB_seconds = (<span class="num">128</span> / <span class="num">1024</span>) × <span class="num">0.200</span> × <span class="num">1_000_000</span>  <span class="cm">// = 25,000</span>
+Duration_cost = <span class="num">25_000</span> × $<span class="num">0.0000166667</span>          <span class="cm">// = $0.42</span>
+Total = $<span class="num">0.20</span> + $<span class="num">0.42</span> = $<span class="num">0.62</span> <span class="cm">// for 1M requests!</span>
+
+<span class="cm">// Example: 1024 MB, 50ms (faster!), 1M invocations</span>
+GB_seconds = (<span class="num">1024</span> / <span class="num">1024</span>) × <span class="num">0.050</span> × <span class="num">1_000_000</span> <span class="cm">// = 50,000</span>
+Duration_cost = <span class="num">50_000</span> × $<span class="num">0.0000166667</span>         <span class="cm">// = $0.83</span>
+Total = $<span class="num">0.20</span> + $<span class="num">0.83</span> = $<span class="num">1.03</span>
+<span class="cm">// More memory = more cost here. But faster, so check SLA.</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+  <p>Creating a production-ready Lambda function with SQS trigger, VPC, environment variables, and monitoring.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create Lambda Function</div>
+      <div class="console-step-path">Lambda → Functions → Create function</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Author from scratch / Blueprint / Container</div>
+        <div class="console-field-value">Author from scratch</div>
+        <div class="console-field-hint">Use "Container image" if your deployment is a Docker image (useful for .NET AOT or large dependencies). Use "Blueprint" for common patterns like SQS consumer.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Function name</div>
+        <div class="console-field-value">OrderProcessor</div>
+        <div class="console-field-hint">Use descriptive names: ServiceName-Action (e.g. OrderService-ProcessOrder). Avoid generic names like "function1". Name cannot be changed after creation.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Runtime</div>
+        <div class="console-field-value">.NET 8</div>
+        <div class="console-field-hint">Choose the managed runtime. For .NET AOT use "provided.al2023" (custom runtime). Managed runtimes get automatic security patches from AWS.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Architecture</div>
+        <div class="console-field-value">arm64 (Graviton)</div>
+        <div class="console-field-hint">arm64 is 20% cheaper and often faster than x86_64. Works with .NET 8. Only use x86_64 if you have x86-specific native dependencies.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Execution role</div>
+        <div class="console-field-value">Create a new role with basic Lambda permissions</div>
+        <div class="console-field-hint">Creates a role with CloudWatch Logs access. You'll add specific permissions (S3, DynamoDB, SQS) afterward following least privilege principle.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Configure Memory, Timeout & Storage</div>
+      <div class="console-step-path">Lambda → [function] → Configuration → General configuration → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Memory</div>
+        <div class="console-field-value">512 MB (start here, tune with Power Tuning tool)</div>
+        <div class="console-field-hint">CPU scales proportionally with memory. Start at 512 MB, run Lambda Power Tuning to find optimal. For CPU-bound tasks: go higher. For I/O-bound: 256–512 MB often sufficient.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Timeout</div>
+        <div class="console-field-value">30 seconds</div>
+        <div class="console-field-hint">Max 15 minutes. Set to your expected p99 processing time × 2. If using SQS: set SQS visibility timeout to 6× this value. Never set higher than needed — billing continues until timeout.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Ephemeral storage (/tmp)</div>
+        <div class="console-field-value">512 MB (default) — increase to 10 GB if processing large files</div>
+        <div class="console-field-hint">Files written to /tmp persist between warm invocations of same container. Use for caching downloaded files, models, or intermediate processing.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Set Environment Variables</div>
+      <div class="console-step-path">Lambda → [function] → Configuration → Environment variables → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Environment variables</div>
+        <div class="console-field-value">DB_CONNECTION_STRING = myapp/prod/database (Secrets Manager name)</div>
+        <div class="console-field-value">LOG_LEVEL = Information</div>
+        <div class="console-field-value">ENVIRONMENT = production</div>
+        <div class="console-field-hint">Store non-secret config here. For secrets: store the Secrets Manager secret NAME (not value) as an env var, then fetch the secret in init code. Encrypt env vars with KMS CMK for extra security.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption key</div>
+        <div class="console-field-value">AWS managed key (default) or your CMK for sensitive config</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Add SQS Trigger</div>
+      <div class="console-step-path">Lambda → [function] → Configuration → Triggers → Add trigger</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Trigger</div>
+        <div class="console-field-value">SQS</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">SQS queue</div>
+        <div class="console-field-value">OrderProcessingQueue</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Batch size</div>
+        <div class="console-field-value">10</div>
+        <div class="console-field-hint">Max 10,000 for SQS. Start with 10 for simplicity. Larger batches = fewer Lambda invocations = cheaper, but harder error handling. Use ReportBatchItemFailures.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Batch window</div>
+        <div class="console-field-value">0 seconds</div>
+        <div class="console-field-hint">How long to wait for a fuller batch. 0 = invoke immediately. Non-zero = wait up to N seconds to accumulate messages. Useful for bursty traffic patterns.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Report batch item failures</div>
+        <div class="console-field-value">✅ Enable</div>
+        <div class="console-field-hint">Critical — allows partial batch success. Without this, one failed message causes entire 10-message batch to retry.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Configure Reserved Concurrency</div>
+      <div class="console-step-path">Lambda → [function] → Configuration → Concurrency → Edit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Concurrency</div>
+        <div class="console-field-value">Reserve concurrency: 50</div>
+        <div class="console-field-hint">Cap this function at 50 concurrent executions. Protects downstream DB from connection exhaustion. Also guarantees this function gets 50 slots even if other functions are busy.</div>
+      </div>
+      <div class="console-note">If using Provisioned Concurrency: set it on a function version or alias (not $LATEST). $LATEST cannot use Provisioned Concurrency.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Enable X-Ray Tracing & CloudWatch</div>
+      <div class="console-step-path">Lambda → [function] → Configuration → Monitoring and operations tools</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">AWS X-Ray tracing</div>
+        <div class="console-field-value">✅ Active — traces full request path</div>
+        <div class="console-field-hint">X-Ray shows end-to-end latency: Lambda cold start + handler + downstream calls (DB, S3, etc.). Essential for performance debugging. Small cost: $5 per million traces.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">CloudWatch Logs</div>
+        <div class="console-field-value">Enabled by default (execution role needs logs:CreateLogGroup, logs:PutLogEvents)</div>
+        <div class="console-field-hint">Set log retention! Default: never expire. Set to 30–90 days for production. Unbounded retention = growing CloudWatch bill.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Enhanced monitoring</div>
+        <div class="console-field-value">✅ Enable CloudWatch Lambda Insights</div>
+        <div class="console-field-hint">Provides system-level metrics: CPU time, memory usage, network, disk I/O per invocation. Far more detailed than basic metrics. Worth the small extra cost for production.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# — Lambda Function Patterns</h2>
+
+  <h3>Install NuGet packages</h3>
+  <div class="code-block"><pre>Install-Package Amazon.Lambda.Core
+Install-Package Amazon.Lambda.Serialization.SystemTextJson
+Install-Package Amazon.Lambda.APIGatewayEvents
+Install-Package Amazon.Lambda.SQSEvents
+Install-Package Amazon.Lambda.S3Events
+Install-Package AWSSDK.Lambda   <span class="cm">// for invoking Lambda from code</span></pre></div>
+
+  <h3>Pattern 1 — API Gateway HTTP Function</h3>
+  <div class="code-block">
+    <span class="code-label">ApiFunction.cs — sync, returns HTTP response</span>
+    <pre>[<span class="tp">assembly</span>: <span class="tp">LambdaSerializer</span>(
+    <span class="kw">typeof</span>(<span class="tp">DefaultLambdaJsonSerializer</span>))]
+
+<span class="kw">public class</span> <span class="tp">ApiFunction</span>
+{
+    <span class="cm">// ── Init code: runs ONCE per container ────────</span>
+    <span class="kw">private static readonly</span> <span class="tp">HttpClient</span> _http = <span class="kw">new</span>();
+    <span class="kw">private static readonly</span> <span class="tp">string</span> _connStr;
+
+    <span class="kw">static</span> <span class="tp">ApiFunction</span>()
+    {
+        <span class="cm">// Fetch secret once at cold start — cached in memory</span>
+        _connStr = <span class="tp">Environment</span>.<span class="fn">GetEnvironmentVariable</span>(
+            <span class="str">"DB_SECRET_NAME"</span>)!;
+    }
+
+    <span class="cm">// ── Handler: called on every invocation ───────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">APIGatewayHttpApiV2ProxyResponse</span>&gt;
+        <span class="fn">HandleAsync</span>(<span class="tp">APIGatewayHttpApiV2ProxyRequest</span> req,
+                    <span class="tp">ILambdaContext</span> ctx)
+    {
+        ctx.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"RequestId: {Id}", ctx.AwsRequestId</span>);
+
+        <span class="kw">var</span> id = req.PathParameters[<span class="str">"id"</span>];
+        <span class="kw">var</span> userId = req.RequestContext
+            .Authorizer?.Jwt?.Claims[<span class="str">"sub"</span>];
+
+        <span class="cm">// Business logic...</span>
+        <span class="kw">var</span> result = <span class="kw">new</span> { orderId = id, userId };
+
+        <span class="kw">return new</span> <span class="tp">APIGatewayHttpApiV2ProxyResponse</span>
+        {
+            StatusCode = <span class="num">200</span>,
+            Body       = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(result),
+            Headers    = <span class="kw">new</span>() {
+                [<span class="str">"Content-Type"</span>] = <span class="str">"application/json"</span> }
+        };
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 2 — SQS Consumer with Partial Batch Failure</h3>
+  <div class="code-block">
+    <span class="code-label">SqsFunction.cs — production-grade batch handler</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.SQSEvents;
+
+<span class="kw">public class</span> <span class="tp">SqsFunction</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">SQSBatchResponse</span>&gt; <span class="fn">HandleAsync</span>(
+        <span class="tp">SQSEvent</span> evt, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="kw">var</span> failures = <span class="kw">new</span>
+            <span class="tp">List</span>&lt;<span class="tp">SQSBatchResponse</span>.<span class="tp">BatchItemFailure</span>&gt;();
+
+        <span class="kw">var</span> tasks = evt.Records.<span class="fn">Select</span>(async record =>
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>
+                    .<span class="fn">Deserialize</span>&lt;<span class="tp">OrderEvent</span>&gt;(record.Body);
+
+                <span class="kw">await</span> <span class="fn">ProcessAsync</span>(order!, ctx);
+            }
+            <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+            {
+                ctx.Logger.<span class="fn">LogError</span>(ex,
+                    <span class="str">"Failed: {Id}", record.MessageId</span>);
+
+                <span class="kw">lock</span> (failures)
+                    failures.<span class="fn">Add</span>(<span class="kw">new</span> () {
+                        ItemIdentifier = record.MessageId });
+            }
+        });
+
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(tasks); <span class="cm">// parallel processing</span>
+
+        <span class="kw">return new</span> <span class="tp">SQSBatchResponse</span>
+            { BatchItemFailures = failures };
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">ProcessAsync</span>(
+        <span class="tp">OrderEvent</span> order, <span class="tp">ILambdaContext</span> ctx)
+    {
+        ctx.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"Processing order {Id}", order.OrderId</span>);
+        <span class="cm">// inventory, email, analytics...</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 3 — S3 Trigger (Process Uploaded File)</h3>
+  <div class="code-block">
+    <span class="code-label">S3Function.cs — react to file uploads</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.S3Events;
+<span class="kw">using</span> Amazon.S3;
+
+<span class="kw">public class</span> <span class="tp">S3Function</span>
+{
+    <span class="kw">private static readonly</span> <span class="tp">IAmazonS3</span> _s3 =
+        <span class="kw">new</span> <span class="tp">AmazonS3Client</span>();
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">S3Event</span> evt, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="kw">foreach</span> (<span class="kw">var</span> record <span class="kw">in</span> evt.Records)
+        {
+            <span class="kw">var</span> bucket = record.S3.Bucket.Name;
+            <span class="kw">var</span> key    = record.S3.Object.Key;
+            <span class="kw">var</span> size   = record.S3.Object.Size;
+
+            ctx.Logger.<span class="fn">LogInformation</span>(
+                <span class="str">"Processing s3://{B}/{K} ({S} bytes)",
+                bucket, key, size</span>);
+
+            <span class="kw">using var</span> stream = <span class="kw">await</span> _s3
+                .<span class="fn">GetObjectStreamAsync</span>(bucket, key, <span class="kw">null</span>);
+
+            <span class="cm">// Process the file stream...</span>
+            <span class="kw">await</span> <span class="fn">ResizeImageAsync</span>(stream, bucket, key);
+        }
+    }
+
+    <span class="kw">private</span> <span class="tp">Task</span> <span class="fn">ResizeImageAsync</span>(
+        <span class="tp">Stream</span> s, <span class="tp">string</span> b, <span class="tp">string</span> k)
+        => <span class="tp">Task</span>.CompletedTask; <span class="cm">// your image processing</span>
+}</pre>
+  </div>
+
+  <h3>Pattern 4 — Invoke Lambda from Code</h3>
+  <div class="code-block">
+    <span class="code-label">Invoke another Lambda function programmatically</span>
+    <pre><span class="kw">using</span> Amazon.Lambda;
+<span class="kw">using</span> Amazon.Lambda.Model;
+
+<span class="kw">public class</span> <span class="tp">LambdaInvokerService</span>
+{
+    <span class="kw">private static readonly</span> <span class="tp">IAmazonLambda</span> _lambda =
+        <span class="kw">new</span> <span class="tp">AmazonLambdaClient</span>();
+
+    <span class="cm">// ── Sync invoke — wait for result ─────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">TResult</span>&gt; <span class="fn">InvokeAsync</span>&lt;<span class="tp">TPayload</span>, <span class="tp">TResult</span>&gt;(
+        <span class="tp">string</span> functionName, <span class="tp">TPayload</span> payload)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _lambda.<span class="fn">InvokeAsync</span>(
+            <span class="kw">new</span> <span class="tp">InvokeRequest</span>
+        {
+            FunctionName   = functionName,
+            InvocationType = <span class="tp">InvocationType</span>.RequestResponse,
+            Payload        = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload)
+        });
+
+        <span class="kw">return</span> <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">TResult</span>&gt;(
+            response.Payload)!;
+    }
+
+    <span class="cm">// ── Async invoke — fire and forget ─────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">InvokeFireAndForgetAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> functionName, <span class="tp">T</span> payload)
+    {
+        <span class="kw">await</span> _lambda.<span class="fn">InvokeAsync</span>(<span class="kw">new</span> <span class="tp">InvokeRequest</span>
+        {
+            FunctionName   = functionName,
+            InvocationType = <span class="tp">InvocationType</span>.Event, <span class="cm">// async</span>
+            Payload        = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(payload)
+        });
+        <span class="cm">// Returns immediately — Lambda runs in background</span>
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Function Design</h3>
+  <ul class="checklist">
+    <li>Move expensive operations (DB connections, HTTP clients, secrets) to init code — they run once</li>
+    <li>Keep functions small and focused — one function, one responsibility</li>
+    <li>Use static readonly for reusable objects — HttpClient, DB connections, config</li>
+    <li>Choose arm64 (Graviton) architecture — 20% cheaper, often faster</li>
+    <li>Use Lambda Power Tuning tool to find optimal memory setting for your workload</li>
+    <li>Cache secrets in memory at startup — don't call Secrets Manager on every invocation</li>
+    <li>Use structured logging (JSON) — makes CloudWatch Logs Insights queries fast</li>
+  </ul>
+
+  <h3>Cold Start Reduction</h3>
+  <ul class="checklist">
+    <li>Use Native AOT for latency-critical .NET functions — cold start under 100ms</li>
+    <li>Minimise package size — use PublishTrimmed=true, remove unused packages</li>
+    <li>Use Lambda Layers for shared dependencies to keep function zips small</li>
+    <li>Enable Provisioned Concurrency for user-facing APIs with strict latency SLAs</li>
+    <li>Lazy-load resources you don't always need — don't load everything at init</li>
+    <li>Cache results in /tmp across warm invocations to avoid redundant downloads</li>
+  </ul>
+
+  <h3>Concurrency & Safety</h3>
+  <ul class="checklist">
+    <li>Always set Reserved Concurrency — protect downstream services from Lambda scale-out</li>
+    <li>Set SQS visibility timeout to 6× Lambda timeout to prevent duplicate processing</li>
+    <li>Use Destinations for async Lambda — route failures to SQS DLQ or SNS alert</li>
+    <li>Always use SQSBatchResponse with partial batch item failures for SQS triggers</li>
+    <li>Set CloudWatch alarm on Lambda errors AND throttles — both are production incidents</li>
+    <li>Set log retention (30–90 days) — default is never expire = growing cost</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top Lambda Mistakes</h4>
+    <p>
+    ❌ <strong>Creating new HttpClient in every invocation</strong> — socket exhaustion, port reuse issues<br>
+    ❌ <strong>Connecting to DB inside handler</strong> — reconnects on every call, slow + expensive<br>
+    ❌ <strong>No Reserved Concurrency</strong> — Lambda scale-out overwhelms RDS connection pool<br>
+    ❌ <strong>Timeout set to 15 minutes for all functions</strong> — slow failures, high billing for bugs<br>
+    ❌ <strong>Hardcoding secrets in env vars</strong> — visible in console and CloudTrail, use Secrets Manager<br>
+    ❌ <strong>$LATEST in production</strong> — use versioned aliases for stable deployments<br>
+    ❌ <strong>Not handling SQS partial batch failure</strong> — one bad message retries entire batch<br>
+    ❌ <strong>Ignoring cold start in latency-sensitive paths</strong> — p99 latency 10× worse than average
+    </p>
+  </div>
+
+  <h3>Lambda vs EC2 vs ECS — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Lambda</th><th>ECS Fargate</th><th>EC2</th></tr>
+    <tr><td>Short API calls (&lt;15 min)</td><td>✅ Perfect</td><td>Works</td><td>Overkill</td></tr>
+    <tr><td>Event-driven processing</td><td>✅ Perfect</td><td>Works</td><td>Complex</td></tr>
+    <tr><td>Long-running jobs (&gt;15 min)</td><td>❌ Not possible</td><td>✅ Perfect</td><td>Works</td></tr>
+    <tr><td>Stateful / WebSocket server</td><td>❌</td><td>✅</td><td>✅</td></tr>
+    <tr><td>Unpredictable traffic, spiky</td><td>✅ Best</td><td>Slower scale</td><td>Manual</td></tr>
+    <tr><td>Constant high traffic</td><td>Expensive at scale</td><td>✅ More cost-efficient</td><td>✅</td></tr>
+    <tr><td>Zero traffic periods</td><td>✅ $0.00</td><td>Pay minimum</td><td>Always paying</td></tr>
+    <tr><td>ML inference / heavy CPU</td><td>Limited (10 GB max)</td><td>✅ GPU support</td><td>✅ GPU</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS Lambda!</h3>
+    <p>What is Lambda · Execution lifecycle (init vs handler code) · Cold start anatomy with comparison bars · Mitigation strategies (AOT, Provisioned Concurrency, package size) · Concurrency types (unreserved, reserved, provisioned) · All 12 trigger types (sync, async, stream) · Async Destinations · Layers &amp; memory tuning · Pricing formula · Full AWS Console setup (every field!) · 4 C# patterns (API GW, SQS batch, S3, invoke) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--lam-d);">No servers. No ops. Just code that runs — and you pay only for what you use! ⚡🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
