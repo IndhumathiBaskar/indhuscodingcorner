@@ -1,0 +1,1310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon DynamoDB — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.2);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --ddb:#2a7aaa;--ddb-l:#d8eef8;--ddb-d:#1a5a8a;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#eef5fb 0%,#d8eaf6 45%,#c8dced 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'⚡';position:absolute;right:-5px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'🗄️';position:absolute;left:-5px;bottom:-10px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--ddb-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--ddb-l);color:var(--ddb-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--ddb-l);letter-spacing:-.01em;}
+.section h3{color:var(--ddb-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ TABLE ANATOMY VISUAL ══ */
+.table-anatomy{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.ta-header{background:linear-gradient(90deg,var(--ddb-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.ta-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);}
+.ta-row:last-child{border-bottom:none;}
+.ta-row.header-row{background:var(--surface);font-weight:600;}
+.ta-cell{padding:8px 12px;font-size:.75rem;border-right:1px solid var(--border);flex:1;display:flex;align-items:center;}
+.ta-cell:last-child{border-right:none;}
+.ta-cell.pk{background:rgba(42,122,170,.08);font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--ddb-d);}
+.ta-cell.sk{background:rgba(108,71,212,.06);font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--purple);}
+.ta-cell.attr{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text2);}
+.ta-cell.label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);flex:0 0 80px;}
+.key-legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface);}
+.key-badge{display:flex;align-items:center;gap:6px;font-size:.7rem;color:var(--muted);}
+.key-dot{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
+
+/* ══ PARTITION MAP VISUAL ══ */
+.partition-map{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.pm-header{background:linear-gradient(90deg,var(--ddb-l),var(--teal-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.pm-body{padding:12px 14px;}
+.pm-row{display:flex;align-items:stretch;gap:8px;margin-bottom:8px;}
+.pm-row:last-child{margin-bottom:0;}
+.pm-pk{background:var(--ddb-l);border:1.5px solid rgba(42,122,170,.3);border-radius:6px;padding:8px 10px;min-width:110px;flex-shrink:0;}
+.pm-pk h5{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;color:var(--ddb-d);margin-bottom:3px;}
+.pm-pk p{font-size:.62rem;color:var(--muted);}
+.pm-arrow{display:flex;align-items:center;color:var(--border2);font-size:1.2rem;padding:0 3px;flex-shrink:0;}
+.pm-items{display:flex;gap:5px;flex-wrap:wrap;flex:1;}
+.pm-item{background:var(--purple-l);border:1px solid rgba(108,71,212,.2);border-radius:5px;padding:5px 7px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--purple);}
+.pm-item.sorted::before{content:'';display:block;width:100%;height:1px;background:rgba(108,71,212,.15);margin-bottom:3px;}
+
+/* ══ GSI/LSI COMPARISON ══ */
+.index-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;}
+.index-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.index-card-head{padding:10px 14px;font-weight:700;font-size:.82rem;display:flex;align-items:center;gap:7px;border-bottom:1px solid var(--border);}
+.gsi-head{background:var(--green-l);}
+.gsi-head h4{color:var(--green);font-size:.82rem;}
+.lsi-head{background:var(--purple-l);}
+.lsi-head h4{color:var(--purple);font-size:.82rem;}
+.index-card-body{padding:12px 14px;}
+.index-card-body li{color:var(--muted);font-size:.8rem;margin-bottom:4px;padding-left:14px;position:relative;list-style:none;}
+.index-card-body li::before{content:"›";position:absolute;left:0;color:var(--ddb-d);}
+
+/* ══ ACCESS PATTERN CARDS ══ */
+.access-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:14px 0;}
+.access-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.access-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.ac-query::before{background:var(--green);}
+.ac-get::before{background:var(--blue);}
+.ac-scan::before{background:var(--red);}
+.ac-gsi::before{background:var(--purple);}
+.access-card .ac-op{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.ac-query .ac-op{background:var(--green-l);color:var(--green);}
+.ac-get .ac-op{background:var(--blue-l);color:var(--blue);}
+.ac-scan .ac-op{background:var(--red-l);color:var(--red);}
+.ac-gsi .ac-op{background:var(--purple-l);color:var(--purple);}
+.access-card h4{font-size:.8rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.access-card p{font-size:.72rem;color:var(--muted);}
+.access-card .ac-cost{font-family:'JetBrains Mono',monospace;font-size:.63rem;margin-top:5px;padding:2px 6px;border-radius:3px;display:inline-block;}
+.cost-low{background:var(--green-l);color:var(--green);}
+.cost-med{background:var(--aws-l);color:var(--aws);}
+.cost-high{background:var(--red-l);color:var(--red);}
+
+/* ══ CAPACITY MODE SWITCH ══ */
+.cap-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;}
+.cap-side{flex:1;padding:14px 16px;}
+.cap-on-demand{background:var(--green-l);border-right:1px solid var(--border);}
+.cap-provisioned{background:var(--blue-l);}
+.cap-side h4{font-size:.82rem;font-weight:700;margin-bottom:6px;}
+.cap-on-demand h4{color:var(--green);}
+.cap-provisioned h4{color:var(--blue);}
+.cap-side li{font-size:.75rem;color:var(--muted);margin-bottom:3px;padding-left:12px;position:relative;list-style:none;}
+.cap-side li::before{content:"›";position:absolute;left:0;color:var(--ddb-d);}
+
+/* ══ SINGLE TABLE DESIGN VISUAL ══ */
+.std-table{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.std-header{background:linear-gradient(90deg,var(--aws-l),var(--ddb-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.std-row{display:flex;align-items:center;border-bottom:1px solid var(--border);padding:7px 12px;gap:8px;}
+.std-row:last-child{border-bottom:none;}
+.std-entity{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:700;padding:2px 7px;border-radius:3px;flex-shrink:0;min-width:60px;text-align:center;}
+.e-user{background:var(--blue-l);color:var(--blue);}
+.e-order{background:var(--green-l);color:var(--green);}
+.e-product{background:var(--purple-l);color:var(--purple);}
+.e-payment{background:var(--aws-l);color:var(--aws);}
+.std-pk{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--ddb-d);font-weight:600;width:140px;flex-shrink:0;}
+.std-sk{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--purple);flex:1;}
+.std-attrs{font-size:.65rem;color:var(--muted);flex:1;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--ddb-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-ddb{background:var(--ddb-l);border:1.5px solid rgba(42,122,170,.3);}
+.n-ddb .flow-node-title{color:var(--ddb-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--ddb-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--ddb);}
+.step-body h4{color:var(--ddb-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--ddb-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--ddb-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--ddb);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--ddb);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--ddb);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(42,122,170,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ddb-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--ddb-l),var(--green-l));border:1px solid rgba(42,122,170,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.access-grid,.index-compare{grid-template-columns:1fr;}
+  .cap-toggle,.flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .std-attrs{display:none;}
+  .pm-row{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⚡ <span>Amazon DynamoDB</span> — Complete Guide</h1>
+  <p>NoSQL · Partition Keys · Sort Keys · GSI · LSI · Capacity Modes · Single-Table Design · Streams · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is DynamoDB</button>
+  <button class="tab-btn" onclick="T('keys',this)">Keys & Partitions</button>
+  <button class="tab-btn" onclick="T('operations',this)">Operations</button>
+  <button class="tab-btn" onclick="T('indexes',this)">GSI & LSI</button>
+  <button class="tab-btn" onclick="T('capacity',this)">Capacity & Pricing</button>
+  <button class="tab-btn" onclick="T('singletable',this)">Single-Table Design</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS DYNAMODB
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>⚡ What is Amazon DynamoDB?</h2>
+  <p><strong>DynamoDB</strong> is AWS's fully managed, serverless NoSQL database. No servers to provision, no OS to patch, no replication to configure. It stores data as items (rows) in tables, scales from zero to millions of requests per second automatically, and delivers single-digit millisecond performance at any scale.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — City Filing System</h4>
+    <p>DynamoDB is like a city's filing system. The city is divided into postal districts (partitions) based on address (partition key). Within each district, files are sorted chronologically (sort key). To find all files for a resident — you go to their district and scan their sorted drawer. Cross-reference indexes (GSI) let you find files by phone number instead of address. Each district clerk (partition) operates independently — the city handles millions of requests simultaneously with no bottlenecks.</p>
+  </div>
+
+  <!-- TABLE ANATOMY VISUAL -->
+  <h3>Anatomy of a DynamoDB Table</h3>
+  <div class="table-anatomy">
+    <div class="ta-header">🗄️ OrdersTable — every row is an "item", no fixed schema beyond the key</div>
+    <div class="ta-row header-row">
+      <div class="ta-cell label">Type</div>
+      <div class="ta-cell pk" style="font-size:.68rem;font-weight:700;">PK (Partition Key)</div>
+      <div class="ta-cell sk" style="font-size:.68rem;font-weight:700;">SK (Sort Key)</div>
+      <div class="ta-cell" style="font-size:.68rem;font-weight:700;color:var(--text);">Attributes (flexible!)</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--blue);font-size:.65rem;">User</div>
+      <div class="ta-cell pk">USER#usr_001</div>
+      <div class="ta-cell sk">PROFILE</div>
+      <div class="ta-cell attr">name="Indhu" · email="indhu@myapp.com" · plan="pro"</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--green);font-size:.65rem;">Order</div>
+      <div class="ta-cell pk">USER#usr_001</div>
+      <div class="ta-cell sk">ORDER#2025-04-01#ord_101</div>
+      <div class="ta-cell attr">amount=2499 · status="shipped" · items=3</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--green);font-size:.65rem;">Order</div>
+      <div class="ta-cell pk">USER#usr_001</div>
+      <div class="ta-cell sk">ORDER#2025-03-15#ord_098</div>
+      <div class="ta-cell attr">amount=799 · status="delivered" · items=1</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--blue);font-size:.65rem;">User</div>
+      <div class="ta-cell pk">USER#usr_002</div>
+      <div class="ta-cell sk">PROFILE</div>
+      <div class="ta-cell attr">name="Ravi" · email="ravi@myapp.com" · plan="free"</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--aws);font-size:.65rem;">Product</div>
+      <div class="ta-cell pk">PRODUCT#prod_500</div>
+      <div class="ta-cell sk">DETAILS</div>
+      <div class="ta-cell attr">name="Laptop" · price=89999 · stock=42</div>
+    </div>
+    <div class="key-legend">
+      <div class="key-badge"><div class="key-dot" style="background:rgba(42,122,170,.3);border:1px solid rgba(42,122,170,.5);"></div>Partition Key (PK) — routes to the right partition</div>
+      <div class="key-badge"><div class="key-dot" style="background:rgba(108,71,212,.2);border:1px solid rgba(108,71,212,.4);"></div>Sort Key (SK) — sorts items within a partition</div>
+      <div class="key-badge"><div class="key-dot" style="background:var(--surface);border:1px solid var(--border);"></div>Attributes — any shape, no fixed schema required</div>
+    </div>
+  </div>
+
+  <h3>DynamoDB vs RDS — The Right Tool</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Choose DynamoDB when</h4>
+      <ul>
+        <li>Need single-digit ms latency at any scale</li>
+        <li>Access patterns are known and simple</li>
+        <li>Traffic is unpredictable / spiky</li>
+        <li>No complex joins or ad-hoc queries needed</li>
+        <li>Serverless / event-driven architecture</li>
+        <li>Key-value lookups dominate workload</li>
+        <li>Gaming, IoT, sessions, user profiles, carts</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🗄️ Choose RDS / PostgreSQL when</h4>
+      <ul>
+        <li>Complex reporting and analytics queries</li>
+        <li>Many-to-many relationships with joins</li>
+        <li>Ad-hoc queries that aren't predefined</li>
+        <li>ACID transactions across many tables</li>
+        <li>Strong SQL familiarity in team</li>
+        <li>Financial ledgers with complex constraints</li>
+        <li>OLAP workloads — use Redshift instead</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>DynamoDB key facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Latency</h4><p>Single-digit ms reads/writes at any scale</p></div>
+    <div class="icon-item"><span class="emoji">♾️</span><h4>Scale</h4><p>Unlimited storage, unlimited throughput</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Availability</h4><p>99.999% SLA, 3-AZ replication built-in</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Item size</h4><p>Max 400 KB per item</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Encryption</h4><p>At-rest KMS encryption by default</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Free tier</h4><p>25 GB + 25 WCU + 25 RCU free forever</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — KEYS & PARTITIONS
+══════════════════════════════════ -->
+<div id="tab-keys" class="tab-panel"><div class="section">
+  <h2>🔑 Keys & Partitions — The Foundation</h2>
+  <p>DynamoDB's performance and data model are entirely determined by how you design your keys. Get this right and everything else follows.</p>
+
+  <h3>The Three Key Configurations</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔵 Simple Key (PK only)</h4>
+      <ul>
+        <li>One attribute acts as the unique identifier</li>
+        <li>Each item must have a unique PK value</li>
+        <li>Like a dictionary — key → single value</li>
+        <li>Good for: sessions, config, user-to-profile maps</li>
+        <li>Example: <code>userId = "usr_001"</code></li>
+        <li>Cannot store multiple items per PK</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟣 Composite Key (PK + SK)</h4>
+      <ul>
+        <li>Two attributes together form the unique key</li>
+        <li>Multiple items can share PK — differentiated by SK</li>
+        <li>Like a file cabinet — drawer (PK) has sorted files (SK)</li>
+        <li>Query all items with same PK efficiently</li>
+        <li>Good for: 99% of production use cases</li>
+        <li>Example: PK=<code>USER#001</code> SK=<code>ORDER#2025-04-01</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- PARTITION MAP VISUAL -->
+  <h3>How DynamoDB Partitions Your Data</h3>
+  <div class="partition-map">
+    <div class="pm-header">🗺️ DynamoDB hashes PK → assigns to physical partition — items with same PK land in same partition, sorted by SK</div>
+    <div class="pm-body">
+      <div class="pm-row">
+        <div class="pm-pk"><h5>USER#usr_001</h5><p>Partition A</p></div>
+        <div class="pm-arrow">→</div>
+        <div class="pm-items">
+          <div class="pm-item">PROFILE</div>
+          <div class="pm-item">ORDER#2025-04-01</div>
+          <div class="pm-item">ORDER#2025-03-15</div>
+          <div class="pm-item">ORDER#2025-02-10</div>
+        </div>
+      </div>
+      <div class="pm-row">
+        <div class="pm-pk"><h5>USER#usr_002</h5><p>Partition B</p></div>
+        <div class="pm-arrow">→</div>
+        <div class="pm-items">
+          <div class="pm-item">PROFILE</div>
+          <div class="pm-item">ORDER#2025-04-05</div>
+        </div>
+      </div>
+      <div class="pm-row">
+        <div class="pm-pk"><h5>PRODUCT#prod_500</h5><p>Partition C</p></div>
+        <div class="pm-arrow">→</div>
+        <div class="pm-items">
+          <div class="pm-item">DETAILS</div>
+          <div class="pm-item">REVIEW#rev_010</div>
+          <div class="pm-item">REVIEW#rev_011</div>
+          <div class="pm-item">STOCK#WH_MUMBAI</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Sort Key Superpowers</h3>
+  <div class="card">
+    <h4>🔍 Sort Key enables rich range queries</h4>
+    <p>Once you've selected a partition (via PK), the sort key lets you query a subset of items efficiently:<br><br>
+    <code>begins_with(SK, "ORDER#2025-04")</code> → all April 2025 orders<br>
+    <code>between(SK, "ORDER#2025-01-01", "ORDER#2025-03-31")</code> → Q1 orders<br>
+    <code>SK = "PROFILE"</code> → just the user profile<br>
+    <code>begins_with(SK, "ORDER#")</code> → all orders for this user<br><br>
+    This is why using a timestamp or date prefix in your SK is so powerful — range queries by time are free and fast.</p>
+  </div>
+
+  <h3>Choosing a Good Partition Key</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Good Partition Keys</h4>
+      <ul>
+        <li>High cardinality — many distinct values</li>
+        <li>Uniform access — no single "hot" partition</li>
+        <li>userId, orderId, deviceId, sessionId</li>
+        <li>Composite: tenantId#userId</li>
+        <li>Roughly equal traffic across all PK values</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ Bad Partition Keys</h4>
+      <ul>
+        <li>Low cardinality: status ("pending"/"done")</li>
+        <li>Date only: "2025-04-01" — all today's writes to one partition</li>
+        <li>Boolean: "isActive" — only 2 partitions!</li>
+        <li>Sequential IDs starting from 1 — all writes to partition 1 initially</li>
+        <li>Country code — India has 1B users, all in one partition</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — OPERATIONS
+══════════════════════════════════ -->
+<div id="tab-operations" class="tab-panel"><div class="section">
+  <h2>🔧 Operations — Reading & Writing Data</h2>
+  <p>DynamoDB has a distinct set of operations. Choosing the right one dramatically impacts performance and cost. Never Scan when you can Query. Never Query when you can GetItem.</p>
+
+  <!-- ACCESS PATTERN CARDS -->
+  <h3>Read Operations — Performance Hierarchy</h3>
+  <div class="access-grid">
+    <div class="access-card ac-get">
+      <div class="ac-op">GetItem</div>
+      <h4>Single item by exact key</h4>
+      <p>Provide exact PK (+ SK if composite). Returns one item. O(1) — always fast regardless of table size.</p>
+      <div class="ac-cost cost-low">⚡ 0.5 RCU (eventual) / 1 RCU (strong)</div>
+    </div>
+    <div class="access-card ac-query">
+      <div class="ac-op">Query</div>
+      <h4>Multiple items — same partition</h4>
+      <p>Provide exact PK + optional SK condition. Returns all matching items sorted. Only reads within one partition. Fast.</p>
+      <div class="ac-cost cost-low">⚡ Reads only matching items</div>
+    </div>
+    <div class="access-card ac-gsi">
+      <div class="ac-op">Query GSI</div>
+      <h4>Items by non-key attribute</h4>
+      <p>Query on a Global Secondary Index. Same efficiency as base table Query, but on different attributes.</p>
+      <div class="ac-cost cost-med">💰 GSI read capacity separate</div>
+    </div>
+    <div class="access-card ac-scan">
+      <div class="ac-op">Scan</div>
+      <h4>⚠️ Reads ENTIRE table</h4>
+      <p>Reads every single item. Filtered after read. Consumes RCU for ALL data, not just results. Avoid in production hotpaths.</p>
+      <div class="ac-cost cost-high">🔥 Reads entire table — expensive</div>
+    </div>
+  </div>
+
+  <h3>Write Operations</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✍️ PutItem</h4>
+      <ul>
+        <li>Creates or completely replaces an item</li>
+        <li>If item exists with same key → overwritten silently</li>
+        <li>Use condition to prevent accidental overwrite</li>
+        <li>1 WCU per KB written</li>
+        <li>Most common write operation</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 UpdateItem</h4>
+      <ul>
+        <li>Modifies specific attributes of an existing item</li>
+        <li>Other attributes unchanged</li>
+        <li>Atomic operations: SET, REMOVE, ADD, DELETE</li>
+        <li>Atomic counter: <code>ADD views 1</code></li>
+        <li>Conditional: update only if attribute matches</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🗑️ DeleteItem</h4>
+      <ul>
+        <li>Deletes item by exact key</li>
+        <li>Returns deleted item (if you want it)</li>
+        <li>Condition expression: only delete if condition met</li>
+        <li>Example: only delete if status = "cancelled"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Batch / Transact</h4>
+      <ul>
+        <li>BatchWriteItem: up to 25 PutItem/DeleteItem at once</li>
+        <li>BatchGetItem: up to 100 GetItem at once</li>
+        <li>TransactWriteItems: ACID across up to 100 items</li>
+        <li>TransactGetItems: consistent read up to 100 items</li>
+        <li>Transactions consume 2× the WCU/RCU</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: CONDITIONAL WRITES -->
+  <h3>Conditional Writes — Optimistic Locking</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">📱 App updates product stock</div>
+      <ul class="flow-items">
+        <li>Current stock: 5 units</li>
+        <li>User wants to buy 3</li>
+        <li>Condition: only update IF stock >= 3</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ Condition met — stock updated</div>
+        <ul class="flow-items">
+          <li>Expression: stock >= :qty (3)</li>
+          <li>Atomic: stock 5 → 2</li>
+          <li>Another request at same time → condition fails → retry</li>
+          <li>No overselling — thread-safe update</li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">❌ Condition fails — ConditionalCheckFailedException</div>
+        <ul class="flow-items">
+          <li>Stock was already 2 (someone else bought)</li>
+          <li>App catches exception → tells user "out of stock"</li>
+          <li>No transaction needed — condition is atomic</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Strongly Consistent vs Eventually Consistent reads</h4>
+    <p><strong>Eventually Consistent (default, 0.5 RCU):</strong> May return slightly stale data (milliseconds old). Reads from any of the 3 AZ replicas. Use for: most reads where absolute freshness isn't critical.<br><br>
+    <strong>Strongly Consistent (1 RCU):</strong> Always returns most recent data. Reads from the leader replica. Use for: after a write that must be immediately visible, financial balances, inventory counts. Double the cost.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — GSI & LSI
+══════════════════════════════════ -->
+<div id="tab-indexes" class="tab-panel"><div class="section">
+  <h2>📑 Global & Local Secondary Indexes</h2>
+  <p>Indexes let you query your table on attributes that aren't the primary key — without expensive Scans. Think of them as separate sorted copies of your data, maintained automatically by DynamoDB.</p>
+
+  <!-- GSI vs LSI COMPARISON -->
+  <h3>GSI vs LSI — Side by Side</h3>
+  <div class="index-compare">
+    <div class="index-card">
+      <div class="index-card-head gsi-head"><h4>🟢 Global Secondary Index (GSI)</h4></div>
+      <div class="index-card-body">
+        <ul>
+          <li>Completely different PK and SK from base table</li>
+          <li>Created at any time — even after table exists</li>
+          <li>Has its own separate throughput capacity</li>
+          <li>Eventually consistent reads only</li>
+          <li>Up to 20 GSIs per table</li>
+          <li>Data is projected (copied) to the GSI</li>
+          <li>Good for: query by any attribute</li>
+          <li>Example: query orders by status + date</li>
+        </ul>
+      </div>
+    </div>
+    <div class="index-card">
+      <div class="index-card-head lsi-head"><h4>🔵 Local Secondary Index (LSI)</h4></div>
+      <div class="index-card-body">
+        <ul>
+          <li>Same PK as base table, different SK</li>
+          <li>Must be created at table creation — cannot add later!</li>
+          <li>Shares base table's throughput capacity</li>
+          <li>Supports strongly consistent reads</li>
+          <li>Up to 5 LSIs per table</li>
+          <li>10 GB per partition limit (with LSI)</li>
+          <li>Good for: query same partition by different sort</li>
+          <li>Example: user's orders sorted by amount instead of date</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- GSI VISUAL EXAMPLE -->
+  <h3>GSI Example — Orders by Status</h3>
+  <div class="table-anatomy">
+    <div class="ta-header">📑 StatusDateIndex (GSI) — query all "pending" orders sorted by date</div>
+    <div class="ta-row header-row">
+      <div class="ta-cell label">Entity</div>
+      <div class="ta-cell pk">GSI PK (status)</div>
+      <div class="ta-cell sk">GSI SK (createdAt)</div>
+      <div class="ta-cell attr">Projected Attributes</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--green);font-size:.65rem;">Order</div>
+      <div class="ta-cell pk">pending</div>
+      <div class="ta-cell sk">2025-04-07T10:30:00Z</div>
+      <div class="ta-cell attr">orderId=ord_201 · amount=1499 · userId=usr_001</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--green);font-size:.65rem;">Order</div>
+      <div class="ta-cell pk">pending</div>
+      <div class="ta-cell sk">2025-04-06T14:22:00Z</div>
+      <div class="ta-cell attr">orderId=ord_199 · amount=2999 · userId=usr_045</div>
+    </div>
+    <div class="ta-row">
+      <div class="ta-cell label" style="color:var(--aws);font-size:.65rem;">Order</div>
+      <div class="ta-cell pk">shipped</div>
+      <div class="ta-cell sk">2025-04-05T09:15:00Z</div>
+      <div class="ta-cell attr">orderId=ord_188 · amount=799 · userId=usr_002</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 GSI Projection — what data to copy to the index</h4>
+    <p><strong>KEYS_ONLY:</strong> Only PK, SK, and GSI keys projected. Cheapest. Use if you'll fetch the full item separately after querying the GSI.<br>
+    <strong>INCLUDE:</strong> Keys + specific attributes you name. Middle ground.<br>
+    <strong>ALL:</strong> Entire item projected to GSI. Most expensive (double storage + write cost). Use only if you need all attributes from the index query result without a second fetch.</p>
+  </div>
+
+  <h3>When to Use Which</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Access pattern</th><th>Solution</th><th>Why</th></tr>
+    <tr><td>Get user by userId</td><td>GetItem on base table</td><td>PK = userId, perfect</td></tr>
+    <tr><td>Get all orders for a user</td><td>Query base table</td><td>PK = userId, SK begins_with ORDER#</td></tr>
+    <tr><td>Get all PENDING orders (all users)</td><td>GSI on status</td><td>Status is not the PK — need GSI</td></tr>
+    <tr><td>User's orders sorted by amount</td><td>LSI (SK = amount)</td><td>Same PK, different SK — LSI at creation</td></tr>
+    <tr><td>Find user by email</td><td>GSI (PK = email)</td><td>Email not in base key — GSI</td></tr>
+    <tr><td>All items in a category</td><td>GSI (PK = category)</td><td>Category not base PK — GSI</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — CAPACITY & PRICING
+══════════════════════════════════ -->
+<div id="tab-capacity" class="tab-panel"><div class="section">
+  <h2>💰 Capacity Modes & Pricing</h2>
+  <p>DynamoDB offers two capacity modes. Choosing the right one can halve your costs or prevent throttling. You can switch modes once every 24 hours.</p>
+
+  <!-- CAPACITY MODE CARDS -->
+  <div class="cap-toggle">
+    <div class="cap-side cap-on-demand">
+      <h4>✅ On-Demand (Pay Per Request)</h4>
+      <ul>
+        <li>No capacity planning required</li>
+        <li>Scales instantly on any traffic spike</li>
+        <li>Pay per read/write request unit</li>
+        <li>$1.25 per million WRU (Write Request Units)</li>
+        <li>$0.25 per million RRU (Read Request Units)</li>
+        <li>Best for: unpredictable, spiky, or new workloads</li>
+        <li>No throttling — auto-scales to any level</li>
+      </ul>
+    </div>
+    <div class="cap-side cap-provisioned">
+      <h4>🔵 Provisioned (Manual Capacity)</h4>
+      <ul>
+        <li>You set RCU + WCU manually</li>
+        <li>$0.00065 per RCU/hour · $0.00327 per WCU/hour</li>
+        <li>Cheaper than On-Demand for predictable load</li>
+        <li>Can add Auto Scaling to adjust automatically</li>
+        <li>Throttled if you exceed provisioned limits</li>
+        <li>Best for: steady, predictable workloads</li>
+        <li>Use reserved capacity for 1-year: up to 77% savings</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Read/Write Capacity Units Explained</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📖 Read Capacity Unit (RCU)</h4>
+      <ul>
+        <li>1 RCU = 1 strongly consistent read of up to 4 KB/sec</li>
+        <li>1 RCU = 2 eventually consistent reads of up to 4 KB/sec</li>
+        <li>Larger items consume more RCU (rounded up to 4 KB)</li>
+        <li>Example: 10 KB item, strong consistent = 3 RCU (ceil(10/4))</li>
+        <li>Transact reads = 2× RCU cost</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✍️ Write Capacity Unit (WCU)</h4>
+      <ul>
+        <li>1 WCU = 1 write of up to 1 KB/sec</li>
+        <li>Larger items consume more WCU (rounded up to 1 KB)</li>
+        <li>Example: 3.5 KB item = 4 WCU</li>
+        <li>Transact writes = 2× WCU cost</li>
+        <li>Conditional writes still consume full WCU</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: CAPACITY DECISION -->
+  <h3>Which Mode to Choose?</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ On-Demand if:</div>
+        <ul class="flow-items">
+          <li>New application — unknown traffic patterns</li>
+          <li>Traffic spikes without warning (e-commerce sales)</li>
+          <li>Very low traffic most of the time (dev/staging)</li>
+          <li>Can't predict read/write ratio</li>
+          <li>Simplicity over cost optimisation</li>
+        </ul>
+      </div>
+      <div class="flow-node n-ddb" style="max-width:100%">
+        <div class="flow-node-title">✅ Provisioned if:</div>
+        <ul class="flow-items">
+          <li>Stable, predictable traffic patterns</li>
+          <li>Cost is a priority (up to 5× cheaper at steady load)</li>
+          <li>Can use Auto Scaling for minor fluctuations</li>
+          <li>Using reserved capacity for maximum savings</li>
+          <li>Production apps with 30+ days of traffic data</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>DynamoDB Streams — React to Changes</h3>
+  <div class="flow">
+    <div class="flow-node n-ddb">
+      <div class="flow-node-title">🗄️ DynamoDB — item changed</div>
+      <ul class="flow-items">
+        <li>Any PutItem, UpdateItem, DeleteItem operation</li>
+        <li>Change captured in DynamoDB Stream (24-hour window)</li>
+        <li>Stream record contains: OLD image, NEW image, or BOTH</li>
+        <li>Ordered within each partition key</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">λ Lambda reacts to change</div>
+        <ul class="flow-items">
+          <li>Lambda Event Source Mapping on stream</li>
+          <li>Trigger: ElasticSearch sync, cache invalidation</li>
+          <li>Pattern: event sourcing, audit log</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">🌊 Kinesis Data Streams</div>
+        <ul class="flow-items">
+          <li>DynamoDB → Kinesis Data Streams</li>
+          <li>Longer retention (up to 1 year)</li>
+          <li>Multiple consumers on same stream</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — SINGLE-TABLE DESIGN
+══════════════════════════════════ -->
+<div id="tab-singletable" class="tab-panel"><div class="section">
+  <h2>🏗️ Single-Table Design — The DynamoDB Way</h2>
+  <p>In relational DBs, you create one table per entity type (users, orders, products). In DynamoDB, the recommended pattern is to store <em>all</em> entity types in a single table — using key prefixes and overloaded indexes to model relationships.</p>
+
+  <div class="tip">
+    <h4>💡 Why Single-Table Design?</h4>
+    <p>DynamoDB charges per table for provisioned capacity and you pay for cross-table operations separately. More importantly — you can fetch related data (user + their orders + their profile) in a <strong>single Query call</strong> instead of multiple round trips. Each round trip adds latency. Single-table = fewer API calls = lower latency.</p>
+  </div>
+
+  <!-- SINGLE TABLE VISUAL -->
+  <h3>All Entities in One Table — E-Commerce Example</h3>
+  <div class="std-table">
+    <div class="std-header">🗄️ AppTable — Users, Orders, Products, Payments — all in one table</div>
+    <div class="std-row">
+      <div class="std-entity e-user">USER</div>
+      <div class="std-pk">USER#usr_001</div>
+      <div class="std-sk">PROFILE</div>
+      <div class="std-attrs">name, email, plan, createdAt</div>
+    </div>
+    <div class="std-row">
+      <div class="std-entity e-order">ORDER</div>
+      <div class="std-pk">USER#usr_001</div>
+      <div class="std-sk">ORDER#2025-04-07#ord_201</div>
+      <div class="std-attrs">amount, status, items, GSI1PK=STATUS#pending</div>
+    </div>
+    <div class="std-row">
+      <div class="std-entity e-order">ORDER</div>
+      <div class="std-pk">USER#usr_001</div>
+      <div class="std-sk">ORDER#2025-03-15#ord_188</div>
+      <div class="std-attrs">amount, status, items, GSI1PK=STATUS#delivered</div>
+    </div>
+    <div class="std-row">
+      <div class="std-entity e-payment">PAYMENT</div>
+      <div class="std-pk">USER#usr_001</div>
+      <div class="std-sk">PAYMENT#ord_201</div>
+      <div class="std-attrs">method, cardLast4, transactionId</div>
+    </div>
+    <div class="std-row">
+      <div class="std-entity e-user">USER</div>
+      <div class="std-pk">USER#usr_002</div>
+      <div class="std-sk">PROFILE</div>
+      <div class="std-attrs">name, email, plan, createdAt</div>
+    </div>
+    <div class="std-row">
+      <div class="std-entity e-product">PRODUCT</div>
+      <div class="std-pk">PRODUCT#prod_500</div>
+      <div class="std-sk">DETAILS</div>
+      <div class="std-attrs">name, price, category, GSI1PK=CAT#electronics</div>
+    </div>
+  </div>
+
+  <h3>Access Patterns This Design Enables</h3>
+  <div class="access-grid">
+    <div class="access-card ac-query">
+      <div class="ac-op">Query</div>
+      <h4>Get user + all orders</h4>
+      <p>PK=USER#usr_001, SK begins_with("ORDER#") — one API call returns user and all orders sorted by date.</p>
+    </div>
+    <div class="access-card ac-get">
+      <div class="ac-op">GetItem</div>
+      <h4>Get user profile only</h4>
+      <p>PK=USER#usr_001, SK=PROFILE — pinpoint exact item.</p>
+    </div>
+    <div class="access-card ac-query">
+      <div class="ac-op">Query</div>
+      <h4>Get all Q1 orders for user</h4>
+      <p>PK=USER#usr_001, SK between "ORDER#2025-01-01" and "ORDER#2025-03-31"</p>
+    </div>
+    <div class="access-card ac-gsi">
+      <div class="ac-op">GSI Query</div>
+      <h4>All pending orders (any user)</h4>
+      <p>GSI: PK=STATUS#pending — returns all pending orders across all users, sorted by date.</p>
+    </div>
+    <div class="access-card ac-gsi">
+      <div class="ac-op">GSI Query</div>
+      <h4>Products by category</h4>
+      <p>GSI: PK=CAT#electronics — all electronics sorted by price.</p>
+    </div>
+    <div class="access-card ac-get">
+      <div class="ac-op">GetItem</div>
+      <h4>Payment for specific order</h4>
+      <p>PK=USER#usr_001, SK=PAYMENT#ord_201 — instant lookup.</p>
+    </div>
+  </div>
+
+  <h3>Generic Key Naming Convention</h3>
+  <div class="card">
+    <h4>📋 The "Overloaded GSI" Pattern</h4>
+    <p>Use generic attribute names for the GSI keys (e.g. <code>GSI1PK</code>, <code>GSI1SK</code>) and populate them with different values per entity type:<br><br>
+    For User items: <code>GSI1PK = EMAIL#indhu@myapp.com</code> → query by email<br>
+    For Order items: <code>GSI1PK = STATUS#pending</code> → query all pending orders<br>
+    For Product items: <code>GSI1PK = CAT#electronics</code> → query by category<br><br>
+    One GSI, multiple access patterns. The GSI is "overloaded" — it serves different queries for different entity types. This is the canonical single-table design pattern advocated by AWS.</p>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Single-table design trade-offs</h4>
+    <p>Single-table design is powerful but adds complexity. It requires upfront access pattern analysis. Adding new access patterns later may require a new GSI. The data model is harder to understand for new team members. <strong>Start with your access patterns</strong> — write them all down first, then design the table around them. Never design the table then figure out queries later.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+  <p>Creating a production DynamoDB table with composite key, GSI, encryption, and DynamoDB Streams.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create Table</div>
+      <div class="console-step-path">DynamoDB → Tables → Create table</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Table name</div>
+        <div class="console-field-value">AppTable</div>
+        <div class="console-field-hint">Use a single descriptive name. Single-table design means one table per application, not one per entity. Cannot rename after creation.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Partition key (PK) — name</div>
+        <div class="console-field-value">PK</div>
+        <div class="console-field-hint">Use generic names "PK" and "SK" for single-table design — different entities will use the same key names with different value patterns. Type: String.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Partition key type</div>
+        <div class="console-field-value">String</div>
+        <div class="console-field-hint">String is most flexible for prefixed keys (USER#, ORDER#). Use Number only if your PK is purely numeric. Binary is rare.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Sort key (SK) — name</div>
+        <div class="console-field-value">SK</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Sort key type</div>
+        <div class="console-field-value">String</div>
+        <div class="console-field-hint">String sort keys enable begins_with and between queries with ISO timestamps. Number keys enable numeric range queries.</div>
+      </div>
+      <div class="console-note">The primary key (PK + SK) is set here and cannot be changed. Choose carefully.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Choose Capacity Mode & Settings</div>
+      <div class="console-step-path">Same form → Table settings → Customize settings</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Read/write capacity mode</div>
+        <div class="console-field-value">On-demand (for new apps) / Provisioned (for predictable load)</div>
+        <div class="console-field-hint">Start with On-demand for new applications. Switch to Provisioned after 30 days when you understand your traffic patterns. Saves up to 5× cost at stable loads.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Provisioned Read capacity units</div>
+        <div class="console-field-value">5 (dev) / measure from CloudWatch for prod</div>
+        <div class="console-field-hint">1 RCU handles 1 strongly consistent read of up to 4 KB per second. Use ConsumedReadCapacityUnits metric to right-size. Enable Auto Scaling.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Auto Scaling</div>
+        <div class="console-field-value">✅ Enable for both read and write capacity</div>
+        <div class="console-field-hint">Set target utilisation to 70%. DynamoDB scales up when usage exceeds 70%, scales down when below. Min 5, Max 1000 is a reasonable starting range.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption at rest</div>
+        <div class="console-field-value">Owned by Amazon DynamoDB (free) or KMS CMK</div>
+        <div class="console-field-hint">DynamoDB-owned key: free encryption. AWS managed KMS: no extra cost but CloudTrail visibility. Customer managed KMS: $1/month per key, use for compliance/cross-account.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Add Global Secondary Index (GSI)</div>
+      <div class="console-step-path">Same form → Secondary indexes → Create global index</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Index name</div>
+        <div class="console-field-value">GSI1</div>
+        <div class="console-field-hint">Use generic GSI1, GSI2 names for single-table design. The same index serves multiple access patterns for different entity types.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Partition key</div>
+        <div class="console-field-value">GSI1PK (String)</div>
+        <div class="console-field-hint">This attribute must exist on items you want to appear in this index. Items without GSI1PK are simply not included in the index.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Sort key</div>
+        <div class="console-field-value">GSI1SK (String)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Attribute projections</div>
+        <div class="console-field-value">Include — then add: status, createdAt, amount, userId</div>
+        <div class="console-field-hint">KEYS_ONLY: cheapest, requires GetItem for full details. INCLUDE: specify exactly what you need in queries. ALL: full item copy — most expensive. Start with INCLUDE.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Enable DynamoDB Streams</div>
+      <div class="console-step-path">Table → Exports and streams → DynamoDB stream details → Enable</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Stream view type</div>
+        <div class="console-field-value">New and old images</div>
+        <div class="console-field-hint">NEW_IMAGE: only what the item looks like after change. OLD_IMAGE: before. NEW_AND_OLD_IMAGES: both — needed for audit logs, change detection, undo operations. KEYS_ONLY: just keys, cheapest.</div>
+      </div>
+      <div class="console-note">After enabling: go to Lambda → Create function → trigger = DynamoDB → select this table's stream ARN. Lambda processes changes in batches.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable Point-in-Time Recovery (PITR)</div>
+      <div class="console-step-path">Table → Backups → Edit → Enable PITR</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Point-in-time recovery</div>
+        <div class="console-field-value">✅ Enable</div>
+        <div class="console-field-hint">Continuously backs up your table. Restore to any second within the last 35 days. Essential safety net for production. If you accidentally delete 10,000 items — restore in minutes. ~$0.20 per GB/month.</div>
+      </div>
+      <div class="console-note">Always enable PITR on production tables. The cost is negligible compared to the protection it provides against data loss.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete DynamoDB Implementation</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.DynamoDBv2
+Install-Package Amazon.DynamoDBv2.DataModel  <span class="cm">// Object Persistence Model</span></pre></div>
+
+  <h3>Low-Level Client — Full Control</h3>
+  <div class="code-block">
+    <span class="code-label">DynamoDbService.cs</span>
+    <pre><span class="kw">using</span> Amazon.DynamoDBv2;
+<span class="kw">using</span> Amazon.DynamoDBv2.Model;
+
+<span class="kw">public class</span> <span class="tp">DynamoDbService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonDynamoDB</span> _ddb;
+    <span class="kw">private const string</span> Table = <span class="str">"AppTable"</span>;
+
+    <span class="kw">public</span> <span class="tp">DynamoDbService</span>(<span class="tp">IAmazonDynamoDB</span> ddb) => _ddb = ddb;
+
+    <span class="cm">// ── PutItem ────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PutOrderAsync</span>(<span class="tp">Order</span> order)
+    {
+        <span class="kw">await</span> _ddb.<span class="fn">PutItemAsync</span>(<span class="kw">new</span> <span class="tp">PutItemRequest</span>
+        {
+            TableName = Table,
+            Item = <span class="kw">new</span>()
+            {
+                [<span class="str">"PK"</span>]       = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">$"USER#{order.UserId}"</span> },
+                [<span class="str">"SK"</span>]       = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">$"ORDER#{order.CreatedAt:O}#{order.OrderId}"</span> },
+                [<span class="str">"GSI1PK"</span>]  = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">$"STATUS#{order.Status}"</span> },
+                [<span class="str">"GSI1SK"</span>]  = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = order.CreatedAt.<span class="fn">ToString</span>(<span class="str">"O"</span>) },
+                [<span class="str">"orderId"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = order.OrderId },
+                [<span class="str">"amount"</span>]  = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { N = order.Amount.<span class="fn">ToString</span>() },
+                [<span class="str">"status"</span>]  = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = order.Status }
+            },
+            <span class="cm">// Prevent overwriting existing order</span>
+            ConditionExpression = <span class="str">"attribute_not_exists(PK)"</span>
+        });
+    }
+
+    <span class="cm">// ── GetItem ────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,<span class="tp">AttributeValue</span>&gt;?&gt;
+        <span class="fn">GetUserProfileAsync</span>(<span class="tp">string</span> userId)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _ddb.<span class="fn">GetItemAsync</span>(<span class="kw">new</span> <span class="tp">GetItemRequest</span>
+        {
+            TableName = Table,
+            Key = <span class="kw">new</span>()
+            {
+                [<span class="str">"PK"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>{ S = <span class="str">$"USER#{userId}"</span>},
+                [<span class="str">"SK"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>{ S = <span class="str">"PROFILE"</span> }
+            },
+            ConsistentRead = <span class="kw">true</span> <span class="cm">// strong consistency</span>
+        });
+        <span class="kw">return</span> response.Item.Count > <span class="num">0</span> ? response.Item : <span class="kw">null</span>;
+    }
+
+    <span class="cm">// ── Query — all orders for user ────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,<span class="tp">AttributeValue</span>&gt;&gt;&gt;
+        <span class="fn">QueryUserOrdersAsync</span>(<span class="tp">string</span> userId)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _ddb.<span class="fn">QueryAsync</span>(<span class="kw">new</span> <span class="tp">QueryRequest</span>
+        {
+            TableName              = Table,
+            KeyConditionExpression =
+                <span class="str">"PK = :pk AND begins_with(SK, :prefix)"</span>,
+            ExpressionAttributeValues = <span class="kw">new</span>()
+            {
+                [<span class="str">":pk"</span>]     = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">$"USER#{userId}"</span> },
+                [<span class="str">":prefix"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">"ORDER#"</span> }
+            },
+            ScanIndexForward = <span class="kw">false</span> <span class="cm">// newest first</span>
+        });
+        <span class="kw">return</span> response.Items;
+    }
+
+    <span class="cm">// ── UpdateItem — atomic counter ─────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">IncrementViewCountAsync</span>(
+        <span class="tp">string</span> productId)
+    {
+        <span class="kw">await</span> _ddb.<span class="fn">UpdateItemAsync</span>(<span class="kw">new</span> <span class="tp">UpdateItemRequest</span>
+        {
+            TableName = Table,
+            Key = <span class="kw">new</span>()
+            {
+                [<span class="str">"PK"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">$"PRODUCT#{productId}"</span> },
+                [<span class="str">"SK"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>
+                    { S = <span class="str">"DETAILS"</span> }
+            },
+            UpdateExpression = <span class="str">"ADD #views :one"</span>,
+            ExpressionAttributeNames  = <span class="kw">new</span>(){ [<span class="str">"#views"</span>]=<span class="str">"views"</span> },
+            ExpressionAttributeValues = <span class="kw">new</span>()
+            {
+                [<span class="str">":one"</span>] = <span class="kw">new</span> <span class="tp">AttributeValue</span>{ N=<span class="str">"1"</span> }
+            }
+        });
+    }
+}</pre>
+  </div>
+
+  <h3>Object Persistence Model (Higher Level)</h3>
+  <div class="code-block">
+    <span class="code-label">Order.cs + DynamoDBContext — map C# objects directly</span>
+    <pre><span class="kw">using</span> Amazon.DynamoDBv2.DataModel;
+
+<span class="cm">// ── Model with DynamoDB attributes ─────────────</span>
+[<span class="tp">DynamoDBTable</span>(<span class="str">"AppTable"</span>)]
+<span class="kw">public class</span> <span class="tp">Order</span>
+{
+    [<span class="tp">DynamoDBHashKey</span>(<span class="str">"PK"</span>)]       <span class="cm">// partition key</span>
+    <span class="kw">public string</span> Pk { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+
+    [<span class="tp">DynamoDBRangeKey</span>(<span class="str">"SK"</span>)]      <span class="cm">// sort key</span>
+    <span class="kw">public string</span> Sk { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+
+    [<span class="tp">DynamoDBProperty</span>(<span class="str">"orderId"</span>)]
+    <span class="kw">public string</span> OrderId { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+
+    [<span class="tp">DynamoDBProperty</span>(<span class="str">"amount"</span>)]
+    <span class="kw">public decimal</span> Amount { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="tp">DynamoDBProperty</span>(<span class="str">"status"</span>)]
+    <span class="kw">public string</span> Status { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+
+    [<span class="tp">DynamoDBIgnore</span>]               <span class="cm">// not stored</span>
+    <span class="kw">public string</span> UserId { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+
+    <span class="kw">public</span> <span class="tp">DateTime</span> CreatedAt { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="cm">// ── Usage with DynamoDBContext ──────────────────</span>
+<span class="kw">public class</span> <span class="tp">OrderRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IDynamoDBContext</span> _ctx;
+
+    <span class="kw">public</span> <span class="tp">OrderRepository</span>(<span class="tp">IDynamoDBContext</span> ctx) => _ctx = ctx;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>(<span class="tp">Order</span> order)
+        => <span class="kw">await</span> _ctx.<span class="fn">SaveAsync</span>(order);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Order</span>?&gt; <span class="fn">GetAsync</span>(<span class="tp">string</span> pk, <span class="tp">string</span> sk)
+        => <span class="kw">await</span> _ctx.<span class="fn">LoadAsync</span>&lt;<span class="tp">Order</span>&gt;(pk, sk);
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeleteAsync</span>(<span class="tp">string</span> pk, <span class="tp">string</span> sk)
+        => <span class="kw">await</span> _ctx.<span class="fn">DeleteAsync</span>&lt;<span class="tp">Order</span>&gt;(pk, sk);
+
+    <span class="kw">public</span> <span class="tp">AsyncSearch</span>&lt;<span class="tp">Order</span>&gt; <span class="fn">QueryUserOrders</span>(<span class="tp">string</span> userId)
+    {
+        <span class="kw">var</span> pk = <span class="str">$"USER#{userId}"</span>;
+        <span class="kw">return</span> _ctx.<span class="fn">QueryAsync</span>&lt;<span class="tp">Order</span>&gt;(pk,
+            <span class="tp">QueryOperator</span>.BeginsWith, [<span class="str">"ORDER#"</span>]);
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonDynamoDB</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">IDynamoDBContext</span>&gt;(sp =>
+    <span class="kw">new</span> <span class="tp">DynamoDBContext</span>(sp.<span class="fn">GetRequiredService</span>&lt;<span class="tp">IAmazonDynamoDB</span>&gt;()));
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">OrderRepository</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">DynamoDbService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Data Modelling</h3>
+  <ul class="checklist">
+    <li>Start with access patterns — list every query your app needs BEFORE designing the table</li>
+    <li>Use composite keys (PK + SK) for almost all tables — simple key limits your flexibility</li>
+    <li>Prefix key values to distinguish entity types: USER#, ORDER#, PRODUCT#</li>
+    <li>Use ISO 8601 timestamps in sort keys to enable time-range queries</li>
+    <li>Prefer single-table design — fewer tables, fewer round trips, lower latency</li>
+    <li>Plan LSIs at table creation — you cannot add them later</li>
+    <li>Keep item size small — large items consume more RCU/WCU and slow queries</li>
+  </ul>
+
+  <h3>Performance & Cost</h3>
+  <ul class="checklist">
+    <li>Never use Scan in production hot paths — always Query via PK or GSI</li>
+    <li>Use eventually consistent reads (default) unless you specifically need strong consistency</li>
+    <li>Use BatchGetItem and BatchWriteItem to reduce API call overhead</li>
+    <li>Project only needed attributes to GSIs — KEYS_ONLY or INCLUDE, not ALL</li>
+    <li>Enable Auto Scaling on Provisioned capacity to avoid over-provisioning</li>
+    <li>Use On-Demand for dev/test and unpredictable prod; Provisioned for steady prod workloads</li>
+    <li>Monitor ConsumedReadCapacityUnits and ConsumedWriteCapacityUnits in CloudWatch</li>
+  </ul>
+
+  <h3>Reliability & Safety</h3>
+  <ul class="checklist">
+    <li>Always enable Point-in-Time Recovery (PITR) on production tables</li>
+    <li>Use conditional writes to prevent race conditions (attribute_not_exists, version check)</li>
+    <li>Enable DynamoDB Streams for event sourcing, audit logs, and cross-region replication</li>
+    <li>Set TTL attribute to auto-expire old items — clean up sessions, temp data for free</li>
+    <li>Use transactions (TransactWriteItems) for multi-item ACID operations</li>
+    <li>Tag tables with Environment, App, Team — enables cost allocation and access policies</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top DynamoDB Mistakes</h4>
+    <p>
+    ❌ <strong>Using Scan in production queries</strong> — reads entire table, charges for every item<br>
+    ❌ <strong>Choosing status as partition key</strong> — only 3-4 distinct values → hot partition<br>
+    ❌ <strong>Designing table before listing access patterns</strong> — table won't support your queries<br>
+    ❌ <strong>Forgetting to add LSI at table creation</strong> — cannot add later, must recreate table<br>
+    ❌ <strong>Projecting ALL attributes to every GSI</strong> — doubles storage and write costs<br>
+    ❌ <strong>Not using condition expressions on writes</strong> — accidental overwrites go undetected<br>
+    ❌ <strong>No PITR enabled</strong> — one bad bulk delete = unrecoverable data loss<br>
+    ❌ <strong>Item size over 400 KB</strong> — DynamoDB rejects the write entirely
+    </p>
+  </div>
+
+  <h3>DynamoDB vs RDS vs Redis — The Full Picture</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>DynamoDB</th><th>RDS/PostgreSQL</th><th>ElastiCache/Redis</th></tr>
+    <tr><td>Sub-ms key lookups at scale</td><td>✅</td><td>Possible</td><td>✅ Fastest</td></tr>
+    <tr><td>Complex multi-table joins</td><td>❌</td><td>✅</td><td>❌</td></tr>
+    <tr><td>Unknown / spiky traffic</td><td>✅ Auto-scale</td><td>Manual</td><td>Manual</td></tr>
+    <tr><td>Full-text search</td><td>❌ (use OpenSearch)</td><td>Limited</td><td>❌</td></tr>
+    <tr><td>ACID transactions</td><td>✅ (within 100 items)</td><td>✅ Full</td><td>Limited</td></tr>
+    <tr><td>Session storage</td><td>✅</td><td>Overkill</td><td>✅ Best</td></tr>
+    <tr><td>Event sourcing / streams</td><td>✅ Streams</td><td>Possible</td><td>❌</td></tr>
+    <tr><td>Serverless / zero ops</td><td>✅</td><td>Requires management</td><td>Requires management</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon DynamoDB!</h3>
+    <p>What is DynamoDB · Table anatomy (PK, SK, attributes) · Partition map visual · Keys design (good vs bad) · All operations (GetItem, Query, Scan, Update, Conditional) · GSI vs LSI with projection · Capacity modes (On-Demand vs Provisioned) · DynamoDB Streams · Single-table design with overloaded GSI · Full AWS Console setup (every field!) · Complete C# SDK (low-level + Object Persistence Model) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--ddb-d);">Single-digit millisecond performance at any scale — design it right and it flies! ⚡🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
