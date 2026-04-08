@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon RDS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --rds:#2a6aaa;--rds-l:#d8eaf8;--rds-d:#1a4a8a;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#eef4fb 0%,#d8e8f5 45%,#c8d8ed 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'🗄️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'🔄';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--rds-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--rds-l);color:var(--rds-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--rds-l);letter-spacing:-.01em;}
+.section h3{color:var(--rds-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ MULTI-AZ VISUAL — showpiece ══ */
+.multiaz{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.multiaz-header{background:linear-gradient(90deg,var(--rds-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.multiaz-body{padding:16px;}
+.az-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:14px;}
+.az-box{border-radius:var(--r);padding:12px 14px;text-align:center;}
+.az-primary{background:linear-gradient(135deg,var(--green-l),#d0f4e4);border:2px solid rgba(42,122,90,.35);}
+.az-primary h5{color:var(--green);font-weight:700;font-size:.82rem;margin-bottom:4px;}
+.az-standby{background:var(--surface);border:2px solid var(--border);}
+.az-standby h5{color:var(--muted);font-weight:700;font-size:.82rem;margin-bottom:4px;}
+.az-standby.active{background:linear-gradient(135deg,var(--green-l),#d0f4e4);border:2px solid rgba(42,122,90,.35);}
+.az-standby.active h5{color:var(--green);}
+.az-sync{text-align:center;}
+.az-sync-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--rds-d);background:var(--rds-l);padding:2px 8px;border-radius:3px;display:block;margin-bottom:4px;}
+.az-sync-arrow{font-size:1.3rem;color:var(--rds-d);}
+.az-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.badge-primary{background:var(--green-l);color:var(--green);}
+.badge-standby{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.badge-failover{background:var(--aws-l);color:var(--aws);}
+.az-db-info{font-size:.7rem;color:var(--muted);}
+/* failover timeline */
+.failover-steps{display:flex;align-items:stretch;overflow-x:auto;gap:0;border-top:1px solid var(--border);margin-top:8px;}
+.fs-step{flex:1;min-width:90px;padding:8px 10px;text-align:center;border-right:1px solid var(--border);position:relative;}
+.fs-step:last-child{border-right:none;}
+.fs-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:#fff;margin:0 auto 5px;}
+.fs-step h6{font-size:.68rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.fs-step p{font-size:.6rem;color:var(--muted);}
+.fs-step .fs-time{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--rds-d);margin-top:3px;display:block;}
+
+/* ══ READ REPLICA VISUAL ══ */
+.rr-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.rr-header{background:linear-gradient(90deg,var(--purple-l),var(--rds-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.rr-body{padding:14px;}
+.rr-primary{background:var(--rds-l);border:2px solid rgba(42,106,170,.35);border-radius:var(--r);padding:10px 14px;text-align:center;max-width:200px;margin:0 auto;}
+.rr-primary h5{color:var(--rds-d);font-weight:700;font-size:.8rem;margin-bottom:2px;}
+.rr-primary p{font-size:.65rem;color:var(--muted);}
+.rr-arrow-down{text-align:center;color:var(--rds-d);font-size:1.2rem;padding:4px 0;}
+.rr-replicas{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:8px;}
+.rr-replica{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);border-radius:var(--r);padding:9px 10px;text-align:center;}
+.rr-replica h6{color:var(--purple);font-weight:700;font-size:.72rem;margin-bottom:2px;}
+.rr-replica p{font-size:.62rem;color:var(--muted);}
+.rr-replica .rr-lag{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--green);margin-top:3px;}
+
+/* ══ AURORA vs RDS COMPARISON ══ */
+.engine-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.ec-header{display:flex;border-bottom:1px solid var(--border);}
+.ec-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.78rem;}
+.ec-col.rds-col{background:var(--rds-l);color:var(--rds-d);border-right:1px solid var(--border);}
+.ec-col.aurora-col{background:linear-gradient(135deg,var(--purple-l),var(--rds-l));color:var(--purple);}
+.ec-row{display:flex;border-bottom:1px solid var(--border);}
+.ec-row:last-child{border-bottom:none;}
+.ec-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:130px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.ec-val{flex:1;padding:7px 12px;font-size:.75rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.ec-val:last-child{border-right:none;}
+.ec-val.better{color:var(--green);font-weight:600;}
+.ec-val.same{color:var(--muted);}
+
+/* ══ STORAGE METER ══ */
+.storage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.storage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.storage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-gp3::before{background:var(--green);}
+.sc-io1::before{background:var(--blue);}
+.sc-mag::before{background:var(--muted);}
+.storage-card .st-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.storage-card .st-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.sc-gp3 .st-type{background:var(--green-l);color:var(--green);}
+.sc-io1 .st-type{background:var(--blue-l);color:var(--blue);}
+.sc-mag .st-type{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+.st-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.st-metric-label{font-size:.68rem;color:var(--muted);}
+.st-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+.st-bar{height:5px;background:var(--surface);border-radius:100px;overflow:hidden;margin-bottom:8px;border:1px solid var(--border);}
+.st-fill{height:100%;border-radius:100px;}
+
+/* ══ CONNECTION POOL VISUAL ══ */
+.conn-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.conn-header{background:linear-gradient(90deg,var(--aws-l),var(--rds-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.conn-body{padding:14px;}
+.conn-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.conn-row:last-child{margin-bottom:0;}
+.conn-label{font-size:.72rem;font-weight:700;width:120px;flex-shrink:0;}
+.conn-apps{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.conn-app{width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;flex-shrink:0;}
+.conn-active{background:var(--rds-l);border:1px solid rgba(42,106,170,.3);color:var(--rds-d);}
+.conn-pool{background:var(--green-l);border:1px solid rgba(42,122,90,.3);color:var(--green);}
+.conn-exhausted{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+.conn-note{font-size:.65rem;color:var(--muted);margin-left:auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--rds-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-rds{background:var(--rds-l);border:1.5px solid rgba(42,106,170,.3);}
+.n-rds .flow-node-title{color:var(--rds-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--rds-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--rds);}
+.step-body h4{color:var(--rds-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--rds-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--rds-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--rds);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--rds);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--rds);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(42,106,170,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--rds-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--rds-l),var(--green-l));border:1px solid rgba(42,106,170,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.storage-grid,.rr-replicas{grid-template-columns:1fr;}
+  .flow-row,.az-row,.ec-row{flex-direction:column;}
+  .az-row{grid-template-columns:1fr;gap:6px;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .conn-note{display:none;}
+  .ec-label{width:80px;font-size:.6rem;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🗄️ <span>Amazon RDS</span> — Complete Guide</h1>
+  <p>Managed Relational Database · Multi-AZ · Read Replicas · Aurora · Storage · Backups · Parameter Groups · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is RDS</button>
+  <button class="tab-btn" onclick="T('multiaz',this)">Multi-AZ Failover</button>
+  <button class="tab-btn" onclick="T('replicas',this)">Read Replicas</button>
+  <button class="tab-btn" onclick="T('aurora',this)">Aurora</button>
+  <button class="tab-btn" onclick="T('storage',this)">Storage & Backup</button>
+  <button class="tab-btn" onclick="T('connections',this)">Connections & Proxy</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS RDS
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🗄️ What is Amazon RDS?</h2>
+  <p><strong>RDS = Relational Database Service.</strong> A fully managed service that runs MySQL, PostgreSQL, SQL Server, Oracle, MariaDB, and Amazon Aurora in the cloud. AWS handles provisioning, patching, backups, replication, and failover — you focus only on your data and queries.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — The Hospital</h4>
+    <p>RDS is like a hospital's operating theatre system. The <strong>primary database</strong> is the lead surgeon — doing all the active work (reads + writes). The <strong>Multi-AZ standby</strong> is the fully briefed backup surgeon — identical skills, watching everything, ready to step in within 60 seconds if the lead falls ill. <strong>Read replicas</strong> are consulting specialists — they can review case notes (SELECT queries) but cannot perform operations (no writes). AWS is the hospital administration — handling building maintenance, supplies, and compliance so the surgeons can focus on patients.</p>
+  </div>
+
+  <!-- WHAT RDS MANAGES FOR YOU -->
+  <h3>What AWS Manages — So You Don't Have To</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😓 Self-managed DB on EC2</h4>
+      <ul>
+        <li>Install + configure the database engine</li>
+        <li>Patch the OS and DB engine manually</li>
+        <li>Set up replication between instances</li>
+        <li>Configure and test failover yourself</li>
+        <li>Schedule and verify backups</li>
+        <li>Monitor disk space — expand manually</li>
+        <li>Handle SSL certificates yourself</li>
+        <li>Configure parameter tuning</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ RDS — AWS handles all of this</h4>
+      <ul>
+        <li>Engine installed + configured automatically</li>
+        <li>Auto minor patches (configurable window)</li>
+        <li>Synchronous replication to standby (Multi-AZ)</li>
+        <li>Automatic failover in 60–120 seconds</li>
+        <li>Automated backups + point-in-time restore</li>
+        <li>Storage Auto Scaling — grows automatically</li>
+        <li>SSL/TLS certificates managed by AWS</li>
+        <li>Parameter groups for tuning</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Supported Engines</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🐘</span><h4>PostgreSQL</h4><p>Most popular open-source. Best for complex queries.</p></div>
+    <div class="icon-item"><span class="emoji">🐬</span><h4>MySQL</h4><p>Widely used, great ecosystem, solid performance.</p></div>
+    <div class="icon-item"><span class="emoji">🪟</span><h4>SQL Server</h4><p>Windows ecosystem, Enterprise/Standard/Express.</p></div>
+    <div class="icon-item"><span class="emoji">🌟</span><h4>Aurora MySQL</h4><p>5× MySQL performance. AWS-optimized storage.</p></div>
+    <div class="icon-item"><span class="emoji">✨</span><h4>Aurora PostgreSQL</h4><p>3× PostgreSQL performance. Serverless option.</p></div>
+    <div class="icon-item"><span class="emoji">🔶</span><h4>Oracle / MariaDB</h4><p>Enterprise Oracle or MySQL-compatible MariaDB.</p></div>
+  </div>
+
+  <h3>RDS key facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Max storage</h4><p>64 TB (gp2/gp3) · 16 TB io1</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Failover</h4><p>Multi-AZ: 60–120 sec automatic</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Read Replicas</h4><p>Up to 15 per Aurora, 5 per RDS</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Backup retention</h4><p>1–35 days automated backups</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Encryption</h4><p>KMS at-rest, SSL/TLS in-transit</p></div>
+    <div class="icon-item"><span class="emoji">📈</span><h4>Auto Scaling</h4><p>Storage grows automatically, no downtime</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — MULTI-AZ FAILOVER
+══════════════════════════════════ -->
+<div id="tab-multiaz" class="tab-panel"><div class="section">
+  <h2>🔄 Multi-AZ — High Availability Failover</h2>
+  <p>Multi-AZ deploys a synchronous standby replica in a different Availability Zone. If the primary fails — hardware fault, AZ outage, OS crash — RDS automatically promotes the standby with no manual intervention and no data loss.</p>
+
+  <!-- MULTI-AZ VISUAL — NORMAL + FAILOVER -->
+  <h3>Normal Operation → Failure → Failover</h3>
+  <div class="multiaz">
+    <div class="multiaz-header">🔄 Multi-AZ — Normal operation and failover scenario</div>
+    <div class="multiaz-body">
+
+      <!-- NORMAL STATE -->
+      <p style="font-size:.72rem;font-weight:700;color:var(--green);margin-bottom:8px;">▶ NORMAL STATE — Primary healthy</p>
+      <div class="az-row">
+        <div class="az-box az-primary">
+          <span class="az-badge badge-primary">PRIMARY</span>
+          <h5>🟢 AZ-1 (ap-south-1a)</h5>
+          <div class="az-db-info">db.r6g.xlarge · Reads + Writes<br>App connects here via CNAME</div>
+        </div>
+        <div class="az-sync">
+          <span class="az-sync-label">Synchronous replication</span>
+          <div class="az-sync-arrow">⇄</div>
+          <span class="az-sync-label">every transaction</span>
+        </div>
+        <div class="az-box az-standby">
+          <span class="az-badge badge-standby">STANDBY</span>
+          <h5>⚪ AZ-2 (ap-south-1b)</h5>
+          <div class="az-db-info">Exact mirror of primary<br>No traffic — invisible to app</div>
+        </div>
+      </div>
+
+      <!-- FAILOVER STATE -->
+      <p style="font-size:.72rem;font-weight:700;color:var(--red);margin:14px 0 8px;">⚡ FAILOVER — Primary fails → Standby promoted</p>
+      <div class="az-row">
+        <div class="az-box az-standby" style="border-color:var(--red-b);background:var(--red-l);">
+          <span class="az-badge" style="background:var(--red-l);color:var(--red);">FAILED</span>
+          <h5 style="color:var(--red);">💀 AZ-1 (ap-south-1a)</h5>
+          <div class="az-db-info" style="color:var(--red);">Hardware failure / AZ outage<br>No longer serving traffic</div>
+        </div>
+        <div class="az-sync">
+          <span class="az-sync-label" style="color:var(--aws);">DNS CNAME</span>
+          <div class="az-sync-arrow" style="color:var(--aws);">→</div>
+          <span class="az-sync-label" style="color:var(--aws);">re-points</span>
+        </div>
+        <div class="az-box az-standby active">
+          <span class="az-badge badge-primary">NEW PRIMARY</span>
+          <h5>🟢 AZ-2 (ap-south-1b)</h5>
+          <div class="az-db-info">Promoted — now accepting all traffic<br>App reconnects via same CNAME</div>
+        </div>
+      </div>
+
+      <!-- FAILOVER TIMELINE -->
+      <div class="failover-steps">
+        <div class="fs-step">
+          <div class="fs-num" style="background:var(--red);">1</div>
+          <h6>Failure Detected</h6>
+          <p>Health check fails · AZ unreachable</p>
+          <span class="fs-time">t=0s</span>
+        </div>
+        <div class="fs-step">
+          <div class="fs-num" style="background:var(--aws);">2</div>
+          <h6>Failover Begins</h6>
+          <p>RDS initiates promotion of standby</p>
+          <span class="fs-time">t=10s</span>
+        </div>
+        <div class="fs-step">
+          <div class="fs-num" style="background:var(--aws);">3</div>
+          <h6>Standby Promoted</h6>
+          <p>Standby becomes new primary</p>
+          <span class="fs-time">t=30s</span>
+        </div>
+        <div class="fs-step">
+          <div class="fs-num" style="background:var(--rds-d);">4</div>
+          <h6>DNS Updated</h6>
+          <p>CNAME endpoint re-points to new primary</p>
+          <span class="fs-time">t=45s</span>
+        </div>
+        <div class="fs-step">
+          <div class="fs-num" style="background:var(--green);">5</div>
+          <h6>App Reconnects</h6>
+          <p>Connection pool re-establishes · Traffic resumes</p>
+          <span class="fs-time">t=60–120s</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 The CNAME is key — never use the IP</h4>
+    <p>Your app connects to RDS using the <strong>endpoint CNAME</strong> (e.g. <code>mydb.abc123.ap-south-1.rds.amazonaws.com</code>), never a direct IP. During failover, AWS updates this CNAME to point to the new primary. If your app uses the IP directly — failover won't work. Always use the endpoint hostname. Connection pools must honour the DNS TTL (~5s for RDS).</p>
+  </div>
+
+  <h3>Multi-AZ vs Multi-AZ Cluster (Multi-Writer)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔵 Multi-AZ (2 instances)</h4>
+      <ul>
+        <li>1 Primary (reads + writes) + 1 Standby (no traffic)</li>
+        <li>Synchronous replication — zero data loss</li>
+        <li>Failover: 60–120 seconds</li>
+        <li>Standby is invisible — only used during failover</li>
+        <li>All major engines supported</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟣 Multi-AZ Cluster (3 instances)</h4>
+      <ul>
+        <li>1 Writer + 2 Readers across 3 AZs</li>
+        <li>Readers serve read traffic (unlike standby)</li>
+        <li>Faster failover: ~35 seconds</li>
+        <li>Lower write latency (local write commit)</li>
+        <li>MySQL + PostgreSQL only</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Multi-AZ is NOT a read scaling solution</h4>
+    <p>The Multi-AZ standby <strong>does not serve any read traffic</strong>. It's purely for high availability and failover. To scale reads, you need <strong>Read Replicas</strong> (next tab). Don't create Multi-AZ expecting to split read/write traffic — that's a different feature.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — READ REPLICAS
+══════════════════════════════════ -->
+<div id="tab-replicas" class="tab-panel"><div class="section">
+  <h2>📖 Read Replicas — Scale Your Reads</h2>
+  <p>Read Replicas are <strong>asynchronous</strong> copies of your primary database. They accept SELECT queries, offloading read traffic from the primary — which can then handle more writes. Add replicas in the same region, cross-region, or as the foundation for a promoted standalone database.</p>
+
+  <!-- READ REPLICA VISUAL -->
+  <h3>Read Replica Architecture</h3>
+  <div class="rr-visual">
+    <div class="rr-header">📖 Primary handles all writes · Replicas absorb reads</div>
+    <div class="rr-body">
+      <div class="rr-primary">
+        <h5>🟢 Primary DB</h5>
+        <p>All INSERT / UPDATE / DELETE<br>+ reads if no replica available</p>
+      </div>
+      <div class="rr-arrow-down">↓ async replication (binary log)</div>
+      <div class="rr-replicas">
+        <div class="rr-replica">
+          <h6>📖 Replica 1</h6>
+          <p>Same AZ · App reporting queries</p>
+          <div class="rr-lag">Lag: ~0.2s</div>
+        </div>
+        <div class="rr-replica">
+          <h6>📖 Replica 2</h6>
+          <p>Different AZ · API read traffic</p>
+          <div class="rr-lag">Lag: ~0.5s</div>
+        </div>
+        <div class="rr-replica">
+          <h6>📖 Replica 3</h6>
+          <p>Cross-region · DR + local reads</p>
+          <div class="rr-lag">Lag: ~2s</div>
+        </div>
+        <div class="rr-replica" style="background:var(--teal-l);border-color:rgba(26,122,106,.25);">
+          <h6 style="color:var(--teal);">🔄 Promoted</h6>
+          <p>Replica → standalone DB</p>
+          <div class="rr-lag" style="color:var(--aws);">Breaks replication</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Async Replication — Lag Explained</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">✍️ App writes to Primary</div>
+      <ul class="flow-items">
+        <li>INSERT INTO orders VALUES (...)</li>
+        <li>Primary commits → acknowledges to app immediately</li>
+        <li>Binary log entry created</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ async — primary doesn't wait</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">📤 Binary log shipped to Replica</div>
+      <ul class="flow-items">
+        <li>Replica SQL thread applies the change</li>
+        <li>Typical lag: milliseconds to seconds</li>
+        <li>Under heavy write load: lag can grow</li>
+        <li>Cross-region replica: higher lag due to network</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ app reads from replica</div>
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">⚠️ Read may see stale data!</div>
+      <ul class="flow-items">
+        <li>Newly written order may not appear yet on replica</li>
+        <li>Design for "eventual consistency" from replicas</li>
+        <li>Solution: always read your own writes from Primary</li>
+        <li>Solution: use RDS Proxy to route appropriately</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Using Read Replicas Effectively</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Good use cases for replicas</h4>
+      <ul>
+        <li>Reporting / analytics dashboards (slightly stale OK)</li>
+        <li>Search and list queries (doesn't need latest data)</li>
+        <li>Read-heavy microservices (product catalog, user lookup)</li>
+        <li>BI tools and data exports</li>
+        <li>Cross-region disaster recovery (promote on DR event)</li>
+        <li>Testing / staging (replica of production)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ Don't use replicas for</h4>
+      <ul>
+        <li>"Read your own write" patterns (just wrote → immediately read)</li>
+        <li>Auth token validation (must be fresh)</li>
+        <li>Payment confirmations (stale = wrong balance)</li>
+        <li>Inventory checks before purchase (oversell risk)</li>
+        <li>Any flow requiring guaranteed freshness</li>
+        <li>Replacing Multi-AZ for HA — replicas don't auto-failover</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Cross-Region Read Replicas</h3>
+  <div class="flow">
+    <div class="flow-node n-rds">
+      <div class="flow-node-title">🗄️ Primary — ap-south-1 (Mumbai)</div>
+      <ul class="flow-items">
+        <li>Serves Indian users — primary write endpoint</li>
+        <li>Binary log streamed cross-region continuously</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ async replication over encrypted connection</div>
+    <div class="flow-row">
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">📖 Read Replica — us-east-1</div>
+        <ul class="flow-items">
+          <li>US users read local replica</li>
+          <li>Lower latency for US reads</li>
+          <li>Can promote to standalone if Mumbai fails (DR)</li>
+        </ul>
+      </div>
+      <div class="flow-node n-teal" style="max-width:100%">
+        <div class="flow-node-title">📖 Read Replica — eu-west-1</div>
+        <ul class="flow-items">
+          <li>EU users read from Frankfurt</li>
+          <li>GDPR: data also in EU region</li>
+          <li>Independent failover target</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — AURORA
+══════════════════════════════════ -->
+<div id="tab-aurora" class="tab-panel"><div class="section">
+  <h2>✨ Amazon Aurora — RDS on Steroids</h2>
+  <p><strong>Aurora</strong> is AWS's proprietary cloud-native relational database. It is MySQL and PostgreSQL compatible — your apps work without code changes — but Aurora's architecture is completely reimagined for cloud performance, availability, and scale.</p>
+
+  <!-- AURORA vs RDS COMPARISON -->
+  <h3>Aurora vs Standard RDS — Head to Head</h3>
+  <div class="engine-compare">
+    <div class="ec-header">
+      <div class="ec-col rds-col">🗄️ RDS (MySQL/PostgreSQL)</div>
+      <div class="ec-col aurora-col">✨ Aurora</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Storage</div>
+      <div class="ec-val">EBS volumes, fixed size, manual grow</div>
+      <div class="ec-val better">Auto-grows in 10 GB increments, up to 128 TB</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Replication</div>
+      <div class="ec-val">1–5 replicas, async binary log</div>
+      <div class="ec-val better">Up to 15 replicas, lag &lt; 100ms, shared storage</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Read perf</div>
+      <div class="ec-val">Standard PostgreSQL/MySQL</div>
+      <div class="ec-val better">3× PostgreSQL, 5× MySQL throughput</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Failover</div>
+      <div class="ec-val">60–120 seconds (DNS flip)</div>
+      <div class="ec-val better">&lt; 30 seconds (replica promotion)</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Storage cost</div>
+      <div class="ec-val">Pay for provisioned storage size</div>
+      <div class="ec-val same">Pay for used storage + I/O</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Backtrack</div>
+      <div class="ec-val">Restore from snapshot (minutes)</div>
+      <div class="ec-val better">Rewind DB to seconds ago (Aurora MySQL only)</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Serverless</div>
+      <div class="ec-val">❌ Always-on instances</div>
+      <div class="ec-val better">✅ Aurora Serverless v2 — scales to zero</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Cost</div>
+      <div class="ec-val">Lower instance cost</div>
+      <div class="ec-val same">~20% higher instances + I/O charges</div>
+    </div>
+    <div class="ec-row">
+      <div class="ec-label">Best for</div>
+      <div class="ec-val">Standard workloads, cost-sensitive</div>
+      <div class="ec-val better">High-traffic production, need scale + resilience</div>
+    </div>
+  </div>
+
+  <h3>Aurora's Storage Architecture — Why It's Different</h3>
+  <div class="flow">
+    <div class="flow-node n-rds">
+      <div class="flow-node-title">🗄️ Standard RDS — EBS storage</div>
+      <ul class="flow-items">
+        <li>Each instance has its own EBS volume</li>
+        <li>Replica must replicate full data pages over network</li>
+        <li>Failover: promote replica + attach new EBS</li>
+        <li>Storage is per-instance — siloed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ compare with</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">✨ Aurora — Shared Distributed Storage</div>
+      <ul class="flow-items">
+        <li>All instances (writer + all readers) share ONE storage layer</li>
+        <li>Storage automatically replicated across 3 AZs × 2 copies = 6 copies</li>
+        <li>Replication to readers: only redo logs (tiny) — not full pages</li>
+        <li>Failover: reader promoted instantly — already has the data!</li>
+        <li>No storage limit worries — grows automatically</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Aurora Serverless v2 — Scale to Zero</h3>
+  <div class="card">
+    <h4>⚡ Aurora Serverless v2</h4>
+    <p>Scales <strong>instantly</strong> from minimum ACUs (Aurora Capacity Units) to maximum based on load — in fine-grained increments, not large jumps.<br><br>
+    <strong>Scale down to zero:</strong> After a period of inactivity, Aurora Serverless v2 can scale to 0 ACU — you pay nothing. On next connection, scales up in milliseconds.<br><br>
+    <strong>Use for:</strong> Development databases, variable workloads, new applications where traffic is unknown, multi-tenant apps where each tenant has low individual traffic.<br><br>
+    <strong>Pricing:</strong> $0.12 per ACU-hour (in ap-south-1). 1 ACU ≈ 2 GB RAM. Min 0 ACU, max 128 ACU = up to 256 GB RAM instantly.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — STORAGE & BACKUP
+══════════════════════════════════ -->
+<div id="tab-storage" class="tab-panel"><div class="section">
+  <h2>💾 Storage Types, Backups & Restore</h2>
+
+  <h3>Storage Types — Choose Based on IOPS Needs</h3>
+  <div class="storage-grid">
+    <div class="storage-card sc-gp3">
+      <div class="st-name">General Purpose SSD</div>
+      <div class="st-type">gp3 ✅ Recommended</div>
+      <div class="st-metric"><span class="st-metric-label">IOPS</span><span class="st-metric-val">3,000–16,000</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:60%;background:var(--green);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Throughput</span><span class="st-metric-val">125–1,000 MB/s</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:55%;background:var(--green);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Cost</span><span class="st-metric-val">$0.115/GB/month</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:35%;background:var(--green);"></div></div>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:7px;">Best for: most production workloads. IOPS and throughput provisioned independently.</p>
+    </div>
+    <div class="storage-card sc-io1">
+      <div class="st-name">Provisioned IOPS SSD</div>
+      <div class="st-type">io1 / io2</div>
+      <div class="st-metric"><span class="st-metric-label">IOPS</span><span class="st-metric-val">1,000–256,000</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:95%;background:var(--blue);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Throughput</span><span class="st-metric-val">Up to 4,000 MB/s</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:90%;background:var(--blue);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Cost</span><span class="st-metric-val">$0.125/GB + $0.10/IOPS</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:80%;background:var(--blue);"></div></div>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:7px;">Best for: high-transaction OLTP, consistent low latency required.</p>
+    </div>
+    <div class="storage-card sc-mag">
+      <div class="st-name">Magnetic</div>
+      <div class="st-type">standard</div>
+      <div class="st-metric"><span class="st-metric-label">IOPS</span><span class="st-metric-val">~100</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:15%;background:var(--muted);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Throughput</span><span class="st-metric-val">Low</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:10%;background:var(--muted);"></div></div>
+      <div class="st-metric"><span class="st-metric-label">Cost</span><span class="st-metric-val">Lowest</span></div>
+      <div class="st-bar"><div class="st-fill" style="width:20%;background:var(--muted);"></div></div>
+      <p style="font-size:.7rem;color:var(--muted);margin-top:7px;">Legacy only. Avoid for new deployments. Dev/test low-traffic only.</p>
+    </div>
+  </div>
+
+  <h3>Backup Types — Automated vs Manual</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔄 Automated Backups</h4>
+      <ul>
+        <li>Full daily snapshot during backup window</li>
+        <li>Transaction logs every 5 minutes</li>
+        <li>Enables Point-in-Time Recovery (PITR)</li>
+        <li>Restore to any second within retention period</li>
+        <li>Retention: 1–35 days (default: 7 days)</li>
+        <li>Free storage up to the DB instance size</li>
+        <li>Deleted when DB instance is deleted</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📸 Manual Snapshots</h4>
+      <ul>
+        <li>You trigger on-demand</li>
+        <li>Kept until YOU explicitly delete them</li>
+        <li>Survive DB instance deletion</li>
+        <li>Can be shared to other AWS accounts</li>
+        <li>Can be copied to other regions for DR</li>
+        <li>Charged at $0.095/GB/month beyond free tier</li>
+        <li>Best for: before major migrations, long-term archives</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: POINT-IN-TIME RESTORE -->
+  <h3>Point-in-Time Recovery — How It Works</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">💥 Disaster — bulk DELETE at 14:32:15</div>
+      <ul class="flow-items">
+        <li>Developer runs: DELETE FROM orders WHERE status = 'shipped'</li>
+        <li>Missing WHERE clause — deletes 2 million rows!</li>
+        <li>Realised at 14:45 — 13 minutes of carnage</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-rds">
+      <div class="flow-node-title">🎯 Restore to 14:32:14 — one second before</div>
+      <ul class="flow-items">
+        <li>RDS Console: Restore to Point in Time</li>
+        <li>Target time: 2025-04-07 14:32:14 UTC</li>
+        <li>RDS restores last full snapshot + replays transaction logs up to 14:32:14</li>
+        <li>Creates a NEW instance — original still running</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Recovered instance with all 2M rows intact</div>
+      <ul class="flow-items">
+        <li>Verify data on restored instance</li>
+        <li>Rename original, point app at restored instance</li>
+        <li>Or dump/import the specific table from restored instance</li>
+        <li>PITR works down to the second — within 5-minute log granularity</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — CONNECTIONS & PROXY
+══════════════════════════════════ -->
+<div id="tab-connections" class="tab-panel"><div class="section">
+  <h2>🔌 Connections, RDS Proxy & Parameter Groups</h2>
+  <p>Connection management is one of the most critical and often overlooked aspects of RDS in production. Too many connections = database crash. RDS Proxy solves this for serverless and microservice architectures.</p>
+
+  <!-- CONNECTION EXHAUSTION VISUAL -->
+  <h3>The Connection Exhaustion Problem</h3>
+  <div class="conn-visual">
+    <div class="conn-header">🔌 Connection limits — RDS vs Lambda scale-out</div>
+    <div class="conn-body">
+      <div class="conn-row">
+        <span class="conn-label" style="color:var(--green);">DB limit: 500</span>
+        <div class="conn-apps">
+          <div class="conn-app conn-active">DB</div>
+        </div>
+        <span class="conn-note">db.r6g.xlarge: max 1,500 connections</span>
+      </div>
+      <div class="conn-row">
+        <span class="conn-label" style="color:var(--aws);">10 Lambda</span>
+        <div class="conn-apps">
+          <div class="conn-app conn-active" title="Lambda">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+          <div class="conn-app conn-active">λ</div>
+        </div>
+        <span class="conn-note">10 × 1 conn = 10 DB connections — fine</span>
+      </div>
+      <div class="conn-row">
+        <span class="conn-label" style="color:var(--red);">500 Lambda ⚠️</span>
+        <div class="conn-apps">
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">λ</div>
+          <div class="conn-app conn-exhausted">…</div>
+        </div>
+        <span class="conn-note">500 × 1 = 500 conns — approaching limit!</span>
+      </div>
+      <div class="conn-row">
+        <span class="conn-label" style="color:var(--green);">With Proxy ✅</span>
+        <div class="conn-apps">
+          <div class="conn-app conn-pool">P</div>
+          <div class="conn-app conn-pool">P</div>
+          <div class="conn-app conn-pool">P</div>
+          <span style="font-size:.65rem;color:var(--muted);">proxy pool: 50 connections shared across 500 Lambdas</span>
+        </div>
+        <span class="conn-note">50 shared DB connections — DB never overwhelmed</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOW: RDS PROXY -->
+  <h3>RDS Proxy — How It Works</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">📱 500 Lambda functions / microservices</div>
+      <ul class="flow-items">
+        <li>Each Lambda opens a connection when invoked</li>
+        <li>500 concurrent Lambdas = 500 connection attempts</li>
+        <li>Connect to: proxy endpoint (not RDS directly)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-teal">
+      <div class="flow-node-title">🔄 RDS Proxy — Connection Pool Manager</div>
+      <ul class="flow-items">
+        <li>Accepts all 500 Lambda connections</li>
+        <li>Maintains a small pool of real DB connections (e.g. 50)</li>
+        <li>Multiplexes: maps 500 app connections → 50 DB connections</li>
+        <li>Queues queries when all pool connections busy</li>
+        <li>Credentials from Secrets Manager (Lambda never has DB password)</li>
+        <li>IAM authentication supported (no password in Lambda config)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ max 50 connections at any time</div>
+    <div class="flow-node n-rds">
+      <div class="flow-node-title">🗄️ RDS Instance — Protected</div>
+      <ul class="flow-items">
+        <li>Only sees 50 connections — never overwhelmed</li>
+        <li>Works at comfortable connection level</li>
+        <li>Faster failover: Proxy buffers queries during failover</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Parameter Groups — Tune the Database</h3>
+  <div class="card">
+    <h4>⚙️ What are Parameter Groups?</h4>
+    <p>Parameter groups are configuration files for your DB engine. Instead of SSHing into a server and editing my.cnf, you set parameters in a Parameter Group and attach it to your RDS instance.<br><br>
+    <strong>Static parameters:</strong> require DB reboot to apply (e.g. max_connections, innodb_buffer_pool_size)<br>
+    <strong>Dynamic parameters:</strong> apply immediately without reboot (e.g. slow_query_log, log_queries_not_using_indexes)<br><br>
+    <strong>Default parameter group:</strong> AWS-managed, cannot edit. Create a custom group → attach to your instance → change parameters freely.<br><br>
+    <strong>Key parameters to tune:</strong><br>
+    <code>max_connections</code> — match to your connection pool size<br>
+    <code>shared_buffers</code> (PG) — set to 25% of RAM<br>
+    <code>work_mem</code> (PG) — memory per sort/hash operation<br>
+    <code>slow_query_log</code> — enable to catch slow queries<br>
+    <code>log_min_duration_statement</code> (PG) — log queries over N ms</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create DB Instance</div>
+      <div class="console-step-path">RDS → Databases → Create database</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Creation method</div>
+        <div class="console-field-value">Standard create</div>
+        <div class="console-field-hint">Easy create hides most settings — use Standard create so you can see and configure every important option.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Engine type</div>
+        <div class="console-field-value">PostgreSQL (or Aurora PostgreSQL for production)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Engine version</div>
+        <div class="console-field-value">Latest major version (e.g. PostgreSQL 16.x)</div>
+        <div class="console-field-hint">Always use the latest major version for new deployments. Older versions lose support and security patches over time.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Templates</div>
+        <div class="console-field-value">Production (enables Multi-AZ and backups by default)</div>
+        <div class="console-field-hint">Production template pre-selects Multi-AZ, automated backups, deletion protection. Dev/Test template disables these for cost savings.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">DB instance identifier</div>
+        <div class="console-field-value">myapp-prod-postgres</div>
+        <div class="console-field-hint">Format: app-env-engine. This becomes part of the endpoint hostname — choose a name you're comfortable with long-term.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Master username / password</div>
+        <div class="console-field-value">postgres / [strong password — store in Secrets Manager!]</div>
+        <div class="console-field-hint">Tick "Manage master credentials in AWS Secrets Manager" — AWS creates the secret automatically and rotates the password. You never see or store the raw password.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Instance Size & Storage</div>
+      <div class="console-step-path">Same form → Instance configuration + Storage</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">DB instance class</div>
+        <div class="console-field-value">db.t4g.medium (dev) / db.r8g.xlarge (prod)</div>
+        <div class="console-field-hint">t-class: burstable CPU — good for dev/test with variable load. r-class: memory optimised — best for databases (large buffer pool). m-class: balanced. Graviton (g suffix) = 20% cheaper + better perf.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Storage type</div>
+        <div class="console-field-value">General Purpose SSD (gp3)</div>
+        <div class="console-field-hint">gp3 is the new default — you can configure IOPS and throughput independently without paying for more storage. More cost-efficient than gp2 for most workloads.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Allocated storage</div>
+        <div class="console-field-value">100 GB</div>
+        <div class="console-field-hint">Start at what you need. Enable Storage Autoscaling — set max threshold (e.g. 1000 GB). RDS grows automatically in 10% increments when 90% full.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Storage autoscaling</div>
+        <div class="console-field-value">✅ Enable · Maximum storage threshold: 1,000 GB</div>
+        <div class="console-field-hint">Never run out of disk space unnoticed. RDS grows the volume automatically. Zero downtime for storage expansion.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Availability & Durability</div>
+      <div class="console-step-path">Same form → Availability and durability</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Multi-AZ deployment</div>
+        <div class="console-field-value">Create a standby instance (Multi-AZ DB instance)</div>
+        <div class="console-field-hint">Always enable for production. Doubles the instance cost but provides automatic failover with zero data loss. Development: disable to save cost.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Connectivity (VPC & Security)</div>
+      <div class="console-step-path">Same form → Connectivity</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Virtual private cloud (VPC)</div>
+        <div class="console-field-value">Your production VPC</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Public access</div>
+        <div class="console-field-value">No (private subnets only)</div>
+        <div class="console-field-hint">NEVER set Yes in production. Your DB should only be reachable from within your VPC (EC2, ECS, Lambda in same VPC). Public = anyone on internet can attempt connections.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">VPC security group</div>
+        <div class="console-field-value">Create new: myapp-prod-rds-sg</div>
+        <div class="console-field-hint">The security group controls who can connect. Add inbound rule: PostgreSQL (port 5432) from your app's security group. Not from 0.0.0.0/0!</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Database port</div>
+        <div class="console-field-value">5432 (PostgreSQL default)</div>
+        <div class="console-field-hint">Some teams change the default port for security-through-obscurity. Not required but sometimes mandated by compliance.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Additional Configuration (Critical)</div>
+      <div class="console-step-path">Same form → Additional configuration</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Backup retention period</div>
+        <div class="console-field-value">14 days</div>
+        <div class="console-field-hint">More days = more PITR flexibility. 7 days is minimum for production. 14–35 days for apps where data audit trails matter.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Backup window</div>
+        <div class="console-field-value">00:00–01:00 UTC (low traffic period)</div>
+        <div class="console-field-hint">Automated backup causes brief I/O pause. Set during your application's lowest traffic window. Does NOT cause downtime — just may slow queries briefly.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Maintenance window</div>
+        <div class="console-field-value">Monday 03:00–04:00 UTC</div>
+        <div class="console-field-hint">RDS applies OS + minor engine patches during this window. Choose the lowest-traffic time. Multi-AZ: failover → patch → failback = minimal impact.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Deletion protection</div>
+        <div class="console-field-value">✅ Enable</div>
+        <div class="console-field-hint">Prevents accidental deletion from console or API. Must be disabled before you can delete. Essential for production — prevents catastrophic accidents.</div>
+      </div>
+      <div class="console-note">Review the estimated monthly cost shown at the bottom. Click <strong>Create database</strong>. Provisioning takes ~5–10 minutes.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# — Connecting to RDS from .NET</h2>
+
+  <h3>Install NuGet packages</h3>
+  <div class="code-block"><pre>Install-Package Npgsql                    <span class="cm">// PostgreSQL driver</span>
+Install-Package Npgsql.EntityFrameworkCore.PostgreSQL  <span class="cm">// EF Core</span>
+Install-Package AWSSDK.RDS                <span class="cm">// manage RDS via SDK</span>
+Install-Package AWSSDK.SecretsManager     <span class="cm">// fetch credentials</span></pre></div>
+
+  <h3>Pattern 1 — Connection String from Secrets Manager</h3>
+  <div class="code-block">
+    <span class="code-label">RdsConnectionFactory.cs — production pattern</span>
+    <pre><span class="kw">using</span> Amazon.SecretsManager;
+<span class="kw">using</span> Amazon.SecretsManager.Model;
+<span class="kw">using</span> Npgsql;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">RdsConnectionFactory</span>
+{
+    <span class="kw">private static</span> <span class="tp">NpgsqlDataSource</span>? _dataSource;
+    <span class="kw">private static readonly</span> <span class="tp">SemaphoreSlim</span> _lock = <span class="kw">new</span>(<span class="num">1</span>, <span class="num">1</span>);
+
+    <span class="cm">// Called ONCE at startup (Lambda init code / Program.cs)</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span>&lt;<span class="tp">NpgsqlDataSource</span>&gt;
+        <span class="fn">GetDataSourceAsync</span>()
+    {
+        <span class="kw">if</span> (_dataSource != <span class="kw">null</span>) <span class="kw">return</span> _dataSource;
+
+        <span class="kw">await</span> _lock.<span class="fn">WaitAsync</span>();
+        <span class="kw">try</span>
+        {
+            <span class="kw">if</span> (_dataSource != <span class="kw">null</span>) <span class="kw">return</span> _dataSource;
+
+            <span class="cm">// Fetch credentials from Secrets Manager</span>
+            <span class="kw">var</span> secretName =
+                <span class="tp">Environment</span>.<span class="fn">GetEnvironmentVariable</span>(<span class="str">"DB_SECRET_NAME"</span>)!;
+            <span class="kw">var</span> sm = <span class="kw">new</span> <span class="tp">AmazonSecretsManagerClient</span>();
+            <span class="kw">var</span> secret = <span class="kw">await</span> sm.<span class="fn">GetSecretValueAsync</span>(
+                <span class="kw">new</span> <span class="tp">GetSecretValueRequest</span>
+                    { SecretId = secretName });
+
+            <span class="kw">var</span> creds = <span class="tp">JsonSerializer</span>
+                .<span class="fn">Deserialize</span>&lt;<span class="tp">DbCredentials</span>&gt;(secret.SecretString)!;
+
+            <span class="cm">// Build connection string</span>
+            <span class="kw">var</span> connStr = <span class="kw">new</span> <span class="tp">NpgsqlConnectionStringBuilder</span>
+            {
+                Host             = creds.Host,
+                Port             = creds.Port,
+                Database         = creds.Dbname,
+                Username         = creds.Username,
+                Password         = creds.Password,
+                SslMode          = <span class="tp">SslMode</span>.VerifyFull,
+                MaxPoolSize      = <span class="num">20</span>, <span class="cm">// max connections per instance</span>
+                MinPoolSize      = <span class="num">2</span>,
+                ConnectionLifetime = <span class="num">300</span>, <span class="cm">// recycle every 5 min</span>
+                Timeout          = <span class="num">30</span>
+            }.<span class="fn">ToString</span>();
+
+            <span class="cm">// NpgsqlDataSource manages the connection pool</span>
+            _dataSource = <span class="tp">NpgsqlDataSource</span>.<span class="fn">Create</span>(connStr);
+            <span class="kw">return</span> _dataSource;
+        }
+        <span class="kw">finally</span> { _lock.<span class="fn">Release</span>(); }
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">DbCredentials</span>(
+    <span class="tp">string</span> Host, <span class="tp">int</span> Port, <span class="tp">string</span> Dbname,
+    <span class="tp">string</span> Username, <span class="tp">string</span> Password);</pre>
+  </div>
+
+  <h3>Pattern 2 — EF Core with Read Replica Split</h3>
+  <div class="code-block">
+    <span class="code-label">AppDbContext.cs + read/write split</span>
+    <pre><span class="kw">using</span> Microsoft.EntityFrameworkCore;
+
+<span class="kw">public class</span> <span class="tp">AppDbContext</span> : <span class="tp">DbContext</span>
+{
+    <span class="kw">public</span> <span class="tp">DbSet</span>&lt;<span class="tp">Order</span>&gt; Orders { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">null</span>!;
+    <span class="kw">public</span> <span class="tp">DbSet</span>&lt;<span class="tp">User</span>&gt;  Users  { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">null</span>!;
+
+    <span class="kw">public</span> <span class="tp">AppDbContext</span>(<span class="tp">DbContextOptions</span>&lt;<span class="tp">AppDbContext</span>&gt; opts)
+        : <span class="kw">base</span>(opts) { }
+}
+
+<span class="cm">// ── Register with read/write split ──────────────────</span>
+<span class="cm">// Program.cs</span>
+<span class="kw">var</span> writeConnStr = <span class="str">$"Host={primaryEndpoint};..."</span>;
+<span class="kw">var</span> readConnStr  = <span class="str">$"Host={replicaEndpoint};..."</span>;
+
+<span class="cm">// Write context — for all mutations</span>
+builder.Services.<span class="fn">AddDbContext</span>&lt;<span class="tp">AppDbContext</span>&gt;(opts =>
+    opts.<span class="fn">UseNpgsql</span>(writeConnStr));
+
+<span class="cm">// Read context — for SELECT-only operations</span>
+builder.Services.<span class="fn">AddDbContext</span>&lt;<span class="tp">ReadOnlyDbContext</span>&gt;(opts =>
+    opts.<span class="fn">UseNpgsql</span>(readConnStr)
+        .<span class="fn">UseQueryTrackingBehavior</span>(
+            <span class="tp">QueryTrackingBehavior</span>.NoTracking)); <span class="cm">// faster reads</span></pre>
+  </div>
+
+  <h3>Pattern 3 — RDS IAM Authentication (no passwords)</h3>
+  <div class="code-block">
+    <span class="code-label">RdsIamAuth.cs — token-based auth, no stored passwords</span>
+    <pre><span class="kw">using</span> Amazon.RDS.Util;
+
+<span class="kw">public class</span> <span class="tp">RdsIamConnectionFactory</span>
+{
+    <span class="cm">// IAM auth: generate a short-lived token (15 min validity)</span>
+    <span class="cm">// IAM role must have: rds-db:connect permission</span>
+    <span class="kw">public static</span> <span class="tp">string</span> <span class="fn">BuildConnectionString</span>(
+        <span class="tp">string</span> host, <span class="tp">int</span> port, <span class="tp">string</span> database,
+        <span class="tp">string</span> dbUser, <span class="tp">string</span> region)
+    {
+        <span class="cm">// Generate IAM auth token (15-minute expiry)</span>
+        <span class="kw">var</span> authToken = <span class="tp">RDSAuthTokenGenerator</span>.<span class="fn">GenerateAuthToken</span>(
+            <span class="tp">Amazon</span>.<span class="tp">RegionEndpoint</span>.<span class="fn">GetBySystemName</span>(region),
+            host, port, dbUser);
+
+        <span class="kw">return</span> <span class="kw">new</span> <span class="tp">NpgsqlConnectionStringBuilder</span>
+        {
+            Host     = host,
+            Port     = port,
+            Database = database,
+            Username = dbUser,
+            Password = authToken,   <span class="cm">// token as password</span>
+            SslMode  = <span class="tp">SslMode</span>.VerifyFull  <span class="cm">// required for IAM</span>
+        }.<span class="fn">ToString</span>();
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 4 — Manage RDS via SDK</h3>
+  <div class="code-block">
+    <span class="code-label">RdsManagementService.cs</span>
+    <pre><span class="kw">using</span> Amazon.RDS;
+<span class="kw">using</span> Amazon.RDS.Model;
+
+<span class="kw">public class</span> <span class="tp">RdsManagementService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonRDS</span> _rds;
+
+    <span class="kw">public</span> <span class="tp">RdsManagementService</span>(<span class="tp">IAmazonRDS</span> rds) => _rds = rds;
+
+    <span class="cm">// ── Create manual snapshot ─────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateSnapshotAsync</span>(
+        <span class="tp">string</span> instanceId, <span class="tp">string</span> snapshotId)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _rds.<span class="fn">CreateDBSnapshotAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateDBSnapshotRequest</span>
+        {
+            DBInstanceIdentifier = instanceId,
+            DBSnapshotIdentifier = snapshotId,
+            Tags = [<span class="kw">new</span> <span class="tp">Tag</span>
+                { Key=<span class="str">"CreatedBy"</span>, Value=<span class="str">"deployment-pipeline"</span> }]
+        });
+        <span class="kw">return</span> resp.DBSnapshot.DBSnapshotIdentifier;
+    }
+
+    <span class="cm">// ── Create read replica ────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CreateReadReplicaAsync</span>(
+        <span class="tp">string</span> sourceId, <span class="tp">string</span> replicaId)
+    {
+        <span class="kw">await</span> _rds.<span class="fn">CreateDBInstanceReadReplicaAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateDBInstanceReadReplicaRequest</span>
+        {
+            SourceDBInstanceIdentifier = sourceId,
+            DBInstanceIdentifier       = replicaId,
+            DBInstanceClass            = <span class="str">"db.r8g.large"</span>,
+            PubliclyAccessible         = <span class="kw">false</span>
+        });
+    }
+
+    <span class="cm">// ── List instances and their status ───────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">DBInstance</span>&gt;&gt; <span class="fn">ListInstancesAsync</span>()
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _rds.<span class="fn">DescribeDBInstancesAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeDBInstancesRequest</span>());
+        <span class="kw">return</span> resp.DBInstances;
+    }
+}
+</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>High Availability</h3>
+  <ul class="checklist">
+    <li>Always enable Multi-AZ for production — it's not optional</li>
+    <li>Always connect via the RDS endpoint CNAME — never hardcode an IP address</li>
+    <li>Enable deletion protection on all production instances</li>
+    <li>Use RDS Proxy for Lambda and high-concurrency apps to prevent connection exhaustion</li>
+    <li>Test failover manually before you need it: Reboot with failover option in console</li>
+    <li>Set maintenance window to lowest traffic period — Multi-AZ makes it nearly zero-impact</li>
+  </ul>
+
+  <h3>Performance</h3>
+  <ul class="checklist">
+    <li>Use gp3 storage — provision IOPS independently without paying for more storage</li>
+    <li>Enable Storage Autoscaling with a sensible max threshold</li>
+    <li>Use Read Replicas for analytics, reporting, and read-heavy microservices</li>
+    <li>Set max_pool_size in your connection string to match your instance's max_connections</li>
+    <li>Enable Performance Insights — free basic tier, see top SQL queries instantly</li>
+    <li>Enable Enhanced Monitoring (60-second granularity) for production instances</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Never enable public access — RDS should only be reachable inside your VPC</li>
+    <li>Store credentials in Secrets Manager with auto-rotation — not in env vars or config files</li>
+    <li>Enable SSL/TLS for all connections — use sslmode=verify-full in connection strings</li>
+    <li>Use IAM database authentication for applications instead of static passwords</li>
+    <li>Security group inbound: only allow from your app's security group, not 0.0.0.0/0</li>
+    <li>Enable encryption at rest for all instances (KMS — free with AWS managed key)</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top RDS Mistakes</h4>
+    <p>
+    ❌ <strong>Connecting via IP instead of CNAME</strong> — IP changes on failover, your app loses DB permanently<br>
+    ❌ <strong>No Multi-AZ in production</strong> — AZ outage = hours of downtime<br>
+    ❌ <strong>Public accessibility = Yes</strong> — DB exposed to the entire internet<br>
+    ❌ <strong>No deletion protection</strong> — one wrong CLI command deletes your entire database<br>
+    ❌ <strong>Reading from replica right after writing</strong> — replication lag = stale reads<br>
+    ❌ <strong>No connection pooling / too many connections</strong> — DB max_connections exceeded = all apps fail<br>
+    ❌ <strong>Using t-class instances for production write workloads</strong> — CPU credits exhausted = sudden slowdown<br>
+    ❌ <strong>Backup window during peak traffic</strong> — brief I/O slowdown exactly when users are active
+    </p>
+  </div>
+
+  <h3>RDS vs Aurora vs DynamoDB — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>RDS</th><th>Aurora</th><th>DynamoDB</th></tr>
+    <tr><td>SQL + complex joins + ad-hoc queries</td><td>✅</td><td>✅</td><td>❌</td></tr>
+    <tr><td>Highest read throughput at scale</td><td>Limited</td><td>✅ 15 replicas</td><td>✅ Unlimited</td></tr>
+    <tr><td>Auto storage scaling</td><td>✅ Manual +Auto</td><td>✅ Automatic</td><td>✅ Automatic</td></tr>
+    <tr><td>Serverless (scale to zero)</td><td>❌</td><td>✅ Serverless v2</td><td>✅ On-demand</td></tr>
+    <tr><td>Sub-ms latency</td><td>~1–10ms</td><td>~1–5ms</td><td>✅ &lt;1ms</td></tr>
+    <tr><td>Fastest failover</td><td>60–120s</td><td>✅ &lt;30s</td><td>Built-in, no failover concept</td></tr>
+    <tr><td>Cost at low traffic</td><td>Always paying</td><td>Serverless v2 ≈ zero</td><td>✅ $0 at zero traffic</td></tr>
+    <tr><td>ACID transactions</td><td>✅ Full SQL</td><td>✅ Full SQL</td><td>✅ (within 100 items)</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon RDS!</h3>
+    <p>What is RDS · Multi-AZ failover with step-by-step timeline · Read Replicas (async replication, lag, cross-region) · Aurora architecture (shared storage, 5× perf, &lt;30s failover, Serverless v2) · Storage types (gp3, io1) with bars · Automated vs manual backups + PITR restore scenario · Connection exhaustion problem + RDS Proxy solution · Parameter Groups · Full AWS Console setup (every field!) · 4 C# patterns (Secrets Manager, EF Core read split, IAM auth, management SDK) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--rds-d);">Your database is now production-hardened, highly available, and auto-recovering! 🗄️🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
