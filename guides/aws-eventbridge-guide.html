@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon EventBridge — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f3f1ed;--card:#fff;--border:#e4dfd8;--border2:#d4cfc8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.2);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --rose:#9a2a5a;--rose-l:#f5dce8;
+  --eb:#5a2aaa;--eb-l:#eadcfc;--eb-d:#3a1a8a;
+  --text:#1a1814;--text2:#4a453f;--muted:#8c877f;
+  --code-bg:#1e1e2e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#f4f0fa 0%,#e8d8f8 45%,#dac8f0 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'✈️';position:absolute;right:-5px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'📡';position:absolute;left:-5px;bottom:-10px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--eb-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--eb-l);color:var(--eb-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--eb-l);letter-spacing:-.01em;}
+.section h3{color:var(--eb-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ ATC ROUTING VISUAL — the showpiece ══ */
+.atc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.atc-header{background:linear-gradient(90deg,var(--eb-l),var(--purple-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.atc-body{padding:16px;}
+
+/* Event sources row */
+.atc-sources{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;}
+.atc-source{border-radius:var(--r);padding:8px 10px;text-align:center;flex:1;min-width:80px;flex-shrink:0;}
+.src-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.src-aws h5{color:var(--aws);font-size:.68rem;font-weight:700;margin-bottom:2px;}
+.src-custom{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.src-custom h5{color:var(--blue);font-size:.68rem;font-weight:700;margin-bottom:2px;}
+.src-saas{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.src-saas h5{color:var(--green);font-size:.68rem;font-weight:700;margin-bottom:2px;}
+.atc-source p{font-size:.6rem;color:var(--muted);}
+
+/* Event bus centre */
+.atc-bus-wrap{display:flex;align-items:center;justify-content:center;margin:4px 0;}
+.atc-arrow{color:var(--border2);font-size:1.3rem;text-align:center;}
+.atc-bus{background:linear-gradient(135deg,var(--eb-l),var(--purple-l));border:2px solid rgba(90,42,170,.3);border-radius:var(--r);padding:12px 18px;text-align:center;max-width:280px;margin:6px auto;}
+.atc-bus h4{color:var(--eb-d);font-weight:700;font-size:.84rem;margin-bottom:3px;}
+.atc-bus p{font-size:.7rem;color:var(--text2);}
+
+/* Rules + Targets */
+.atc-rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:8px;margin-top:12px;}
+.atc-rule{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;box-shadow:var(--sh);}
+.atc-rule-head{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;color:var(--eb-d);margin-bottom:5px;display:flex;align-items:center;gap:5px;}
+.atc-match{font-size:.62rem;color:var(--muted);background:var(--surface);border-radius:4px;padding:2px 6px;margin-bottom:4px;font-family:'JetBrains Mono',monospace;}
+.atc-target{display:flex;align-items:center;gap:5px;font-size:.65rem;color:var(--text2);margin-top:4px;padding:3px 6px;background:var(--green-l);border-radius:4px;}
+
+/* ══ EVENT ANATOMY ══ */
+.event-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.event-card-header{background:var(--surface);padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
+.event-field{display:flex;align-items:baseline;gap:10px;padding:6px 14px;border-bottom:1px solid var(--surface);}
+.event-field:last-child{border-bottom:none;}
+.event-key{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;color:var(--eb-d);width:120px;flex-shrink:0;}
+.event-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);flex:1;}
+.event-note{font-size:.65rem;color:var(--muted);margin-left:auto;}
+.event-key.match-field{color:var(--green);background:var(--green-l);padding:1px 5px;border-radius:3px;}
+
+/* ══ PATTERN MATCH VISUAL ══ */
+.pattern-demo{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pattern-demo-header{background:linear-gradient(90deg,var(--green-l),var(--teal-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.pattern-row{display:flex;align-items:center;padding:8px 14px;border-bottom:1px solid var(--border);gap:10px;flex-wrap:wrap;}
+.pattern-row:last-child{border-bottom:none;}
+.pattern-name{font-weight:700;font-size:.78rem;color:var(--text);width:140px;flex-shrink:0;}
+.pattern-json{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text2);background:var(--surface);padding:3px 8px;border-radius:4px;flex:1;min-width:0;}
+.pattern-result{font-family:'JetBrains Mono',monospace;font-size:.64rem;padding:2px 8px;border-radius:3px;flex-shrink:0;}
+.p-match{background:var(--green-l);color:var(--green);}
+.p-no{background:var(--red-l);color:var(--red);}
+
+/* ══ TARGETS GRID ══ */
+.targets-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+.target-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .2s;}
+.target-card:hover{transform:translateY(-2px);}
+.target-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.t-compute::before{background:var(--green);}
+.t-messaging::before{background:var(--aws);}
+.t-storage::before{background:var(--blue);}
+.t-workflow::before{background:var(--purple);}
+.t-http::before{background:var(--teal);}
+.target-card .t-badge{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:5px;}
+.t-compute .t-badge{background:var(--green-l);color:var(--green);}
+.t-messaging .t-badge{background:var(--aws-l);color:var(--aws);}
+.t-storage .t-badge{background:var(--blue-l);color:var(--blue);}
+.t-workflow .t-badge{background:var(--purple-l);color:var(--purple);}
+.t-http .t-badge{background:var(--teal-l);color:var(--teal);}
+.target-card h4{font-size:.78rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.target-card p{font-size:.68rem;color:var(--muted);}
+
+/* ══ SCHEDULER VISUAL ══ */
+.schedule-list{margin:14px 0;}
+.schedule-item{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;box-shadow:var(--sh);}
+.schedule-item:last-child{margin-bottom:0;}
+.sched-type{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:3px;flex-shrink:0;min-width:65px;text-align:center;}
+.sched-rate{background:var(--green-l);color:var(--green);}
+.sched-cron{background:var(--purple-l);color:var(--purple);}
+.sched-once{background:var(--blue-l);color:var(--blue);}
+.sched-expr{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);flex:1;}
+.sched-desc{font-size:.72rem;color:var(--muted);}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--eb-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-src{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-src .flow-node-title{color:var(--aws);}
+.n-eb{background:var(--eb-l);border:1.5px solid rgba(90,42,170,.3);}
+.n-eb .flow-node-title{color:var(--eb-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--eb-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--eb);}
+.step-body h4{color:var(--eb-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--eb-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--blue-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--eb-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--eb);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--blue-l);border:1px solid rgba(42,90,154,.2);border-left:4px solid var(--blue);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--blue);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a2a3e;border-left:3px solid var(--eb);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--eb);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#6c7086;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+code{background:rgba(90,42,170,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--eb-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--eb-l),var(--green-l));border:1px solid rgba(90,42,170,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.targets-grid{grid-template-columns:1fr;}
+  .flow-row,.atc-sources{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .event-note{display:none;}
+  .sched-desc{display:none;}
+  .pattern-name{width:100px;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>🛫 <span>Amazon EventBridge</span> — Complete Guide</h1>
+  <p>Event Bus · Rules · Targets · Event Patterns · Schema Registry · Pipes · Scheduler · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is EventBridge</button>
+  <button class="tab-btn" onclick="T('events',this)">Events & Bus</button>
+  <button class="tab-btn" onclick="T('rules',this)">Rules & Patterns</button>
+  <button class="tab-btn" onclick="T('targets',this)">Targets</button>
+  <button class="tab-btn" onclick="T('pipes',this)">Pipes & Scheduler</button>
+  <button class="tab-btn" onclick="T('patterns',this)">Real-World Patterns</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS EVENTBRIDGE
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🛫 What is Amazon EventBridge?</h2>
+  <p><strong>EventBridge</strong> is AWS's fully managed serverless event bus. It receives events from AWS services, your own applications, and SaaS partners — then routes each event to the right target based on rules you define. No polling, no coupling between producers and consumers, no infrastructure to manage.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — Air Traffic Control</h4>
+    <p>EventBridge is like an air traffic control (ATC) system. Planes (events) arrive from different airports (AWS services, your apps, SaaS tools). The ATC tower (EventBridge bus) doesn't carry passengers — it receives flight plans and routes each flight to the correct runway (target). If a flight matches "international AND heavy aircraft" → runway 28L (Lambda). If it matches "domestic small" → runway 09R (SQS). The pilot (event producer) doesn't know which runway they'll land on — ATC decides everything.</p>
+  </div>
+
+  <!-- ATC VISUAL -->
+  <h3>The Full EventBridge Architecture</h3>
+  <div class="atc">
+    <div class="atc-header">🛫 EventBridge — events flow in, rules route them out to the right targets</div>
+    <div class="atc-body">
+
+      <!-- Sources -->
+      <div class="atc-sources">
+        <div class="atc-source src-aws">
+          <h5>☁️ AWS Services</h5>
+          <p>EC2, S3, RDS, CodePipeline, 200+ services</p>
+        </div>
+        <div class="atc-source src-custom">
+          <h5>🏗️ Your App</h5>
+          <p>Custom events from microservices</p>
+        </div>
+        <div class="atc-source src-saas">
+          <h5>🔌 SaaS Partners</h5>
+          <p>Zendesk, Shopify, Stripe, Datadog</p>
+        </div>
+        <div class="atc-source src-aws" style="background:var(--purple-l);border-color:rgba(108,71,212,.2);">
+          <h5 style="color:var(--purple);">📅 Scheduler</h5>
+          <p>Time-based event generation</p>
+        </div>
+      </div>
+
+      <div class="atc-arrow">↓ all events arrive at →</div>
+
+      <!-- Bus -->
+      <div class="atc-bus">
+        <h4>📡 EventBridge Event Bus</h4>
+        <p>Receives events · Evaluates rules · Routes to targets</p>
+      </div>
+
+      <div class="atc-arrow">↓ rules match &amp; route →</div>
+
+      <!-- Rules -->
+      <div class="atc-rules">
+        <div class="atc-rule">
+          <div class="atc-rule-head">📋 Rule 1</div>
+          <div class="atc-match">source = "orders" AND detail.status = "placed"</div>
+          <div class="atc-target">→ λ ProcessOrder</div>
+          <div class="atc-target">→ 📬 SQS Analytics</div>
+        </div>
+        <div class="atc-rule">
+          <div class="atc-rule-head">📋 Rule 2</div>
+          <div class="atc-match">source = "aws.ec2" AND state = "stopped"</div>
+          <div class="atc-target">→ 📧 SNS OpsAlert</div>
+        </div>
+        <div class="atc-rule">
+          <div class="atc-rule-head">📋 Rule 3</div>
+          <div class="atc-match">source = "payments" AND amount ≥ 10000</div>
+          <div class="atc-target">→ λ FraudCheck</div>
+          <div class="atc-target">→ 🔄 Step Functions</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>EventBridge vs SNS vs SQS — The Right Tool</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🛫 Choose EventBridge when</h4>
+      <ul>
+        <li>Content-based routing — route by event data</li>
+        <li>Events from AWS services or SaaS partners</li>
+        <li>Complex event filtering and transformation</li>
+        <li>Scheduled tasks (cron replacement)</li>
+        <li>Schema discovery and validation</li>
+        <li>200+ target types in one rule</li>
+        <li>Audit log of all events (Archive + Replay)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📡 Keep SNS / SQS when</h4>
+      <ul>
+        <li>Simple fan-out to many subscribers (SNS)</li>
+        <li>Durable message queue with retry (SQS)</li>
+        <li>High-throughput message delivery (SNS)</li>
+        <li>SMS / Email / Mobile push (SNS)</li>
+        <li>Messages with 14-day retention needed (SQS)</li>
+        <li>FIFO ordering guarantees (SQS FIFO)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key EventBridge facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🎯</span><h4>200+ targets</h4><p>Lambda, SQS, SNS, Step Functions, API GW…</p></div>
+    <div class="icon-item"><span class="emoji">🔌</span><h4>SaaS partners</h4><p>Shopify, Zendesk, Stripe, Datadog, etc.</p></div>
+    <div class="icon-item"><span class="emoji">📅</span><h4>Scheduler</h4><p>Cron/rate schedules, one-time triggers</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Archive</h4><p>Replay past events — up to indefinitely</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Schema Registry</h4><p>Discover and version event schemas</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Pricing</h4><p>$1 per million custom events published</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — EVENTS & BUS
+══════════════════════════════════ -->
+<div id="tab-events" class="tab-panel"><div class="section">
+  <h2>📨 Events & The Event Bus</h2>
+  <p>Everything in EventBridge revolves around events — JSON objects describing something that happened. The event bus is the central receiver that accepts events and evaluates rules against them.</p>
+
+  <!-- EVENT ANATOMY -->
+  <h3>Anatomy of an EventBridge Event</h3>
+  <div class="event-card">
+    <div class="event-card-header">📨 OrderPlaced event — every field explained</div>
+    <div class="event-field">
+      <span class="event-key">version</span>
+      <span class="event-val">"0"</span>
+      <span class="event-note">Always "0" — EventBridge format version</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key">id</span>
+      <span class="event-val">"a1b2c3d4-e5f6-7890-abcd-ef1234567890"</span>
+      <span class="event-note">Unique event ID — AWS generated</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key match-field">source</span>
+      <span class="event-val">"myapp.orders"</span>
+      <span class="event-note">⬅ Pattern match here — identifies origin</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key match-field">detail-type</span>
+      <span class="event-val">"Order Placed"</span>
+      <span class="event-note">⬅ Pattern match here — human-readable event name</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key">account</span>
+      <span class="event-val">"123456789012"</span>
+      <span class="event-note">AWS account that published the event</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key">time</span>
+      <span class="event-val">"2025-04-07T10:30:00Z"</span>
+      <span class="event-note">ISO 8601 timestamp</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key">region</span>
+      <span class="event-val">"ap-south-1"</span>
+      <span class="event-note">AWS region of origin</span>
+    </div>
+    <div class="event-field">
+      <span class="event-key match-field">detail</span>
+      <span class="event-val">{"orderId":"ord_201","userId":"usr_001","amount":2499,"currency":"INR","status":"placed","items":[...]}</span>
+      <span class="event-note">⬅ Pattern match inside here too</span>
+    </div>
+  </div>
+
+  <h3>The Three Event Buses</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔵 Default Event Bus</h4>
+      <ul>
+        <li>Exists in every AWS account automatically</li>
+        <li>Receives ALL AWS service events (EC2, S3, RDS, etc.)</li>
+        <li>Also accepts custom events from your app</li>
+        <li>Cannot be deleted</li>
+        <li>Good for: reacting to AWS infrastructure events</li>
+        <li>Example: EC2 instance stopped → notify ops team</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟣 Custom Event Bus</h4>
+      <ul>
+        <li>You create for your own events</li>
+        <li>Isolate events by domain or microservice</li>
+        <li>Cross-account access via resource policy</li>
+        <li>Up to 100 custom buses per account</li>
+        <li>Good for: microservices event-driven architecture</li>
+        <li>Example: orders-bus, payments-bus, users-bus</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔌 SaaS Partner Event Bus</h4>
+      <ul>
+        <li>Provided by SaaS vendors (Shopify, Stripe, etc.)</li>
+        <li>Partner publishes events directly to your AWS account</li>
+        <li>No webhook infrastructure needed on your side</li>
+        <li>Configure in AWS Marketplace</li>
+        <li>Good for: e-commerce, payments, CRM integrations</li>
+        <li>Example: Shopify order.created → your Lambda</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📦 Event Archive</h4>
+      <ul>
+        <li>Archive all or filtered events on a bus</li>
+        <li>Replay archived events at any time</li>
+        <li>Retention: days to indefinite</li>
+        <li>Use for: debugging, re-processing after bug fix</li>
+        <li>Replay at controlled rate to avoid overwhelming targets</li>
+        <li>Like a flight recorder — every event captured</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: EVENT JOURNEY -->
+  <h3>Event Journey — Producer to Target</h3>
+  <div class="flow">
+    <div class="flow-node n-src">
+      <div class="flow-node-title">📤 Producer publishes event</div>
+      <ul class="flow-items">
+        <li>Your app calls PutEvents API</li>
+        <li>AWS service automatically generates event (e.g. S3 object created)</li>
+        <li>SaaS partner sends event to your partner bus</li>
+        <li>Event must be &lt; 256 KB</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ arrives at bus in milliseconds</div>
+    <div class="flow-node n-eb">
+      <div class="flow-node-title">📡 EventBridge receives event</div>
+      <ul class="flow-items">
+        <li>Event stored durably (at-least-once delivery)</li>
+        <li>All rules on this bus evaluated simultaneously</li>
+        <li>Matching rules fire their targets in parallel</li>
+        <li>Non-matching rules — event passes through silently</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ matching rules fire</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Targets invoked simultaneously</div>
+      <ul class="flow-items">
+        <li>Up to 5 targets per rule (up to 300 total across rules)</li>
+        <li>Each target receives the event independently</li>
+        <li>Optional: transform event before delivery</li>
+        <li>Optional: retry policy + DLQ for failed deliveries</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — RULES & PATTERNS
+══════════════════════════════════ -->
+<div id="tab-rules" class="tab-panel"><div class="section">
+  <h2>📋 Rules & Event Patterns</h2>
+  <p>Rules are the heart of EventBridge. Each rule contains an event pattern (what to match) and one or more targets (where to route). Patterns are JSON objects — if the event structure matches the pattern, the rule fires.</p>
+
+  <h3>Event Pattern Matching — How It Works</h3>
+  <p>Pattern matching compares pattern fields against event fields. A field in the pattern must exist in the event and the value must match. Fields NOT in the pattern are ignored.</p>
+
+  <div class="pattern-demo">
+    <div class="pattern-demo-header">🎯 Pattern: {"source":["myapp.orders"],"detail":{"status":["placed"]}} — does this event match?</div>
+    <div class="pattern-row">
+      <span class="pattern-name">✅ Full match</span>
+      <span class="pattern-json">source="myapp.orders", detail.status="placed", detail.amount=2499</span>
+      <span class="pattern-result p-match">✅ MATCHES</span>
+    </div>
+    <div class="pattern-row">
+      <span class="pattern-name">✅ Extra fields OK</span>
+      <span class="pattern-json">source="myapp.orders", detail.status="placed", detail.currency="INR", detail.region="india"</span>
+      <span class="pattern-result p-match">✅ MATCHES</span>
+    </div>
+    <div class="pattern-row">
+      <span class="pattern-name">❌ Wrong status</span>
+      <span class="pattern-json">source="myapp.orders", detail.status="shipped" (not "placed")</span>
+      <span class="pattern-result p-no">⛔ NO MATCH</span>
+    </div>
+    <div class="pattern-row">
+      <span class="pattern-name">❌ Wrong source</span>
+      <span class="pattern-json">source="myapp.payments", detail.status="placed"</span>
+      <span class="pattern-result p-no">⛔ NO MATCH</span>
+    </div>
+    <div class="pattern-row">
+      <span class="pattern-name">❌ Missing source</span>
+      <span class="pattern-json">detail.status="placed" (no source field in event)</span>
+      <span class="pattern-result p-no">⛔ NO MATCH</span>
+    </div>
+  </div>
+
+  <h3>All Pattern Operators</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔤 Value Matching</h4>
+      <ul>
+        <li><code>["placed"]</code> — exact match (string)</li>
+        <li><code>["placed","shipped"]</code> — OR: matches either</li>
+        <li><code>[{"prefix":"order."}]</code> — starts with</li>
+        <li><code>[{"suffix":".failed"}]</code> — ends with</li>
+        <li><code>[{"anything-but":"test"}]</code> — not this value</li>
+        <li><code>[{"anything-but":["dev","staging"]}]</code> — not any of these</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔢 Numeric & Existence</h4>
+      <ul>
+        <li><code>[{"numeric":["=",100]}]</code> — equals</li>
+        <li><code>[{"numeric":[">",1000]}]</code> — greater than</li>
+        <li><code>[{"numeric":[">=",500,"<=",5000]}]</code> — range</li>
+        <li><code>[{"exists":true}]</code> — field must exist</li>
+        <li><code>[{"exists":false}]</code> — field must NOT exist</li>
+        <li><code>[{"cidr":"10.0.0.0/24"}]</code> — IP range match</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Example Patterns — Real Scenarios</h3>
+  <div class="code-block">
+    <span class="code-label">Common event patterns — copy and use</span>
+    <pre><span class="cm">// 1. EC2 instance state change → alert ops</span>
+{
+  <span class="str">"source"</span>: [<span class="str">"aws.ec2"</span>],
+  <span class="str">"detail-type"</span>: [<span class="str">"EC2 Instance State-change Notification"</span>],
+  <span class="str">"detail"</span>: {
+    <span class="str">"state"</span>: [<span class="str">"stopped"</span>, <span class="str">"terminated"</span>]
+  }
+}
+
+<span class="cm">// 2. High-value order → fraud check</span>
+{
+  <span class="str">"source"</span>: [<span class="str">"myapp.orders"</span>],
+  <span class="str">"detail-type"</span>: [<span class="str">"Order Placed"</span>],
+  <span class="str">"detail"</span>: {
+    <span class="str">"amount"</span>: [{ <span class="str">"numeric"</span>: [<span class="str">">="</span>, <span class="num">10000</span>] }]
+  }
+}
+
+<span class="cm">// 3. Failed CodePipeline → notify team</span>
+{
+  <span class="str">"source"</span>: [<span class="str">"aws.codepipeline"</span>],
+  <span class="str">"detail-type"</span>: [<span class="str">"CodePipeline Pipeline Execution State Change"</span>],
+  <span class="str">"detail"</span>: {
+    <span class="str">"state"</span>: [<span class="str">"FAILED"</span>]
+  }
+}
+
+<span class="cm">// 4. S3 object uploaded to specific prefix</span>
+{
+  <span class="str">"source"</span>: [<span class="str">"aws.s3"</span>],
+  <span class="str">"detail-type"</span>: [<span class="str">"Object Created"</span>],
+  <span class="str">"detail"</span>: {
+    <span class="str">"bucket"</span>: { <span class="str">"name"</span>: [<span class="str">"my-uploads-bucket"</span>] },
+    <span class="str">"object"</span>: { <span class="str">"key"</span>: [{ <span class="str">"prefix"</span>: <span class="str">"invoices/"</span> }] }
+  }
+}</pre>
+  </div>
+
+  <h3>Input Transformation — Reshape Before Delivery</h3>
+  <div class="card">
+    <h4>🔄 Transform the event before it reaches the target</h4>
+    <p>Sometimes your target (Lambda, SQS, HTTP endpoint) needs a different event shape than what EventBridge delivers. Input Transformer lets you extract fields and build a new payload:<br><br>
+    <strong>Input paths:</strong> extract values → <code>{"orderId": "$.detail.orderId", "amount": "$.detail.amount"}</code><br>
+    <strong>Template:</strong> build new JSON → <code>{"order": "&lt;orderId&gt;", "total": &lt;amount&gt;, "source": "eventbridge"}</code><br><br>
+    Result: your Lambda receives <code>{"order":"ord_201","total":2499,"source":"eventbridge"}</code> — clean, no AWS envelope wrapping.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — TARGETS
+══════════════════════════════════ -->
+<div id="tab-targets" class="tab-panel"><div class="section">
+  <h2>🎯 Targets — Where Events Land</h2>
+  <p>EventBridge can route events to over 200 AWS services and custom endpoints. Each rule can send to up to 5 targets simultaneously — the same event delivered to multiple systems in parallel.</p>
+
+  <!-- TARGETS GRID -->
+  <h3>All Target Categories</h3>
+  <div class="targets-grid">
+    <div class="target-card t-compute">
+      <div class="t-badge">COMPUTE</div>
+      <h4>λ Lambda</h4>
+      <p>Invoke any Lambda function. Most flexible — run any custom logic.</p>
+    </div>
+    <div class="target-card t-compute">
+      <div class="t-badge">COMPUTE</div>
+      <h4>🐳 ECS Task</h4>
+      <p>Start a Fargate or EC2 task. Good for long-running jobs triggered by events.</p>
+    </div>
+    <div class="target-card t-messaging">
+      <div class="t-badge">MESSAGING</div>
+      <h4>📬 SQS Queue</h4>
+      <p>Put event in queue for reliable async processing with buffering.</p>
+    </div>
+    <div class="target-card t-messaging">
+      <div class="t-badge">MESSAGING</div>
+      <h4>📡 SNS Topic</h4>
+      <p>Fan-out event to all SNS subscribers — email, SMS, Lambda, SQS.</p>
+    </div>
+    <div class="target-card t-workflow">
+      <div class="t-badge">WORKFLOW</div>
+      <h4>🔄 Step Functions</h4>
+      <p>Start a state machine execution. Orchestrate complex multi-step workflows.</p>
+    </div>
+    <div class="target-card t-workflow">
+      <div class="t-badge">WORKFLOW</div>
+      <h4>📋 CodePipeline</h4>
+      <p>Trigger a CI/CD pipeline from any event (e.g. S3 file upload).</p>
+    </div>
+    <div class="target-card t-http">
+      <div class="t-badge">HTTP</div>
+      <h4>🌐 API Destination</h4>
+      <p>Send to any HTTPS endpoint with auth. Connect to Salesforce, Slack, PagerDuty.</p>
+    </div>
+    <div class="target-card t-storage">
+      <div class="t-badge">STORAGE</div>
+      <h4>🪣 S3 Bucket</h4>
+      <p>Put event as an object in S3. Archive events or feed data pipelines.</p>
+    </div>
+    <div class="target-card t-storage">
+      <div class="t-badge">STORAGE</div>
+      <h4>🌊 Kinesis Stream</h4>
+      <p>Stream events to Kinesis for real-time analytics or multi-consumer processing.</p>
+    </div>
+    <div class="target-card t-workflow">
+      <div class="t-badge">WORKFLOW</div>
+      <h4>🛫 EventBridge Bus</h4>
+      <p>Route to another event bus — cross-account, cross-region event routing.</p>
+    </div>
+    <div class="target-card t-compute">
+      <div class="t-badge">COMPUTE</div>
+      <h4>🚪 API Gateway</h4>
+      <p>Invoke an API endpoint — REST API or HTTP API.</p>
+    </div>
+    <div class="target-card t-messaging">
+      <div class="t-badge">MESSAGING</div>
+      <h4>🤖 CloudWatch</h4>
+      <p>Create CloudWatch log entries directly from events for audit trails.</p>
+    </div>
+  </div>
+
+  <!-- FLOW: API DESTINATIONS -->
+  <h3>API Destinations — Connect to the World</h3>
+  <div class="flow">
+    <div class="flow-node n-eb">
+      <div class="flow-node-title">📡 EventBridge rule matches</div>
+      <ul class="flow-items">
+        <li>Event: payment.failed for high-value customer</li>
+        <li>Rule fires — target: API Destination (Slack webhook)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔐 Connection (auth managed by EventBridge)</div>
+      <ul class="flow-items">
+        <li>Connection stores auth credentials securely in Secrets Manager</li>
+        <li>Auth types: Basic, OAuth, API Key</li>
+        <li>EventBridge refreshes OAuth tokens automatically</li>
+        <li>You never manage auth headers manually</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-teal">
+      <div class="flow-node-title">🌐 HTTPS POST to Slack / Salesforce / PagerDuty</div>
+      <ul class="flow-items">
+        <li>Input transformer reshapes event to Slack block kit format</li>
+        <li>EventBridge retries on non-2xx with exponential backoff</li>
+        <li>Rate limiting: throttle to max N requests/sec to protect target</li>
+        <li>DLQ captures failed deliveries for inspection</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FLOW: CROSS-ACCOUNT -->
+  <h3>Cross-Account Event Routing</h3>
+  <div class="flow">
+    <div class="flow-node n-src">
+      <div class="flow-node-title">🏢 Account A — Production</div>
+      <ul class="flow-items">
+        <li>Publishes order events to its custom event bus</li>
+        <li>Rule: forward all events to Account B's bus</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ cross-account via resource policy</div>
+    <div class="flow-node n-eb">
+      <div class="flow-node-title">🏢 Account B — Central Ops / Security</div>
+      <ul class="flow-items">
+        <li>Receives events from Account A's bus</li>
+        <li>Separate rules for alerting, auditing, monitoring</li>
+        <li>Security team monitors without prod access</li>
+        <li>Central event hub — single pane of glass</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — PIPES & SCHEDULER
+══════════════════════════════════ -->
+<div id="tab-pipes" class="tab-panel"><div class="section">
+  <h2>🔗 EventBridge Pipes & Scheduler</h2>
+  <p>Pipes and Scheduler are two powerful EventBridge features that go beyond simple event routing — connecting sources directly to targets with enrichment, and triggering events on a time schedule.</p>
+
+  <h3>EventBridge Pipes — Point-to-Point with Enrichment</h3>
+  <div class="tip">
+    <h4>💡 What are Pipes?</h4>
+    <p>Pipes create point-to-point integrations between event sources and targets — with optional filtering, enrichment (add data), and transformation along the way. Unlike the event bus (which is many-to-many via rules), a Pipe is a single, fully-managed integration channel.</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-node n-src">
+      <div class="flow-node-title">📥 Pipe Source</div>
+      <ul class="flow-items">
+        <li>SQS queue (polls automatically)</li>
+        <li>Kinesis stream</li>
+        <li>DynamoDB stream</li>
+        <li>Kafka topic (MSK or self-managed)</li>
+        <li>API Gateway, MQ, RabbitMQ</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ optional</div>
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">🔍 Filter (optional)</div>
+      <ul class="flow-items">
+        <li>Same pattern syntax as EventBridge rules</li>
+        <li>Drop events that don't match before enrichment</li>
+        <li>Save cost — don't invoke enrichment for irrelevant events</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ optional</div>
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">✨ Enrichment (optional)</div>
+      <ul class="flow-items">
+        <li>Call Lambda / Step Functions / API GW / EventBridge bus</li>
+        <li>Add data to the event before delivering to target</li>
+        <li>Example: SQS message has userId → Lambda looks up user details → enriched event goes to target</li>
+        <li>Keeps target code clean — no lookup logic needed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🎯 Pipe Target</div>
+      <ul class="flow-items">
+        <li>Lambda, SQS, SNS, Step Functions, EventBridge bus</li>
+        <li>HTTP endpoint (API Destination)</li>
+        <li>Receives the enriched, filtered, transformed event</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>EventBridge Scheduler — Next-Gen Cron</h3>
+  <p>Scheduler replaces CloudWatch Events cron rules. It creates one-time or recurring schedules to invoke any AWS target — at any scale, with flexible time zone support.</p>
+
+  <!-- SCHEDULE TYPES -->
+  <h3>Schedule Expressions</h3>
+  <div class="schedule-list">
+    <div class="schedule-item">
+      <span class="sched-type sched-rate">rate</span>
+      <span class="sched-expr">rate(5 minutes)</span>
+      <span class="sched-desc">Every 5 minutes — simplest recurring schedule</span>
+    </div>
+    <div class="schedule-item">
+      <span class="sched-type sched-rate">rate</span>
+      <span class="sched-expr">rate(1 day)</span>
+      <span class="sched-desc">Daily — good for batch jobs, cleanup tasks, reports</span>
+    </div>
+    <div class="schedule-item">
+      <span class="sched-type sched-cron">cron</span>
+      <span class="sched-expr">cron(0 2 * * ? *)</span>
+      <span class="sched-desc">Every day at 2:00 AM UTC — maintenance window</span>
+    </div>
+    <div class="schedule-item">
+      <span class="sched-type sched-cron">cron</span>
+      <span class="sched-expr">cron(0 9 ? * MON-FRI *)</span>
+      <span class="sched-desc">9 AM on weekdays only — business-hours jobs</span>
+    </div>
+    <div class="schedule-item">
+      <span class="sched-type sched-cron">cron</span>
+      <span class="sched-expr">cron(0 0 1 * ? *)</span>
+      <span class="sched-desc">Midnight on 1st of every month — monthly reports</span>
+    </div>
+    <div class="schedule-item">
+      <span class="sched-type sched-once">one-time</span>
+      <span class="sched-expr">at(2025-12-31T23:59:00)</span>
+      <span class="sched-desc">Exactly once at specified datetime — fire-and-forget</span>
+    </div>
+  </div>
+
+  <h3>Scheduler vs CloudWatch Events Cron — Why Scheduler Wins</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>EventBridge Scheduler</th><th>CloudWatch Events Rules</th></tr>
+    <tr><td><strong>Timezones</strong></td><td>✅ Any timezone supported</td><td>❌ UTC only</td></tr>
+    <tr><td><strong>One-time schedules</strong></td><td>✅ at() syntax</td><td>❌ Not supported</td></tr>
+    <tr><td><strong>Scale</strong></td><td>Millions of schedules</td><td>300 rules per bus limit</td></tr>
+    <tr><td><strong>Flexible windows</strong></td><td>✅ Fire within a window</td><td>❌</td></tr>
+    <tr><td><strong>Targets</strong></td><td>200+ AWS targets</td><td>Limited targets</td></tr>
+    <tr><td><strong>DLQ support</strong></td><td>✅ Per schedule</td><td>✅ Per rule</td></tr>
+    <tr><td><strong>Best for</strong></td><td>All new scheduled work</td><td>Legacy — migrate away</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — REAL-WORLD PATTERNS
+══════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel"><div class="section">
+  <h2>🏗️ Real-World Patterns</h2>
+  <p>EventBridge appears at the centre of every serious event-driven architecture. Here are the patterns you'll build in production.</p>
+
+  <h3>Pattern 1 — Microservices Event Bus</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-src" style="max-width:100%">
+        <div class="flow-node-title">🛒 Order Service publishes</div>
+        <ul class="flow-items">
+          <li>source: myapp.orders</li>
+          <li>detail-type: Order Placed</li>
+          <li>detail: orderId, userId, amount, items</li>
+        </ul>
+      </div>
+      <div class="flow-node n-eb" style="max-width:100%">
+        <div class="flow-node-title">📡 Orders Event Bus</div>
+        <ul class="flow-items">
+          <li>Rule 1: all orders → SQS Inventory Queue</li>
+          <li>Rule 2: order.placed → Lambda SendEmail</li>
+          <li>Rule 3: amount≥10000 → Lambda FraudCheck</li>
+          <li>Rule 4: all → S3 audit archive</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Pattern 2 — AWS Infrastructure Alerting</h3>
+  <div class="flow">
+    <div class="flow-node n-src">
+      <div class="flow-node-title">☁️ AWS service events → Default Bus</div>
+      <ul class="flow-items">
+        <li>EC2 instance stops unexpectedly</li>
+        <li>RDS database failover event</li>
+        <li>CodePipeline deployment fails</li>
+        <li>ECS task exits with non-zero code</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">📧 SNS → Email</div>
+        <ul class="flow-items">
+          <li>On-call engineer alert</li>
+          <li>Input transformer formats nicely</li>
+        </ul>
+      </div>
+      <div class="flow-node n-blue" style="max-width:100%">
+        <div class="flow-node-title">🌐 Slack via API Dest</div>
+        <ul class="flow-items">
+          <li>#alerts channel post</li>
+          <li>Includes resource ID + runbook link</li>
+        </ul>
+      </div>
+      <div class="flow-node n-purple" style="max-width:100%">
+        <div class="flow-node-title">🔄 Step Functions</div>
+        <ul class="flow-items">
+          <li>Auto-remediation workflow</li>
+          <li>Restart EC2, page on-call</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Pattern 3 — Scheduled Maintenance</h3>
+  <div class="flow">
+    <div class="flow-node n-purple">
+      <div class="flow-node-title">📅 Scheduler: cron(0 2 * * ? *) — 2 AM daily</div>
+      <ul class="flow-items">
+        <li>No event to process — time is the trigger</li>
+        <li>Invokes Lambda: NightlyCleanupFunction</li>
+        <li>Input: custom JSON payload {"task":"cleanup","date":"&lt;aws.scheduler.scheduled-time&gt;"}</li>
+        <li>DLQ: if Lambda fails, alert on-call</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">λ Lambda executes maintenance tasks</div>
+      <ul class="flow-items">
+        <li>Delete expired sessions from DynamoDB</li>
+        <li>Archive old S3 objects to Glacier</li>
+        <li>Generate daily reports to S3</li>
+        <li>Sends summary to SNS → email team</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Pattern 4 — SaaS Integration (Shopify → Your App)</h3>
+  <div class="flow">
+    <div class="flow-node n-src">
+      <div class="flow-node-title">🛍️ Shopify — order.paid event</div>
+      <ul class="flow-items">
+        <li>Shopify sends event to your AWS Partner Event Bus</li>
+        <li>No webhook server needed on your side</li>
+        <li>Event includes: order ID, customer, total, line items</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-eb">
+      <div class="flow-node-title">📡 Partner Bus → Rules</div>
+      <ul class="flow-items">
+        <li>Rule 1: order.paid → Lambda FulfillOrder (ECS task)</li>
+        <li>Rule 2: all Shopify events → Kinesis for analytics</li>
+        <li>Rule 3: order.refunded → Lambda HandleRefund</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Your backend receives clean events</div>
+      <ul class="flow-items">
+        <li>Input transformer maps Shopify schema to your schema</li>
+        <li>No Shopify SDK in your Lambda</li>
+        <li>Archive all Shopify events for replay if bug found</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>⚙️ Console Setup — Every Field Explained</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create a Custom Event Bus</div>
+      <div class="console-step-path">EventBridge → Event buses → Create event bus</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">myapp-orders-bus</div>
+        <div class="console-field-hint">Use domain-based naming: app-domain-bus. Separate buses per business domain (orders, payments, users) keeps rules organised and isolates access.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Resource-based policy (optional)</div>
+        <div class="console-field-value">Add if another AWS account needs to publish or subscribe</div>
+        <div class="console-field-hint">Cross-account: add Principal = arn:aws:iam::OTHER_ACCOUNT:root with Action = events:PutEvents. Required for multi-account event routing.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Archive</div>
+        <div class="console-field-value">✅ Create archive → retention: 30 days</div>
+        <div class="console-field-hint">Archive enables replay. If a bug corrupts data, archive lets you replay all events after fixing the bug. Set retention to at least 30 days in production.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create a Rule</div>
+      <div class="console-step-path">EventBridge → Rules → Create rule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Name</div>
+        <div class="console-field-value">ProcessOrderPlaced</div>
+        <div class="console-field-hint">Name rules by: Action + Trigger. Avoids generic names like "rule1". Include the event it matches and what it does.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Event bus</div>
+        <div class="console-field-value">myapp-orders-bus (custom) or default (for AWS events)</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Rule type</div>
+        <div class="console-field-value">Rule with an event pattern</div>
+        <div class="console-field-hint">Choose "Schedule" if it's time-triggered (better: use Scheduler instead). Choose "Event pattern" to match incoming events.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Event source</div>
+        <div class="console-field-value">Other → Custom pattern (JSON editor)</div>
+        <div class="console-field-hint">For your own events, choose "Other". For AWS service events, choose the service from the dropdown — it shows a guided pattern builder.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Event pattern (JSON)</div>
+        <div class="console-field-value">{"source":["myapp.orders"],"detail-type":["Order Placed"]}</div>
+        <div class="console-field-hint">Test pattern with the "Test pattern" button — paste sample events to verify matches before saving. Saves hours of debugging.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Add Targets to the Rule</div>
+      <div class="console-step-path">Same wizard → Select targets</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Target type</div>
+        <div class="console-field-value">AWS service → Lambda function</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Function</div>
+        <div class="console-field-value">OrderProcessorFunction</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Input transformer (optional)</div>
+        <div class="console-field-value">Input path: {"orderId":"$.detail.orderId","amount":"$.detail.amount"}<br>Template: {"order":"&lt;orderId&gt;","total":&lt;amount&gt;}</div>
+        <div class="console-field-hint">Transform event before Lambda receives it. Extracts only needed fields, removes AWS envelope. Lambda code stays clean.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Retry policy</div>
+        <div class="console-field-value">Maximum age: 24 hours · Retry attempts: 185</div>
+        <div class="console-field-hint">EventBridge retries with exponential backoff. 185 retries over 24 hours covers most transient failures. Reduce for time-sensitive events.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Dead-letter queue</div>
+        <div class="console-field-value">✅ SQS queue: OrderEvents-DLQ</div>
+        <div class="console-field-hint">Always configure DLQ. If all retries fail, event goes to DLQ for inspection. Set CloudWatch alarm on DLQ depth > 0.</div>
+      </div>
+      <div class="console-note">Add up to 5 targets per rule. Each fires independently. Click <strong>Next</strong> → review → <strong>Create rule</strong>.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create a Scheduler</div>
+      <div class="console-step-path">EventBridge → Scheduler → Create schedule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Schedule name</div>
+        <div class="console-field-value">NightlyCleanup</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Schedule type</div>
+        <div class="console-field-value">Recurring schedule → Cron-based</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Cron expression</div>
+        <div class="console-field-value">0 2 * * ? *</div>
+        <div class="console-field-hint">2:00 AM UTC daily. Use the visual cron builder to construct expressions without memorising the syntax. Test with "Next trigger dates" button.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Timezone</div>
+        <div class="console-field-value">Asia/Kolkata (IST)</div>
+        <div class="console-field-hint">Scheduler supports real timezones — not available in CloudWatch Events. Set to your business timezone so 2 AM means 2 AM IST, not 2 AM UTC.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Flexible time window</div>
+        <div class="console-field-value">Off (exact time) or 15 minutes (fire within window)</div>
+        <div class="console-field-hint">Flexible window spreads load — useful when many schedules fire at exact same time. Off for time-sensitive tasks.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Target</div>
+        <div class="console-field-value">Lambda → NightlyCleanupFunction</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable Schema Discovery</div>
+      <div class="console-step-path">EventBridge → Schema registry → Discoverers → Create discoverer</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Source</div>
+        <div class="console-field-value">Select your custom event bus: myapp-orders-bus</div>
+        <div class="console-field-hint">Schema discoverer monitors your bus and automatically infers JSON schema from events. Schemas appear in the registry after events are published.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">What schema discovery gives you</div>
+        <div class="console-field-value">Auto-generated C# classes from your event schemas</div>
+        <div class="console-field-hint">In the Schema Registry: select your event schema → Download code bindings → C# → download ZIP with generated classes. Use in your Lambda directly.</div>
+      </div>
+      <div class="console-note">Schema discovery costs $0.10 per million events discovered. Turn off after initial discovery to save cost.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Complete EventBridge Implementation</h2>
+
+  <h3>Install NuGet</h3>
+  <div class="code-block"><pre>Install-Package AWSSDK.EventBridge
+Install-Package AWSSDK.Scheduler
+Install-Package Amazon.Lambda.CloudWatchEvents  <span class="cm">// for Lambda handler</span></pre></div>
+
+  <h3>EventBridge Service — Publish & Manage</h3>
+  <div class="code-block">
+    <span class="code-label">EventBridgeService.cs</span>
+    <pre><span class="kw">using</span> Amazon.EventBridge;
+<span class="kw">using</span> Amazon.EventBridge.Model;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">EventBridgeService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonEventBridge</span> _eb;
+    <span class="kw">private const string</span> BusName = <span class="str">"myapp-orders-bus"</span>;
+
+    <span class="kw">public</span> <span class="tp">EventBridgeService</span>(<span class="tp">IAmazonEventBridge</span> eb) => _eb = eb;
+
+    <span class="cm">// ── Publish single event ───────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">PublishAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> source,
+        <span class="tp">string</span> detailType,
+        <span class="tp">T</span>      detail)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _eb.<span class="fn">PutEventsAsync</span>(
+            <span class="kw">new</span> <span class="tp">PutEventsRequest</span>
+        {
+            Entries = [<span class="kw">new</span> <span class="tp">PutEventsRequestEntry</span>
+            {
+                EventBusName = BusName,
+                Source       = source,     <span class="cm">// "myapp.orders"</span>
+                DetailType   = detailType, <span class="cm">// "Order Placed"</span>
+                Detail       = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(detail),
+                Time         = <span class="tp">DateTime</span>.UtcNow
+            }]
+        });
+
+        <span class="kw">if</span> (response.FailedEntryCount > <span class="num">0</span>)
+        {
+            <span class="kw">var</span> err = response.Entries[<span class="num">0</span>];
+            <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                <span class="str">$"EventBridge publish failed: {err.ErrorCode} - {err.ErrorMessage}"</span>);
+        }
+
+        <span class="kw">return</span> response.Entries[<span class="num">0</span>].EventId;
+    }
+
+    <span class="cm">// ── Publish batch (up to 10 events) ───────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PublishBatchAsync</span>(
+        <span class="tp">IEnumerable</span>&lt;<span class="tp">EventRecord</span>&gt; events)
+    {
+        <span class="kw">var</span> entries = events.<span class="fn">Select</span>(e =>
+            <span class="kw">new</span> <span class="tp">PutEventsRequestEntry</span>
+        {
+            EventBusName = BusName,
+            Source       = e.Source,
+            DetailType   = e.DetailType,
+            Detail       = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(e.Detail)
+        }).<span class="fn">ToList</span>();
+
+        <span class="cm">// EventBridge allows up to 10 per PutEvents call</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> batch <span class="kw">in</span> entries.<span class="fn">Chunk</span>(<span class="num">10</span>))
+        {
+            <span class="kw">var</span> response = <span class="kw">await</span> _eb.<span class="fn">PutEventsAsync</span>(
+                <span class="kw">new</span> <span class="tp">PutEventsRequest</span> { Entries = batch.<span class="fn">ToList</span>() });
+
+            <span class="kw">if</span> (response.FailedEntryCount > <span class="num">0</span>)
+                <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                    <span class="str">$"{response.FailedEntryCount} events failed"</span>);
+        }
+    }
+
+    <span class="cm">// ── Create a rule programmatically ────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateRuleAsync</span>(
+        <span class="tp">string</span> name, <span class="tp">string</span> patternJson)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _eb.<span class="fn">PutRuleAsync</span>(<span class="kw">new</span> <span class="tp">PutRuleRequest</span>
+        {
+            Name          = name,
+            EventBusName  = BusName,
+            EventPattern  = patternJson,
+            State         = <span class="tp">RuleState</span>.ENABLED,
+            Description   = <span class="str">$"Created by app at {DateTime.UtcNow:O}"</span>
+        });
+        <span class="kw">return</span> response.RuleArn;
+    }
+
+    <span class="cm">// ── Add Lambda target to rule ─────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">AddLambdaTargetAsync</span>(
+        <span class="tp">string</span> ruleName, <span class="tp">string</span> lambdaArn)
+    {
+        <span class="kw">await</span> _eb.<span class="fn">PutTargetsAsync</span>(<span class="kw">new</span> <span class="tp">PutTargetsRequest</span>
+        {
+            Rule         = ruleName,
+            EventBusName = BusName,
+            Targets      = [<span class="kw">new</span> <span class="tp">Target</span>
+            {
+                Id  = <span class="str">"lambda-target-1"</span>,
+                Arn = lambdaArn,
+                <span class="cm">// Optional: transform input</span>
+                InputTransformer = <span class="kw">new</span> <span class="tp">InputTransformer</span>
+                {
+                    InputPathsMap = <span class="kw">new</span>()
+                    {
+                        [<span class="str">"orderId"</span>] = <span class="str">"$.detail.orderId"</span>,
+                        [<span class="str">"amount"</span>]  = <span class="str">"$.detail.amount"</span>
+                    },
+                    InputTemplate =
+                        <span class="str">"{\"order\":\"&lt;orderId&gt;\",\"total\":&lt;amount&gt;}"</span>
+                },
+                <span class="cm">// Optional: DLQ for failed deliveries</span>
+                DeadLetterConfig = <span class="kw">new</span> <span class="tp">DeadLetterConfig</span>
+                    { Arn = <span class="str">"arn:aws:sqs:...:OrderEvents-DLQ"</span> }
+            }]
+        });
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">EventRecord</span>(
+    <span class="tp">string</span> Source, <span class="tp">string</span> DetailType, <span class="tp">object</span> Detail);</pre>
+  </div>
+
+  <h3>Lambda Handler — Receiving EventBridge Events</h3>
+  <div class="code-block">
+    <span class="code-label">OrderProcessorFunction.cs — Lambda triggered by EventBridge</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="cm">// EventBridge event structure</span>
+<span class="kw">public record</span> <span class="tp">EventBridgeEvent</span>&lt;<span class="tp">T</span>&gt;(
+    <span class="tp">string</span> Version    ,
+    <span class="tp">string</span> Id         ,
+    <span class="tp">string</span> Source     ,
+    <span class="tp">string</span> DetailType ,
+    <span class="tp">string</span> Account    ,
+    <span class="tp">string</span> Time       ,
+    <span class="tp">string</span> Region     ,
+    <span class="tp">T</span>      Detail);
+
+<span class="kw">public record</span> <span class="tp">OrderDetail</span>(
+    <span class="tp">string</span>  OrderId,
+    <span class="tp">string</span>  UserId,
+    <span class="tp">decimal</span> Amount,
+    <span class="tp">string</span>  Status);
+
+<span class="kw">public class</span> <span class="tp">OrderProcessorFunction</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">EventBridgeEvent</span>&lt;<span class="tp">OrderDetail</span>&gt; evt,
+        <span class="tp">ILambdaContext</span> ctx)
+    {
+        ctx.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"Event: {Type} from {Source} at {Time}"</span>,
+            evt.DetailType, evt.Source, evt.Time);
+
+        <span class="kw">var</span> order = evt.Detail;
+        ctx.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"Processing order {Id} for ${Amount}"</span>,
+            order.OrderId, order.Amount);
+
+        <span class="cm">// Your business logic here...</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>;
+    }
+}
+
+<span class="cm">// ── Scheduler Target Handler ─────────────────────────
+// Scheduler injects its own payload</span>
+<span class="kw">public class</span> <span class="tp">NightlyCleanupFunction</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">JsonElement</span> input, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="cm">// Get scheduled time from Scheduler context</span>
+        <span class="kw">var</span> scheduledTime = ctx.ClientContext?
+            .Custom?.<span class="fn">GetValueOrDefault</span>(<span class="str">"scheduled-time"</span>);
+
+        ctx.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"Nightly cleanup at {Time}", scheduledTime</span>);
+
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">CompletedTask</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>Register in DI</h3>
+  <div class="code-block">
+    <span class="code-label">Program.cs</span>
+    <pre>builder.Services.<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonEventBridge</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">EventBridgeService</span>&gt;();</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES (last tab)
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices & Common Mistakes</h2>
+
+  <h3>Event Design</h3>
+  <ul class="checklist">
+    <li>Always include source and detail-type — they are the primary routing fields for rules</li>
+    <li>Use consistent naming: source = "myapp.domain" (e.g. myapp.orders), detail-type = "Noun Verb" (e.g. Order Placed)</li>
+    <li>Include a correlationId in every event detail for distributed tracing across services</li>
+    <li>Include a version field in detail — allows schema evolution without breaking consumers</li>
+    <li>Keep events as facts about what happened — not commands telling consumers what to do</li>
+    <li>Use ISO 8601 timestamps — EventBridge adds its own "time" but include your own event time in detail</li>
+  </ul>
+
+  <h3>Rules & Routing</h3>
+  <ul class="checklist">
+    <li>Create separate custom buses per domain — don't put all events on the default bus</li>
+    <li>Enable event archive on every production bus — enables replay after bugs</li>
+    <li>Always configure DLQ on every target — never lose events silently on failure</li>
+    <li>Test patterns before deploying — use the EventBridge console Pattern Tester</li>
+    <li>Use Input Transformer — deliver only what the target needs, not the full AWS envelope</li>
+    <li>Use Scheduler (not CloudWatch Events rules) for all new scheduled work</li>
+  </ul>
+
+  <h3>Operations & Monitoring</h3>
+  <ul class="checklist">
+    <li>Enable CloudWatch metrics: FailedInvocations, ThrottledRules, MatchedEvents</li>
+    <li>Alert on FailedInvocations > 0 — event delivery is failing</li>
+    <li>Alert on DLQ depth > 0 — events being dropped after retries</li>
+    <li>Use X-Ray tracing to follow events across Lambda invocations</li>
+    <li>Use Schema Registry schema discovery to generate typed C# classes</li>
+    <li>Tag all buses and rules — enables cost allocation per team or domain</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top EventBridge Mistakes</h4>
+    <p>
+    ❌ <strong>Using default bus for all custom events</strong> — mixes infrastructure alerts with app events, hard to manage<br>
+    ❌ <strong>No DLQ on targets</strong> — failed events silently dropped after retries exhaust<br>
+    ❌ <strong>No event archive</strong> — cannot replay events after fixing a bug<br>
+    ❌ <strong>Events as commands ("ProcessOrder")</strong> — use facts ("OrderPlaced") — consumers decide what to do<br>
+    ❌ <strong>Not using Input Transformer</strong> — Lambda receives AWS envelope JSON, not just your payload<br>
+    ❌ <strong>Forgetting to grant EventBridge permission to invoke Lambda</strong> — rule created but Lambda never fires<br>
+    ❌ <strong>Using CloudWatch Events cron when Scheduler exists</strong> — Scheduler has timezone support, one-time schedules, millions of schedules<br>
+    ❌ <strong>No correlationId in events</strong> — impossible to trace a request across multiple EventBridge-triggered services
+    </p>
+  </div>
+
+  <h3>EventBridge vs SNS vs SQS — The Full Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>EventBridge</th><th>SNS</th><th>SQS</th></tr>
+    <tr><td>Routing</td><td>✅ Content-based (200+ patterns)</td><td>✅ Filter policies</td><td>❌ No routing</td></tr>
+    <tr><td>Targets</td><td>✅ 200+ AWS services</td><td>Limited protocols</td><td>Consumers pull</td></tr>
+    <tr><td>AWS service events</td><td>✅ Native integration</td><td>❌</td><td>❌</td></tr>
+    <tr><td>SaaS partners</td><td>✅ 30+ partners</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Scheduling</td><td>✅ Built-in Scheduler</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Event replay</td><td>✅ Archive + Replay</td><td>❌</td><td>❌ (14-day retention)</td></tr>
+    <tr><td>Schema registry</td><td>✅ Auto-discovery</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Message retention</td><td>24h (retry window)</td><td>Not stored</td><td>Up to 14 days</td></tr>
+    <tr><td>Fan-out to many</td><td>Via multiple rules</td><td>✅ Best</td><td>❌</td></tr>
+    <tr><td>Cost</td><td>$1 per million events</td><td>$0.50 per million</td><td>$0.40 per million</td></tr>
+    <tr><td>Best for</td><td>Complex routing, AWS events, SaaS, scheduling</td><td>Simple fan-out, alerts</td><td>Durable queue, workers</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon EventBridge!</h3>
+    <p>What is EventBridge · ATC architecture visual · Event anatomy (source, detail-type, detail) · Three event buses · Rules and all pattern operators · 200+ targets including API Destinations and cross-account routing · EventBridge Pipes (source → filter → enrichment → target) · Scheduler (rate, cron, one-time, timezones) · Schema Registry · Full console setup (every field) · Complete C# SDK (publish, batch, rules, targets, Lambda handler) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--eb-d);">Every event routed to exactly the right place — build truly decoupled systems! 🛫🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
