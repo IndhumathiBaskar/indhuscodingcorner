@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon ECR — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4fbf8;--surface:#e8f5ef;--card:#fff;--border:#c8e4d8;--border2:#b0d4c4;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#1a7a5a;--green-l:#d4f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#0f6b5a;--teal-l:#c8eee5;
+  --ecr:#0f7a60;--ecr-l:#c4ede0;--ecr-d:#0a5a45;
+  --text:#121c18;--text2:#3a4a42;--muted:#7a8a82;
+  --code-bg:#0d1b14;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#daf5ec 0%,#b8e8d8 45%,#9ed8c8 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'📦';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'🐳';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--ecr-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(244,251,248,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--ecr-l);color:var(--ecr-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--ecr-l);letter-spacing:-.01em;}
+.section h3{color:var(--ecr-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ LIFECYCLE VISUAL ══ */
+.lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.lifecycle-header{background:linear-gradient(90deg,var(--ecr-l),var(--green-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.lifecycle-body{padding:16px;}
+.lc-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;}
+.lc-stage{flex:1;min-width:100px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:10px 12px;text-align:center;}
+.lc-stage.active-stage{background:var(--ecr-l);border-color:rgba(15,122,96,.35);}
+.lc-stage.expired-stage{background:var(--red-l);border-color:var(--red-b);}
+.lc-stage h5{font-size:.72rem;font-weight:700;margin-bottom:3px;}
+.lc-stage.active-stage h5{color:var(--ecr-d);}
+.lc-stage.expired-stage h5{color:var(--red);}
+.lc-stage p{font-size:.62rem;color:var(--muted);margin:0;}
+.lc-arrow{display:flex;align-items:center;color:var(--border2);font-size:1.2rem;flex-shrink:0;}
+
+/* ══ IMAGE FLOW VISUAL ══ */
+.push-flow{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pf-header{background:linear-gradient(90deg,var(--ecr-l),var(--teal-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.pf-body{padding:14px;}
+.pf-source{background:var(--blue-l);border:2px solid rgba(42,90,154,.35);border-radius:var(--r);padding:10px 14px;text-align:center;max-width:200px;margin:0 auto;}
+.pf-source h5{color:var(--blue);font-weight:700;font-size:.8rem;margin-bottom:2px;}
+.pf-source p{font-size:.65rem;color:var(--muted);}
+.pf-arrow{text-align:center;color:var(--ecr-d);font-size:1.2rem;padding:4px 0;}
+.pf-stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:8px;}
+.pf-stage{background:var(--ecr-l);border:1.5px solid rgba(15,122,96,.2);border-radius:var(--r);padding:9px 10px;text-align:center;}
+.pf-stage h6{color:var(--ecr-d);font-weight:700;font-size:.72rem;margin-bottom:2px;}
+.pf-stage p{font-size:.62rem;color:var(--muted);}
+.pf-stage .pf-tag{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--ecr);margin-top:3px;}
+
+/* ══ REPO vs REPO COMPARISON ══ */
+.repo-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.rc-header{display:flex;border-bottom:1px solid var(--border);}
+.rc-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.78rem;}
+.rc-col.priv-col{background:var(--ecr-l);color:var(--ecr-d);border-right:1px solid var(--border);}
+.rc-col.pub-col{background:linear-gradient(135deg,var(--green-l),var(--ecr-l));color:var(--green);}
+.rc-row{display:flex;border-bottom:1px solid var(--border);}
+.rc-row:last-child{border-bottom:none;}
+.rc-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:130px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.rc-val{flex:1;padding:7px 12px;font-size:.75rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.rc-val:last-child{border-right:none;}
+.rc-val.better{color:var(--green);font-weight:600;}
+.rc-val.same{color:var(--muted);}
+
+/* ══ SCAN METER ══ */
+.scan-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.scan-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.scan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-basic::before{background:var(--ecr);}
+.sc-enhanced::before{background:var(--green);}
+.sc-crit::before{background:var(--red);}
+.scan-card .sc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.scan-card .sc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.sc-basic .sc-type{background:var(--ecr-l);color:var(--ecr-d);}
+.sc-enhanced .sc-type{background:var(--green-l);color:var(--green);}
+.sc-crit .sc-type{background:var(--red-l);color:var(--red);}
+.sc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.sc-metric-label{font-size:.68rem;color:var(--muted);}
+.sc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+.sc-bar{height:5px;background:var(--surface);border-radius:100px;overflow:hidden;margin-bottom:8px;border:1px solid var(--border);}
+.sc-fill{height:100%;border-radius:100px;}
+
+/* ══ AUTH FLOW ══ */
+.auth-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.auth-header{background:linear-gradient(90deg,var(--aws-l),var(--ecr-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.auth-body{padding:14px;}
+.auth-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.auth-row:last-child{margin-bottom:0;}
+.auth-label{font-size:.72rem;font-weight:700;width:120px;flex-shrink:0;}
+.auth-steps{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.auth-step{padding:4px 10px;border-radius:4px;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.auth-iam{background:var(--ecr-l);border:1px solid rgba(15,122,96,.3);color:var(--ecr-d);}
+.auth-token{background:var(--green-l);border:1px solid rgba(26,122,90,.3);color:var(--green);}
+.auth-denied{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+.auth-note{font-size:.65rem;color:var(--muted);margin-left:auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--ecr-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-ecr{background:var(--ecr-l);border:1.5px solid rgba(15,122,96,.3);}
+.n-ecr .flow-node-title{color:var(--ecr-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(26,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(15,107,90,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--ecr-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--ecr);}
+.step-body h4{color:var(--ecr-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--ecr-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--ecr-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--ecr-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--ecr);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--ecr-l);border:1px solid rgba(15,122,96,.2);border-left:4px solid var(--ecr);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--ecr-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(26,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #0d2e20;border-left:3px solid var(--ecr);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--ecr);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#5a7060;font-style:italic;}.tp{color:#7de8d0;}.fn{color:#6dcfa8;}.num{color:#fab387;}
+code{background:rgba(15,122,96,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ecr-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--ecr-l),var(--green-l));border:1px solid rgba(15,122,96,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.scan-grid,.pf-stages{grid-template-columns:1fr;}
+  .flow-row,.rc-row,.lc-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .auth-note{display:none;}
+  .rc-label{width:80px;font-size:.6rem;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>📦 <span>Amazon ECR</span> — Complete Guide</h1>
+  <p>Elastic Container Registry · Image Push/Pull · Lifecycle Policies · Image Scanning · Cross-Account · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is ECR</button>
+  <button class="tab-btn" onclick="T('repos',this)">Repositories</button>
+  <button class="tab-btn" onclick="T('pushpull',this)">Push &amp; Pull</button>
+  <button class="tab-btn" onclick="T('auth',this)">Auth &amp; IAM</button>
+  <button class="tab-btn" onclick="T('lifecycle',this)">Lifecycle Policies</button>
+  <button class="tab-btn" onclick="T('scanning',this)">Image Scanning</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS ECR
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>📦 What is Amazon ECR?</h2>
+  <p><strong>ECR = Elastic Container Registry.</strong> A fully managed Docker-compatible container image registry hosted by AWS. ECR stores, versions, and distributes your Docker and OCI container images. It integrates natively with ECS, EKS, Lambda, and CodePipeline — pulling images without extra credentials.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — The Library</h4>
+    <p>ECR is like a secure private library for your container images. Each <strong>repository</strong> is a shelf (e.g. "my-api"). Each <strong>image tag</strong> is a specific edition of a book (e.g. <code>v1.2.0</code> or <code>latest</code>). The <strong>image digest</strong> is the ISBN — unique and immutable regardless of what tag you give the book. AWS is the librarian — securing access, automatically archiving old editions (lifecycle policies), and inspecting books for known defects (image scanning). Your CI/CD pipeline is the publishing team pushing new editions to the shelf.</p>
+  </div>
+
+  <!-- WHAT ECR MANAGES FOR YOU -->
+  <h3>What AWS Manages — So You Don't Have To</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😓 Self-managed Registry (Docker Hub / self-hosted)</h4>
+      <ul>
+        <li>Set up and maintain the registry server</li>
+        <li>Manage TLS certificates yourself</li>
+        <li>Handle authentication and access control manually</li>
+        <li>Build cleanup scripts to remove old image versions</li>
+        <li>Integrate vulnerability scanning tools separately</li>
+        <li>Handle replication to multiple regions yourself</li>
+        <li>Pay Docker Hub egress / pull rate limits</li>
+        <li>Manage storage capacity and scaling</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ ECR — AWS handles all of this</h4>
+      <ul>
+        <li>Fully managed — no server to provision or patch</li>
+        <li>TLS encryption in transit, managed automatically</li>
+        <li>IAM-based auth — no separate credential system</li>
+        <li>Lifecycle policies auto-delete old/untagged images</li>
+        <li>Native vulnerability scanning (Basic + Inspector)</li>
+        <li>Cross-region replication with one config rule</li>
+        <li>Free data transfer to ECS/EKS in same region</li>
+        <li>Scales to any image size and pull concurrency</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>ECR Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🗂️</span><h4>Repository</h4><p>Logical store for one app's images (e.g. <code>my-api</code>).</p></div>
+    <div class="icon-item"><span class="emoji">🏷️</span><h4>Image Tag</h4><p>Human-readable label — <code>latest</code>, <code>v1.2</code>, <code>git-abc123</code>.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Image Digest</h4><p>Immutable SHA256 hash. Tag changes; digest never does.</p></div>
+    <div class="icon-item"><span class="emoji">📜</span><h4>Lifecycle Policy</h4><p>Auto-delete old/untagged images by count or age rules.</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Image Scanning</h4><p>CVE scanning — Basic (on push) or Enhanced (Inspector).</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Replication</h4><p>Cross-region &amp; cross-account image copy — automatic.</p></div>
+  </div>
+
+  <h3>ECR Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💾</span><h4>Storage cost</h4><p>$0.10/GB per month after 500 MB free tier</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>Data transfer</h4><p>Free pulls to ECS/EKS/Lambda in same region</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Encryption</h4><p>AES-256 at rest (AWS managed or custom KMS)</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Auth token</h4><p>12-hour temporary token from <code>GetAuthorizationToken</code></p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Tag immutability</h4><p>Optional: prevent overwriting existing image tags</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Public Gallery</h4><p>ECR Public — share images openly at gallery.ecr.aws</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — REPOSITORIES
+══════════════════════════════════ -->
+<div id="tab-repos" class="tab-panel"><div class="section">
+  <h2>🗂️ Repositories — Private vs Public</h2>
+  <p>ECR offers two repository types. <strong>Private repositories</strong> require IAM authentication and are scoped to your AWS account and region. <strong>Public repositories</strong> live on ECR Public Gallery (<code>gallery.ecr.aws</code>) and allow anonymous pulls anywhere — ideal for open-source images.</p>
+
+  <!-- PRIVATE vs PUBLIC COMPARISON -->
+  <h3>Private vs Public — Head to Head</h3>
+  <div class="repo-compare">
+    <div class="rc-header">
+      <div class="rc-col priv-col">🔒 Private Repository</div>
+      <div class="rc-col pub-col">🌍 Public Repository</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Auth required</div>
+      <div class="rc-val">IAM token (12h TTL)</div>
+      <div class="rc-val better">Anonymous pull — no auth</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Visibility</div>
+      <div class="rc-val">Your AWS account only</div>
+      <div class="rc-val">Public — anyone can pull</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Cross-account</div>
+      <div class="rc-val">Via resource-based policy</div>
+      <div class="rc-val better">Automatic — no config</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Image scanning</div>
+      <div class="rc-val better">Basic + Enhanced (Inspector)</div>
+      <div class="rc-val">Basic scan only</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Replication</div>
+      <div class="rc-val better">Cross-region + cross-account</div>
+      <div class="rc-val same">Not supported</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Lifecycle policies</div>
+      <div class="rc-val better">Full lifecycle rules</div>
+      <div class="rc-val same">Not supported</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Free tier</div>
+      <div class="rc-val">500 MB storage free</div>
+      <div class="rc-val better">50 GB/month free bandwidth</div>
+    </div>
+    <div class="rc-row">
+      <div class="rc-label">Use case</div>
+      <div class="rc-val">Production workloads</div>
+      <div class="rc-val">Open-source, base images</div>
+    </div>
+  </div>
+
+  <h3>Repository URI Structure</h3>
+  <div class="flow">
+    <div class="flow-node n-ecr">
+      <div class="flow-node-title">🔒 Private Repository URI</div>
+      <ul class="flow-items">
+        <li><code>123456789012.dkr.ecr.ap-south-1.amazonaws.com/my-api:v1.2.0</code></li>
+        <li>Format: <code>{account-id}.dkr.ecr.{region}.amazonaws.com/{repo-name}:{tag}</code></li>
+        <li>Account ID is baked into the registry URL — unique per account</li>
+        <li>Tag is optional — defaults to <code>latest</code> if omitted (avoid this!)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ vs</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🌍 Public Repository URI</div>
+      <ul class="flow-items">
+        <li><code>public.ecr.aws/myorg/my-api:v1.2.0</code></li>
+        <li>Format: <code>public.ecr.aws/{alias}/{repo-name}:{tag}</code></li>
+        <li>Alias is a human-readable name you claim on ECR Public</li>
+        <li>Pulls work without <code>docker login</code> from anywhere</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Tag Immutability — Why You Should Enable It</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>❌ Tag Immutability OFF (default)</h4>
+      <ul>
+        <li>Any push can overwrite an existing tag</li>
+        <li><code>docker push my-api:latest</code> silently replaces the old image</li>
+        <li>Your ECS task revision 42 might pull a totally different image than revision 41</li>
+        <li>Rollbacks become unreliable — the old tag is gone</li>
+        <li>Fine for development; dangerous in production</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ Tag Immutability ON (recommended for prod)</h4>
+      <ul>
+        <li>Overwriting an existing tag returns an error</li>
+        <li>Forces unique tags per push (git SHA, build number, semver)</li>
+        <li>Every deployment is traceable and reproducible</li>
+        <li>Rollback = just deploy the previous unique tag</li>
+        <li>Audit trail: which exact bytes ran at what time</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Never rely on <code>:latest</code> in production</h4>
+    <p>The <code>latest</code> tag is just a convention — not a guarantee of the newest image. It can be overwritten by any push. Use semantic versioning (<code>v1.2.3</code>), git commit SHA (<code>git-abc1234</code>), or build numbers (<code>build-482</code>) as your image tags. Enable tag immutability to enforce this at the registry level.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — PUSH & PULL
+══════════════════════════════════ -->
+<div id="tab-pushpull" class="tab-panel"><div class="section">
+  <h2>🚀 Push &amp; Pull — The Image Workflow</h2>
+  <p>Every image goes through a <strong>build → tag → authenticate → push</strong> cycle to reach ECR. Pulling reverses it: authenticate → pull → run. Understanding each step prevents the most common CI/CD failures.</p>
+
+  <!-- PUSH FLOW VISUAL -->
+  <h3>Push Workflow — Developer &amp; CI/CD</h3>
+  <div class="push-flow">
+    <div class="pf-header">🚢 Full push flow from source code to ECR</div>
+    <div class="pf-body">
+      <div class="pf-source">
+        <h5>📝 Source Code</h5>
+        <p>Dockerfile + application code<br>in your repo or CI runner</p>
+      </div>
+      <div class="pf-arrow">↓ docker build</div>
+      <div class="pf-stages">
+        <div class="pf-stage">
+          <h6>🏗️ Build Image</h6>
+          <p>Layers assembled by Docker daemon from Dockerfile</p>
+          <div class="pf-tag">docker build -t my-api .</div>
+        </div>
+        <div class="pf-stage">
+          <h6>🏷️ Tag Image</h6>
+          <p>Rename to include full ECR registry URI</p>
+          <div class="pf-tag">docker tag my-api {uri}:v1.2</div>
+        </div>
+        <div class="pf-stage">
+          <h6>🔑 Authenticate</h6>
+          <p>Get 12-hour token from AWS, pipe to docker login</p>
+          <div class="pf-tag">aws ecr get-login-password | docker login</div>
+        </div>
+        <div class="pf-stage" style="background:var(--ecr-l);border-color:rgba(15,122,96,.35);">
+          <h6 style="color:var(--ecr-d);">📤 Push</h6>
+          <p>Layers uploaded — only changed layers are sent</p>
+          <div class="pf-tag">docker push {uri}:v1.2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Step-by-Step Push Commands</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Authenticate Docker to ECR</h4>
+      <p>Get a 12-hour temporary password from AWS and pipe it to <code>docker login</code>. Run this once per CI job or before your push window expires.</p>
+    </div>
+  </div>
+  <div class="code-block"><span class="code-label">bash — authenticate to private ECR</span><pre><span class="cm"># Replace ACCOUNT_ID and REGION with your values</span>
+aws ecr get-login-password --region ap-south-1 \
+  | docker login \
+      --username AWS \
+      --password-stdin \
+      123456789012.dkr.ecr.ap-south-1.amazonaws.com</pre></div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Build &amp; Tag the Image</h4>
+      <p>Build locally with a short name, then tag it with the full ECR URI. The tag should be a unique identifier — git SHA is a great choice.</p>
+    </div>
+  </div>
+  <div class="code-block"><span class="code-label">bash — build and tag</span><pre><span class="cm"># Build the image</span>
+docker build -t my-api .
+
+<span class="cm"># Tag with full ECR URI + git SHA</span>
+GIT_SHA=$(git rev-parse --short HEAD)
+docker tag my-api \
+  123456789012.dkr.ecr.ap-south-1.amazonaws.com/my-api:${GIT_SHA}</pre></div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Push to ECR</h4>
+      <p>Docker uploads only the layers that changed. First push of a new image sends all layers. Subsequent pushes with only app-layer changes are fast — base OS layers are cached.</p>
+    </div>
+  </div>
+  <div class="code-block"><span class="code-label">bash — push to ecr</span><pre>docker push \
+  123456789012.dkr.ecr.ap-south-1.amazonaws.com/my-api:${GIT_SHA}
+
+<span class="cm"># Output shows each layer: "Layer already exists" = cached</span>
+<span class="cm"># Only changed layers are actually uploaded</span></pre></div>
+
+  <h3>Pull Workflow — ECS / EKS / Lambda</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">🖥️ ECS Task / EKS Pod starts</div>
+      <ul class="flow-items">
+        <li>Task definition specifies ECR image URI + tag or digest</li>
+        <li>ECS agent / kubelet needs to pull the image</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ get auth token</div>
+    <div class="flow-node n-teal">
+      <div class="flow-node-title">🔑 IAM Role provides credentials</div>
+      <ul class="flow-items">
+        <li>ECS Task Role / EKS Node Role calls <code>ecr:GetAuthorizationToken</code></li>
+        <li>12-hour token returned automatically — no manual login</li>
+        <li>Token scoped to the account's ECR registry</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ pull layers</div>
+    <div class="flow-node n-ecr">
+      <div class="flow-node-title">📦 ECR serves image layers</div>
+      <ul class="flow-items">
+        <li>Only missing layers pulled — Docker cache re-used</li>
+        <li>Data transfer is free within same AWS region</li>
+        <li>Digest validates integrity — tampered image = pull failure</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ container starts</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Container running</div>
+      <ul class="flow-items">
+        <li>Image layers mounted as read-only overlay filesystem</li>
+        <li>Writable container layer on top for runtime changes</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Pull by digest, not tag, for guaranteed immutability</h4>
+    <p>A tag can be moved. A digest cannot. In ECS task definitions and Kubernetes manifests, pin to the digest: <code>123456789012.dkr.ecr.ap-south-1.amazonaws.com/my-api@sha256:abc123...</code>. This guarantees the exact same bytes run every time, making deployments truly reproducible and rollbacks safe.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — AUTH & IAM
+══════════════════════════════════ -->
+<div id="tab-auth" class="tab-panel"><div class="section">
+  <h2>🔑 Authentication &amp; IAM — Who Can Push and Pull</h2>
+  <p>ECR uses <strong>two IAM policy types</strong> together: the standard IAM identity policy attached to users/roles, and the ECR <strong>repository resource policy</strong> attached directly to the repository. Both must allow the action for it to succeed.</p>
+
+  <!-- AUTH FLOW VISUAL -->
+  <h3>Authentication Flow — IAM → Token → Docker</h3>
+  <div class="auth-visual">
+    <div class="auth-header">🔑 ECR Auth — from IAM principal to docker push</div>
+    <div class="auth-body">
+      <div class="auth-row">
+        <div class="auth-label">CI/CD pipeline</div>
+        <div class="auth-steps">
+          <div class="auth-step auth-iam">IAM Role assumed</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-token">GetAuthorizationToken called</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-token">docker login succeeds</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-iam">docker push ✅</div>
+        </div>
+      </div>
+      <div class="auth-row">
+        <div class="auth-label">ECS Task</div>
+        <div class="auth-steps">
+          <div class="auth-step auth-iam">Task Execution Role</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-token">Token fetched by agent</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-iam">Image pulled ✅</div>
+        </div>
+      </div>
+      <div class="auth-row">
+        <div class="auth-label">Wrong role</div>
+        <div class="auth-steps">
+          <div class="auth-step auth-iam">IAM Role assumed</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-denied">ecr:GetAuthorizationToken denied</div>
+          <div class="auth-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="auth-step auth-denied">no basic auth credentials ❌</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Required IAM Permissions — Push vs Pull</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📤 Push permissions (CI/CD role)</h4>
+      <ul>
+        <li><code>ecr:GetAuthorizationToken</code> — get login token (account-level)</li>
+        <li><code>ecr:BatchCheckLayerAvailability</code> — check which layers exist</li>
+        <li><code>ecr:InitiateLayerUpload</code> — start a layer upload</li>
+        <li><code>ecr:UploadLayerPart</code> — send layer bytes</li>
+        <li><code>ecr:CompleteLayerUpload</code> — finalise the layer</li>
+        <li><code>ecr:PutImage</code> — write the image manifest + tag</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📥 Pull permissions (ECS/EKS task role)</h4>
+      <ul>
+        <li><code>ecr:GetAuthorizationToken</code> — get login token (account-level)</li>
+        <li><code>ecr:BatchGetImage</code> — fetch the image manifest</li>
+        <li><code>ecr:GetDownloadUrlForLayer</code> — get presigned layer URLs</li>
+        <li><code>ecr:BatchCheckLayerAvailability</code> — verify cached layers</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Cross-Account Access — Repository Policy</h3>
+  <p>To let another AWS account pull from your private ECR, attach a <strong>resource-based policy</strong> directly to the repository. This is separate from IAM identity policies.</p>
+  <div class="code-block"><span class="code-label">JSON — ECR repository policy (cross-account pull)</span><pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowCrossAccountPull"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::987654321098:root"</span>
+      },
+      <span class="str">"Action"</span>: [
+        <span class="str">"ecr:BatchGetImage"</span>,
+        <span class="str">"ecr:GetDownloadUrlForLayer"</span>,
+        <span class="str">"ecr:BatchCheckLayerAvailability"</span>
+      ]
+    }
+  ]
+}</pre></div>
+
+  <div class="warn">
+    <h4>⚠️ <code>GetAuthorizationToken</code> is account-level — not repository-level</h4>
+    <p>The first IAM permission needed, <code>ecr:GetAuthorizationToken</code>, must be granted at the IAM policy level — it cannot be granted via a repository resource policy. The token it returns works for all repositories in that AWS account. Repository policies then control access per-repo for push/pull operations.</p>
+  </div>
+
+  <h3>VPC Endpoint — Pull Without Internet</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">❌ Without VPC Endpoint</div>
+      <ul class="flow-items">
+        <li>ECS/EKS must route ECR pulls through NAT Gateway or IGW</li>
+        <li>NAT Gateway costs: $0.045/GB data processed</li>
+        <li>Traffic leaves your VPC — less secure</li>
+        <li>NAT Gateway is a potential single point of failure</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ solution</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ With VPC Interface Endpoint (PrivateLink)</div>
+      <ul class="flow-items">
+        <li>Create endpoints: <code>com.amazonaws.{region}.ecr.api</code> + <code>ecr.dkr</code> + <code>s3</code></li>
+        <li>ECR pulls stay entirely inside the AWS network</li>
+        <li>No NAT Gateway needed — saves cost at scale</li>
+        <li>Required for ECS/EKS in private subnets with no NAT</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — LIFECYCLE POLICIES
+══════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>♻️ Lifecycle Policies — Auto-Clean Old Images</h2>
+  <p>Without lifecycle policies, ECR repositories grow forever. Every CI/CD build pushes a new image, and old ones accumulate — burning storage costs and cluttering the repository. Lifecycle policies define rules to automatically expire images by <strong>count</strong>, <strong>age</strong>, or <strong>tag status</strong>.</p>
+
+  <!-- LIFECYCLE VISUAL -->
+  <h3>Image Retention — Policy in Action</h3>
+  <div class="lifecycle">
+    <div class="lifecycle-header">♻️ Lifecycle policy keeps last 10 tagged images, expires untagged after 1 day</div>
+    <div class="lifecycle-body">
+      <p style="font-size:.72rem;font-weight:700;color:var(--ecr-d);margin-bottom:8px;">▶ TAGGED IMAGES — Newest 10 kept, older ones expire</p>
+      <div class="lc-row">
+        <div class="lc-stage active-stage"><h5>v1.10 🟢</h5><p>Latest — KEEP</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage active-stage"><h5>v1.9 🟢</h5><p>Recent — KEEP</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage active-stage"><h5>v1.8 🟢</h5><p>Recent — KEEP</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage active-stage"><h5>v1.1 🟢</h5><p>10th newest — KEEP</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage expired-stage"><h5>v1.0 🔴</h5><p>11th — EXPIRE</p></div>
+      </div>
+      <p style="font-size:.72rem;font-weight:700;color:var(--red);margin:14px 0 8px;">⚡ UNTAGGED IMAGES — Expire after 1 day</p>
+      <div class="lc-row">
+        <div class="lc-stage active-stage"><h5>untagged 🟢</h5><p>Pushed today — KEEP</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage expired-stage"><h5>untagged 🔴</h5><p>Pushed 2 days ago — EXPIRE</p></div>
+        <div class="lc-arrow">→</div>
+        <div class="lc-stage expired-stage"><h5>untagged 🔴</h5><p>Pushed 5 days ago — EXPIRE</p></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Lifecycle Policy JSON — Common Patterns</h3>
+  <div class="code-block"><span class="code-label">JSON — expire untagged images after 1 day + keep last 10 tagged</span><pre>{
+  <span class="str">"rules"</span>: [
+    {
+      <span class="str">"rulePriority"</span>: <span class="num">1</span>,
+      <span class="str">"description"</span>: <span class="str">"Expire untagged images after 1 day"</span>,
+      <span class="str">"selection"</span>: {
+        <span class="str">"tagStatus"</span>: <span class="str">"untagged"</span>,
+        <span class="str">"countType"</span>: <span class="str">"sinceImagePushed"</span>,
+        <span class="str">"countUnit"</span>: <span class="str">"days"</span>,
+        <span class="str">"countNumber"</span>: <span class="num">1</span>
+      },
+      <span class="str">"action"</span>: { <span class="str">"type"</span>: <span class="str">"expire"</span> }
+    },
+    {
+      <span class="str">"rulePriority"</span>: <span class="num">2</span>,
+      <span class="str">"description"</span>: <span class="str">"Keep last 10 tagged images"</span>,
+      <span class="str">"selection"</span>: {
+        <span class="str">"tagStatus"</span>: <span class="str">"tagged"</span>,
+        <span class="str">"tagPrefixList"</span>: [<span class="str">"v"</span>],
+        <span class="str">"countType"</span>: <span class="str">"imageCountMoreThan"</span>,
+        <span class="str">"countNumber"</span>: <span class="num">10</span>
+      },
+      <span class="str">"action"</span>: { <span class="str">"type"</span>: <span class="str">"expire"</span> }
+    }
+  ]
+}</pre></div>
+
+  <h3>Common Lifecycle Rule Patterns</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔁 Count-based — keep last N</h4>
+      <ul>
+        <li>Keep the most recent 10 production images (<code>v*</code>)</li>
+        <li>Keep the most recent 5 release candidates (<code>rc-*</code>)</li>
+        <li>Keep the most recent 3 dev builds (<code>dev-*</code>)</li>
+        <li>Good when you don't care about age, just count</li>
+        <li>Rule: <code>imageCountMoreThan</code> + tag prefix filter</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📅 Age-based — expire after N days</h4>
+      <ul>
+        <li>Expire all untagged images older than 1 day</li>
+        <li>Expire <code>dev-*</code> builds after 7 days</li>
+        <li>Expire <code>rc-*</code> images after 30 days</li>
+        <li>Good for time-bounded environments (feature branches)</li>
+        <li>Rule: <code>sinceImagePushed</code> + countUnit: days</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Use "Lifecycle Policy Preview" before saving</h4>
+    <p>In the ECR console, click <strong>Dry run</strong> (Lifecycle Policy Preview) before saving a new rule. ECR shows you exactly which images would be deleted today. This prevents accidental deletion of images still referenced by running ECS services or EKS deployments.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — IMAGE SCANNING
+══════════════════════════════════ -->
+<div id="tab-scanning" class="tab-panel"><div class="section">
+  <h2>🔍 Image Scanning — Vulnerability Detection</h2>
+  <p>ECR can automatically scan container images for known OS and language-package vulnerabilities using the CVE (Common Vulnerabilities and Exposures) database. Two scanning modes exist: <strong>Basic scanning</strong> (built-in, free) and <strong>Enhanced scanning</strong> (Amazon Inspector, paid, deeper coverage).</p>
+
+  <!-- SCAN TIER CARDS -->
+  <h3>Basic vs Enhanced Scanning</h3>
+  <div class="scan-grid">
+    <div class="scan-card sc-basic">
+      <div class="sc-name">Basic Scanning</div>
+      <div class="sc-type">FREE</div>
+      <div class="sc-metric"><span class="sc-metric-label">Engine</span><span class="sc-metric-val">Clair (open source)</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:55%;background:var(--ecr);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Trigger</span><span class="sc-metric-val">On push or manual</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">OS packages</span><span class="sc-metric-val">✅ Yes</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Language pkgs</span><span class="sc-metric-val">❌ No</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Continuous</span><span class="sc-metric-val">❌ One-time scan</span></div>
+    </div>
+    <div class="scan-card sc-enhanced">
+      <div class="sc-name">Enhanced Scanning</div>
+      <div class="sc-type">INSPECTOR</div>
+      <div class="sc-metric"><span class="sc-metric-label">Engine</span><span class="sc-metric-val">Amazon Inspector</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:92%;background:var(--green);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Trigger</span><span class="sc-metric-val">On push + continuous</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">OS packages</span><span class="sc-metric-val">✅ Yes</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Language pkgs</span><span class="sc-metric-val">✅ npm, pip, gem, nuget</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Continuous</span><span class="sc-metric-val">✅ Re-scans on new CVEs</span></div>
+    </div>
+    <div class="scan-card sc-crit">
+      <div class="sc-name">Critical Finding</div>
+      <div class="sc-type">CVSS ≥ 9.0</div>
+      <div class="sc-metric"><span class="sc-metric-label">CVSS score</span><span class="sc-metric-val">9.0 – 10.0</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:100%;background:var(--red);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Action</span><span class="sc-metric-val">Block deployment</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Notification</span><span class="sc-metric-val">EventBridge → SNS</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Remediation</span><span class="sc-metric-val">Rebuild with fix</span></div>
+    </div>
+  </div>
+
+  <h3>Scan Finding Severities</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Severity</th><th>CVSS Score</th><th>Recommended Action</th><th>Example</th></tr>
+    <tr><td>CRITICAL</td><td>9.0 – 10.0</td><td>Block deployment immediately</td><td>Remote code execution with no auth</td></tr>
+    <tr><td>HIGH</td><td>7.0 – 8.9</td><td>Fix within 7 days</td><td>Privilege escalation, data exposure</td></tr>
+    <tr><td>MEDIUM</td><td>4.0 – 6.9</td><td>Fix within 30 days</td><td>Denial of service, info disclosure</td></tr>
+    <tr><td>LOW</td><td>0.1 – 3.9</td><td>Track, fix next release</td><td>Informational, minor issues</td></tr>
+    <tr><td>INFORMATIONAL</td><td>0.0</td><td>Awareness only</td><td>Best practice notes</td></tr>
+  </table></div>
+
+  <h3>CI/CD Gate — Block Deployments with Critical CVEs</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">📤 CI pushes new image to ECR</div>
+      <ul class="flow-items">
+        <li>GitHub Actions / CodePipeline / Jenkins builds and pushes</li>
+        <li>Scan triggered automatically on push</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ wait for scan result</div>
+    <div class="flow-row">
+      <div class="flow-node n-green" style="max-width:100%">
+        <div class="flow-node-title">✅ No CRITICAL findings</div>
+        <ul class="flow-items">
+          <li>Pipeline continues to deploy to ECS/EKS</li>
+          <li>Tag promoted from <code>staging-sha</code> to <code>prod-sha</code></li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad" style="max-width:100%">
+        <div class="flow-node-title">🚫 CRITICAL CVE found</div>
+        <ul class="flow-items">
+          <li>Pipeline fails — deployment blocked</li>
+          <li>Alert sent via SNS / Slack / PagerDuty</li>
+          <li>Dev must update base image and rebuild</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="success">
+    <h4>✅ Automate scan result checks in CI/CD</h4>
+    <p>After pushing an image, use <code>aws ecr describe-image-scan-findings</code> and fail the pipeline if <code>findingSeverityCounts.CRITICAL &gt; 0</code>. Pair with EventBridge rules to send scan findings to your security team's Slack channel or ticketing system in real time.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ AWS Console Setup — Every Field Explained</h2>
+  <p>Full walkthrough of creating an ECR private repository and pushing your first image through the Console and CLI. Every field, every option, every reason.</p>
+
+  <!-- STEP 1 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to ECR and Create Repository</div>
+      <div class="console-step-path">AWS Console → ECR → Repositories → Create repository</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Visibility settings</div>
+        <div class="console-field-value">Private</div>
+        <div class="console-field-hint">Private = IAM auth required. Public = gallery.ecr.aws, anonymous pulls. Choose Private for all production workloads.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Repository name</div>
+        <div class="console-field-value">my-api</div>
+        <div class="console-field-hint">Lowercase letters, numbers, hyphens, slashes. Use slashes for namespacing: <code>team-a/my-api</code>. Max 256 chars.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Tag immutability</div>
+        <div class="console-field-value">Enabled</div>
+        <div class="console-field-hint">Prevents overwriting existing image tags. Strongly recommended for production — forces unique versioned tags per push.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Image scan settings — Scan on push</div>
+        <div class="console-field-value">Enabled</div>
+        <div class="console-field-hint">Triggers a Basic (Clair) vulnerability scan every time an image is pushed. Free. No reason to leave this off.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Encryption settings</div>
+        <div class="console-field-value">AES-256 (AWS managed)</div>
+        <div class="console-field-hint">AES-256 with AWS-managed key is free and sufficient for most workloads. Choose KMS with a customer-managed key if you need to control key rotation or cross-account key sharing.</div>
+      </div>
+      <div class="console-note">✅ Click <strong>Create repository</strong>. Your ECR URI is now: <code>{account}.dkr.ecr.{region}.amazonaws.com/my-api</code></div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create IAM Role for CI/CD (Push Permissions)</div>
+      <div class="console-step-path">IAM → Roles → Create role → Custom trust policy</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Trusted entity type</div>
+        <div class="console-field-value">Custom trust policy</div>
+        <div class="console-field-hint">For GitHub Actions: use OIDC trust. For CodeBuild: trust codebuild.amazonaws.com. For EC2 CI: trust ec2.amazonaws.com.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Permissions — inline policy</div>
+        <div class="console-field-value">ecr:GetAuthorizationToken (account level) + ecr:BatchCheckLayerAvailability, InitiateLayerUpload, UploadLayerPart, CompleteLayerUpload, PutImage (repo level)</div>
+        <div class="console-field-hint">GetAuthorizationToken must use Resource: * — it's not scoped to a repository. All other push actions can be scoped to the specific repo ARN.</div>
+      </div>
+      <div class="console-note">💡 Least-privilege: only grant the push actions to your CI/CD role. ECS task execution role needs only pull actions.</div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">View Push Commands from Console</div>
+      <div class="console-step-path">ECR → your-repo → View push commands</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Pre-filled commands</div>
+        <div class="console-field-value">aws ecr get-login-password | docker login --username AWS --password-stdin {account}.dkr.ecr.{region}.amazonaws.com</div>
+        <div class="console-field-hint">AWS pre-fills your Account ID and Region — copy directly. Run once per 12 hours to refresh the auth token.</div>
+      </div>
+      <div class="console-note">✅ The Console shows all 4 steps: authenticate, build, tag, push — with your specific URI pre-filled.</div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Add Lifecycle Policy</div>
+      <div class="console-step-path">ECR → your-repo → Lifecycle Policy → Create rule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Rule priority</div>
+        <div class="console-field-value">1</div>
+        <div class="console-field-hint">Lower number = evaluated first. Rule 1 is checked before Rule 2. Order matters when images could match multiple rules.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Image status</div>
+        <div class="console-field-value">Untagged</div>
+        <div class="console-field-hint">Untagged = images with no tag (often produced by re-pushing to the same tag when immutability is off). These are safe to clean up quickly.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Match criteria</div>
+        <div class="console-field-value">Since image pushed: 1 day</div>
+        <div class="console-field-hint">Expire untagged images after 1 day. For tagged images, use "Image count more than: 10" to keep the newest 10.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Action</div>
+        <div class="console-field-value">Expire</div>
+        <div class="console-field-hint">Expire = permanently delete. Click "Save and dry run" first to preview what would be deleted before committing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable Enhanced Scanning (Optional — Inspector)</div>
+      <div class="console-step-path">ECR → Private registry → Scanning configuration</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Scan type</div>
+        <div class="console-field-value">Enhanced scanning</div>
+        <div class="console-field-hint">Enables Amazon Inspector integration. Scans OS packages AND language packages (npm, pip, gem, NuGet). Scans continuously — re-alerts when new CVEs are published for existing images.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Repositories to scan</div>
+        <div class="console-field-value">All repositories (or specific filters)</div>
+        <div class="console-field-hint">Apply to all repos or filter by name prefix. Production repos should always be scanned. Dev/scratch repos are optional.</div>
+      </div>
+      <div class="console-note">⚠️ Enhanced scanning is billed per image scanned via Amazon Inspector pricing. Basic scanning (Clair) is free.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Working with ECR Programmatically</h2>
+  <p>The AWS SDK for .NET lets you manage ECR repositories, retrieve auth tokens, query images, apply lifecycle policies, and read scan findings — all from C#. Install the NuGet package: <code>AWSSDK.ECR</code>.</p>
+
+  <h3>Setup — ECR Client &amp; Authentication Token</h3>
+  <div class="code-block"><span class="code-label">C# — setup and get ECR auth token</span><pre><span class="kw">using</span> Amazon.ECR;
+<span class="kw">using</span> Amazon.ECR.Model;
+<span class="kw">using</span> System.Text;
+
+<span class="kw">public class</span> <span class="tp">EcrService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonECR</span> _ecr;
+    <span class="kw">private readonly string</span> _accountId;
+    <span class="kw">private readonly string</span> _region;
+
+    <span class="kw">public</span> <span class="fn">EcrService</span>(<span class="tp">IAmazonECR</span> ecr, <span class="tp">string</span> accountId, <span class="tp">string</span> region)
+    {
+        _ecr = ecr;
+        _accountId = accountId;
+        _region = region;
+    }
+
+    <span class="cm">// ── Get 12-hour docker login token ────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">GetDockerLoginPasswordAsync</span>()
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ecr.<span class="fn">GetAuthorizationTokenAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetAuthorizationTokenRequest</span>());
+
+        <span class="kw">var</span> token = resp.AuthorizationData[<span class="num">0</span>].AuthorizationToken;
+        <span class="kw">var</span> decoded = <span class="tp">Encoding</span>.<span class="fn">UTF8</span>.GetString(
+            <span class="tp">Convert</span>.<span class="fn">FromBase64String</span>(token));
+
+        <span class="cm">// decoded = "AWS:{password}" — split and return password part</span>
+        <span class="kw">return</span> decoded.Split(<span class="str">':'</span>)[<span class="num">1</span>];
+    }
+
+    <span class="cm">// ── Get full ECR registry URI ──────────────────────────────</span>
+    <span class="kw">public string</span> <span class="fn">GetRegistryUri</span>()
+        => <span class="str">$"{_accountId}.dkr.ecr.{_region}.amazonaws.com"</span>;
+}</pre></div>
+
+  <h3>Create &amp; Manage Repositories</h3>
+  <div class="code-block"><span class="code-label">C# — create repository and apply lifecycle policy</span><pre>    <span class="cm">// ── Create repository with tag immutability ───────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateRepositoryAsync</span>(<span class="tp">string</span> repoName)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ecr.<span class="fn">CreateRepositoryAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateRepositoryRequest</span>
+        {
+            RepositoryName      = repoName,
+            ImageTagMutability  = <span class="tp">ImageTagMutability</span>.IMMUTABLE,
+            ImageScanningConfiguration = <span class="kw">new</span> <span class="tp">ImageScanningConfiguration</span>
+            {
+                ScanOnPush = <span class="kw">true</span>
+            },
+            EncryptionConfiguration = <span class="kw">new</span> <span class="tp">EncryptionConfiguration</span>
+            {
+                EncryptionType = <span class="tp">EncryptionType</span>.AES256
+            },
+            Tags = [<span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Environment"</span>, Value = <span class="str">"production"</span> }]
+        });
+
+        <span class="kw">return</span> resp.Repository.RepositoryUri;
+    }
+
+    <span class="cm">// ── Apply lifecycle policy JSON ────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ApplyLifecyclePolicyAsync</span>(<span class="tp">string</span> repoName)
+    {
+        <span class="kw">const string</span> policy = <span class="str">"""
+        {
+          "rules": [
+            {
+              "rulePriority": 1,
+              "description": "Expire untagged after 1 day",
+              "selection": {
+                "tagStatus": "untagged",
+                "countType": "sinceImagePushed",
+                "countUnit": "days",
+                "countNumber": 1
+              },
+              "action": { "type": "expire" }
+            },
+            {
+              "rulePriority": 2,
+              "description": "Keep last 10 tagged",
+              "selection": {
+                "tagStatus": "tagged",
+                "tagPrefixList": ["v"],
+                "countType": "imageCountMoreThan",
+                "countNumber": 10
+              },
+              "action": { "type": "expire" }
+            }
+          ]
+        }
+        """</span>;
+
+        <span class="kw">await</span> _ecr.<span class="fn">PutLifecyclePolicyAsync</span>(
+            <span class="kw">new</span> <span class="tp">PutLifecyclePolicyRequest</span>
+        {
+            RepositoryName = repoName,
+            LifecyclePolicyText = policy
+        });
+    }</pre></div>
+
+  <h3>List Images &amp; Read Scan Findings</h3>
+  <div class="code-block"><span class="code-label">C# — list images and check vulnerability scan results</span><pre>    <span class="cm">// ── List all images in a repository ───────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">ImageDetail</span>&gt;&gt; <span class="fn">ListImagesAsync</span>(<span class="tp">string</span> repoName)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ecr.<span class="fn">DescribeImagesAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeImagesRequest</span>
+        {
+            RepositoryName = repoName,
+            Filter = <span class="kw">new</span> <span class="tp">DescribeImagesFilter</span>
+            {
+                TagStatus = <span class="tp">TagStatus</span>.TAGGED
+            }
+        });
+        <span class="kw">return</span> resp.ImageDetails;
+    }
+
+    <span class="cm">// ── Get scan findings for a specific image ─────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">ImageScanFindings</span>&gt; <span class="fn">GetScanFindingsAsync</span>(
+        <span class="tp">string</span> repoName, <span class="tp">string</span> imageTag)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ecr.<span class="fn">DescribeImageScanFindingsAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeImageScanFindingsRequest</span>
+        {
+            RepositoryName = repoName,
+            ImageId = <span class="kw">new</span> <span class="tp">ImageIdentifier</span> { ImageTag = imageTag }
+        });
+
+        <span class="kw">return</span> resp.ImageScanFindings;
+    }
+
+    <span class="cm">// ── Block deployment if CRITICAL CVEs found ────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">bool</span>&gt; <span class="fn">IsSafeToDeployAsync</span>(
+        <span class="tp">string</span> repoName, <span class="tp">string</span> imageTag)
+    {
+        <span class="kw">var</span> findings = <span class="kw">await</span> <span class="fn">GetScanFindingsAsync</span>(repoName, imageTag);
+
+        findings.FindingSeverityCounts.<span class="fn">TryGetValue</span>(
+            <span class="str">"CRITICAL"</span>, <span class="kw">out var</span> criticalCount);
+
+        <span class="kw">return</span> criticalCount == <span class="num">0</span>;
+    }
+
+    <span class="cm">// ── Delete an image by tag (cleanup) ──────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeleteImageAsync</span>(<span class="tp">string</span> repoName, <span class="tp">string</span> imageTag)
+    {
+        <span class="kw">await</span> _ecr.<span class="fn">BatchDeleteImageAsync</span>(
+            <span class="kw">new</span> <span class="tp">BatchDeleteImageRequest</span>
+        {
+            RepositoryName = repoName,
+            ImageIds = [<span class="kw">new</span> <span class="tp">ImageIdentifier</span> { ImageTag = imageTag }]
+        });
+    }
+}</pre></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Repository &amp; Tagging</h3>
+  <ul class="checklist">
+    <li>Enable Tag Immutability on all production repositories — prevents silent overwrites</li>
+    <li>Never use <code>:latest</code> in ECS task definitions or Kubernetes manifests — pin to a versioned or git-SHA tag</li>
+    <li>Namespace repositories with slashes for large teams: <code>team-payments/checkout-api</code></li>
+    <li>Use digest pinning in production deployments for true immutability: <code>image@sha256:abc...</code></li>
+    <li>Create separate repositories per service — do not push different apps into the same repo</li>
+    <li>Tag every production image with both a version tag and the git SHA for traceability</li>
+  </ul>
+
+  <h3>Security &amp; Access</h3>
+  <ul class="checklist">
+    <li>Use IAM roles — never embed AWS credentials in Dockerfiles or CI environment variables</li>
+    <li>Separate CI/CD push role from ECS/EKS pull role — principle of least privilege</li>
+    <li>Enable scan-on-push for all repositories — it's free with Basic scanning</li>
+    <li>Set up EventBridge rule to alert on CRITICAL scan findings before they reach production</li>
+    <li>Use VPC Endpoints for ECR in private subnets — avoid NAT Gateway costs and keep traffic off the public internet</li>
+    <li>Use customer-managed KMS keys if you need audit control over who can decrypt image layers</li>
+  </ul>
+
+  <h3>Cost &amp; Lifecycle</h3>
+  <ul class="checklist">
+    <li>Always create lifecycle policies — even a simple "expire untagged after 1 day" saves significant storage over time</li>
+    <li>Run "Lifecycle Policy Dry Run" before saving any new policy to avoid deleting images in use</li>
+    <li>ECR data transfer to ECS/EKS in the same region is free — no need to cache images externally for same-region workloads</li>
+    <li>For multi-region workloads, use ECR Replication rather than pushing to multiple registries from CI</li>
+    <li>Monitor repository sizes with CloudWatch — set billing alarms if storage grows unexpectedly</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top ECR Mistakes</h4>
+    <p>
+    ❌ <strong>Using <code>:latest</code> in production</strong> — every new push silently changes what runs next deployment<br>
+    ❌ <strong>No lifecycle policy</strong> — repository grows to thousands of images, storage bill grows monthly with no benefit<br>
+    ❌ <strong>Storing AWS credentials in CI environment</strong> — use IAM roles with OIDC (GitHub Actions) or instance profiles<br>
+    ❌ <strong>Missing <code>ecr:GetAuthorizationToken</code> on the IAM role</strong> — causes "no basic auth credentials" error even with correct repo permissions<br>
+    ❌ <strong>Not creating a VPC endpoint</strong> — private ECS tasks silently route ECR pulls through NAT Gateway, incurring data transfer costs<br>
+    ❌ <strong>Deleting a repository with images referenced by running tasks</strong> — ECS cannot pull images if the repository is deleted, causing failed deployments on new task starts<br>
+    ❌ <strong>Tag immutability off in prod</strong> — a failed CI push can overwrite a known-good image tag, corrupting your production artifacts<br>
+    ❌ <strong>Ignoring scan findings</strong> — a CRITICAL CVE in your base image running in production is a breach waiting to happen
+    </p>
+  </div>
+
+  <h3>ECR vs Docker Hub vs GitHub Container Registry — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>ECR Private</th><th>Docker Hub</th><th>GitHub GHCR</th></tr>
+    <tr><td>Production ECS / EKS workloads</td><td>✅ Best choice</td><td>⚠️ Rate limits</td><td>✅ Good</td></tr>
+    <tr><td>Free same-region data transfer</td><td>✅ Yes</td><td>❌ Paid egress</td><td>❌ Paid egress</td></tr>
+    <tr><td>IAM-integrated auth</td><td>✅ Native</td><td>❌ Separate creds</td><td>❌ GitHub tokens</td></tr>
+    <tr><td>Continuous CVE scanning</td><td>✅ Inspector</td><td>✅ Snyk (paid tier)</td><td>❌ Manual only</td></tr>
+    <tr><td>Public open-source distribution</td><td>⚠️ ECR Public</td><td>✅ Industry standard</td><td>✅ Great for OSS</td></tr>
+    <tr><td>Cross-region replication</td><td>✅ Built-in</td><td>❌ Not supported</td><td>❌ Not supported</td></tr>
+    <tr><td>Lifecycle policies</td><td>✅ Fully featured</td><td>⚠️ Basic (paid)</td><td>❌ Manual</td></tr>
+    <tr><td>Cost at high pull volume</td><td>✅ Free in-region</td><td>❌ Rate limited free</td><td>⚠️ Included in GH plan</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon ECR!</h3>
+    <p>What is ECR · Private vs Public repositories · Tag Immutability + digest pinning · Push &amp; pull workflow step-by-step · IAM auth — identity policy vs resource policy · Cross-account access + VPC Endpoints · Lifecycle policies (count-based + age-based with dry run) · Basic vs Enhanced (Inspector) image scanning · CVE severity tiers + CI/CD deployment gates · Full AWS Console setup (every field!) · 4 C# patterns (auth token, create repo, lifecycle policy, scan findings) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--ecr-d);">Your container registry is now secure, cost-optimised, and production-hardened! 📦🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
