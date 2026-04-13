@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS AppSync – Indhu's Coding Corner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
+
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --border: #e8e4dc;
+    --accent: #c96a2a;
+    --accent-light: #f5ede6;
+    --accent-dark: #a3521f;
+    --text: #1a1714;
+    --text-muted: #6b6560;
+    --text-light: #9c958e;
+    --code-bg: #f0ede8;
+    --success: #2d7a4f;
+    --info: #1d5fa3;
+    --warning: #b86e1a;
+    --tag-bg: #e8f4ec;
+    --tag-text: #2d7a4f;
+    --radius: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.07);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.09);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 18px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-md);
+  }
+  .header-inner { max-width: 900px; margin: 0 auto; }
+  .header-brand { font-size: 13px; color: var(--accent); font-weight: 600; letter-spacing: .04em; margin-bottom: 2px; }
+  .header-title { font-size: 20px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .header-title .service-badge {
+    background: var(--accent); color: #fff; font-size: 11px;
+    padding: 2px 8px; border-radius: 20px; font-weight: 600; letter-spacing: .03em;
+  }
+
+  /* ── NAV TABS ── */
+  .tab-nav-wrap {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 67px;
+    z-index: 90;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-nav-wrap::-webkit-scrollbar { display: none; }
+  .tab-nav {
+    display: flex;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    gap: 0;
+  }
+  .tab-btn {
+    background: none; border: none; cursor: pointer;
+    padding: 13px 16px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    transition: color .2s, border-color .2s;
+    font-family: inherit;
+  }
+  .tab-btn:hover { color: var(--accent); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  /* ── CONTENT ── */
+  .content { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── TYPOGRAPHY ── */
+  h2 { font-size: 20px; font-weight: 700; color: var(--text); margin: 32px 0 14px; }
+  h2:first-child { margin-top: 0; }
+  h3 { font-size: 16px; font-weight: 600; color: var(--text); margin: 24px 0 10px; }
+  p { margin-bottom: 14px; color: var(--text); }
+  ul, ol { padding-left: 20px; margin-bottom: 14px; }
+  li { margin-bottom: 6px; }
+  strong { font-weight: 600; color: var(--text); }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow);
+  }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .card-grid .card { margin-bottom: 0; }
+  .card-icon { font-size: 22px; margin-bottom: 8px; }
+  .card-title { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: var(--text-muted); margin-bottom: 0; }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-left: 4px solid;
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    font-size: 14px;
+  }
+  .callout-info { background: #e8f0fa; border-color: var(--info); }
+  .callout-warning { background: #fdf3e7; border-color: var(--warning); }
+  .callout-success { background: #e8f4ec; border-color: var(--success); }
+  .callout strong { display: block; margin-bottom: 4px; }
+
+  /* ── CODE ── */
+  pre {
+    background: #1e1b18;
+    color: #e8e0d4;
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+    border: 1px solid #2e2a25;
+  }
+  code {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--accent-dark);
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .kw { color: #c792ea; }
+  .str { color: #c3e88d; }
+  .num { color: #f78c6c; }
+  .cmt { color: #697098; font-style: italic; }
+  .type { color: #82aaff; }
+  .fn { color: #82aaff; }
+  .prop { color: #f07178; }
+  .val { color: #ffcb6b; }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin: 18px 0;
+    justify-content: flex-start;
+  }
+  .flow-box {
+    background: var(--accent-light);
+    border: 2px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 110px;
+    color: var(--accent-dark);
+  }
+  .flow-box.blue {
+    background: #e8f0fa;
+    border-color: var(--info);
+    color: var(--info);
+  }
+  .flow-box.green {
+    background: #e8f4ec;
+    border-color: var(--success);
+    color: var(--success);
+  }
+  .flow-box.gray {
+    background: var(--code-bg);
+    border-color: #a09890;
+    color: #5a534e;
+  }
+  .flow-arrow {
+    font-size: 18px;
+    color: var(--text-light);
+    padding: 0 6px;
+    flex-shrink: 0;
+  }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; margin-bottom: 18px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th {
+    background: var(--accent-light);
+    color: var(--accent-dark);
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg); }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+  .badge-orange { background: var(--accent-light); color: var(--accent-dark); }
+  .badge-green { background: var(--tag-bg); color: var(--tag-text); }
+  .badge-blue { background: #e8f0fa; color: var(--info); }
+  .badge-gray { background: var(--code-bg); color: var(--text-muted); }
+
+  /* ── STEP LIST ── */
+  .steps { counter-reset: step; margin-bottom: 18px; }
+  .step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 16px;
+    align-items: flex-start;
+  }
+  .step-num {
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 2px;
+  }
+  .step-body { flex: 1; }
+  .step-body strong { display: block; margin-bottom: 3px; }
+  .step-body p { margin-bottom: 0; font-size: 14px; color: var(--text-muted); }
+
+  /* ── COMPLETION CARD ── */
+  .completion-card {
+    background: linear-gradient(135deg, var(--accent-light) 0%, #fff 100%);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    padding: 28px 24px;
+    text-align: center;
+    margin-top: 32px;
+  }
+  .completion-card .trophy { font-size: 40px; margin-bottom: 10px; }
+  .completion-card h2 { margin: 0 0 8px; font-size: 22px; }
+  .completion-card p { color: var(--text-muted); margin-bottom: 0; font-size: 14px; }
+
+  /* ── FIELD TABLE (console) ── */
+  .field-row { display: flex; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+  .field-label {
+    background: var(--accent); color: #fff;
+    border-radius: 4px; padding: 3px 10px;
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap; flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+  .field-desc { font-size: 14px; color: var(--text-muted); flex: 1; min-width: 200px; }
+
+  @media (max-width: 600px) {
+    .header-title { font-size: 16px; }
+    .tab-btn { padding: 12px 12px; font-size: 12px; }
+    h2 { font-size: 18px; }
+    pre { font-size: 12px; padding: 12px 14px; }
+    .card-grid { grid-template-columns: 1fr; }
+    .flow { gap: 4px; }
+    .flow-box { min-width: 90px; font-size: 12px; padding: 8px 10px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-brand">☕ Indhu's Coding Corner</div>
+    <div class="header-title">
+      AWS AppSync
+      <span class="service-badge">Managed GraphQL</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tab-nav-wrap">
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="showTab('overview')">Overview</button>
+    <button class="tab-btn" onclick="showTab('core')">Core Concepts</button>
+    <button class="tab-btn" onclick="showTab('resolvers')">Resolvers</button>
+    <button class="tab-btn" onclick="showTab('realtime')">Real-Time</button>
+    <button class="tab-btn" onclick="showTab('auth')">Auth</button>
+    <button class="tab-btn" onclick="showTab('csharp')">C# Usage</button>
+    <button class="tab-btn" onclick="showTab('console')">Console Setup</button>
+    <button class="tab-btn" onclick="showTab('patterns')">Patterns</button>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- ══════════════ OVERVIEW ══════════════ -->
+  <div id="overview" class="tab-panel active">
+    <h2>What is AWS AppSync?</h2>
+    <p>
+      AWS AppSync is a <strong>fully managed GraphQL API service</strong>. It sits between your client apps and your backend data sources — handling schema parsing, resolver execution, authentication, real-time subscriptions, and caching. You define your GraphQL schema; AppSync takes care of the infrastructure.
+    </p>
+
+    <div class="callout callout-info">
+      <strong>💡 Simple mental model</strong>
+      Think of AppSync as <em>API Gateway for GraphQL</em>. Instead of REST endpoints, clients send structured queries. AppSync routes each field in that query to the right backend data source through a <strong>resolver</strong>.
+    </div>
+
+    <h3>Request flow</h3>
+    <div class="flow">
+      <div class="flow-box blue">Client<br/><small>Query / Mutation / Subscription</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">AppSync<br/><small>Schema + Auth</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Resolver<br/><small>JS / VTL logic</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">Data Source<br/><small>DynamoDB / Lambda / HTTP…</small></div>
+    </div>
+    <div class="flow">
+      <div class="flow-box blue">Client<br/><small>Receives response</small></div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-box">AppSync<br/><small>Assembles JSON</small></div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-box green">Data Source<br/><small>Returns data</small></div>
+    </div>
+
+    <h3>Why use AppSync?</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🚫</div>
+        <div class="card-title">No server to manage</div>
+        <p>No Apollo Server, Express, or container to run. AppSync scales automatically.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">Real-time built-in</div>
+        <p>GraphQL subscriptions over WebSockets. Supports millions of connected clients. No custom pub/sub needed.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <div class="card-title">Multi-source in one query</div>
+        <p>Aggregate data from DynamoDB, Lambda, RDS, OpenSearch, and HTTP endpoints in a single GraphQL request.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔐</div>
+        <div class="card-title">Multiple auth modes</div>
+        <p>Cognito, IAM, OpenID Connect, and API Keys — mix and match on the same API.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💾</div>
+        <div class="card-title">Server-side caching</div>
+        <p>High-speed in-memory caches reduce direct data source hits and lower latency.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Offline support</div>
+        <p>With AWS Amplify: offline data access and automatic conflict resolution on reconnect.</p>
+      </div>
+    </div>
+
+    <h3>AppSync vs alternatives</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Feature</th><th>AppSync</th><th>API Gateway + REST</th><th>Self-hosted GraphQL</th></tr></thead>
+        <tbody>
+          <tr><td>GraphQL native</td><td>✅ Yes</td><td>❌ REST only</td><td>✅ Yes</td></tr>
+          <tr><td>Real-time subscriptions</td><td>✅ Managed WebSockets</td><td>⚠️ Manual setup</td><td>⚠️ DIY pub/sub</td></tr>
+          <tr><td>Infra to manage</td><td>None</td><td>None (but lambdas)</td><td>Containers / servers</td></tr>
+          <tr><td>Direct DynamoDB connect</td><td>✅ No Lambda needed</td><td>❌ Lambda required</td><td>❌ Lambda required</td></tr>
+          <tr><td>Auth</td><td>Cognito / IAM / OIDC / API Key</td><td>Cognito / IAM / API Key</td><td>Custom</td></tr>
+          <tr><td>Vendor lock-in</td><td>High (AWS-specific)</td><td>Medium</td><td>Low</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Supported data sources</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data Source</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Amazon DynamoDB</strong></td><td>High-throughput CRUD, primary default choice</td></tr>
+          <tr><td><strong>AWS Lambda</strong></td><td>Complex business logic, any downstream service</td></tr>
+          <tr><td><strong>Amazon RDS Aurora Serverless</strong></td><td>Relational SQL data</td></tr>
+          <tr><td><strong>Amazon OpenSearch</strong></td><td>Full-text search, filtering, aggregations</td></tr>
+          <tr><td><strong>HTTP Endpoint</strong></td><td>External REST APIs, third-party services</td></tr>
+          <tr><td><strong>NONE (local)</strong></td><td>Computed fields, static values, pipeline orchestration</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ CORE CONCEPTS ══════════════ -->
+  <div id="core" class="tab-panel">
+    <h2>Core Concepts</h2>
+
+    <h3>GraphQL Operations</h3>
+    <p>AppSync exposes three types of GraphQL operations:</p>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🔍</div>
+        <div class="card-title">Query</div>
+        <p>Read data. Like a GET request — fetches fields you ask for, nothing more.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">✏️</div>
+        <div class="card-title">Mutation</div>
+        <p>Write / update / delete data. Like POST/PUT/DELETE. Triggers subscriptions.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📡</div>
+        <div class="card-title">Subscription</div>
+        <p>Real-time push. Client subscribes over WebSocket; receives data when a linked mutation fires.</p>
+      </div>
+    </div>
+
+    <h3>Schema</h3>
+    <p>The schema is the contract of your API. It defines <strong>types</strong>, which <strong>queries</strong> exist, which <strong>mutations</strong> exist, and which <strong>subscriptions</strong> exist.</p>
+    <pre><code><span class="kw">type</span> <span class="type">Post</span> {
+  id:      <span class="type">ID!</span>
+  title:   <span class="type">String!</span>
+  content: <span class="type">String</span>
+  author:  <span class="type">String!</span>
+  createdAt: <span class="type">AWSDateTime</span>
+}
+
+<span class="kw">type</span> <span class="type">Query</span> {
+  getPost(id: <span class="type">ID!</span>): <span class="type">Post</span>
+  listPosts: [<span class="type">Post</span>]
+}
+
+<span class="kw">type</span> <span class="type">Mutation</span> {
+  createPost(title: <span class="type">String!</span>, content: <span class="type">String</span>, author: <span class="type">String!</span>): <span class="type">Post</span>
+  updatePost(id: <span class="type">ID!</span>, title: <span class="type">String</span>): <span class="type">Post</span>
+  deletePost(id: <span class="type">ID!</span>): <span class="type">Post</span>
+}
+
+<span class="kw">type</span> <span class="type">Subscription</span> {
+  onCreatePost: <span class="type">Post</span> <span class="val">@aws_subscribe</span>(mutations: [<span class="str">"createPost"</span>])
+  onUpdatePost: <span class="type">Post</span> <span class="val">@aws_subscribe</span>(mutations: [<span class="str">"updatePost"</span>])
+}</code></pre>
+
+    <div class="callout callout-info">
+      <strong>💡 AWS Scalar types</strong>
+      AppSync adds special AWS scalars: <code>AWSDateTime</code>, <code>AWSDate</code>, <code>AWSTime</code>, <code>AWSEmail</code>, <code>AWSJSON</code>, <code>AWSPhone</code>, <code>AWSURL</code>, <code>AWSIPAddress</code>.
+    </div>
+
+    <h3>Data Source</h3>
+    <p>A data source is a registered backend that your resolvers talk to. You register it once with a name (e.g., <code>BlogPostsTable</code>) and reference it in resolvers.</p>
+
+    <h3>Resolver</h3>
+    <p>A resolver connects a <strong>specific schema field</strong> to a <strong>data source</strong>. It has two parts:</p>
+    <div class="flow" style="margin-top:12px;">
+      <div class="flow-box">Request Handler<br/><small>Transforms GraphQL → Data Source format</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">Data Source</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Response Handler<br/><small>Transforms result → GraphQL response</small></div>
+    </div>
+
+    <h3>Pipeline Resolver</h3>
+    <p>Chains multiple <strong>functions</strong> in sequence. Useful for auth checks + data fetch + transformation in one request.</p>
+    <div class="flow">
+      <div class="flow-box gray">Before Step</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Function 1<br/><small>Validate</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Function 2<br/><small>Fetch Data</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Function 3<br/><small>Transform</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box gray">After Step</div>
+    </div>
+
+    <h3>Merged API</h3>
+    <p>AppSync supports composing multiple GraphQL APIs (source APIs) into a single <strong>Merged API</strong> endpoint. Each team owns their sub-schema independently; the merged API unifies them for clients.</p>
+
+    <h3>AppSync Events (Pub/Sub)</h3>
+    <p>A newer AppSync feature separate from GraphQL — a lightweight HTTP publish / WebSocket subscribe event system using <strong>channels</strong> and <strong>namespaces</strong>. No GraphQL schema required.</p>
+    <div class="callout callout-warning">
+      <strong>⚠️ Two distinct AppSync products</strong>
+      <strong>AppSync GraphQL API</strong> — traditional schema-driven queries/mutations/subscriptions.<br/>
+      <strong>AppSync Events API</strong> — schema-free pub/sub over HTTP + WebSocket channels.
+    </div>
+  </div>
+
+  <!-- ══════════════ RESOLVERS ══════════════ -->
+  <div id="resolvers" class="tab-panel">
+    <h2>Resolvers In Depth</h2>
+
+    <p>Resolvers are written in <strong>JavaScript</strong> (recommended) or the older VTL (Velocity Template Language). Each resolver has a <code>request</code> function and a <code>response</code> function.</p>
+
+    <h3>Resolver types</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Type</th><th>When to use</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-orange">Unit Resolver</span></td>
+            <td>One field → one data source call</td>
+            <td>Simplest; most common</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-blue">Pipeline Resolver</span></td>
+            <td>Complex multi-step logic</td>
+            <td>Chain of functions; before/after hooks</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-gray">NONE Resolver</span></td>
+            <td>Computed/static fields; subscription triggers</td>
+            <td>No external call; useful for local data</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>JavaScript resolver — DynamoDB GetItem</h3>
+    <pre><code><span class="cmt">// Resolver for: Query.getPost</span>
+<span class="kw">import</span> { util } <span class="kw">from</span> <span class="str">'@aws-appsync/utils'</span>
+<span class="kw">import</span> * <span class="kw">as</span> ddb <span class="kw">from</span> <span class="str">'@aws-appsync/utils/dynamodb'</span>
+
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">return</span> ddb.<span class="fn">get</span>({ key: { id: ctx.args.id } })
+}
+
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) {
+  <span class="kw">const</span> { error, result } = ctx
+  <span class="kw">if</span> (error) util.<span class="fn">error</span>(error.message, error.type)
+  <span class="kw">return</span> result
+}</code></pre>
+
+    <h3>JavaScript resolver — DynamoDB PutItem (Mutation)</h3>
+    <pre><code><span class="cmt">// Resolver for: Mutation.createPost</span>
+<span class="kw">import</span> { util } <span class="kw">from</span> <span class="str">'@aws-appsync/utils'</span>
+<span class="kw">import</span> * <span class="kw">as</span> ddb <span class="kw">from</span> <span class="str">'@aws-appsync/utils/dynamodb'</span>
+
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">const</span> item = {
+    ...ctx.args,
+    id: util.autoId(),
+    createdAt: util.time.<span class="fn">nowISO8601</span>()
+  }
+  <span class="kw">return</span> ddb.<span class="fn">put</span>({ key: { id: item.id }, item })
+}
+
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) {
+  <span class="kw">const</span> { error, result } = ctx
+  <span class="kw">if</span> (error) util.<span class="fn">error</span>(error.message, error.type)
+  <span class="kw">return</span> result
+}</code></pre>
+
+    <h3>JavaScript resolver — Lambda data source</h3>
+    <pre><code><span class="cmt">// Resolver for any field backed by a Lambda function</span>
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">return</span> {
+    operation: <span class="str">'Invoke'</span>,
+    payload: { field: ctx.info.fieldName, arguments: ctx.args }
+  }
+}
+
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) {
+  <span class="kw">if</span> (ctx.error) {
+    util.<span class="fn">error</span>(ctx.error.message, ctx.error.type)
+  }
+  <span class="kw">return</span> ctx.result
+}</code></pre>
+
+    <h3>Pipeline resolver — chained functions</h3>
+    <pre><code><span class="cmt">// Function 1 — authorize the caller</span>
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">if</span> (!ctx.identity?.sub) util.<span class="fn">unauthorized</span>()
+  <span class="kw">return</span> {}   <span class="cmt">// NONE data source</span>
+}
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) { <span class="kw">return</span> ctx.prev.result }
+
+<span class="cmt">// Function 2 — fetch from DynamoDB</span>
+<span class="kw">import</span> * <span class="kw">as</span> ddb <span class="kw">from</span> <span class="str">'@aws-appsync/utils/dynamodb'</span>
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">return</span> ddb.<span class="fn">get</span>({ key: { id: ctx.args.id } })
+}
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) { <span class="kw">return</span> ctx.result }</code></pre>
+
+    <h3>Useful context variables</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>ctx.args</code></td><td>Arguments passed by the client in the operation</td></tr>
+          <tr><td><code>ctx.identity</code></td><td>Identity of the caller (Cognito claims, IAM principal, etc.)</td></tr>
+          <tr><td><code>ctx.source</code></td><td>The parent object in a nested resolve</td></tr>
+          <tr><td><code>ctx.result</code></td><td>The result from the data source call</td></tr>
+          <tr><td><code>ctx.prev.result</code></td><td>Result from the previous function (pipeline only)</td></tr>
+          <tr><td><code>ctx.info.fieldName</code></td><td>The field name being resolved</td></tr>
+          <tr><td><code>ctx.request.headers</code></td><td>HTTP request headers</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ REAL-TIME ══════════════ -->
+  <div id="realtime" class="tab-panel">
+    <h2>Real-Time with Subscriptions</h2>
+
+    <p>AppSync subscriptions let clients <strong>receive data pushed in real-time</strong> when mutations occur. AppSync manages all WebSocket infrastructure, connection lifecycle, and fanout to connected clients.</p>
+
+    <div class="callout callout-info">
+      <strong>💡 How subscriptions work</strong>
+      A subscription is always triggered by a mutation. When a mutation fires, AppSync broadcasts the result to all clients currently subscribed to that subscription field.
+    </div>
+
+    <h3>Schema setup</h3>
+    <pre><code><span class="kw">type</span> <span class="type">Subscription</span> {
+  <span class="cmt"># Fires when ANY createPost mutation runs</span>
+  onCreatePost: <span class="type">Post</span>
+    <span class="val">@aws_subscribe</span>(mutations: [<span class="str">"createPost"</span>])
+
+  <span class="cmt"># Fires only for a specific author (argument filter)</span>
+  onPostByAuthor(author: <span class="type">String!</span>): <span class="type">Post</span>
+    <span class="val">@aws_subscribe</span>(mutations: [<span class="str">"createPost"</span>])
+}</code></pre>
+
+    <h3>How subscription filtering works</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🧑‍💻</div>
+        <div class="card-title">Basic Filtering (client-defined)</div>
+        <p>Client passes subscription arguments. AppSync filters results client-side — only sends matching data.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">Enhanced Filtering (backend-defined)</div>
+        <p>Resolver defines filters with extra operators (gt, lt, contains, beginsWith…). Enforced centrally on the server.</p>
+      </div>
+    </div>
+
+    <h3>Client subscription example (JavaScript)</h3>
+    <pre><code><span class="cmt">// Using AWS Amplify client</span>
+<span class="kw">import</span> { generateClient } <span class="kw">from</span> <span class="str">'aws-amplify/api'</span>
+
+<span class="kw">const</span> client = <span class="fn">generateClient</span>()
+
+<span class="kw">const</span> subscription = client
+  .<span class="fn">graphql</span>({
+    query: <span class="str">`subscription OnCreatePost {
+      onCreatePost {
+        id title author createdAt
+      }
+    }`</span>
+  })
+  .<span class="fn">subscribe</span>({
+    next: ({ data }) =&gt; console.<span class="fn">log</span>(<span class="str">'New post:'</span>, data.onCreatePost),
+    error: (err) =&gt;  console.<span class="fn">error</span>(err)
+  })
+
+<span class="cmt">// Unsubscribe when done</span>
+subscription.<span class="fn">unsubscribe</span>()</code></pre>
+
+    <h3>Subscription with enhanced filtering — resolver</h3>
+    <pre><code><span class="cmt">// Subscription resolver attached to onSpecialTicketCreated
+// Uses NONE data source — no external call needed</span>
+<span class="kw">import</span> { extensions } <span class="kw">from</span> <span class="str">'@aws-appsync/utils'</span>
+
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) { <span class="kw">return</span> {} }
+
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) {
+  <span class="cmt">// Only deliver if severity &gt;= 7</span>
+  extensions.<span class="fn">setSubscriptionFilter</span>(
+    extensions.filter.<span class="fn">ge</span>(<span class="str">'severity'</span>, <span class="num">7</span>)
+  )
+  <span class="kw">return</span> {}
+}</code></pre>
+
+    <h3>AppSync Events API (Pub/Sub channels)</h3>
+    <p>A separate lightweight pub/sub system that does NOT require a GraphQL schema. Publish via HTTP, subscribe over WebSocket.</p>
+    <div class="flow">
+      <div class="flow-box blue">Publisher<br/><small>HTTP POST to channel</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">AppSync Events<br/><small>Namespace / Channel routing</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">Subscribers<br/><small>WebSocket push</small></div>
+    </div>
+
+    <h3>Real-time use cases</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Use Case</th><th>Approach</th></tr></thead>
+        <tbody>
+          <tr><td>Live chat messages</td><td>Subscription on <code>sendMessage</code> mutation</td></tr>
+          <tr><td>Live dashboard (stock prices)</td><td>Subscription or Events API channel</td></tr>
+          <tr><td>Order status updates</td><td>Mutation from Lambda backend triggers subscription</td></tr>
+          <tr><td>Collaborative document edits</td><td>Subscription with enhanced filtering per documentId</td></tr>
+          <tr><td>IoT device telemetry</td><td>Lambda → AppSync mutation → subscribed dashboards</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout callout-warning">
+      <strong>⚠️ Subscription limits to know</strong>
+      Subscriptions are triggered by mutations only. For background processes (Step Functions, scheduled jobs), use a Lambda with IAM to fire a mutation or use a NONE resolver as a "dummy" mutation to trigger the subscription.
+    </div>
+  </div>
+
+  <!-- ══════════════ AUTH ══════════════ -->
+  <div id="auth" class="tab-panel">
+    <h2>Authentication &amp; Authorization</h2>
+
+    <p>AppSync supports <strong>four auth modes</strong>. You set a <em>default</em> auth mode when creating the API and can add additional modes. Field-level auth directives let you mix modes on the same schema.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Auth Mode</th><th>Best For</th><th>Directive</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-orange">API Key</span></td>
+            <td>Public APIs, demos, development</td>
+            <td><code>@aws_api_key</code></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-blue">Amazon Cognito User Pools</span></td>
+            <td>End-user apps with login/signup</td>
+            <td><code>@aws_cognito_user_pools</code></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-green">AWS IAM</span></td>
+            <td>Lambda, EC2, backend services</td>
+            <td><code>@aws_iam</code></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-gray">OpenID Connect</span></td>
+            <td>Third-party identity providers (Auth0, etc.)</td>
+            <td><code>@aws_oidc</code></td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-gray">Lambda Authorizer</span></td>
+            <td>Custom auth logic</td>
+            <td><code>@aws_lambda</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Field-level auth in schema</h3>
+    <pre><code><span class="kw">type</span> <span class="type">Post</span> {
+  id:      <span class="type">ID!</span>
+  title:   <span class="type">String!</span>
+  <span class="cmt"># Any authenticated user (Cognito or API Key) can read</span>
+  content: <span class="type">String</span> <span class="val">@aws_api_key</span> <span class="val">@aws_cognito_user_pools</span>
+  <span class="cmt"># Admin-only field — IAM only</span>
+  adminNotes: <span class="type">String</span> <span class="val">@aws_iam</span>
+}
+
+<span class="kw">type</span> <span class="type">Mutation</span> {
+  <span class="cmt"># Only callable by backend services (IAM)</span>
+  createPost(title: <span class="type">String!</span>): <span class="type">Post</span> <span class="val">@aws_iam</span>
+  <span class="cmt"># Callable by logged-in users via Cognito</span>
+  updatePost(id: <span class="type">ID!</span>, title: <span class="type">String</span>): <span class="type">Post</span> <span class="val">@aws_cognito_user_pools</span>
+}</code></pre>
+
+    <h3>Auth in resolvers — using identity context</h3>
+    <pre><code><span class="cmt">// Resolver: only return posts the caller owns</span>
+<span class="kw">import</span> * <span class="kw">as</span> ddb <span class="kw">from</span> <span class="str">'@aws-appsync/utils/dynamodb'</span>
+<span class="kw">import</span> { util } <span class="kw">from</span> <span class="str">'@aws-appsync/utils'</span>
+
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">const</span> callerId = ctx.identity?.sub    <span class="cmt">// Cognito user ID</span>
+
+  <span class="kw">if</span> (!callerId) util.<span class="fn">unauthorized</span>()
+
+  <span class="kw">return</span> ddb.<span class="fn">query</span>({
+    index: <span class="str">'authorIndex'</span>,
+    query: {
+      expression: <span class="str">'author = :userId'</span>,
+      expressionValues: { <span class="str">':userId'</span>: callerId }
+    }
+  })
+}
+
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) {
+  <span class="kw">if</span> (ctx.error) util.<span class="fn">error</span>(ctx.error.message)
+  <span class="kw">return</span> ctx.result.items
+}</code></pre>
+
+    <div class="callout callout-warning">
+      <strong>⚠️ IAM as primary auth mode for EventBridge</strong>
+      If you're using AppSync as an EventBridge target, IAM must be the <em>primary</em> authorization mode — not an additional mode. This is a commonly missed configuration.
+    </div>
+
+    <h3>Cognito identity context fields</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td><code>ctx.identity.sub</code></td><td>Unique Cognito user ID (UUID)</td></tr>
+          <tr><td><code>ctx.identity.username</code></td><td>Cognito username</td></tr>
+          <tr><td><code>ctx.identity.claims</code></td><td>All JWT claims (email, groups, custom attributes)</td></tr>
+          <tr><td><code>ctx.identity.groups</code></td><td>Cognito user pool groups the user belongs to</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════ C# USAGE ══════════════ -->
+  <div id="csharp" class="tab-panel">
+    <h2>Using AppSync from C# / .NET</h2>
+
+    <p>Your C# backend can interact with AppSync in two main ways: as a <strong>Lambda resolver</strong> (handling inbound GraphQL requests) or as a <strong>client calling AppSync mutations</strong> (to trigger subscriptions).</p>
+
+    <h3>1. Lambda resolver — handling AppSync requests in C#</h3>
+    <p>When AppSync resolves a field via a Lambda data source, it sends a structured JSON payload to your Lambda. Your C# function receives and responds to it.</p>
+
+    <pre><code><span class="cmt">// NuGet: Amazon.Lambda.Core, Amazon.Lambda.Serialization.SystemTextJson</span>
+<span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> System.Text.Json.Serialization;
+
+[<span class="type">assembly</span>: <span class="type">LambdaSerializer</span>(<span class="kw">typeof</span>(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
+
+<span class="kw">public class</span> <span class="type">AppSyncEvent</span>
+{
+    [<span class="type">JsonPropertyName</span>(<span class="str">"arguments"</span>)]
+    <span class="kw">public</span> <span class="type">Dictionary</span>&lt;<span class="type">string</span>, <span class="type">object</span>&gt; Arguments { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="type">JsonPropertyName</span>(<span class="str">"identity"</span>)]
+    <span class="kw">public</span> <span class="type">AppSyncIdentity</span> Identity { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="type">JsonPropertyName</span>(<span class="str">"info"</span>)]
+    <span class="kw">public</span> <span class="type">AppSyncInfo</span> Info { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="kw">public class</span> <span class="type">AppSyncIdentity</span>
+{
+    [<span class="type">JsonPropertyName</span>(<span class="str">"sub"</span>)]
+    <span class="kw">public string</span> Sub { <span class="kw">get</span>; <span class="kw">set</span>; }
+
+    [<span class="type">JsonPropertyName</span>(<span class="str">"username"</span>)]
+    <span class="kw">public string</span> Username { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="kw">public class</span> <span class="type">AppSyncInfo</span>
+{
+    [<span class="type">JsonPropertyName</span>(<span class="str">"fieldName"</span>)]
+    <span class="kw">public string</span> FieldName { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="kw">public class</span> <span class="type">Post</span>
+{
+    <span class="kw">public string</span> Id      { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> Title   { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> Author  { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> CreatedAt { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="kw">public class</span> <span class="type">PostResolver</span>
+{
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">Post</span>&gt; <span class="fn">Handler</span>(<span class="type">AppSyncEvent</span> appsyncEvent, <span class="type">ILambdaContext</span> context)
+    {
+        context.Logger.<span class="fn">LogLine</span>($<span class="str">"Field: {appsyncEvent.Info.FieldName}"</span>);
+        context.Logger.<span class="fn">LogLine</span>($<span class="str">"Called by: {appsyncEvent.Identity?.Username}"</span>);
+
+        <span class="kw">var</span> title = appsyncEvent.Arguments[<span class="str">"title"</span>]?.ToString();
+
+        <span class="cmt">// … your business logic + DynamoDB call …</span>
+        <span class="kw">return new</span> <span class="type">Post</span>
+        {
+            Id        = <span class="type">Guid</span>.<span class="fn">NewGuid</span>().ToString(),
+            Title     = title,
+            Author    = appsyncEvent.Identity?.Username ?? <span class="str">"unknown"</span>,
+            CreatedAt = <span class="type">DateTime</span>.UtcNow.<span class="fn">ToString</span>(<span class="str">"o"</span>)
+        };
+    }
+}</code></pre>
+
+    <h3>2. Calling AppSync mutations from C# (IAM-signed)</h3>
+    <p>A backend Lambda or service can call AppSync mutations directly using AWS Signature V4 (IAM auth). This triggers subscriptions for connected clients.</p>
+
+    <pre><code><span class="cmt">// NuGet: AWSSDK.Core, System.Net.Http.Json</span>
+<span class="kw">using</span> Amazon.Runtime;
+<span class="kw">using</span> Amazon.Runtime.Internal.Auth;
+<span class="kw">using</span> System.Net.Http.Headers;
+<span class="kw">using</span> System.Text;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="type">AppSyncClient</span>
+{
+    <span class="kw">private readonly string</span> _endpoint = <span class="str">"https://xxxxxx.appsync-api.us-east-1.amazonaws.com/graphql"</span>;
+    <span class="kw">private readonly</span> <span class="type">HttpClient</span> _http = <span class="kw">new</span>();
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">string</span>&gt; <span class="fn">MutateAsync</span>(<span class="type">string</span> title, <span class="type">string</span> author)
+    {
+        <span class="kw">var</span> mutation = <span class="kw">new</span>
+        {
+            query = <span class="str">@"mutation CreatePost($title: String!, $author: String!) {
+                        createPost(title: $title, author: $author) { id title author }
+                      }"</span>,
+            variables = <span class="kw">new</span> { title, author }
+        };
+
+        <span class="kw">var</span> body = <span class="type">JsonSerializer</span>.<span class="fn">Serialize</span>(mutation);
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="type">HttpRequestMessage</span>(<span class="type">HttpMethod</span>.Post, _endpoint)
+        {
+            Content = <span class="kw">new</span> <span class="type">StringContent</span>(body, <span class="type">Encoding</span>.UTF8, <span class="str">"application/json"</span>)
+        };
+
+        <span class="cmt">// Add AWS SigV4 headers using AWS credentials from environment</span>
+        <span class="kw">var</span> credentials = <span class="kw">await</span> <span class="type">FallbackCredentialsFactory</span>.GetCredentials()
+                                                                .<span class="fn">GetCredentialsAsync</span>();
+
+        <span class="cmt">// Sign the request (see AWS SDK SigV4Signer for full implementation)</span>
+        <span class="cmt">// This example shows the pattern; use AWS4Signer in production</span>
+        request.Headers.Add(<span class="str">"x-amz-security-token"</span>, credentials.Token);
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _http.<span class="fn">SendAsync</span>(request);
+        <span class="kw">return await</span> response.Content.<span class="fn">ReadAsStringAsync</span>();
+    }
+}</code></pre>
+
+    <h3>3. Reading AppSync config from appsettings.json</h3>
+    <pre><code><span class="cmt">// appsettings.json</span>
+{
+  <span class="prop">"AppSync"</span>: {
+    <span class="prop">"Endpoint"</span>: <span class="str">"https://xxxxxx.appsync-api.us-east-1.amazonaws.com/graphql"</span>,
+    <span class="prop">"ApiKey"</span>:  <span class="str">"da2-xxxxxxxxxxxxxxxxxxxx"</span>,
+    <span class="prop">"Region"</span>:  <span class="str">"us-east-1"</span>
+  }
+}
+
+<span class="cmt">// Using API Key auth (dev/testing only)</span>
+<span class="kw">public class</span> <span class="type">AppSyncApiKeyClient</span>
+{
+    <span class="kw">private readonly</span> <span class="type">HttpClient</span> _http;
+    <span class="kw">private readonly string</span> _endpoint;
+
+    <span class="kw">public</span> <span class="type">AppSyncApiKeyClient</span>(<span class="type">IConfiguration</span> config, <span class="type">HttpClient</span> http)
+    {
+        _http     = http;
+        _endpoint = config[<span class="str">"AppSync:Endpoint"</span>];
+        _http.DefaultRequestHeaders.Add(<span class="str">"x-api-key"</span>, config[<span class="str">"AppSync:ApiKey"</span>]);
+    }
+
+    <span class="kw">public async</span> <span class="type">Task</span>&lt;<span class="type">string</span>&gt; <span class="fn">QueryAsync</span>(<span class="type">string</span> graphqlQuery)
+    {
+        <span class="kw">var</span> payload = <span class="type">JsonSerializer</span>.<span class="fn">Serialize</span>(<span class="kw">new</span> { query = graphqlQuery });
+        <span class="kw">var</span> response = <span class="kw">await</span> _http.<span class="fn">PostAsync</span>(
+            _endpoint,
+            <span class="kw">new</span> <span class="type">StringContent</span>(payload, <span class="type">Encoding</span>.UTF8, <span class="str">"application/json"</span>)
+        );
+        <span class="kw">return await</span> response.Content.<span class="fn">ReadAsStringAsync</span>();
+    }
+}</code></pre>
+
+    <div class="callout callout-success">
+      <strong>✅ Best practices for C# + AppSync</strong>
+      Use Lambda as data source when you need complex C# business logic — DynamoDB resolvers (JS) are better for simple CRUD. Register <code>HttpClient</code> via <code>IHttpClientFactory</code> in Lambda to reuse connections across warm invocations.
+    </div>
+  </div>
+
+  <!-- ══════════════ CONSOLE SETUP ══════════════ -->
+  <div id="console" class="tab-panel">
+    <h2>AWS Console Setup — Step by Step</h2>
+    <p>This tab walks through creating a complete AppSync API from the AWS Console.</p>
+
+    <h3>Step 1 — Create the API</h3>
+    <div class="card">
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open AppSync</strong><p>Search "AppSync" in the AWS Console → click <em>Create API</em>.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Choose API type</strong><p>Select <em>GraphQL APIs</em> → <em>Design from scratch</em>. (Choose <em>Event APIs</em> for schema-free pub/sub.)</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Fill in API details</strong></div></div>
+      </div>
+      <div class="field-row"><div class="field-label">API Name</div><div class="field-desc">Give a meaningful name. e.g. <code>BlogAPI</code>. Used to identify the API in console and CloudWatch.</div></div>
+      <div class="field-row"><div class="field-label">Default Auth Mode</div><div class="field-desc">Choose how clients authenticate by default. <strong>API Key</strong> = simplest for dev. <strong>Cognito</strong> = user-facing apps. <strong>IAM</strong> = backend services. You can add more auth modes after creation.</div></div>
+      <div class="field-row"><div class="field-label">Additional Auth Modes</div><div class="field-desc">Optional. Add a second auth mode for field-level control. E.g. primary = Cognito, additional = IAM for backend calls.</div></div>
+      <div class="field-row"><div class="field-label">API Key Expiration</div><div class="field-desc">Only if API Key auth selected. Keys expire in 1–365 days. Rotate before expiry.</div></div>
+    </div>
+
+    <h3>Step 2 — Define your schema</h3>
+    <div class="card">
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Go to Schema tab</strong><p>In the left nav, click <em>Schema</em>. You'll see an editor.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Paste your schema</strong><p>Write or paste your GraphQL schema with types, queries, mutations, and subscriptions.</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Save schema</strong><p>Click <em>Save Schema</em>. AppSync validates the SDL immediately.</p></div></div>
+      </div>
+    </div>
+
+    <h3>Step 3 — Create a data source</h3>
+    <div class="card">
+      <div class="field-row"><div class="field-label">Data Source Name</div><div class="field-desc">Logical name referenced in resolvers. e.g. <code>BlogPostsTable</code>. No spaces allowed.</div></div>
+      <div class="field-row"><div class="field-label">Data Source Type</div><div class="field-desc">Pick the backend: <strong>Amazon DynamoDB table</strong>, <strong>AWS Lambda function</strong>, <strong>Amazon OpenSearch domain</strong>, <strong>HTTP endpoint</strong>, or <strong>None</strong>.</div></div>
+      <div class="field-row"><div class="field-label">Region</div><div class="field-desc">AWS region of the data source. Usually same region as your AppSync API.</div></div>
+      <div class="field-row"><div class="field-label">Table Name (DynamoDB)</div><div class="field-desc">The DynamoDB table to connect. The table must already exist.</div></div>
+      <div class="field-row"><div class="field-label">IAM Role</div><div class="field-desc">IAM role AppSync will assume to access the data source. Use <em>New Role</em> to let AWS auto-create a scoped role, or pick an existing one.</div></div>
+    </div>
+
+    <h3>Step 4 — Attach resolvers</h3>
+    <div class="card">
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Go to Schema → find a field</strong><p>In the Schema editor, each resolver-attachable field has an <em>Attach</em> button in the right panel.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Choose resolver type</strong><p><strong>Unit resolver</strong> (one data source) or <strong>Pipeline resolver</strong> (chain of functions).</p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Select data source</strong><p>Pick the data source you created in Step 3.</p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Write resolver code</strong><p>Choose <strong>JavaScript</strong> (recommended). Write the <code>request</code> and <code>response</code> functions. The console provides helpers and templates for common operations.</p></div></div>
+        <div class="step"><div class="step-num">5</div><div class="step-body"><strong>Test locally</strong><p>Use the <em>Test</em> tab in the resolver editor to run with mock data — without touching real data sources.</p></div></div>
+        <div class="step"><div class="step-num">6</div><div class="step-body"><strong>Save resolver</strong><p>Click <em>Save Resolver</em>. Repeat for every field that needs resolving.</p></div></div>
+      </div>
+    </div>
+
+    <h3>Step 5 — Test your API</h3>
+    <div class="card">
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><div class="step-body"><strong>Open Queries tab</strong><p>Left nav → <em>Queries</em>. A built-in GraphiQL-style editor.</p></div></div>
+        <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Run a mutation</strong><p>e.g. <code>mutation { createPost(title: "Hello", author: "Indhu") { id title } }</code></p></div></div>
+        <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Run a query</strong><p>e.g. <code>query { listPosts { id title author createdAt } }</code></p></div></div>
+        <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Test a subscription</strong><p>Start a subscription in the Queries tab, then fire a mutation in a separate browser tab to see real-time data pushed.</p></div></div>
+      </div>
+    </div>
+
+    <h3>Step 6 — Enable caching (optional)</h3>
+    <div class="card">
+      <div class="field-row"><div class="field-label">Cache Instance Type</div><div class="field-desc">Size of the managed cache cluster. Start with <code>SMALL</code> for dev, scale up for production.</div></div>
+      <div class="field-row"><div class="field-label">TTL</div><div class="field-desc">Time-to-live in seconds for cached responses. 5–300s typical for dynamic data; longer for static data.</div></div>
+      <div class="field-row"><div class="field-label">Encryption</div><div class="field-desc">Toggle encryption at rest and in transit for the cache. Recommended for production.</div></div>
+      <div class="field-row"><div class="field-label">Per-resolver caching</div><div class="field-desc">After enabling API-level caching, go to each resolver and enable caching individually + set per-resolver TTL.</div></div>
+    </div>
+
+    <h3>Step 7 — Enable CloudWatch logging</h3>
+    <div class="card">
+      <div class="field-row"><div class="field-label">CloudWatch Logs Role ARN</div><div class="field-desc">IAM role that allows AppSync to write to CloudWatch. Use <em>New Role</em> for auto-creation.</div></div>
+      <div class="field-row"><div class="field-label">Field Log Level</div><div class="field-desc"><strong>NONE</strong> — no field-level logs. <strong>ERROR</strong> — only errors. <strong>ALL</strong> — every resolver request/response (verbose, useful for debugging; disable in production to save cost).</div></div>
+      <div class="field-row"><div class="field-label">Exclude verbose content</div><div class="field-desc">When log level is ALL, toggle this to suppress request/response body from logs — reduces log volume.</div></div>
+    </div>
+  </div>
+
+  <!-- ══════════════ PATTERNS ══════════════ -->
+  <div id="patterns" class="tab-panel">
+    <h2>Common Patterns &amp; Best Practices</h2>
+
+    <h3>Pattern 1 — Direct DynamoDB resolver (no Lambda)</h3>
+    <p>Use JavaScript resolvers talking directly to DynamoDB for simple CRUD. No Lambda cold starts, lower cost, lower latency.</p>
+    <div class="flow">
+      <div class="flow-box blue">AppSync<br/>Query / Mutation</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">JS Resolver<br/>(ddb utils)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">DynamoDB</div>
+    </div>
+    <p><span class="badge badge-green">✅ Best for</span> standard CRUD — list, get, create, update, delete.</p>
+
+    <h3>Pattern 2 — Lambda for complex logic</h3>
+    <p>When business rules go beyond what JS resolvers can express, or you need to call services not natively supported (PostgreSQL, Redis, external APIs), use Lambda as your data source.</p>
+    <div class="flow">
+      <div class="flow-box blue">AppSync</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">JS Resolver<br/>(invoke)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Lambda (.NET / C#)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box green">Any backend</div>
+    </div>
+
+    <h3>Pattern 3 — Merged API (micro-frontend backends)</h3>
+    <p>Different teams own different sub-APIs (PostsAPI, UsersAPI, CommentsAPI). A Merged API composes them into one endpoint for clients.</p>
+    <div class="flow">
+      <div class="flow-box blue">Client</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Merged API</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box gray">PostsAPI</div>
+    </div>
+    <div class="flow" style="margin-top:4px;">
+      <div style="width:110px;"></div>
+      <div class="flow-arrow" style="visibility:hidden;">→</div>
+      <div style="width:110px;"></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box gray">UsersAPI</div>
+    </div>
+
+    <h3>Pattern 4 — EventBridge → AppSync → Subscriptions</h3>
+    <p>Backend events (from Step Functions, S3 events, etc.) published to EventBridge trigger an AppSync mutation via IAM, which in turn pushes real-time updates to connected clients.</p>
+    <div class="flow">
+      <div class="flow-box gray">Step Function / Lambda</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">EventBridge</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">AppSync Mutation<br/>(IAM target)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box blue">WebSocket Clients</div>
+    </div>
+    <div class="callout callout-warning">
+      <strong>⚠️ Remember:</strong> IAM must be the <em>primary</em> auth mode on the AppSync API for EventBridge to invoke it as a target.
+    </div>
+
+    <h3>Pagination pattern</h3>
+    <pre><code><span class="kw">type</span> <span class="type">PostConnection</span> {
+  items:     [<span class="type">Post</span>]
+  nextToken: <span class="type">String</span>
+}
+
+<span class="kw">type</span> <span class="type">Query</span> {
+  listPosts(limit: <span class="type">Int</span>, nextToken: <span class="type">String</span>): <span class="type">PostConnection</span>
+}
+
+<span class="cmt">// Resolver (DynamoDB scan with pagination)</span>
+<span class="kw">import</span> * <span class="kw">as</span> ddb <span class="kw">from</span> <span class="str">'@aws-appsync/utils/dynamodb'</span>
+
+<span class="kw">export function</span> <span class="fn">request</span>(ctx) {
+  <span class="kw">return</span> ddb.<span class="fn">scan</span>({
+    limit:     ctx.args.limit ?? <span class="num">20</span>,
+    nextToken: ctx.args.nextToken
+  })
+}
+<span class="kw">export function</span> <span class="fn">response</span>(ctx) { <span class="kw">return</span> ctx.result }</code></pre>
+
+    <h3>Best practices summary</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Practice</th><th>Why</th></tr></thead>
+        <tbody>
+          <tr><td>Use JavaScript resolvers over VTL</td><td>Easier to read, test, and maintain</td></tr>
+          <tr><td>Direct DynamoDB resolvers for CRUD</td><td>No Lambda cold start, lower cost</td></tr>
+          <tr><td>Enable X-Ray tracing</td><td>End-to-end visibility into resolver latency</td></tr>
+          <tr><td>Use per-resolver caching</td><td>Reduce read load on DynamoDB for stable data</td></tr>
+          <tr><td>Field-level auth directives</td><td>Least-privilege access; cleaner than Lambda checks</td></tr>
+          <tr><td>Test resolvers with mock data</td><td>Use console Test tab before touching live data sources</td></tr>
+          <tr><td>Set subscription filter in resolver</td><td>Reduces WebSocket payload; better for scale</td></tr>
+          <tr><td>Paginate with limit + nextToken</td><td>Never scan entire table; always paginate DynamoDB results</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Cost considerations</h3>
+    <div class="callout callout-info">
+      <strong>💡 AppSync pricing model</strong>
+      You pay per <strong>query/mutation</strong> operation, per <strong>real-time update</strong> (subscription message delivered), per <strong>connection-minute</strong> (WebSocket open duration), and for caching instance hours. Real-time features with many connected clients can increase costs — monitor with CloudWatch.
+    </div>
+
+    <!-- Completion Card -->
+    <div class="completion-card">
+      <div class="trophy">🎉</div>
+      <h2>You've covered AWS AppSync!</h2>
+      <p>Overview → Core Concepts → Resolvers → Real-Time → Auth → C# Usage → Console Setup → Patterns</p>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+  function showTab(id) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    const btns = document.querySelectorAll('.tab-btn');
+    const labels = ['overview','core','resolvers','realtime','auth','csharp','console','patterns'];
+    btns[labels.indexOf(id)].classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+
+</body>
+</html>
