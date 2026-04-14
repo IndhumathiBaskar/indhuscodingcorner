@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon EKS — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f6fb;--surface:#eceef7;--card:#fff;--border:#d4d8ef;--border2:#bcc2e4;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --eks:#3a4ab0;--eks-l:#dde2f8;--eks-d:#252f8a;
+  --text:#141620;--text2:#3a3e5a;--muted:#7a7e9a;
+  --code-bg:#0e0f1e;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#e8ebfa 0%,#d4daf5 45%,#c4ccee 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'☸️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'🐳';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--eks-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,246,251,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--eks-l);color:var(--eks-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--eks-l);letter-spacing:-.01em;}
+.section h3{color:var(--eks-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ CLUSTER ARCHITECTURE VISUAL ══ */
+.cluster-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.cv-header{background:linear-gradient(90deg,var(--eks-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.cv-body{padding:16px;}
+.cv-plane{border-radius:var(--r);padding:12px 14px;margin-bottom:10px;text-align:center;}
+.cv-control{background:linear-gradient(135deg,var(--eks-l),var(--blue-l));border:2px solid rgba(58,74,176,.35);}
+.cv-control h5{color:var(--eks-d);font-weight:700;font-size:.82rem;margin-bottom:4px;}
+.cv-sync{text-align:center;color:var(--border2);font-size:1.2rem;padding:4px 0;}
+.cv-sync-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--eks-d);background:var(--eks-l);padding:2px 8px;border-radius:3px;display:inline-block;margin-bottom:3px;}
+.cv-nodes{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:8px;}
+.cv-node{border-radius:var(--r);padding:10px 12px;text-align:center;border:1.5px solid var(--border);}
+.cv-node-managed{background:var(--green-l);border-color:rgba(31,122,82,.3);}
+.cv-node-managed h5{color:var(--green);font-weight:700;font-size:.75rem;margin-bottom:3px;}
+.cv-node-fargate{background:var(--purple-l);border-color:rgba(108,71,212,.3);}
+.cv-node-fargate h5{color:var(--purple);font-weight:700;font-size:.75rem;margin-bottom:3px;}
+.cv-node-self{background:var(--surface);border-color:var(--border2);}
+.cv-node-self h5{color:var(--muted);font-weight:700;font-size:.75rem;margin-bottom:3px;}
+.cv-node p{font-size:.62rem;color:var(--muted);}
+.cv-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:5px;}
+.badge-managed{background:var(--green-l);color:var(--green);}
+.badge-fargate{background:var(--purple-l);color:var(--purple);}
+.badge-self{background:var(--surface);color:var(--muted);border:1px solid var(--border);}
+/* pod row inside node */
+.pod-row{display:flex;gap:3px;justify-content:center;margin-top:5px;flex-wrap:wrap;}
+.pod{width:14px;height:14px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.48rem;font-weight:700;}
+.pod-running{background:var(--green-l);border:1px solid rgba(31,122,82,.3);color:var(--green);}
+.pod-pending{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);color:var(--aws);}
+.pod-failed{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+
+/* ══ NODE TYPE COMPARISON ══ */
+.node-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.nc-header{display:flex;border-bottom:1px solid var(--border);}
+.nc-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.78rem;}
+.nc-col.managed-col{background:var(--green-l);color:var(--green);border-right:1px solid var(--border);}
+.nc-col.fargate-col{background:var(--purple-l);color:var(--purple);border-right:1px solid var(--border);}
+.nc-col.self-col{background:var(--surface);color:var(--muted);}
+.nc-row{display:flex;border-bottom:1px solid var(--border);}
+.nc-row:last-child{border-bottom:none;}
+.nc-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:120px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.nc-val{flex:1;padding:7px 12px;font-size:.75rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.nc-val:last-child{border-right:none;}
+.nc-val.better{color:var(--green);font-weight:600;}
+.nc-val.warn-val{color:var(--aws);font-weight:600;}
+
+/* ══ NETWORKING VISUAL ══ */
+.net-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.nv-header{background:linear-gradient(90deg,var(--teal-l),var(--eks-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.nv-body{padding:14px;}
+.nv-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.nv-row:last-child{margin-bottom:0;}
+.nv-label{font-size:.72rem;font-weight:700;width:120px;flex-shrink:0;color:var(--text2);}
+.nv-items{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.nv-item{padding:4px 10px;border-radius:4px;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.nv-ingress{background:var(--eks-l);border:1px solid rgba(58,74,176,.3);color:var(--eks-d);}
+.nv-service{background:var(--green-l);border:1px solid rgba(31,122,82,.3);color:var(--green);}
+.nv-denied{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+.nv-note{font-size:.65rem;color:var(--muted);margin-left:auto;}
+
+/* SCALING METER */
+.scaling-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.scaling-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.scaling-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-hpa::before{background:var(--eks);}
+.sc-vpa::before{background:var(--green);}
+.sc-ca::before{background:var(--purple);}
+.scaling-card .sc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.scaling-card .sc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.sc-hpa .sc-type{background:var(--eks-l);color:var(--eks-d);}
+.sc-vpa .sc-type{background:var(--green-l);color:var(--green);}
+.sc-ca .sc-type{background:var(--purple-l);color:var(--purple);}
+.sc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.sc-metric-label{font-size:.68rem;color:var(--muted);}
+.sc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+.sc-bar{height:5px;background:var(--surface);border-radius:100px;overflow:hidden;margin-bottom:8px;border:1px solid var(--border);}
+.sc-fill{height:100%;border-radius:100px;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--eks-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-eks{background:var(--eks-l);border:1.5px solid rgba(58,74,176,.3);}
+.n-eks .flow-node-title{color:var(--eks-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--eks-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--eks);}
+.step-body h4{color:var(--eks-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--eks-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--eks-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--eks-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--eks);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--eks-l);border:1px solid rgba(58,74,176,.2);border-left:4px solid var(--eks);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--eks-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #1a1b30;border-left:3px solid var(--eks);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#7a8ae8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(58,74,176,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--eks-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--eks-l),var(--green-l));border:1px solid rgba(58,74,176,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.scaling-grid,.cv-nodes,.nc-row{grid-template-columns:1fr;}
+  .flow-row,.nc-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .nv-note{display:none;}
+  .nc-label{width:80px;font-size:.6rem;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>☸️ <span>Amazon EKS</span> — Complete Guide</h1>
+  <p>Elastic Kubernetes Service · Control Plane · Node Groups · Networking · Scaling · IAM · Console Setup · C# SDK</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is EKS</button>
+  <button class="tab-btn" onclick="T('architecture',this)">Architecture</button>
+  <button class="tab-btn" onclick="T('nodes',this)">Node Groups</button>
+  <button class="tab-btn" onclick="T('networking',this)">Networking</button>
+  <button class="tab-btn" onclick="T('scaling',this)">Scaling</button>
+  <button class="tab-btn" onclick="T('iam',this)">IAM &amp; IRSA</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# SDK</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS EKS
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>☸️ What is Amazon EKS?</h2>
+  <p><strong>EKS = Elastic Kubernetes Service.</strong> A fully managed Kubernetes control plane that AWS runs, patches, and scales for you. You bring your workloads as Pods; EKS handles the Kubernetes API server, etcd, scheduler, and controller manager — the complex brains of a cluster — so you only manage your worker nodes and applications.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — The Airport</h4>
+    <p>EKS is like a major airport. The <strong>Control Plane</strong> is Air Traffic Control — it knows where every plane (Pod) is, decides which runway (Node) each lands on, and reroutes instantly when a runway closes. <strong>Nodes (EC2 workers)</strong> are the runways and terminals — the actual physical capacity where planes land and operate. <strong>Pods</strong> are the planes — your containerized applications. <strong>Services</strong> are the boarding gates — stable entry points that passengers (traffic) reach regardless of which terminal their plane is at. AWS is the airport authority — maintaining the control tower, runways, and security so airlines (your team) focus on their flights, not infrastructure.</p>
+  </div>
+
+  <h3>What AWS Manages vs What You Manage</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ AWS manages (Control Plane)</h4>
+      <ul>
+        <li>Kubernetes API server — highly available across 3 AZs</li>
+        <li>etcd — the distributed key-value store for cluster state</li>
+        <li>Kubernetes scheduler — decides which node runs each pod</li>
+        <li>Controller manager — handles replication, endpoints, etc.</li>
+        <li>Control plane patching and upgrades (managed rollout)</li>
+        <li>Control plane scaling — handles thousands of nodes</li>
+        <li>Certificate rotation for cluster communication</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🛠️ You manage (Data Plane)</h4>
+      <ul>
+        <li>Worker nodes — EC2 instances running your Pods</li>
+        <li>Node group upgrades (you trigger, EKS executes)</li>
+        <li>Pod deployment manifests (Deployments, Services, etc.)</li>
+        <li>Namespaces and workload isolation</li>
+        <li>Add-ons: CoreDNS, kube-proxy, VPC CNI, metrics-server</li>
+        <li>Application-level monitoring and logging</li>
+        <li>Horizontal and vertical pod scaling rules</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key EKS Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚙️</span><h4>Control Plane</h4><p>AWS-managed Kubernetes API + etcd, HA across 3 AZs.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>Node Group</h4><p>Pool of EC2 instances (or Fargate) running your Pods.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Pod</h4><p>Smallest deployable unit — one or more containers sharing a network namespace.</p></div>
+    <div class="icon-item"><span class="emoji">🔀</span><h4>Deployment</h4><p>Declares desired state — "run 3 replicas of my-api".</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Service</h4><p>Stable DNS + IP to route traffic to pods regardless of IP changes.</p></div>
+    <div class="icon-item"><span class="emoji">🚪</span><h4>Ingress</h4><p>HTTP/HTTPS routing rules — maps URLs to backend Services.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>ConfigMap</h4><p>Inject config into pods without rebuilding the image.</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Secret</h4><p>Base64-encoded sensitive values — use with AWS Secrets Manager.</p></div>
+    <div class="icon-item"><span class="emoji">📁</span><h4>Namespace</h4><p>Virtual cluster — isolate teams, environments, or services.</p></div>
+  </div>
+
+  <h3>EKS Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💰</span><h4>Control plane cost</h4><p>$0.10/hour per cluster (~$73/month) regardless of nodes</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Kubernetes versions</h4><p>AWS supports ~4 versions; each supported ~14 months</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Max nodes</h4><p>Up to 450 managed nodes per node group; thousands per cluster</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Multi-AZ</h4><p>Control plane spans 3 AZs by default — no extra config</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>API access</h4><p>Public + private endpoint options; VPN for private-only</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Auth</h4><p>IAM users/roles mapped to Kubernetes RBAC via aws-auth ConfigMap</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — ARCHITECTURE
+══════════════════════════════════ -->
+<div id="tab-architecture" class="tab-panel"><div class="section">
+  <h2>🏗️ EKS Architecture — Control Plane &amp; Data Plane</h2>
+  <p>EKS is split into two distinct planes. The <strong>Control Plane</strong> lives in an AWS-managed VPC — you never see these servers. The <strong>Data Plane</strong> (your worker nodes) runs in your own VPC, where you control instance types, subnets, and security groups.</p>
+
+  <!-- CLUSTER ARCHITECTURE VISUAL -->
+  <h3>Full Cluster Architecture</h3>
+  <div class="cluster-visual">
+    <div class="cv-header">☸️ EKS Cluster — Control Plane (AWS managed) + Data Plane (your VPC)</div>
+    <div class="cv-body">
+
+      <p style="font-size:.72rem;font-weight:700;color:var(--eks-d);margin-bottom:8px;">⚙️ CONTROL PLANE — AWS managed VPC, highly available across 3 AZs</p>
+      <div class="cv-plane cv-control">
+        <h5>☸️ Kubernetes Control Plane</h5>
+        <div style="font-size:.68rem;color:var(--eks-d);margin-top:4px;">API Server &nbsp;|&nbsp; etcd &nbsp;|&nbsp; Scheduler &nbsp;|&nbsp; Controller Manager &nbsp;|&nbsp; Cloud Controller</div>
+        <div style="font-size:.62rem;color:var(--muted);margin-top:3px;">Patched, scaled, and HA'd by AWS · You access it via kubectl / AWS SDK</div>
+      </div>
+
+      <div class="cv-sync">
+        <span class="cv-sync-label">Secure API connection</span>
+        <div style="font-size:1.3rem;color:var(--border2);">↕</div>
+        <span class="cv-sync-label">kubelet ↔ API server</span>
+      </div>
+
+      <p style="font-size:.72rem;font-weight:700;color:var(--green);margin:10px 0 8px;">🖥️ DATA PLANE — Your VPC, your subnets, your nodes</p>
+      <div class="cv-nodes">
+        <div class="cv-node cv-node-managed">
+          <span class="cv-badge badge-managed">MANAGED</span>
+          <h5>🟢 Managed Node Group</h5>
+          <p>AWS-managed EC2 Auto Scaling Group</p>
+          <div class="pod-row">
+            <div class="pod pod-running">P</div>
+            <div class="pod pod-running">P</div>
+            <div class="pod pod-running">P</div>
+          </div>
+        </div>
+        <div class="cv-node cv-node-managed">
+          <span class="cv-badge badge-managed">MANAGED</span>
+          <h5>🟢 Managed Node Group</h5>
+          <p>Different AZ — fault isolation</p>
+          <div class="pod-row">
+            <div class="pod pod-running">P</div>
+            <div class="pod pod-running">P</div>
+            <div class="pod pod-pending">P</div>
+          </div>
+        </div>
+        <div class="cv-node cv-node-fargate">
+          <span class="cv-badge badge-fargate">FARGATE</span>
+          <h5>🟣 Fargate Profile</h5>
+          <p>Serverless — no EC2 to manage</p>
+          <div class="pod-row">
+            <div class="pod pod-running" style="background:var(--purple-l);border-color:rgba(108,71,212,.3);color:var(--purple);">P</div>
+            <div class="pod pod-running" style="background:var(--purple-l);border-color:rgba(108,71,212,.3);color:var(--purple);">P</div>
+          </div>
+        </div>
+        <div class="cv-node cv-node-self">
+          <span class="cv-badge badge-self">SELF-MANAGED</span>
+          <h5>⚪ Self-managed Node</h5>
+          <p>Your AMI, your patching</p>
+          <div class="pod-row">
+            <div class="pod pod-running">P</div>
+            <div class="pod pod-failed">P</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <h3>How kubectl Reaches the Cluster</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">💻 Developer runs: kubectl get pods</div>
+      <ul class="flow-items">
+        <li>kubeconfig references EKS cluster endpoint</li>
+        <li>AWS credential chain invoked (IAM role/profile)</li>
+        <li>aws eks get-token generates a bearer token from IAM</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ HTTPS request + IAM bearer token</div>
+    <div class="flow-node n-eks">
+      <div class="flow-node-title">⚙️ EKS API Server authenticates request</div>
+      <ul class="flow-items">
+        <li>Validates IAM identity via AWS STS token</li>
+        <li>Looks up IAM principal in aws-auth ConfigMap</li>
+        <li>Maps IAM role → Kubernetes user/group</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ RBAC authorization check</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Response returned to kubectl</div>
+      <ul class="flow-items">
+        <li>Pod list, deployment status, logs — whatever was requested</li>
+        <li>If RBAC denies → 403 Forbidden returned immediately</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Two endpoint modes — know which you need</h4>
+    <p><strong>Public endpoint</strong> (default): API server is accessible from the internet. Secured by IAM + RBAC. Fine for most teams. <strong>Private endpoint only</strong>: API server only reachable from within your VPC — requires VPN or AWS VPN/Direct Connect for developer access. Use private-only for high-security environments like banking or healthcare. You can also enable <strong>both</strong> — internet access plus in-VPC access.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — NODE GROUPS
+══════════════════════════════════ -->
+<div id="tab-nodes" class="tab-panel"><div class="section">
+  <h2>🖥️ Node Groups — Where Your Pods Actually Run</h2>
+  <p>The data plane is where your containers live. EKS gives you three ways to provide compute: <strong>Managed Node Groups</strong> (AWS handles EC2 lifecycle), <strong>Fargate</strong> (serverless, no nodes to manage), and <strong>Self-managed nodes</strong> (full control, full responsibility).</p>
+
+  <!-- NODE TYPE COMPARISON -->
+  <h3>Managed Nodes vs Fargate vs Self-managed</h3>
+  <div class="node-compare">
+    <div class="nc-header">
+      <div class="nc-col managed-col">✅ Managed Node Group</div>
+      <div class="nc-col fargate-col">🟣 Fargate</div>
+      <div class="nc-col self-col">⚪ Self-managed</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">OS patching</div>
+      <div class="nc-val better">AWS handles it</div>
+      <div class="nc-val better">No OS — serverless</div>
+      <div class="nc-val warn-val">You patch manually</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">Node upgrades</div>
+      <div class="nc-val better">Rolling upgrade by AWS</div>
+      <div class="nc-val better">Automatic</div>
+      <div class="nc-val warn-val">Manual — drain + replace</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">Cluster Autoscaler</div>
+      <div class="nc-val better">✅ Fully supported</div>
+      <div class="nc-val better">✅ Auto scales pods</div>
+      <div class="nc-val">⚠️ Supported with extra config</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">Custom AMI</div>
+      <div class="nc-val">✅ Custom AMI supported</div>
+      <div class="nc-val warn-val">❌ Not applicable</div>
+      <div class="nc-val better">✅ Full AMI control</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">GPU workloads</div>
+      <div class="nc-val better">✅ GPU instance types</div>
+      <div class="nc-val warn-val">❌ Not supported</div>
+      <div class="nc-val better">✅ Any instance type</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">Cost model</div>
+      <div class="nc-val">EC2 On-Demand / Spot</div>
+      <div class="nc-val">Per vCPU+GB per second</div>
+      <div class="nc-val">EC2 On-Demand / Spot</div>
+    </div>
+    <div class="nc-row">
+      <div class="nc-label">Best for</div>
+      <div class="nc-val better">Most production workloads</div>
+      <div class="nc-val">Batch, isolation, ephemeral</div>
+      <div class="nc-val">Compliance, custom OS needs</div>
+    </div>
+  </div>
+
+  <h3>Managed Node Group — How Upgrades Work</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📋 You trigger: Update node group version</div>
+      <ul class="flow-items">
+        <li>Console / CLI / Terraform — select new K8s version</li>
+        <li>AWS provisions new nodes with the updated AMI</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ rolling update begins</div>
+    <div class="flow-node n-eks">
+      <div class="flow-node-title">⚙️ EKS cordon + drain old nodes</div>
+      <ul class="flow-items">
+        <li>Marks old nodes as unschedulable (cordon)</li>
+        <li>Safely evicts existing pods (drain) — respects PodDisruptionBudgets</li>
+        <li>New nodes register with control plane, pods rescheduled</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ old nodes terminated</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Upgrade complete — zero downtime</div>
+      <ul class="flow-items">
+        <li>All nodes on new version — cluster fully healthy</li>
+        <li>PodDisruptionBudget ensures minimum replicas always running</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Spot Instances — Save 70–90% on Node Costs</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Good workloads for Spot nodes</h4>
+      <ul>
+        <li>Batch processing jobs (ML training, ETL pipelines)</li>
+        <li>CI/CD build runners — interruption-tolerant by design</li>
+        <li>Stateless microservices with multiple replicas</li>
+        <li>Dev and staging environments where interruption is OK</li>
+        <li>Data processing with checkpointing built in</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ Don't use Spot for</h4>
+      <ul>
+        <li>Stateful workloads (databases, caches) without persistent volumes</li>
+        <li>Single-replica production services — one interruption = outage</li>
+        <li>Long-running sessions requiring connection stability</li>
+        <li>Anything without graceful shutdown handling (SIGTERM)</li>
+        <li>Node where PodDisruptionBudget would block drain</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Mix On-Demand + Spot with node selectors</h4>
+    <p>Create two node groups: one On-Demand (labeled <code>node-type=stable</code>) for critical services, one Spot (labeled <code>node-type=spot</code>) for batch/dev work. Use <code>nodeSelector</code> or <code>nodeAffinity</code> in your Pod specs to pin workloads to the right group. This gives you cost savings without risking production availability.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — NETWORKING
+══════════════════════════════════ -->
+<div id="tab-networking" class="tab-panel"><div class="section">
+  <h2>🌐 Networking — Services, Ingress &amp; Load Balancers</h2>
+  <p>Kubernetes networking is layered. <strong>Pods</strong> get private IPs from your VPC (via VPC CNI). <strong>Services</strong> give pods a stable cluster IP + DNS name. <strong>Ingress</strong> routes external HTTP/HTTPS traffic to services. <strong>AWS Load Balancer Controller</strong> creates real AWS ALBs and NLBs from Kubernetes Service/Ingress objects.</p>
+
+  <!-- SERVICE TYPES FLOW -->
+  <h3>Traffic Flow — Internet to Pod</h3>
+  <div class="net-visual">
+    <div class="nv-header">🌐 Traffic path: User → ALB → Service → Pod</div>
+    <div class="nv-body">
+      <div class="nv-row">
+        <div class="nv-label">User request</div>
+        <div class="nv-items">
+          <div class="nv-item nv-ingress">HTTPS api.myapp.com</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-ingress">Route 53 DNS</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-ingress">ALB (Ingress)</div>
+        </div>
+      </div>
+      <div class="nv-row">
+        <div class="nv-label">K8s routing</div>
+        <div class="nv-items">
+          <div class="nv-item nv-ingress">Ingress rules match /api/*</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-service">Service ClusterIP</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-service">kube-proxy selects Pod</div>
+        </div>
+      </div>
+      <div class="nv-row">
+        <div class="nv-label">Pod receives</div>
+        <div class="nv-items">
+          <div class="nv-item nv-service">Pod IP: 10.0.1.45</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-service">Container port 8080</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-service">App handles request ✅</div>
+        </div>
+      </div>
+      <div class="nv-row">
+        <div class="nv-label">Blocked path</div>
+        <div class="nv-items">
+          <div class="nv-item nv-denied">Direct pod IP access</div>
+          <div class="nv-item" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="nv-item nv-denied">NetworkPolicy blocks ❌</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Kubernetes Service Types</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>Scope</th><th>AWS Resource created</th><th>Use case</th></tr>
+    <tr><td><code>ClusterIP</code></td><td>Cluster-internal only</td><td>None — virtual IP</td><td>Inter-service communication (most services)</td></tr>
+    <tr><td><code>NodePort</code></td><td>Node IP + fixed port</td><td>None</td><td>Dev/testing; not for production</td></tr>
+    <tr><td><code>LoadBalancer</code></td><td>External internet</td><td>NLB (Network Load Balancer)</td><td>TCP/UDP direct load balancing, non-HTTP</td></tr>
+    <tr><td><code>Ingress</code></td><td>External internet</td><td>ALB (Application Load Balancer)</td><td>HTTP/HTTPS with path routing — recommended for web APIs</td></tr>
+  </table></div>
+
+  <h3>VPC CNI — Why Every Pod Gets a VPC IP</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">⚠️ Standard Kubernetes (overlay network)</div>
+      <ul class="flow-items">
+        <li>Pods get IPs from a separate overlay network (10.244.0.0/16)</li>
+        <li>Traffic must NAT to reach VPC resources</li>
+        <li>Complex routing — hard to debug with VPC flow logs</li>
+        <li>Security groups cannot be applied per-pod</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ EKS uses VPC CNI instead</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ EKS VPC CNI — pods are first-class VPC citizens</div>
+      <ul class="flow-items">
+        <li>Every Pod gets a real VPC IP from your subnet's CIDR</li>
+        <li>No NAT — direct routing between pods, RDS, ElastiCache, etc.</li>
+        <li>VPC Flow Logs capture pod-level traffic by IP</li>
+        <li>Security groups can be applied per-pod (Security Groups for Pods)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Plan your IP address space carefully</h4>
+    <p>With VPC CNI, each running Pod consumes a VPC IP address. A node running 30 pods uses 30 IPs from your subnet. A cluster with 100 nodes × 30 pods = 3,000 IPs. A <code>/24</code> subnet only has 256 IPs. <strong>Always use at least <code>/22</code> subnets for pod subnets, or use prefix delegation</strong> (assigns a /28 block per ENI, up to 16 IPs per slot). Plan this before creating the cluster — you cannot change the VPC CIDR later.</p>
+  </div>
+
+  <h3>Network Policies — Zero-Trust Between Pods</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>❌ Without Network Policies (default)</h4>
+      <ul>
+        <li>Any pod can reach any other pod in the cluster</li>
+        <li>A compromised frontend pod could talk to your database pod</li>
+        <li>No traffic isolation between namespaces</li>
+        <li>Blast radius of a breach is the entire cluster</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ With Network Policies (recommended)</h4>
+      <ul>
+        <li>Whitelist-only model — deny all by default, allow explicitly</li>
+        <li>Frontend pods can only reach backend pods on port 8080</li>
+        <li>Backend pods can only reach RDS on port 5432</li>
+        <li>Namespaces are isolated — dev cannot reach production</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SCALING
+══════════════════════════════════ -->
+<div id="tab-scaling" class="tab-panel"><div class="section">
+  <h2>📈 Scaling — Pods, Nodes &amp; Karpenter</h2>
+  <p>EKS scaling works at two levels: <strong>Pod-level</strong> (HPA/VPA — more replicas of your app) and <strong>Node-level</strong> (Cluster Autoscaler or Karpenter — more EC2 instances). Both levels must work together: if you scale pods but have no free node capacity, pods stay pending.</p>
+
+  <!-- SCALING TIER CARDS -->
+  <h3>Three Scaling Mechanisms</h3>
+  <div class="scaling-grid">
+    <div class="scaling-card sc-hpa">
+      <div class="sc-name">Horizontal Pod Autoscaler</div>
+      <div class="sc-type">HPA</div>
+      <div class="sc-metric"><span class="sc-metric-label">Scales</span><span class="sc-metric-val">Pod replicas</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:80%;background:var(--eks);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Trigger</span><span class="sc-metric-val">CPU / memory / custom metrics</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Scale-up speed</span><span class="sc-metric-val">~15–30 seconds</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Use case</span><span class="sc-metric-val">Stateless services</span></div>
+    </div>
+    <div class="scaling-card sc-vpa">
+      <div class="sc-name">Vertical Pod Autoscaler</div>
+      <div class="sc-type">VPA</div>
+      <div class="sc-metric"><span class="sc-metric-label">Scales</span><span class="sc-metric-val">Pod CPU + memory requests</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:55%;background:var(--green);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Trigger</span><span class="sc-metric-val">Historical usage analysis</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Scale-up speed</span><span class="sc-metric-val">Pod restart required</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Use case</span><span class="sc-metric-val">Right-sizing resource requests</span></div>
+    </div>
+    <div class="scaling-card sc-ca">
+      <div class="sc-name">Karpenter / Cluster Autoscaler</div>
+      <div class="sc-type">NODE SCALE</div>
+      <div class="sc-metric"><span class="sc-metric-label">Scales</span><span class="sc-metric-val">EC2 nodes in the cluster</span></div>
+      <div class="sc-bar"><div class="sc-fill" style="width:70%;background:var(--purple);"></div></div>
+      <div class="sc-metric"><span class="sc-metric-label">Trigger</span><span class="sc-metric-val">Pending pods with no capacity</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Scale-up speed</span><span class="sc-metric-val">~2–3 min (Karpenter ~30s)</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Use case</span><span class="sc-metric-val">Dynamic node provisioning</span></div>
+    </div>
+  </div>
+
+  <h3>HPA — Scaling Pods on CPU</h3>
+  <div class="code-block"><span class="code-label">YAML — HPA targeting 60% CPU, 2–10 replicas</span><pre><span class="ky">apiVersion</span>: autoscaling/v2
+<span class="ky">kind</span>: HorizontalPodAutoscaler
+<span class="ky">metadata</span>:
+  <span class="ky">name</span>: <span class="str">my-api-hpa</span>
+  <span class="ky">namespace</span>: <span class="str">production</span>
+<span class="ky">spec</span>:
+  <span class="ky">scaleTargetRef</span>:
+    <span class="ky">apiVersion</span>: apps/v1
+    <span class="ky">kind</span>: <span class="str">Deployment</span>
+    <span class="ky">name</span>: <span class="str">my-api</span>
+  <span class="ky">minReplicas</span>: <span class="num">2</span>
+  <span class="ky">maxReplicas</span>: <span class="num">10</span>
+  <span class="ky">metrics</span>:
+  - <span class="ky">type</span>: Resource
+    <span class="ky">resource</span>:
+      <span class="ky">name</span>: cpu
+      <span class="ky">target</span>:
+        <span class="ky">type</span>: Utilization
+        <span class="ky">averageUtilization</span>: <span class="num">60</span>  <span class="cm"># scale up when avg CPU hits 60%</span></pre></div>
+
+  <h3>Scaling Chain — From Request Spike to New Node</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">📈 Traffic spike — CPU rises to 85%</div>
+      <ul class="flow-items">
+        <li>HPA polls metrics-server every 15 seconds</li>
+        <li>CPU &gt; 60% target → HPA calculates needed replicas</li>
+        <li>HPA scales Deployment from 2 → 5 replicas</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ pods scheduled — no free capacity</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">⏳ 3 new pods stuck in Pending</div>
+      <ul class="flow-items">
+        <li>Scheduler cannot fit pods on existing nodes</li>
+        <li>Karpenter / Cluster Autoscaler detects pending pods</li>
+        <li>Provisions new EC2 node (Karpenter ~30s, CA ~2–3min)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ node joins cluster</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Pods scheduled — cluster healthy</div>
+      <ul class="flow-items">
+        <li>New node registers with control plane</li>
+        <li>Pending pods scheduled onto the new node</li>
+        <li>CPU drops below 60% — HPA holds at 5 replicas</li>
+        <li>After traffic drops → HPA scales down, CA removes idle node</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Karpenter vs Cluster Autoscaler — prefer Karpenter for new clusters</h4>
+    <p><strong>Cluster Autoscaler</strong> scales existing Node Groups — it can only use instance types pre-configured in that group. <strong>Karpenter</strong> (AWS-developed) provisions nodes directly — it reads your pod requirements and picks the optimal instance type, size, and spot/on-demand mix in real time. Karpenter typically provisions nodes 5–10× faster than Cluster Autoscaler and achieves better bin-packing (fewer idle nodes).</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — IAM & IRSA
+══════════════════════════════════ -->
+<div id="tab-iam" class="tab-panel"><div class="section">
+  <h2>🔐 IAM &amp; IRSA — Secure AWS Access from Pods</h2>
+  <p>Pods sometimes need to call AWS APIs — read from S3, write to DynamoDB, publish to SQS. The wrong approach is embedding credentials. The right approach is <strong>IRSA (IAM Roles for Service Accounts)</strong> — pods get temporary AWS credentials via their Kubernetes Service Account, scoped to exactly the IAM role they need.</p>
+
+  <h3>The Problem IRSA Solves</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>❌ Old approach — Node-level IAM role</h4>
+      <ul>
+        <li>All pods on a node share the same EC2 instance role</li>
+        <li>A compromised payment pod can access the same S3 buckets as the logging pod</li>
+        <li>Cannot scope permissions per-service</li>
+        <li>If one pod is breached — all AWS access is exposed</li>
+        <li>No audit trail of which pod called which API</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ IRSA — per-pod IAM role binding</h4>
+      <ul>
+        <li>Each Kubernetes Service Account maps to one IAM Role</li>
+        <li>Temporary credentials injected as env vars into pod</li>
+        <li>Payment pod → only S3 access for receipts</li>
+        <li>Logging pod → only CloudWatch Logs write access</li>
+        <li>Credentials auto-rotated every 15 minutes</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>How IRSA Works — Step by Step</h3>
+  <div class="flow">
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">⚙️ Setup: Create OIDC provider + IAM Role</div>
+      <ul class="flow-items">
+        <li>EKS cluster has an OIDC issuer URL (auto-created)</li>
+        <li>Register this as an Identity Provider in IAM</li>
+        <li>Create IAM role with trust policy scoped to the service account</li>
+        <li>Annotate the Kubernetes Service Account with the role ARN</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ pod starts</div>
+    <div class="flow-node n-eks">
+      <div class="flow-node-title">🔑 Pod token injected at runtime</div>
+      <ul class="flow-items">
+        <li>EKS mutating webhook injects a projected volume with a service account token</li>
+        <li>Token is short-lived (15 min TTL) and audience-restricted</li>
+        <li>AWS SDK automatically finds the token via env var paths</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ pod calls AWS API</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ STS AssumeRoleWithWebIdentity</div>
+      <ul class="flow-items">
+        <li>SDK exchanges the Kubernetes token for STS temporary credentials</li>
+        <li>Credentials scoped to exactly the IAM Role you annotated</li>
+        <li>Auto-refreshed — your application code needs zero changes</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>IRSA Setup — Commands</h3>
+  <div class="code-block"><span class="code-label">bash — IRSA setup with eksctl</span><pre><span class="cm"># 1. Create OIDC provider for the cluster (one-time per cluster)</span>
+eksctl utils associate-iam-oidc-provider \
+  --cluster my-cluster \
+  --region ap-south-1 \
+  --approve
+
+<span class="cm"># 2. Create service account + IAM role in one step</span>
+eksctl create iamserviceaccount \
+  --name my-api-sa \
+  --namespace production \
+  --cluster my-cluster \
+  --region ap-south-1 \
+  --attach-policy-arn arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess \
+  --approve
+
+<span class="cm"># 3. Annotate service account (if creating manually)</span>
+kubectl annotate serviceaccount my-api-sa \
+  -n production \
+  eks.amazonaws.com/role-arn=arn:aws:iam::123456789012:role/my-api-role</pre></div>
+
+  <h3>aws-auth ConfigMap — Granting kubectl Access</h3>
+  <p>Before IRSA, there's a separate question: who can run <code>kubectl</code> against the cluster? The <code>aws-auth</code> ConfigMap maps IAM roles/users to Kubernetes RBAC groups.</p>
+  <div class="code-block"><span class="code-label">YAML — aws-auth ConfigMap (kube-system namespace)</span><pre><span class="ky">apiVersion</span>: v1
+<span class="ky">kind</span>: ConfigMap
+<span class="ky">metadata</span>:
+  <span class="ky">name</span>: aws-auth
+  <span class="ky">namespace</span>: kube-system
+<span class="ky">data</span>:
+  <span class="ky">mapRoles</span>: |
+    - <span class="ky">rolearn</span>: <span class="str">arn:aws:iam::123456789012:role/EKSNodeGroupRole</span>
+      <span class="ky">username</span>: <span class="str">system:node:{{EC2PrivateDNSName}}</span>
+      <span class="ky">groups</span>:
+        - <span class="str">system:bootstrappers</span>
+        - <span class="str">system:nodes</span>
+    - <span class="ky">rolearn</span>: <span class="str">arn:aws:iam::123456789012:role/DevOpsTeamRole</span>
+      <span class="ky">username</span>: <span class="str">devops</span>
+      <span class="ky">groups</span>:
+        - <span class="str">system:masters</span>   <span class="cm"># cluster-admin — use sparingly!</span></pre></div>
+
+  <div class="warn">
+    <h4>⚠️ EKS Access Entries — replace aws-auth with the newer approach</h4>
+    <p>The aws-auth ConfigMap is error-prone — a YAML typo can lock everyone out of the cluster, including you. AWS released <strong>EKS Access Entries</strong> (2024) as the newer approach: manage cluster access via IAM-native API calls (<code>aws eks create-access-entry</code>), not kubectl edits to a ConfigMap. Use Access Entries for all new clusters.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ AWS Console Setup — Every Field Explained</h2>
+  <p>Full walkthrough of creating an EKS cluster and adding a Managed Node Group via the Console. Every field, every option, every reason.</p>
+
+  <!-- STEP 1 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create the EKS Cluster</div>
+      <div class="console-step-path">AWS Console → EKS → Clusters → Create cluster</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Cluster name</div>
+        <div class="console-field-value">my-production-cluster</div>
+        <div class="console-field-hint">Lowercase, hyphens allowed. This name appears in your kubeconfig and all AWS resource names. Choose clearly — it's hard to rename later.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Kubernetes version</div>
+        <div class="console-field-value">1.30 (latest)</div>
+        <div class="console-field-hint">Always use the latest supported version for new clusters. Each version is supported ~14 months. Plan for upgrades twice a year minimum.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Cluster service role</div>
+        <div class="console-field-value">eksClusterRole (AmazonEKSClusterPolicy)</div>
+        <div class="console-field-hint">IAM role that allows EKS to manage EC2, VPC, and ELB resources on your behalf. Create it once and reuse across clusters. Must have AmazonEKSClusterPolicy attached.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Secrets encryption (optional)</div>
+        <div class="console-field-value">KMS key — aws/eks or customer-managed</div>
+        <div class="console-field-hint">Encrypts Kubernetes Secrets stored in etcd at rest using your KMS key. Enable for compliance-sensitive workloads. Cannot be enabled after cluster creation — decide now.</div>
+      </div>
+      <div class="console-note">💡 After clicking Next, you configure networking (VPC, subnets, security groups). Choose private subnets for nodes — only the API endpoint needs public access.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Configure Networking</div>
+      <div class="console-step-path">Create cluster → Specify networking</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">VPC</div>
+        <div class="console-field-value">Your production VPC</div>
+        <div class="console-field-hint">EKS nodes and pods will live here. Cannot change after creation. Ensure your VPC has enough IP space — use /22 or larger subnets for node groups.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Subnets</div>
+        <div class="console-field-value">Private subnets across 3 AZs (e.g. ap-south-1a, 1b, 1c)</div>
+        <div class="console-field-hint">Select subnets in multiple AZs for node group high availability. Tag subnets: kubernetes.io/role/internal-elb=1 for internal load balancers, kubernetes.io/role/elb=1 for internet-facing.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Cluster endpoint access</div>
+        <div class="console-field-value">Public and private</div>
+        <div class="console-field-hint">Public = kubectl works from your laptop. Private = nodes communicate with API server inside VPC (no NAT). Both is the recommended default for most teams. Private-only requires VPN for developer access.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Control plane logging</div>
+        <div class="console-field-value">Enable: API server, Audit, Authenticator</div>
+        <div class="console-field-hint">Sends control plane logs to CloudWatch. API + Audit + Authenticator give you who called what and every auth decision. Costs ~$0.50/GB ingested. Essential for security auditing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Add a Managed Node Group</div>
+      <div class="console-step-path">Cluster → Compute → Add node group</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Node group name</div>
+        <div class="console-field-value">general-workers</div>
+        <div class="console-field-hint">Descriptive name. Create separate node groups by workload type if needed: general-workers, gpu-workers, spot-workers.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Node IAM role</div>
+        <div class="console-field-value">eksNodeRole (AmazonEKSWorkerNodePolicy + AmazonEKS_CNI_Policy + AmazonEC2ContainerRegistryReadOnly)</div>
+        <div class="console-field-hint">Three policies required on every node role: WorkerNode (join cluster), CNI (manage VPC networking), ContainerRegistryReadOnly (pull from ECR). Do not add S3/DynamoDB here — use IRSA per-pod instead.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">AMI type</div>
+        <div class="console-field-value">Amazon Linux 2023 / EKS Optimized</div>
+        <div class="console-field-hint">AWS-maintained AMI pre-installed with kubelet, containerd, and AWS VPC CNI. Automatically updated when you upgrade the node group. Use Bottlerocket for enhanced security (immutable OS, minimal attack surface).</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Instance types</div>
+        <div class="console-field-value">m7g.large (or m6i.large for x86)</div>
+        <div class="console-field-hint">Graviton (m7g, c7g) offers ~20% better price/performance for most workloads. Avoid t-class burstable instances for production — CPU credit exhaustion causes sudden throttling.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Scaling configuration</div>
+        <div class="console-field-value">Minimum: 2 · Desired: 3 · Maximum: 10</div>
+        <div class="console-field-hint">Minimum 2 ensures at least one node per AZ for HA. Maximum sets the ceiling for Cluster Autoscaler/Karpenter. Desired is the starting point.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Configure kubectl Access</div>
+      <div class="console-step-path">Local terminal — after cluster is Active</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Update kubeconfig</div>
+        <div class="console-field-value">aws eks update-kubeconfig --name my-production-cluster --region ap-south-1</div>
+        <div class="console-field-hint">Adds the EKS cluster to your local ~/.kube/config. Your IAM identity must be in the aws-auth ConfigMap or EKS Access Entries to have cluster access.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Verify access</div>
+        <div class="console-field-value">kubectl get nodes</div>
+        <div class="console-field-hint">Should show your managed nodes in Ready state. If you get "Error from server (Forbidden)" your IAM role is not mapped in aws-auth / Access Entries.</div>
+      </div>
+      <div class="console-note">✅ Cluster is ready. Next steps: install AWS Load Balancer Controller, metrics-server, and configure Karpenter or Cluster Autoscaler.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Install Core Add-ons</div>
+      <div class="console-step-path">EKS → Cluster → Add-ons → Get more add-ons</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">CoreDNS</div>
+        <div class="console-field-value">Enabled (required)</div>
+        <div class="console-field-hint">Provides DNS resolution inside the cluster. Every Service gets a DNS name: my-service.my-namespace.svc.cluster.local. Without CoreDNS, service discovery fails completely.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">kube-proxy</div>
+        <div class="console-field-value">Enabled (required)</div>
+        <div class="console-field-hint">Maintains network rules on nodes — routes ClusterIP Service traffic to the correct pod. Required for Service-to-pod routing.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Amazon VPC CNI</div>
+        <div class="console-field-value">Enabled (required)</div>
+        <div class="console-field-hint">Assigns VPC IPs to pods. Required for EKS networking. Managed add-on ensures you always get the AWS-supported version.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">metrics-server</div>
+        <div class="console-field-value">Install separately (required for HPA)</div>
+        <div class="console-field-hint">HPA requires metrics-server to read CPU/memory from pods. Not installed by default. Install via: kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# SDK — Working with EKS Programmatically</h2>
+  <p>The AWS SDK for .NET lets you create and manage EKS clusters, node groups, Fargate profiles, and add-ons from C#. For deploying workloads, use the <strong>KubernetesClient</strong> NuGet package. Install: <code>AWSSDK.EKS</code> and <code>KubernetesClient</code>.</p>
+
+  <h3>Setup — EKS Client &amp; Describe Cluster</h3>
+  <div class="code-block"><span class="code-label">C# — describe cluster and list node groups</span><pre><span class="kw">using</span> Amazon.EKS;
+<span class="kw">using</span> Amazon.EKS.Model;
+
+<span class="kw">public class</span> <span class="tp">EksService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonEKS</span> _eks;
+
+    <span class="kw">public</span> <span class="fn">EksService</span>(<span class="tp">IAmazonEKS</span> eks) => _eks = eks;
+
+    <span class="cm">// ── Describe a cluster ─────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Cluster</span>&gt; <span class="fn">DescribeClusterAsync</span>(<span class="tp">string</span> clusterName)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _eks.<span class="fn">DescribeClusterAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeClusterRequest</span> { Name = clusterName });
+
+        <span class="kw">var</span> cluster = resp.Cluster;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Cluster: {cluster.Name}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Status: {cluster.Status}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"K8s version: {cluster.Version}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Endpoint: {cluster.Endpoint}"</span>);
+
+        <span class="kw">return</span> cluster;
+    }
+
+    <span class="cm">// ── List all node groups ────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">ListNodeGroupsAsync</span>(<span class="tp">string</span> clusterName)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _eks.<span class="fn">ListNodegroupsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListNodegroupsRequest</span> { ClusterName = clusterName });
+        <span class="kw">return</span> resp.Nodegroups;
+    }
+
+    <span class="cm">// ── Describe a node group (instance types, status, scaling)──</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Nodegroup</span>&gt; <span class="fn">DescribeNodeGroupAsync</span>(
+        <span class="tp">string</span> clusterName, <span class="tp">string</span> nodeGroupName)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _eks.<span class="fn">DescribeNodegroupAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeNodegroupRequest</span>
+        {
+            ClusterName   = clusterName,
+            NodegroupName = nodeGroupName
+        });
+        <span class="kw">return</span> resp.Nodegroup;
+    }
+}</pre></div>
+
+  <h3>Create Cluster &amp; Node Group</h3>
+  <div class="code-block"><span class="code-label">C# — create EKS cluster and managed node group</span><pre>    <span class="cm">// ── Create EKS cluster ─────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Cluster</span>&gt; <span class="fn">CreateClusterAsync</span>(
+        <span class="tp">string</span> name, <span class="tp">string</span> roleArn, <span class="tp">List</span>&lt;<span class="tp">string</span>&gt; subnetIds)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _eks.<span class="fn">CreateClusterAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateClusterRequest</span>
+        {
+            Name      = name,
+            Version   = <span class="str">"1.30"</span>,
+            RoleArn   = roleArn,
+            ResourcesVpcConfig = <span class="kw">new</span> <span class="tp">VpcConfigRequest</span>
+            {
+                SubnetIds             = subnetIds,
+                EndpointPublicAccess  = <span class="kw">true</span>,
+                EndpointPrivateAccess = <span class="kw">true</span>
+            },
+            Logging = <span class="kw">new</span> <span class="tp">Logging</span>
+            {
+                ClusterLogging = [<span class="kw">new</span> <span class="tp">LogSetup</span>
+                {
+                    Enabled = <span class="kw">true</span>,
+                    Types   = [<span class="str">"api"</span>, <span class="str">"audit"</span>, <span class="str">"authenticator"</span>]
+                }]
+            },
+            Tags = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+            {
+                [<span class="str">"Environment"</span>] = <span class="str">"production"</span>
+            }
+        });
+        <span class="kw">return</span> resp.Cluster;
+    }
+
+    <span class="cm">// ── Create managed node group ──────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Nodegroup</span>&gt; <span class="fn">CreateNodeGroupAsync</span>(
+        <span class="tp">string</span> clusterName, <span class="tp">string</span> nodeRoleArn,
+        <span class="tp">List</span>&lt;<span class="tp">string</span>&gt; subnetIds)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _eks.<span class="fn">CreateNodegroupAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateNodegroupRequest</span>
+        {
+            ClusterName     = clusterName,
+            NodegroupName   = <span class="str">"general-workers"</span>,
+            NodeRole        = nodeRoleArn,
+            Subnets         = subnetIds,
+            AmiType         = <span class="str">"AL2023_ARM_64_STANDARD"</span>, <span class="cm">// Graviton</span>
+            InstanceTypes   = [<span class="str">"m7g.large"</span>],
+            ScalingConfig   = <span class="kw">new</span> <span class="tp">NodegroupScalingConfig</span>
+            {
+                MinSize     = <span class="num">2</span>,
+                DesiredSize = <span class="num">3</span>,
+                MaxSize     = <span class="num">10</span>
+            },
+            UpdateConfig = <span class="kw">new</span> <span class="tp">NodegroupUpdateConfig</span>
+            {
+                MaxUnavailable = <span class="num">1</span>  <span class="cm">// rolling update — 1 node at a time</span>
+            }
+        });
+        <span class="kw">return</span> resp.Nodegroup;
+    }</pre></div>
+
+  <h3>Deploy a Workload via KubernetesClient</h3>
+  <div class="code-block"><span class="code-label">C# — deploy a Deployment + Service using KubernetesClient</span><pre><span class="kw">using</span> k8s;
+<span class="kw">using</span> k8s.Models;
+
+<span class="kw">public class</span> <span class="tp">K8sDeploymentService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IKubernetes</span> _k8s;
+
+    <span class="kw">public</span> <span class="fn">K8sDeploymentService</span>(<span class="tp">IKubernetes</span> k8s) => _k8s = k8s;
+
+    <span class="cm">// ── Create or update a Deployment ─────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeployAsync</span>(<span class="tp">string</span> ns, <span class="tp">string</span> name,
+        <span class="tp">string</span> image, <span class="tp">int</span> replicas)
+    {
+        <span class="kw">var</span> deployment = <span class="kw">new</span> <span class="tp">V1Deployment</span>
+        {
+            Metadata = <span class="kw">new</span> <span class="tp">V1ObjectMeta</span>
+            {
+                Name              = name,
+                NamespaceProperty = ns,
+                Labels            = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+                                    { [<span class="str">"app"</span>] = name }
+            },
+            Spec = <span class="kw">new</span> <span class="tp">V1DeploymentSpec</span>
+            {
+                Replicas = replicas,
+                Selector = <span class="kw">new</span> <span class="tp">V1LabelSelector</span>
+                {
+                    MatchLabels = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+                                  { [<span class="str">"app"</span>] = name }
+                },
+                Template = <span class="kw">new</span> <span class="tp">V1PodTemplateSpec</span>
+                {
+                    Metadata = <span class="kw">new</span> <span class="tp">V1ObjectMeta</span>
+                    {
+                        Labels = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+                                 { [<span class="str">"app"</span>] = name }
+                    },
+                    Spec = <span class="kw">new</span> <span class="tp">V1PodSpec</span>
+                    {
+                        Containers = [<span class="kw">new</span> <span class="tp">V1Container</span>
+                        {
+                            Name  = name,
+                            Image = image,
+                            Ports = [<span class="kw">new</span> <span class="tp">V1ContainerPort</span>
+                                     { ContainerPort = <span class="num">8080</span> }],
+                            Resources = <span class="kw">new</span> <span class="tp">V1ResourceRequirements</span>
+                            {
+                                Requests = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,
+                                    <span class="tp">ResourceQuantity</span>&gt;
+                                {
+                                    [<span class="str">"cpu"</span>]    = <span class="kw">new</span>(<span class="str">"250m"</span>),
+                                    [<span class="str">"memory"</span>] = <span class="kw">new</span>(<span class="str">"256Mi"</span>)
+                                },
+                                Limits = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,
+                                    <span class="tp">ResourceQuantity</span>&gt;
+                                {
+                                    [<span class="str">"cpu"</span>]    = <span class="kw">new</span>(<span class="str">"500m"</span>),
+                                    [<span class="str">"memory"</span>] = <span class="kw">new</span>(<span class="str">"512Mi"</span>)
+                                }
+                            }
+                        }]
+                    }
+                }
+            }
+        };
+
+        <span class="kw">await</span> _k8s.<span class="fn">CreateNamespacedDeploymentAsync</span>(deployment, ns);
+    }
+}</pre></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Cluster &amp; Node Configuration</h3>
+  <ul class="checklist">
+    <li>Always spread node groups across at least 2 AZs — one AZ outage should not take down your cluster</li>
+    <li>Use Managed Node Groups over self-managed — AWS handles draining, replacing, and patching</li>
+    <li>Set Minimum: 2 nodes — ensures at least one node per AZ for HA even when Cluster Autoscaler scales down</li>
+    <li>Use Graviton (m7g, c7g) instances — ~20% better price/performance for most workloads vs x86</li>
+    <li>Never use t-class (t3, t4g) for production nodes — CPU credits exhaust under sustained load causing throttling</li>
+    <li>Keep control plane and node group Kubernetes versions within 1 minor version of each other</li>
+    <li>Enable control plane logging (API, Audit, Authenticator) from day one — essential for debugging auth issues</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Use IRSA for every pod that needs AWS API access — never rely on the node-level EC2 instance role</li>
+    <li>Use EKS Access Entries (not aws-auth ConfigMap) for managing kubectl access on new clusters</li>
+    <li>Enable secrets encryption with KMS at cluster creation — it cannot be enabled after</li>
+    <li>Apply NetworkPolicies in all namespaces — default-deny-all + explicit allows per service</li>
+    <li>Run non-root containers — add <code>runAsNonRoot: true</code> and <code>readOnlyRootFilesystem: true</code> to all pod specs</li>
+    <li>Enable private API endpoint — restrict public endpoint to office/VPN IP ranges if possible</li>
+    <li>Scan all container images in ECR before deploying — block on CRITICAL CVEs in your CI/CD pipeline</li>
+  </ul>
+
+  <h3>Reliability &amp; Cost</h3>
+  <ul class="checklist">
+    <li>Always set CPU and memory <code>requests</code> and <code>limits</code> — without them HPA cannot scale and pods may be evicted unexpectedly</li>
+    <li>Set a PodDisruptionBudget for every critical service — prevents drain from removing too many pods at once</li>
+    <li>Use Karpenter over Cluster Autoscaler for new clusters — faster node provisioning, better instance diversity</li>
+    <li>Use Spot instances for stateless, fault-tolerant workloads — 70–90% node cost savings</li>
+    <li>Set <code>minReplicas: 2</code> in HPA for all production services — a single replica is a single point of failure</li>
+    <li>Use Fargate for batch/ephemeral workloads to avoid idle node costs</li>
+    <li>Tag all EKS resources — node groups, load balancers, volumes — with environment/team/cost-center for billing visibility</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top EKS Mistakes</h4>
+    <p>
+    ❌ <strong>No resource requests on pods</strong> — HPA cannot scale, scheduler over-packs nodes, pods get OOMKilled unexpectedly<br>
+    ❌ <strong>Using aws-auth ConfigMap for access on new clusters</strong> — one YAML typo locks everyone out including the cluster creator; use EKS Access Entries instead<br>
+    ❌ <strong>Single-AZ node group</strong> — one AZ outage kills all capacity; always span at least 2 AZs<br>
+    ❌ <strong>Node-level IAM role for S3/DynamoDB access</strong> — all pods on the node get access; a breach exposes all AWS resources; use IRSA<br>
+    ❌ <strong>Not setting PodDisruptionBudgets</strong> — node drain during upgrade can take ALL replicas of a service offline simultaneously<br>
+    ❌ <strong>Using t3/t4g instances for production</strong> — CPU credit exhaustion causes sudden throttling exactly when you have traffic spikes<br>
+    ❌ <strong>Forgetting subnet IP space</strong> — VPC CNI gives every pod a VPC IP; a /24 subnet runs out fast at scale; use /22 minimum<br>
+    ❌ <strong>Skipping metrics-server</strong> — HPA silently fails without it; pods never scale even under 100% CPU load
+    </p>
+  </div>
+
+  <h3>EKS vs ECS vs Lambda — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>EKS</th><th>ECS</th><th>Lambda</th></tr>
+    <tr><td>Kubernetes ecosystem (Helm, Istio, ArgoCD)</td><td>✅ Native</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Multi-cloud / portable workloads</td><td>✅ K8s standard</td><td>❌ AWS-only</td><td>❌ AWS-only</td></tr>
+    <tr><td>Simpler operational model</td><td>❌ Complex</td><td>✅ Simpler</td><td>✅ Zero infra</td></tr>
+    <tr><td>Long-running stateful services</td><td>✅ StatefulSets</td><td>✅ ECS volumes</td><td>❌ 15min max</td></tr>
+    <tr><td>Sub-second cold starts</td><td>✅ Always warm</td><td>✅ Always warm</td><td>⚠️ Cold start latency</td></tr>
+    <tr><td>Cost at zero traffic</td><td>$0.10/hr cluster fee</td><td>✅ $0 (Fargate)</td><td>✅ $0 — pay per call</td></tr>
+    <tr><td>GPU workloads (ML training)</td><td>✅ GPU nodes</td><td>✅ GPU instances</td><td>❌ Not supported</td></tr>
+    <tr><td>Fine-grained auto-scaling</td><td>✅ HPA + KEDA</td><td>✅ ECS scaling</td><td>✅ Automatic</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon EKS!</h3>
+    <p>What is EKS · AWS vs your responsibilities · Cluster architecture (Control Plane + Data Plane) · kubectl auth flow · Managed Node Groups vs Fargate vs Self-managed · Spot instances strategy · Kubernetes Service types (ClusterIP → Ingress → ALB) · VPC CNI pod networking · HPA + VPA + Karpenter scaling chain · IRSA per-pod IAM roles (vs dangerous node-level role) · aws-auth vs EKS Access Entries · Full AWS Console setup (every field!) · 3 C# patterns (describe cluster, create cluster+node group, KubernetesClient deploy) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--eks-d);">Your Kubernetes cluster is now production-hardened, securely configured, and auto-scaling! ☸️🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
