@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Amplify — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fdf8f6;--surface:#f7f0ed;--card:#fff;--border:#ecddd8;--border2:#dfc8c0;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --blue:#2a5a9a;--blue-l:#dce8f5;
+  --green:#2a7a5a;--green-l:#d8f0e8;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a7a6a;--teal-l:#d4f0ea;
+  --amp:#c0412a;--amp-l:#fce8e4;--amp-d:#8a2215;
+  --text:#1e1410;--text2:#4a3530;--muted:#9a827a;
+  --code-bg:#160e0c;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#fceae5 0%,#f5d0c8 45%,#edbdb4 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'⚡';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.05;pointer-events:none;}
+.header::after{content:'🚀';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.04;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--amp-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(253,248,246,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--amp-l);color:var(--amp-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--amp-l);letter-spacing:-.01em;}
+.section h3{color:var(--amp-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ DEPLOY PIPELINE VISUAL ══ */
+.pipeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.pipeline-header{background:linear-gradient(90deg,var(--amp-l),var(--aws-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.pipeline-body{padding:16px;}
+.pipe-row{display:flex;align-items:stretch;overflow-x:auto;gap:0;margin-bottom:10px;}
+.pipe-stage{flex:1;min-width:90px;padding:10px 10px;text-align:center;border-right:1px solid var(--border);position:relative;}
+.pipe-stage:last-child{border-right:none;}
+.pipe-icon{font-size:1.2rem;margin-bottom:4px;display:block;}
+.pipe-stage h6{font-size:.7rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.pipe-stage p{font-size:.6rem;color:var(--muted);}
+.pipe-stage .pipe-time{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--amp-d);margin-top:3px;display:block;}
+.pipe-num{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;color:#fff;margin:0 auto 5px;}
+
+/* ══ BRANCH-ENV VISUAL ══ */
+.branch-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.bv-header{background:linear-gradient(90deg,var(--amp-l),var(--purple-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.bv-body{padding:14px;}
+.bv-repo{background:var(--surface);border:2px solid var(--border2);border-radius:var(--r);padding:10px 14px;text-align:center;max-width:200px;margin:0 auto;}
+.bv-repo h5{color:var(--text);font-weight:700;font-size:.8rem;margin-bottom:2px;}
+.bv-repo p{font-size:.65rem;color:var(--muted);}
+.bv-arrow{text-align:center;color:var(--amp-d);font-size:1.2rem;padding:4px 0;}
+.bv-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:8px;}
+.bv-branch{border:1.5px solid var(--border);border-radius:var(--r);padding:9px 10px;text-align:center;}
+.bv-branch.main{background:var(--amp-l);border-color:rgba(192,65,42,.25);}
+.bv-branch.main h6{color:var(--amp-d);}
+.bv-branch.staging{background:var(--aws-l);border-color:rgba(212,135,42,.25);}
+.bv-branch.staging h6{color:var(--aws);}
+.bv-branch.feature{background:var(--purple-l);border-color:rgba(108,71,212,.2);}
+.bv-branch.feature h6{color:var(--purple);}
+.bv-branch h6{font-weight:700;font-size:.72rem;margin-bottom:2px;}
+.bv-branch p{font-size:.62rem;color:var(--muted);}
+.bv-branch .bv-url{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--amp-d);margin-top:3px;display:block;}
+
+/* ══ FEATURE COMPARE ══ */
+.feat-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-header{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.78rem;}
+.fc-col.amp-col{background:var(--amp-l);color:var(--amp-d);border-right:1px solid var(--border);}
+.fc-col.manual-col{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:140px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.75rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.better{color:var(--green);font-weight:600;}
+.fc-val.worse{color:var(--red);font-weight:600;}
+.fc-val.same{color:var(--muted);}
+
+/* ══ BUILD SPEC METER ══ */
+.phase-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.phase-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.phase-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc-pre::before{background:var(--blue);}
+.pc-build::before{background:var(--amp);}
+.pc-post::before{background:var(--green);}
+.phase-card .pc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.phase-card .pc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.pc-pre .pc-type{background:var(--blue-l);color:var(--blue);}
+.pc-build .pc-type{background:var(--amp-l);color:var(--amp-d);}
+.pc-post .pc-type{background:var(--green-l);color:var(--green);}
+.pc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.pc-metric-label{font-size:.68rem;color:var(--muted);}
+.pc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+.pc-bar{height:5px;background:var(--surface);border-radius:100px;overflow:hidden;margin-bottom:8px;border:1px solid var(--border);}
+.pc-fill{height:100%;border-radius:100px;}
+
+/* ══ AUTH FLOW ══ */
+.auth-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.av-header{background:linear-gradient(90deg,var(--aws-l),var(--amp-l));padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.av-body{padding:14px;}
+.av-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.av-row:last-child{margin-bottom:0;}
+.av-label{font-size:.72rem;font-weight:700;width:130px;flex-shrink:0;color:var(--text2);}
+.av-steps{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+.av-step{padding:4px 10px;border-radius:4px;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.av-cognito{background:var(--amp-l);border:1px solid rgba(192,65,42,.3);color:var(--amp-d);}
+.av-token{background:var(--green-l);border:1px solid rgba(42,122,90,.3);color:var(--green);}
+.av-denied{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+.av-note{font-size:.65rem;color:var(--muted);margin-left:auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:520px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--amp-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,90,154,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-amp{background:var(--amp-l);border:1.5px solid rgba(192,65,42,.3);}
+.n-amp .flow-node-title{color:var(--amp-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(42,122,90,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--amp-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--amp);}
+.step-body h4{color:var(--amp-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--amp-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--amp-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--amp-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--amp);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--amp-l);border:1px solid rgba(192,65,42,.2);border-left:4px solid var(--amp);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--amp-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(42,122,90,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #2a1410;border-left:3px solid var(--amp);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#e07a60;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#5a4040;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f2a27a;}
+code{background:rgba(192,65,42,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--amp-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--amp-l),var(--green-l));border:1px solid rgba(192,65,42,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.phase-grid,.bv-branches{grid-template-columns:1fr;}
+  .flow-row,.fc-row,.pipe-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .av-note{display:none;}
+  .fc-label{width:90px;font-size:.6rem;}
+  .pipe-row{overflow-x:auto;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <h1>⚡ <span>AWS Amplify</span> — Complete Guide</h1>
+  <p>Full-Stack Deployment · CI/CD Pipelines · Hosting · Auth (Cognito) · Data (AppSync/GraphQL) · Storage · C# Backend</p>
+</div>
+
+<div class="tab-nav"><div class="tab-nav-inner">
+  <button class="tab-btn active" onclick="T('what',this)">What is Amplify</button>
+  <button class="tab-btn" onclick="T('hosting',this)">Hosting &amp; CI/CD</button>
+  <button class="tab-btn" onclick="T('branches',this)">Branch Environments</button>
+  <button class="tab-btn" onclick="T('auth',this)">Auth (Cognito)</button>
+  <button class="tab-btn" onclick="T('data',this)">Data &amp; Storage</button>
+  <button class="tab-btn" onclick="T('buildspec',this)">Build Spec</button>
+  <button class="tab-btn" onclick="T('console',this)">Console Setup</button>
+  <button class="tab-btn" onclick="T('sdk',this)">C# Backend</button>
+  <button class="tab-btn" onclick="T('best',this)">Best Practices</button>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS AMPLIFY
+══════════════════════════════════ -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>⚡ What is AWS Amplify?</h2>
+  <p><strong>AWS Amplify</strong> is a complete platform for building and deploying full-stack web and mobile applications on AWS. It bundles <strong>Amplify Hosting</strong> (deploy frontend apps with CI/CD from Git), <strong>Amplify Backend</strong> (provision Auth, API, Storage, Functions via CLI or Gen 2 CDK), and a set of client-side libraries that connect your React/Next.js/Vue app to those backends in a few lines of code.</p>
+
+  <div class="tip">
+    <h4>💡 Real-life analogy — The Furnished Apartment</h4>
+    <p>Building a web app from scratch on AWS is like buying an empty plot and constructing a house — you pick every brick (EC2, RDS, Cognito, S3, CloudFront…). <strong>Amplify is the fully furnished apartment</strong>. Move in your code and it wires up authentication, a database API, file storage, and a global CDN for you. The furniture (Cognito, AppSync, DynamoDB, S3, CloudFront) is standard AWS under the hood — Amplify just places it, arranges it, and connects everything so you don't spend weeks on plumbing before writing your first feature.</p>
+  </div>
+
+  <h3>Two Distinct Products Inside Amplify</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌐 Amplify Hosting</h4>
+      <ul>
+        <li>Connect a Git repo (GitHub, GitLab, Bitbucket, CodeCommit)</li>
+        <li>Every push triggers build → test → deploy automatically</li>
+        <li>Global CDN (CloudFront) for static assets</li>
+        <li>SSL/TLS certificate provisioned automatically</li>
+        <li>Custom domains, branch-based preview URLs</li>
+        <li>Server-Side Rendering (Next.js, Nuxt) support</li>
+        <li>Works for any framework or plain HTML/CSS/JS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔧 Amplify Backend (Gen 2)</h4>
+      <ul>
+        <li>Define backend resources in TypeScript (CDK under the hood)</li>
+        <li>Auth — Cognito User Pools + Identity Pools</li>
+        <li>Data — AppSync GraphQL API backed by DynamoDB</li>
+        <li>Storage — S3 buckets with fine-grained access rules</li>
+        <li>Functions — Lambda functions triggered by events</li>
+        <li>Sandbox environments per developer, branch deployments in CI</li>
+        <li>Gen 2 = code-first; Gen 1 = CLI wizard (legacy)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Amplify Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌿</span><h4>Branch → Environment</h4><p>Each Git branch gets its own deployed URL and backend sandbox.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Auth</h4><p>Cognito User Pools for sign-up/in; Identity Pools for AWS resource access.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>Data / AppSync</h4><p>GraphQL API auto-generated from your TypeScript data model.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>Storage</h4><p>S3-backed file storage with per-user, per-group access rules.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Functions</h4><p>Lambda functions — triggered on API calls, auth events, schedules.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>CI/CD</h4><p>Fully managed build pipeline — no CodePipeline config needed.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>SSR / SSG</h4><p>Next.js App Router with server-side rendering on AWS Lambda.</p></div>
+    <div class="icon-item"><span class="emoji">🔔</span><h4>Notifications</h4><p>Push notifications via SNS + Pinpoint, email/SMS via SES/SNS.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Custom Domains</h4><p>Connect your domain — Amplify handles Route 53 + ACM certs.</p></div>
+  </div>
+
+  <h3>Amplify vs Building Manually on AWS</h3>
+  <div class="feat-compare">
+    <div class="fc-header">
+      <div class="fc-col amp-col">⚡ AWS Amplify</div>
+      <div class="fc-col manual-col">🔧 Manual AWS (S3 + CloudFront + Cognito + …)</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Time to first deploy</div>
+      <div class="fc-val better">~5 minutes — connect repo, done</div>
+      <div class="fc-val worse">Hours — S3 policy, CloudFront, OAC, ACM, Route 53…</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">CI/CD setup</div>
+      <div class="fc-val better">Automatic — every git push</div>
+      <div class="fc-val worse">CodePipeline + CodeBuild + IAM roles</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Branch previews</div>
+      <div class="fc-val better">Built-in per branch URL</div>
+      <div class="fc-val worse">Manual — extra CloudFront distribution per branch</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Auth setup</div>
+      <div class="fc-val better">3 lines of config TypeScript</div>
+      <div class="fc-val worse">Cognito User Pool + App Client + Identity Pool + triggers</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Control &amp; flexibility</div>
+      <div class="fc-val same">Medium — escape hatches to CDK</div>
+      <div class="fc-val better">Full — every AWS setting exposed</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Cost overhead</div>
+      <div class="fc-val better">No extra cost — pay per underlying AWS resource</div>
+      <div class="fc-val same">No extra cost — same resources</div>
+    </div>
+    <div class="fc-row">
+      <div class="fc-label">Best for</div>
+      <div class="fc-val better">Teams wanting to ship features, not plumbing</div>
+      <div class="fc-val same">Large teams needing every knob exposed</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — HOSTING & CI/CD
+══════════════════════════════════ -->
+<div id="tab-hosting" class="tab-panel"><div class="section">
+  <h2>🌐 Amplify Hosting &amp; CI/CD Pipeline</h2>
+  <p>Amplify Hosting connects directly to your Git repository. Every commit triggers an automated build-and-deploy pipeline. The output is served from CloudFront — a global CDN with 400+ edge locations — so your users get fast load times worldwide with zero CDN config from you.</p>
+
+  <!-- DEPLOY PIPELINE VISUAL -->
+  <h3>Full CI/CD Pipeline — Git Push to Live</h3>
+  <div class="pipeline">
+    <div class="pipeline-header">🚀 Amplify CI/CD — from git push to global CDN in minutes</div>
+    <div class="pipeline-body">
+      <p style="font-size:.72rem;font-weight:700;color:var(--amp-d);margin-bottom:8px;">▶ Every push to a connected branch triggers this pipeline automatically</p>
+      <div class="pipe-row">
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--blue);">1</div>
+          <span class="pipe-icon">📤</span>
+          <h6>Source</h6>
+          <p>Git push detected by webhook</p>
+          <span class="pipe-time">t=0s</span>
+        </div>
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--amp);">2</div>
+          <span class="pipe-icon">📦</span>
+          <h6>Install</h6>
+          <p>npm install / restore packages</p>
+          <span class="pipe-time">~1–2 min</span>
+        </div>
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--amp);">3</div>
+          <span class="pipe-icon">🔨</span>
+          <h6>Build</h6>
+          <p>npm run build / framework compile</p>
+          <span class="pipe-time">~2–5 min</span>
+        </div>
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--aws);">4</div>
+          <span class="pipe-icon">🧪</span>
+          <h6>Test</h6>
+          <p>Cypress E2E / unit tests (optional)</p>
+          <span class="pipe-time">~1–3 min</span>
+        </div>
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--green);">5</div>
+          <span class="pipe-icon">🚀</span>
+          <h6>Deploy</h6>
+          <p>Assets uploaded to S3 + CloudFront invalidated</p>
+          <span class="pipe-time">~30s</span>
+        </div>
+        <div class="pipe-stage">
+          <div class="pipe-num" style="background:var(--green);">6</div>
+          <span class="pipe-icon">🌍</span>
+          <h6>Live</h6>
+          <p>Global CDN serving new version</p>
+          <span class="pipe-time">t=live</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>What Amplify Hosting Creates Under the Hood</h3>
+  <div class="flow">
+    <div class="flow-node n-amp">
+      <div class="flow-node-title">⚡ You: connect repo + click Deploy</div>
+      <ul class="flow-items">
+        <li>Link GitHub/GitLab/Bitbucket account</li>
+        <li>Select repository and branch</li>
+        <li>Amplify detects your framework automatically</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ Amplify provisions automatically</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">☁️ AWS resources created for you</div>
+      <ul class="flow-items">
+        <li><strong>S3 bucket</strong> — stores your build output (not publicly accessible)</li>
+        <li><strong>CloudFront distribution</strong> — CDN serving assets globally via OAC</li>
+        <li><strong>ACM certificate</strong> — TLS cert for your custom domain (auto-renewed)</li>
+        <li><strong>IAM role</strong> — scoped build role used by the CI pipeline</li>
+        <li><strong>Lambda@Edge / Lambda</strong> — for SSR (Next.js server functions)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ every git push</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ New version live in minutes</div>
+      <ul class="flow-items">
+        <li>Build output uploaded to S3 as new deploy</li>
+        <li>CloudFront cache invalidated — old version removed from edge</li>
+        <li>Deploy history kept — one-click rollback to any previous build</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Supported Frameworks</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚛️</span><h4>Next.js</h4><p>Full SSR + SSG + App Router support on AWS Lambda.</p></div>
+    <div class="icon-item"><span class="emoji">💚</span><h4>Nuxt / Vue</h4><p>SSR and static generation fully supported.</p></div>
+    <div class="icon-item"><span class="emoji">🅰️</span><h4>Angular</h4><p>Static build with routing support.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Vite / React</h4><p>SPA with client-side routing.</p></div>
+    <div class="icon-item"><span class="emoji">🔥</span><h4>Remix</h4><p>SSR-first framework — Lambda-backed.</p></div>
+    <div class="icon-item"><span class="emoji">📄</span><h4>Plain HTML/JS</h4><p>No framework needed — static sites work too.</p></div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Instant rollback — the killer feature</h4>
+    <p>Every Amplify deployment is versioned and retained. If a bad deploy goes live, open the Amplify Console → App → branch → Deployments → click any previous deploy → <strong>Redeploy this version</strong>. The CDN is updated in ~30 seconds. No git revert, no re-build — instant recovery from production incidents.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — BRANCH ENVIRONMENTS
+══════════════════════════════════ -->
+<div id="tab-branches" class="tab-panel"><div class="section">
+  <h2>🌿 Branch Environments — Preview Every Change</h2>
+  <p>Amplify maps each Git branch to an isolated deployed environment with its own URL. Push to <code>main</code> → production. Push to <code>staging</code> → staging URL. Push a feature branch → instant preview URL shared with your team. Each environment can have its own backend and environment variables.</p>
+
+  <!-- BRANCH-ENV VISUAL -->
+  <h3>Branch → Environment Mapping</h3>
+  <div class="branch-visual">
+    <div class="bv-header">🌿 Git branches → isolated Amplify environments with unique URLs</div>
+    <div class="bv-body">
+      <div class="bv-repo">
+        <h5>📁 GitHub Repo</h5>
+        <p>my-app · all branches connected</p>
+      </div>
+      <div class="bv-arrow">↓ Amplify watches all branches</div>
+      <div class="bv-branches">
+        <div class="bv-branch main">
+          <h6>🟢 main</h6>
+          <p>Production environment</p>
+          <span class="bv-url">myapp.com</span>
+        </div>
+        <div class="bv-branch staging">
+          <h6>🟡 staging</h6>
+          <p>QA / pre-prod environment</p>
+          <span class="bv-url">staging.myapp.com</span>
+        </div>
+        <div class="bv-branch feature">
+          <h6>🟣 feat/login-redesign</h6>
+          <p>Auto-generated preview</p>
+          <span class="bv-url">feat-login.abc123.amplifyapp.com</span>
+        </div>
+        <div class="bv-branch feature" style="background:var(--teal-l);border-color:rgba(26,122,106,.2);">
+          <h6 style="color:var(--teal);">🔵 feat/dashboard</h6>
+          <p>Another PR preview</p>
+          <span class="bv-url">feat-dashboard.abc123.amplifyapp.com</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Environment Variables — Per Branch Config</h3>
+  <p>Each branch can have different environment variables — critical for keeping dev/staging/prod configs separate. Set them in the Amplify Console or <code>amplify.yml</code>.</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🟢 main branch variables</h4>
+      <ul>
+        <li><code>NEXT_PUBLIC_API_URL</code> = https://api.myapp.com</li>
+        <li><code>NEXT_PUBLIC_ENV</code> = production</li>
+        <li><code>NEXT_PUBLIC_ANALYTICS_ID</code> = UA-PROD-123</li>
+        <li><code>NODE_ENV</code> = production</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🟡 staging branch variables</h4>
+      <ul>
+        <li><code>NEXT_PUBLIC_API_URL</code> = https://api-staging.myapp.com</li>
+        <li><code>NEXT_PUBLIC_ENV</code> = staging</li>
+        <li><code>NEXT_PUBLIC_ANALYTICS_ID</code> = UA-STG-456</li>
+        <li><code>NODE_ENV</code> = production</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Pull Request Previews — Show Stakeholders Before Merging</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">👩‍💻 Dev opens Pull Request</div>
+      <ul class="flow-items">
+        <li>PR created from <code>feat/new-checkout</code> → <code>main</code></li>
+        <li>Amplify webhook fires immediately on PR open</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ auto-build triggered</div>
+    <div class="flow-node n-amp">
+      <div class="flow-node-title">⚡ Amplify builds the PR branch</div>
+      <ul class="flow-items">
+        <li>Isolated environment spun up — same pipeline as production</li>
+        <li>Unique preview URL generated: <code>pr-42.abc123.amplifyapp.com</code></li>
+        <li>URL posted as a comment on the GitHub PR automatically</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ team reviews</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Stakeholders review on real URL</div>
+      <ul class="flow-items">
+        <li>Designer, PM, QA all click the link — no local setup needed</li>
+        <li>PR merged → preview environment auto-deleted</li>
+        <li>Merge triggers production deploy on <code>main</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Preview environments have the same cost as regular environments</h4>
+    <p>Each Amplify branch environment runs a full CloudFront distribution and SSR Lambda (for Next.js). Many open feature branches = many running environments. Delete branches you no longer need. Set branch auto-deletion in your repo to trigger Amplify environment cleanup, or configure Amplify to only create previews for branches matching a pattern (e.g. <code>feat/*</code>).</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — AUTH (COGNITO)
+══════════════════════════════════ -->
+<div id="tab-auth" class="tab-panel"><div class="section">
+  <h2>🔑 Auth — Cognito User Pools via Amplify</h2>
+  <p>Amplify Auth provisions and connects <strong>Amazon Cognito</strong> — AWS's managed authentication service — to your app. You get sign-up, sign-in, email/phone verification, MFA, social sign-in (Google, Facebook, Apple), and JWT token management — all in a few lines of backend config and a few more of frontend code.</p>
+
+  <!-- AUTH FLOW VISUAL -->
+  <h3>Auth Flow — Sign-In to Authenticated API Call</h3>
+  <div class="auth-visual">
+    <div class="av-header">🔑 Amplify Auth — from login form to authorised backend call</div>
+    <div class="av-body">
+      <div class="av-row">
+        <div class="av-label">User logs in</div>
+        <div class="av-steps">
+          <div class="av-step av-cognito">signIn() called</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-cognito">Cognito validates password</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-token">JWT tokens returned</div>
+        </div>
+      </div>
+      <div class="av-row">
+        <div class="av-label">Authenticated call</div>
+        <div class="av-steps">
+          <div class="av-step av-token">ID + Access token in header</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-cognito">AppSync / API GW validates JWT</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-token">Data returned ✅</div>
+        </div>
+      </div>
+      <div class="av-row">
+        <div class="av-label">Token expired</div>
+        <div class="av-steps">
+          <div class="av-step av-token">Refresh token used</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-cognito">Cognito issues new tokens</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-token">Silent refresh — user unaware ✅</div>
+        </div>
+      </div>
+      <div class="av-row">
+        <div class="av-label">Wrong password</div>
+        <div class="av-steps">
+          <div class="av-step av-denied">NotAuthorizedException</div>
+          <div class="av-step" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">→</div>
+          <div class="av-step av-denied">5 failures → account locked ❌</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Cognito Token Types</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Token</th><th>Lifetime</th><th>Purpose</th><th>Store where</th></tr>
+    <tr><td>ID Token (JWT)</td><td>1 hour</td><td>User identity claims (email, sub, groups) — sent to your API</td><td>Memory only</td></tr>
+    <tr><td>Access Token (JWT)</td><td>1 hour</td><td>Authorize API Gateway / AppSync calls</td><td>Memory only</td></tr>
+    <tr><td>Refresh Token</td><td>30 days (configurable)</td><td>Silently get new ID + Access tokens without re-login</td><td>HttpOnly cookie</td></tr>
+  </table></div>
+
+  <h3>Backend Auth Config (Amplify Gen 2)</h3>
+  <div class="code-block"><span class="code-label">TypeScript — amplify/auth/resource.ts (Gen 2)</span><pre><span class="kw">import</span> { defineAuth } <span class="kw">from</span> <span class="str">'@aws-amplify/backend'</span>;
+
+<span class="kw">export const</span> auth = <span class="fn">defineAuth</span>({
+  loginWith: {
+    email: <span class="kw">true</span>,         <span class="cm">// email + password sign-in</span>
+    phone: <span class="kw">false</span>,
+    externalProviders: {
+      google: {
+        clientId:     <span class="fn">secret</span>(<span class="str">'GOOGLE_CLIENT_ID'</span>),
+        clientSecret: <span class="fn">secret</span>(<span class="str">'GOOGLE_CLIENT_SECRET'</span>),
+      },
+      callbackUrls: [<span class="str">'https://myapp.com/auth/callback'</span>],
+      logoutUrls:   [<span class="str">'https://myapp.com'</span>],
+    },
+  },
+  multifactor: {
+    mode: <span class="str">'OPTIONAL'</span>,  <span class="cm">// users can enroll TOTP or SMS MFA</span>
+    totp: <span class="kw">true</span>,
+  },
+  userAttributes: {
+    <span class="str">'custom:role'</span>: {
+      dataType: <span class="str">'String'</span>,
+      mutable:  <span class="kw">true</span>,
+    },
+  },
+});</pre></div>
+
+  <h3>Frontend Auth — React (Amplify JS v6)</h3>
+  <div class="code-block"><span class="code-label">TypeScript — sign up, sign in, get current user</span><pre><span class="kw">import</span> { signUp, signIn, getCurrentUser,
+         signOut, fetchAuthSession } <span class="kw">from</span> <span class="str">'aws-amplify/auth'</span>;
+
+<span class="cm">// ── Register a new user ────────────────────────────────────</span>
+<span class="kw">const</span> { isSignUpComplete } = <span class="kw">await</span> <span class="fn">signUp</span>({
+  username: <span class="str">'user@example.com'</span>,
+  password: <span class="str">'Passw0rd!'</span>,
+  options: {
+    userAttributes: { email: <span class="str">'user@example.com'</span> },
+  },
+});
+
+<span class="cm">// ── Sign in ────────────────────────────────────────────────</span>
+<span class="kw">const</span> { isSignedIn } = <span class="kw">await</span> <span class="fn">signIn</span>({
+  username: <span class="str">'user@example.com'</span>,
+  password: <span class="str">'Passw0rd!'</span>,
+});
+
+<span class="cm">// ── Get current authenticated user ────────────────────────</span>
+<span class="kw">const</span> { username, userId } = <span class="kw">await</span> <span class="fn">getCurrentUser</span>();
+
+<span class="cm">// ── Get JWT token for API calls ───────────────────────────</span>
+<span class="kw">const</span> session = <span class="kw">await</span> <span class="fn">fetchAuthSession</span>();
+<span class="kw">const</span> idToken = session.tokens?.idToken?.toString();
+<span class="cm">// → Send as Authorization header to your .NET API</span>
+
+<span class="cm">// ── Sign out ───────────────────────────────────────────────</span>
+<span class="kw">await</span> <span class="fn">signOut</span>();</pre></div>
+
+  <div class="success">
+    <h4>✅ Use the Authenticator UI component — zero login UI to build</h4>
+    <p>Amplify ships a ready-made <code>&lt;Authenticator&gt;</code> React component that renders sign-up, sign-in, forgot password, MFA, and email verification flows out of the box. Wrap your app root and your entire auth UI is done: <code>&lt;Authenticator&gt;&lt;App /&gt;&lt;/Authenticator&gt;</code>. It's themeable with CSS variables to match your brand.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — DATA & STORAGE
+══════════════════════════════════ -->
+<div id="tab-data" class="tab-panel"><div class="section">
+  <h2>📡 Data &amp; Storage — AppSync GraphQL + S3</h2>
+  <p>Amplify Data provisions an <strong>AWS AppSync GraphQL API</strong> backed by <strong>DynamoDB</strong> from a simple TypeScript schema. You define your models — Amplify generates the DynamoDB tables, resolvers, and full CRUD GraphQL operations automatically. Amplify Storage gives your users a per-user, per-group S3 bucket with fine-grained access — no S3 policy expertise needed.</p>
+
+  <h3>Data Model Definition (Gen 2)</h3>
+  <div class="code-block"><span class="code-label">TypeScript — amplify/data/resource.ts</span><pre><span class="kw">import</span> { a, defineData, ClientSchema } <span class="kw">from</span> <span class="str">'@aws-amplify/backend'</span>;
+
+<span class="kw">const</span> schema = a.<span class="fn">schema</span>({
+  <span class="cm">// ── DynamoDB table + AppSync CRUD operations ──────────────</span>
+  <span class="tp">Todo</span>: a
+    .<span class="fn">model</span>({
+      title:     a.<span class="fn">string</span>().<span class="fn">required</span>(),
+      content:   a.<span class="fn">string</span>(),
+      done:      a.<span class="fn">boolean</span>().<span class="fn">default</span>(<span class="kw">false</span>),
+      priority:  a.<span class="fn">enum</span>([<span class="str">'LOW'</span>, <span class="str">'MEDIUM'</span>, <span class="str">'HIGH'</span>]),
+      owner:     a.<span class="fn">string</span>(),
+    })
+    .<span class="fn">authorization</span>(allow => [
+      allow.<span class="fn">owner</span>(),             <span class="cm">// only creator can CRUD</span>
+      allow.<span class="fn">authenticated</span>().<span class="fn">to</span>([<span class="str">'read'</span>]) <span class="cm">// all auth users can read</span>
+    ]),
+
+  <span class="tp">Post</span>: a
+    .<span class="fn">model</span>({
+      title:   a.<span class="fn">string</span>().<span class="fn">required</span>(),
+      body:    a.<span class="fn">string</span>(),
+      author:  a.<span class="fn">belongsTo</span>(<span class="str">'User'</span>, <span class="str">'authorId'</span>),
+    })
+    .<span class="fn">authorization</span>(allow => [allow.<span class="fn">authenticated</span>()]),
+});
+
+<span class="kw">export type</span> <span class="tp">Schema</span> = <span class="tp">ClientSchema</span>&lt;<span class="kw">typeof</span> schema&gt;;
+
+<span class="kw">export const</span> data = <span class="fn">defineData</span>({
+  schema,
+  authorizationModes: {
+    defaultAuthorizationMode: <span class="str">'userPool'</span>, <span class="cm">// Cognito JWT</span>
+  },
+});</pre></div>
+
+  <h3>Frontend Data Operations</h3>
+  <div class="code-block"><span class="code-label">TypeScript — CRUD operations from React component</span><pre><span class="kw">import</span> { generateClient } <span class="kw">from</span> <span class="str">'aws-amplify/data'</span>;
+<span class="kw">import</span> <span class="kw">type</span> { <span class="tp">Schema</span> } <span class="kw">from</span> <span class="str">'../amplify/data/resource'</span>;
+
+<span class="kw">const</span> client = <span class="fn">generateClient</span>&lt;<span class="tp">Schema</span>&gt;();
+
+<span class="cm">// ── Create ─────────────────────────────────────────────────</span>
+<span class="kw">const</span> { data: todo } = <span class="kw">await</span> client.models.<span class="tp">Todo</span>.<span class="fn">create</span>({
+  title:    <span class="str">'Learn Amplify Gen 2'</span>,
+  priority: <span class="str">'HIGH'</span>,
+});
+
+<span class="cm">// ── List with filter ───────────────────────────────────────</span>
+<span class="kw">const</span> { data: todos } = <span class="kw">await</span> client.models.<span class="tp">Todo</span>.<span class="fn">list</span>({
+  filter: { done: { eq: <span class="kw">false</span> } },
+});
+
+<span class="cm">// ── Real-time subscription ─────────────────────────────────</span>
+<span class="kw">const</span> sub = client.models.<span class="tp">Todo</span>.<span class="fn">observeQuery</span>().<span class="fn">subscribe</span>({
+  next: ({ items }) => <span class="fn">setTodos</span>(items),
+});
+<span class="cm">// AppSync WebSocket — updates pushed to all subscribers live</span>
+
+<span class="cm">// ── Update ─────────────────────────────────────────────────</span>
+<span class="kw">await</span> client.models.<span class="tp">Todo</span>.<span class="fn">update</span>({ id: todo.id, done: <span class="kw">true</span> });
+
+<span class="cm">// ── Delete ─────────────────────────────────────────────────</span>
+<span class="kw">await</span> client.models.<span class="tp">Todo</span>.<span class="fn">delete</span>({ id: todo.id });</pre></div>
+
+  <h3>Amplify Storage — S3 with Access Rules</h3>
+  <div class="code-block"><span class="code-label">TypeScript — amplify/storage/resource.ts + frontend upload</span><pre><span class="cm">// ── Backend: define access rules ───────────────────────────</span>
+<span class="kw">import</span> { defineStorage } <span class="kw">from</span> <span class="str">'@aws-amplify/backend'</span>;
+
+<span class="kw">export const</span> storage = <span class="fn">defineStorage</span>({
+  name: <span class="str">'myAppStorage'</span>,
+  access: (allow) => ({
+    <span class="cm">// Each user gets their own private "folder"</span>
+    <span class="str">'profile-pictures/{entity_id}/*'</span>: [
+      allow.<span class="fn">entity</span>(<span class="str">'identity'</span>).<span class="fn">to</span>([<span class="str">'read'</span>, <span class="str">'write'</span>, <span class="str">'delete'</span>]),
+      allow.<span class="fn">authenticated</span>().<span class="fn">to</span>([<span class="str">'read'</span>]), <span class="cm">// all users can read profiles</span>
+    ],
+    <span class="cm">// Admin-only uploads area</span>
+    <span class="str">'shared-assets/*'</span>: [
+      allow.<span class="fn">group</span>(<span class="str">'Admin'</span>).<span class="fn">to</span>([<span class="str">'read'</span>, <span class="str">'write'</span>]),
+      allow.<span class="fn">authenticated</span>().<span class="fn">to</span>([<span class="str">'read'</span>]),
+    ],
+  }),
+});
+
+<span class="cm">// ── Frontend: upload a file ────────────────────────────────</span>
+<span class="kw">import</span> { uploadData, getUrl } <span class="kw">from</span> <span class="str">'aws-amplify/storage'</span>;
+
+<span class="kw">await</span> <span class="fn">uploadData</span>({
+  path: <span class="str">`profile-pictures/${userId}/avatar.jpg`</span>,
+  data: file,                <span class="cm">// File from input[type=file]</span>
+  options: { contentType: <span class="str">'image/jpeg'</span> },
+});
+
+<span class="cm">// ── Get a temporary signed URL to display the image ───────</span>
+<span class="kw">const</span> { url } = <span class="kw">await</span> <span class="fn">getUrl</span>({
+  path: <span class="str">`profile-pictures/${userId}/avatar.jpg`</span>,
+});</pre></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — BUILD SPEC
+══════════════════════════════════ -->
+<div id="tab-buildspec" class="tab-panel"><div class="section">
+  <h2>📋 Build Spec — amplify.yml Explained</h2>
+  <p>The <code>amplify.yml</code> file at the root of your repo controls every phase of the Amplify build pipeline. If Amplify auto-detects your framework, it generates a default spec — but you often need to customise it for monorepos, custom build commands, caching, or environment-specific logic.</p>
+
+  <!-- BUILD PHASE CARDS -->
+  <h3>Build Phases</h3>
+  <div class="phase-grid">
+    <div class="phase-card pc-pre">
+      <div class="pc-name">preBuild</div>
+      <div class="pc-type">SETUP</div>
+      <div class="pc-metric"><span class="pc-metric-label">When</span><span class="pc-metric-val">Before npm build</span></div>
+      <div class="pc-bar"><div class="pc-fill" style="width:30%;background:var(--blue);"></div></div>
+      <div class="pc-metric"><span class="pc-metric-label">Use for</span><span class="pc-metric-val">Install packages, set up tools</span></div>
+      <div class="pc-metric"><span class="pc-metric-label">Examples</span><span class="pc-metric-val">npm ci, pip install</span></div>
+    </div>
+    <div class="phase-card pc-build">
+      <div class="pc-name">build</div>
+      <div class="pc-type">COMPILE</div>
+      <div class="pc-metric"><span class="pc-metric-label">When</span><span class="pc-metric-val">Main build step</span></div>
+      <div class="pc-bar"><div class="pc-fill" style="width:80%;background:var(--amp);"></div></div>
+      <div class="pc-metric"><span class="pc-metric-label">Use for</span><span class="pc-metric-val">Framework build command</span></div>
+      <div class="pc-metric"><span class="pc-metric-label">Examples</span><span class="pc-metric-val">npm run build, next build</span></div>
+    </div>
+    <div class="phase-card pc-post">
+      <div class="pc-name">postBuild</div>
+      <div class="pc-type">FINALIZE</div>
+      <div class="pc-metric"><span class="pc-metric-label">When</span><span class="pc-metric-val">After build succeeds</span></div>
+      <div class="pc-bar"><div class="pc-fill" style="width:20%;background:var(--green);"></div></div>
+      <div class="pc-metric"><span class="pc-metric-label">Use for</span><span class="pc-metric-val">Notifications, artifact prep</span></div>
+      <div class="pc-metric"><span class="pc-metric-label">Examples</span><span class="pc-metric-val">copy files, send Slack message</span></div>
+    </div>
+  </div>
+
+  <h3>Complete amplify.yml — Next.js with Caching</h3>
+  <div class="code-block"><span class="code-label">YAML — amplify.yml (Next.js, with caching + env branches)</span><pre><span class="ky">version</span>: <span class="num">1</span>
+
+<span class="ky">applications</span>:
+  - <span class="ky">frontend</span>:
+      <span class="ky">phases</span>:
+        <span class="ky">preBuild</span>:
+          <span class="ky">commands</span>:
+            - <span class="str">npm ci</span>                      <span class="cm"># clean install (faster than npm install)</span>
+        <span class="ky">build</span>:
+          <span class="ky">commands</span>:
+            - <span class="str">npm run build</span>
+        <span class="ky">postBuild</span>:
+          <span class="ky">commands</span>:
+            - <span class="str">echo "Build complete for branch $AWS_BRANCH"</span>
+      <span class="ky">artifacts</span>:
+        <span class="ky">baseDirectory</span>: <span class="str">.next</span>         <span class="cm"># Next.js output folder</span>
+        <span class="ky">files</span>:
+          - <span class="str">'**/*'</span>
+      <span class="ky">cache</span>:
+        <span class="ky">paths</span>:
+          - <span class="str">node_modules/**/*</span>          <span class="cm"># cache node_modules between builds</span>
+          - <span class="str">.next/cache/**/*</span>           <span class="cm"># cache Next.js build cache</span>
+    <span class="ky">appRoot</span>: <span class="str">frontend</span>              <span class="cm"># monorepo: app lives in /frontend subfolder</span></pre></div>
+
+  <h3>Monorepo Setup — Multiple Apps in One Repo</h3>
+  <div class="code-block"><span class="code-label">YAML — amplify.yml for monorepo (frontend + backend in one repo)</span><pre><span class="ky">version</span>: <span class="num">1</span>
+<span class="ky">applications</span>:
+  - <span class="ky">appRoot</span>: <span class="str">packages/web</span>           <span class="cm"># React frontend</span>
+    <span class="ky">frontend</span>:
+      <span class="ky">phases</span>:
+        <span class="ky">preBuild</span>:
+          <span class="ky">commands</span>:
+            - <span class="str">cd ../.. && npm ci</span>       <span class="cm"># install from repo root (shared deps)</span>
+            - <span class="str">cd packages/web</span>
+        <span class="ky">build</span>:
+          <span class="ky">commands</span>:
+            - <span class="str">npm run build</span>
+      <span class="ky">artifacts</span>:
+        <span class="ky">baseDirectory</span>: <span class="str">dist</span>
+        <span class="ky">files</span>: [<span class="str">'**/*'</span>]
+      <span class="ky">cache</span>:
+        <span class="ky">paths</span>: [<span class="str">../../node_modules/**/*</span>]</pre></div>
+
+  <h3>Build Environment Variables — Available in Every Build</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Variable</th><th>Value example</th><th>Purpose</th></tr>
+    <tr><td><code>AWS_BRANCH</code></td><td>main, staging, feat/x</td><td>Current branch being built — use for branch-specific logic</td></tr>
+    <tr><td><code>AWS_APP_ID</code></td><td>d1a2b3c4xyz</td><td>Amplify app ID — useful for API calls to Amplify itself</td></tr>
+    <tr><td><code>AWS_COMMIT_ID</code></td><td>abc1234</td><td>Git commit SHA that triggered the build</td></tr>
+    <tr><td><code>_LIVE_UPDATES</code></td><td>(internal)</td><td>Used by Amplify to install/upgrade build tools</td></tr>
+    <tr><td><code>NODE_VERSION</code></td><td>20</td><td>Set in Console to control the Node.js version used</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Always use <code>npm ci</code> not <code>npm install</code> in builds</h4>
+    <p><code>npm ci</code> installs exactly from <code>package-lock.json</code> — no version drift between developers and CI. It's also faster in CI because it deletes <code>node_modules</code> first and doesn't update the lockfile. <code>npm install</code> in CI can silently install a newer patch version of a dependency that breaks your build — <code>npm ci</code> prevents this entirely.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ AWS Console Setup — Every Field Explained</h2>
+  <p>Full walkthrough of creating an Amplify app and deploying a Next.js site via the Console. Every field, every option, every reason.</p>
+
+  <!-- STEP 1 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create New Amplify App</div>
+      <div class="console-step-path">AWS Console → Amplify → Create new app</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Deploy your app</div>
+        <div class="console-field-value">GitHub (recommended)</div>
+        <div class="console-field-hint">Connect GitHub, GitLab, Bitbucket, or CodeCommit. GitHub is most common. You'll be redirected to authorize AWS Amplify as a GitHub App — grant access to specific repos, not all repos, for security.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Repository</div>
+        <div class="console-field-value">my-org/my-nextjs-app</div>
+        <div class="console-field-hint">Select from the list of repos you authorized. Only repos you gave Amplify access to will appear.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Branch</div>
+        <div class="console-field-value">main</div>
+        <div class="console-field-hint">This is the primary branch — changes here deploy to production. You can connect additional branches (staging, etc.) later from the branch management section.</div>
+      </div>
+      <div class="console-note">💡 Amplify scans your repo and auto-detects the framework (Next.js, Vite, Angular, etc.) and pre-fills the build settings.</div>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Configure Build Settings</div>
+      <div class="console-step-path">App settings → Build settings</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">App name</div>
+        <div class="console-field-value">my-nextjs-app</div>
+        <div class="console-field-hint">Display name in the Amplify Console. Not the domain — just a label. Can be changed any time.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Build spec</div>
+        <div class="console-field-value">Auto-detected (or paste custom amplify.yml)</div>
+        <div class="console-field-hint">Amplify pre-fills based on detected framework. Always review it. For monorepos, paste your custom amplify.yml here or add it to the repo root.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Service role</div>
+        <div class="console-field-value">Create and use a new service role</div>
+        <div class="console-field-hint">IAM role that Amplify assumes during builds. Amplify needs permissions to deploy resources. Click "Create and use a new service role" — Amplify creates the right policies automatically.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Advanced settings — Node.js version</div>
+        <div class="console-field-value">20 (or match your package.json engines field)</div>
+        <div class="console-field-hint">Must match your local Node version to avoid build failures. Set NODE_VERSION as an environment variable or add .nvmrc to your repo root.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Set Environment Variables</div>
+      <div class="console-step-path">App settings → Environment variables</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Variable name</div>
+        <div class="console-field-value">NEXT_PUBLIC_API_URL</div>
+        <div class="console-field-hint">Prefix NEXT_PUBLIC_ for variables exposed to the browser bundle. Variables without this prefix are server-side only (build time). Never put secrets in NEXT_PUBLIC_ — they are baked into the JS bundle sent to users.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Branch override</div>
+        <div class="console-field-value">main → https://api.myapp.com · staging → https://api-staging.myapp.com</div>
+        <div class="console-field-hint">Click "Add variable" then expand "Branch-specific overrides" to set different values per branch. This is how production and staging get different API endpoints without code changes.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Secrets (sensitive values)</div>
+        <div class="console-field-value">Use AWS Secrets Manager or Amplify secret() function</div>
+        <div class="console-field-hint">For API keys, database passwords, OAuth secrets — use Amplify's secret() function in Gen 2 backend code, or store in AWS Secrets Manager and retrieve in Lambda. Never put raw secrets as plain Amplify env vars.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Connect a Custom Domain</div>
+      <div class="console-step-path">App settings → Domain management → Add domain</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Domain</div>
+        <div class="console-field-value">myapp.com</div>
+        <div class="console-field-hint">Enter your root domain. If your domain is in Route 53 in the same account — Amplify auto-creates records. If external DNS (Namecheap, GoDaddy) — Amplify gives you CNAME records to add manually.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Branch → subdomain mapping</div>
+        <div class="console-field-value">main → myapp.com + www.myapp.com · staging → staging.myapp.com</div>
+        <div class="console-field-hint">Map each branch to a subdomain. Amplify provisions an ACM certificate covering all configured subdomains automatically — HTTPS is enabled by default, no cert management from you.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Redirect www → root (or vice versa)</div>
+        <div class="console-field-value">www.myapp.com → myapp.com (301 redirect)</div>
+        <div class="console-field-hint">Add a redirect rule in Rewrites and Redirects. Source: https://www.myapp.com/&lt;*&gt;, Target: https://myapp.com/&lt;*&gt;, Type: 301. Prevents duplicate content for SEO.</div>
+      </div>
+      <div class="console-note">⏱️ Certificate provisioning takes 5–30 minutes. Domain activation takes 24–48 hours if you're updating nameservers at an external registrar.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Enable PR Previews</div>
+      <div class="console-step-path">App settings → Previews → Enable previews</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Previews enabled</div>
+        <div class="console-field-value">On</div>
+        <div class="console-field-hint">Enables automatic build + deploy for every pull request. A unique URL is generated and posted as a comment on the PR in GitHub automatically.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Pull request preview branch pattern</div>
+        <div class="console-field-value">(all branches, or e.g. feat/*)</div>
+        <div class="console-field-hint">Leave blank to preview all PRs, or restrict with a pattern. Restricting prevents accidental preview deployments from dependabot or other automated PRs.</div>
+      </div>
+      <div class="console-note">✅ After enabling, open a PR in GitHub — within seconds you'll see an Amplify bot comment with the preview URL.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# BACKEND
+══════════════════════════════════ -->
+<div id="tab-sdk" class="tab-panel"><div class="section">
+  <h2>💻 C# Backend — Integrating with Amplify APIs</h2>
+  <p>Amplify's frontend libraries target JavaScript/TypeScript. But your <strong>.NET API backend</strong> integrates with Amplify's outputs: validate Cognito JWTs in ASP.NET Core, call AppSync from C# with HttpClient, and read Amplify environment outputs from the <code>amplify_outputs.json</code> configuration file that Amplify generates per deployment.</p>
+
+  <h3>Validate Cognito JWT in ASP.NET Core</h3>
+  <div class="code-block"><span class="code-label">C# — Program.cs — Cognito JWT validation middleware</span><pre><span class="kw">using</span> Microsoft.AspNetCore.Authentication.JwtBearer;
+<span class="kw">using</span> Microsoft.IdentityModel.Tokens;
+
+<span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+<span class="cm">// ── Cognito JWT validation ─────────────────────────────────</span>
+<span class="kw">var</span> region   = builder.Configuration[<span class="str">"Cognito:Region"</span>];     <span class="cm">// ap-south-1</span>
+<span class="kw">var</span> userPool = builder.Configuration[<span class="str">"Cognito:UserPoolId"</span>]; <span class="cm">// ap-south-1_xxxxxxx</span>
+<span class="kw">var</span> authority = <span class="str">$"https://cognito-idp.{region}.amazonaws.com/{userPool}"</span>;
+
+builder.Services
+    .<span class="fn">AddAuthentication</span>(<span class="tp">JwtBearerDefaults</span>.AuthenticationScheme)
+    .<span class="fn">AddJwtBearer</span>(options =>
+    {
+        options.Authority = authority;
+        options.TokenValidationParameters = <span class="kw">new</span> <span class="tp">TokenValidationParameters</span>
+        {
+            ValidateIssuerSigningKey = <span class="kw">true</span>,
+            ValidateIssuer           = <span class="kw">true</span>,
+            ValidateAudience         = <span class="kw">false</span>, <span class="cm">// Cognito access tokens have no aud</span>
+            ValidIssuer              = authority
+        };
+    });
+
+builder.Services.<span class="fn">AddAuthorization</span>();
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+app.<span class="fn">UseAuthentication</span>();
+app.<span class="fn">UseAuthorization</span>();</pre></div>
+
+  <h3>Read Authenticated User Claims in Controller</h3>
+  <div class="code-block"><span class="code-label">C# — extract Cognito user info from JWT claims</span><pre>[<span class="tp">ApiController</span>]
+[<span class="tp">Route</span>(<span class="str">"api/[controller]"</span>)]
+[<span class="tp">Authorize</span>]  <span class="cm">// requires valid Cognito JWT</span>
+<span class="kw">public class</span> <span class="tp">ProfileController</span> : <span class="tp">ControllerBase</span>
+{
+    [<span class="tp">HttpGet</span>]
+    <span class="kw">public</span> <span class="tp">IActionResult</span> <span class="fn">GetProfile</span>()
+    {
+        <span class="cm">// Cognito JWT standard claims</span>
+        <span class="kw">var</span> userId   = User.<span class="fn">FindFirst</span>(<span class="str">"sub"</span>)?.Value;       <span class="cm">// unique Cognito user ID</span>
+        <span class="kw">var</span> email    = User.<span class="fn">FindFirst</span>(<span class="str">"email"</span>)?.Value;
+        <span class="kw">var</span> username = User.<span class="fn">FindFirst</span>(<span class="str">"cognito:username"</span>)?.Value;
+
+        <span class="cm">// Cognito groups (for role-based access)</span>
+        <span class="kw">var</span> groups   = User.Claims
+            .<span class="fn">Where</span>(c => c.Type == <span class="str">"cognito:groups"</span>)
+            .<span class="fn">Select</span>(c => c.Value)
+            .<span class="fn">ToList</span>();
+
+        <span class="kw">var</span> isAdmin  = groups.<span class="fn">Contains</span>(<span class="str">"Admin"</span>);
+
+        <span class="kw">return</span> <span class="fn">Ok</span>(<span class="kw">new</span> { userId, email, username, groups, isAdmin });
+    }
+
+    [<span class="tp">HttpGet</span>(<span class="str">"admin-only"</span>)]
+    [<span class="tp">Authorize</span>(Policy = <span class="str">"AdminOnly"</span>)]
+    <span class="kw">public</span> <span class="tp">IActionResult</span> <span class="fn">AdminEndpoint</span>()
+        => <span class="fn">Ok</span>(<span class="str">"You are an Admin!"</span>);
+}</pre></div>
+
+  <h3>Call AppSync GraphQL from C#</h3>
+  <div class="code-block"><span class="code-label">C# — AppSync GraphQL client using HttpClient</span><pre><span class="kw">public class</span> <span class="tp">AppSyncClient</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">HttpClient</span> _http;
+    <span class="kw">private readonly string</span> _endpoint;  <span class="cm">// from amplify_outputs.json → data.url</span>
+    <span class="kw">private readonly string</span> _apiKey;    <span class="cm">// from amplify_outputs.json → data.api_key</span>
+
+    <span class="kw">public</span> <span class="fn">AppSyncClient</span>(<span class="tp">HttpClient</span> http, <span class="tp">IConfiguration</span> cfg)
+    {
+        _http     = http;
+        _endpoint = cfg[<span class="str">"AppSync:Endpoint"</span>]!;
+        _apiKey   = cfg[<span class="str">"AppSync:ApiKey"</span>]!;
+    }
+
+    <span class="cm">// ── Execute any GraphQL operation ──────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">T</span>?&gt; <span class="fn">QueryAsync</span>&lt;<span class="tp">T</span>&gt;(
+        <span class="tp">string</span> query,
+        <span class="kw">object</span>? variables = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> payload = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(<span class="kw">new</span>
+        {
+            query,
+            variables
+        });
+
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">HttpRequestMessage</span>(<span class="tp">HttpMethod</span>.Post, _endpoint)
+        {
+            Content = <span class="kw">new</span> <span class="tp">StringContent</span>(payload, <span class="tp">Encoding</span>.UTF8, <span class="str">"application/json"</span>)
+        };
+        request.Headers.Add(<span class="str">"x-api-key"</span>, _apiKey);  <span class="cm">// or use Cognito JWT instead</span>
+
+        <span class="kw">var</span> resp = <span class="kw">await</span> _http.<span class="fn">SendAsync</span>(request);
+        resp.<span class="fn">EnsureSuccessStatusCode</span>();
+
+        <span class="kw">using var</span> doc = <span class="kw">await</span> <span class="tp">JsonDocument</span>.<span class="fn">ParseAsync</span>(
+            <span class="kw">await</span> resp.Content.<span class="fn">ReadAsStreamAsync</span>());
+
+        <span class="kw">return</span> doc.RootElement
+            .<span class="fn">GetProperty</span>(<span class="str">"data"</span>)
+            .<span class="fn">Deserialize</span>&lt;<span class="tp">T</span>&gt;();
+    }
+}</pre></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Hosting &amp; Deployment</h3>
+  <ul class="checklist">
+    <li>Always use <code>npm ci</code> instead of <code>npm install</code> in your <code>amplify.yml</code> — ensures reproducible builds from <code>package-lock.json</code></li>
+    <li>Cache <code>node_modules</code> and framework build caches (e.g. <code>.next/cache</code>) in <code>amplify.yml</code> — cuts build time by 50–70%</li>
+    <li>Pin your Node.js version with a <code>.nvmrc</code> file or <code>NODE_VERSION</code> env var — prevents framework incompatibility surprises</li>
+    <li>Use branch-specific environment variables for API URLs, feature flags, and analytics IDs — never hardcode environment differences in code</li>
+    <li>Enable PR previews for all teams — stakeholders reviewing a real URL prevents dozens of "can you show me?" meetings</li>
+    <li>Test instant rollback before you need it — redeploy a previous version and confirm it works under load</li>
+  </ul>
+
+  <h3>Auth &amp; Security</h3>
+  <ul class="checklist">
+    <li>Never put secrets or API keys in <code>NEXT_PUBLIC_</code> env vars — they are baked into the client bundle and visible to anyone</li>
+    <li>Store sensitive build-time secrets in AWS Secrets Manager and reference via Amplify's <code>secret()</code> function in Gen 2</li>
+    <li>Enable MFA (TOTP at minimum) for all admin Cognito user groups</li>
+    <li>Validate Cognito JWTs in your .NET API — check <code>issuer</code>, <code>signature</code>, and <code>expiry</code> — never trust the frontend alone</li>
+    <li>Scope AppSync authorization per model — don't use <code>allow.public()</code> for data models that contain user data</li>
+    <li>Enable Cognito advanced security (threat protection) for production apps — detects credential stuffing and account takeover</li>
+  </ul>
+
+  <h3>Data &amp; Storage</h3>
+  <ul class="checklist">
+    <li>Use <code>allow.owner()</code> authorization for user-specific data — prevents one user reading another user's records</li>
+    <li>Never expose raw S3 URLs — always use Amplify's <code>getUrl()</code> which returns short-lived signed URLs</li>
+    <li>Set S3 lifecycle rules on your Amplify Storage bucket for temporary uploads — delete files older than N days to control costs</li>
+    <li>Use real-time subscriptions (<code>observeQuery</code>) only where live updates are truly needed — each subscription is a WebSocket connection, and too many hurt mobile battery life</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top Amplify Mistakes</h4>
+    <p>
+    ❌ <strong>Putting secrets in NEXT_PUBLIC_ variables</strong> — these are bundled into the JavaScript served to browsers; anyone can read them in DevTools<br>
+    ❌ <strong>Using <code>npm install</code> in builds instead of <code>npm ci</code></strong> — causes non-reproducible builds; different package versions in CI vs local<br>
+    ❌ <strong>Not caching node_modules in amplify.yml</strong> — 3–5 minute package install on every single build; cache cuts it to seconds<br>
+    ❌ <strong>Forgetting to validate Cognito JWT in your .NET API</strong> — the frontend Amplify library handles auth for the client, but your backend must independently validate every token<br>
+    ❌ <strong>Using <code>allow.public()</code> on data models containing PII</strong> — makes data readable by anyone without authentication, including bots<br>
+    ❌ <strong>Leaving open PR preview environments running forever</strong> — each branch environment costs money; delete merged/closed PR branches to clean up<br>
+    ❌ <strong>Not pinning Node.js version</strong> — Amplify's default Node version changes; a platform upgrade can silently break your build<br>
+    ❌ <strong>Mixing Gen 1 (CLI) and Gen 2 (CDK) backend approaches</strong> — they use different deployment models; pick Gen 2 for all new projects
+    </p>
+  </div>
+
+  <h3>Amplify vs Alternatives — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>AWS Amplify</th><th>Vercel / Netlify</th><th>Manual AWS (S3+CF+Cognito)</th></tr>
+    <tr><td>Next.js SSR hosting</td><td>✅ Supported</td><td>✅ Native (Vercel built Next.js)</td><td>⚠️ Complex setup</td></tr>
+    <tr><td>AWS backend integration</td><td>✅ Native — Cognito, AppSync, S3</td><td>⚠️ Manual — bring your own</td><td>✅ Full control</td></tr>
+    <tr><td>Time to first deploy</td><td>✅ ~5 min</td><td>✅ ~2 min</td><td>❌ Hours of config</td></tr>
+    <tr><td>Branch preview URLs</td><td>✅ Built-in</td><td>✅ Built-in</td><td>❌ Manual CDN per branch</td></tr>
+    <tr><td>Stays in AWS VPC</td><td>✅ All resources in your account</td><td>❌ Third-party infrastructure</td><td>✅ Full AWS native</td></tr>
+    <tr><td>Compliance (data sovereignty)</td><td>✅ Data stays in your AWS account</td><td>❌ Data on Vercel/Netlify servers</td><td>✅ Maximum control</td></tr>
+    <tr><td>Cost at low traffic</td><td>✅ Generous free tier</td><td>✅ Generous free tier</td><td>✅ Pay-per-use</td></tr>
+    <tr><td>Fine-grained AWS control</td><td>⚠️ Escape hatches available</td><td>❌ AWS-specific features limited</td><td>✅ Every knob exposed</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS Amplify!</h3>
+    <p>What is Amplify · Amplify Hosting vs Backend (Gen 2) · Amplify vs manual AWS comparison · Full CI/CD pipeline (6 stages with timing) · Branch-per-environment + PR previews · Environment variables per branch · Cognito Auth flow (tokens, MFA, social sign-in) · Frontend sign-up/sign-in/signOut code · Data model definition (AppSync + DynamoDB) · Real-time subscriptions · S3 Storage with owner/group access rules · amplify.yml build spec (phases, caching, monorepo) · Full Console setup (every field!) · .NET JWT validation + claims extraction + AppSync HTTP client · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--amp-d);">Your full-stack Amplify app is now deployed, secured, and CI/CD-automated! ⚡🚀</p>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
