@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CloudFormation — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7fa;--surface:#edf0f5;--card:#ffffff;--border:#dde3ed;--border2:#c8d0e0;
+  --cf:#e67e22;--cf-l:#fef3e6;--cf-d:#b85c0a;--cf-dk:#7a3d00;
+  --blue:#1a6fc4;--blue-l:#daeaf8;--blue-d:#0e4a8a;
+  --green:#1a8a5a;--green-l:#d6f0e4;--green-d:#0f5c3a;
+  --purple:#6636c8;--purple-l:#ede5fc;--purple-d:#4420a0;
+  --teal:#0e7a8a;--teal-l:#d0eef2;--teal-d:#0a566e;
+  --red:#c0283a;--red-l:rgba(192,40,58,.08);--red-b:rgba(192,40,58,.22);
+  --indigo:#3848c8;--indigo-l:#e0e4f8;--indigo-d:#1e2ea0;
+  --text:#111827;--text2:#374151;--muted:#6b7280;
+  --code-bg:#0f1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 3px 12px rgba(0,0,0,.06);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 28px rgba(0,0,0,.08);
+  --sh-xl:0 4px 16px rgba(0,0,0,.08),0 16px 48px rgba(0,0,0,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#1a1a2e 0%,#16213e 40%,#0f3460 75%,#1a4a8a 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");pointer-events:none;opacity:.5;}
+.header-glow{position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(230,126,34,.25) 0%,transparent 70%);pointer-events:none;}
+.header-glow2{position:absolute;bottom:-40px;left:-40px;width:220px;height:220px;background:radial-gradient(circle,rgba(26,111,196,.2) 0%,transparent 70%);pointer-events:none;}
+.header-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(230,126,34,.15);border:1px solid rgba(230,126,34,.3);color:#f0a050;font-size:.7rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:4px 12px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.6rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;line-height:1.15;}
+.header h1 span{background:linear-gradient(90deg,#f0a050,#e67e22);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.55);font-size:.85rem;font-weight:400;}
+.header-stack{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:.68rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,250,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cf-l);color:var(--cf-d);font-weight:700;box-shadow:0 0 0 1.5px rgba(230,126,34,.25);}
+.tab-panel{display:none;animation:fadeUp .2s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--cf-l);letter-spacing:-.02em;}
+.section h3{color:var(--cf-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── STACK ANATOMY VISUAL ── */
+.anatomy{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-xl);}
+.anatomy-header{background:linear-gradient(90deg,#1a1a2e,#0f3460);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #2a3a5a;display:flex;align-items:center;gap:8px;}
+.anatomy-header span{background:rgba(230,126,34,.25);border:1px solid rgba(230,126,34,.4);color:#f0a050;font-size:.65rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.anatomy-body{padding:18px;}
+.template-box{background:linear-gradient(135deg,var(--indigo-l),rgba(230,126,34,.06));border:2px dashed var(--border2);border-radius:var(--r);padding:14px;margin-bottom:14px;position:relative;}
+.template-box::before{content:'TEMPLATE (.yaml / .json)';position:absolute;top:-9px;left:12px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:600;color:var(--indigo);padding:0 6px;letter-spacing:.08em;}
+.section-pills{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px;}
+.sec-pill{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;font-size:.72rem;font-weight:600;border:1.5px solid;}
+.sp-meta{background:var(--indigo-l);border-color:rgba(56,72,200,.25);color:var(--indigo-d);}
+.sp-params{background:var(--teal-l);border-color:rgba(14,122,138,.25);color:var(--teal-d);}
+.sp-mappings{background:var(--purple-l);border-color:rgba(102,54,200,.2);color:var(--purple-d);}
+.sp-conditions{background:var(--cf-l);border-color:rgba(230,126,34,.25);color:var(--cf-d);}
+.sp-resources{background:#fff4e6;border-color:rgba(230,126,34,.35);color:#7a3d00;font-weight:700;}
+.sp-outputs{background:var(--green-l);border-color:rgba(26,138,90,.2);color:var(--green-d);}
+.arrow-down{text-align:center;color:var(--cf);font-size:1.4rem;padding:4px 0;font-weight:700;}
+.deploy-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:8px;margin-top:2px;}
+.deploy-item{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.deploy-item .di-icon{font-size:1.4rem;display:block;margin-bottom:4px;}
+.deploy-item h6{font-size:.7rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.deploy-item p{font-size:.6rem;color:var(--muted);}
+
+/* ── DRIFT METER ── */
+.drift-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.dv-header{background:linear-gradient(90deg,var(--red-l),var(--cf-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.dv-body{padding:14px;}
+.drift-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.drift-row:last-child{border-bottom:none;}
+.drift-resource{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);width:180px;flex-shrink:0;}
+.drift-bar-wrap{flex:1;height:6px;background:var(--surface);border-radius:100px;overflow:hidden;}
+.drift-bar{height:100%;border-radius:100px;transition:width .5s ease;}
+.drift-status{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:4px;flex-shrink:0;width:70px;text-align:center;}
+.ds-in-sync{background:var(--green-l);color:var(--green-d);}
+.ds-drifted{background:var(--red-l);color:var(--red);}
+.ds-modified{background:var(--cf-l);color:var(--cf-d);}
+
+/* ── CHANGE SET VISUAL ── */
+.changeset{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cs-header{background:linear-gradient(90deg,var(--indigo-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.cs-body{padding:0;}
+.cs-row{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);font-size:.72rem;}
+.cs-row:last-child{border-bottom:none;}
+.cs-action{width:70px;flex-shrink:0;padding:9px 10px;font-weight:700;text-align:center;font-size:.65rem;}
+.cs-action.add{background:rgba(26,138,90,.1);color:var(--green-d);}
+.cs-action.modify{background:rgba(230,126,34,.1);color:var(--cf-d);}
+.cs-action.remove{background:var(--red-l);color:var(--red);}
+.cs-action.replace{background:var(--purple-l);color:var(--purple-d);}
+.cs-resource{flex:1;padding:9px 12px;color:var(--text);border-left:1px solid var(--border);}
+.cs-resource span{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:.65rem;display:block;}
+.cs-scope{padding:9px 12px;color:var(--muted);border-left:1px solid var(--border);font-size:.65rem;width:100px;text-align:center;}
+.cs-interrup{padding:9px 10px;border-left:1px solid var(--border);font-size:.65rem;width:90px;text-align:center;}
+.ci-none{color:var(--green-d);font-weight:600;}
+.ci-some{color:var(--cf-d);font-weight:600;}
+.ci-replace{color:var(--red);font-weight:600;}
+
+/* ── INTRINSIC FUNCTIONS ── */
+.fn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.fn-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;}
+.fn-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.fn-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.fn-ref::before{background:var(--blue);}
+.fn-sub::before{background:var(--green);}
+.fn-if::before{background:var(--purple);}
+.fn-join::before{background:var(--teal);}
+.fn-select::before{background:var(--indigo);}
+.fn-base64::before{background:var(--cf);}
+.fn-getatt::before{background:var(--red);}
+.fn-split::before{background:#e040fb;}
+.fn-name{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;color:var(--cf-d);margin-bottom:4px;}
+.fn-desc{font-size:.7rem;color:var(--muted);margin-bottom:6px;}
+.fn-ex{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--blue-d);background:var(--blue-l);padding:3px 7px;border-radius:4px;display:inline-block;}
+
+/* ── LIFECYCLE VISUAL ── */
+.lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.lc-header{background:linear-gradient(90deg,#1a1a2e,#163060);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #2a3a5a;}
+.lc-body{padding:16px;}
+.lc-row{display:flex;align-items:stretch;overflow-x:auto;gap:0;}
+.lc-stage{flex:1;min-width:80px;padding:12px 10px;text-align:center;border-right:1px solid var(--border);position:relative;}
+.lc-stage:last-child{border-right:none;}
+.lc-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;margin:0 auto 6px;}
+.lc-icon{font-size:1.3rem;margin-bottom:4px;display:block;}
+.lc-stage h6{font-size:.68rem;font-weight:700;color:var(--text);margin-bottom:3px;}
+.lc-stage p{font-size:.6rem;color:var(--muted);}
+.lc-stage .lc-state{font-family:'JetBrains Mono',monospace;font-size:.55rem;margin-top:4px;display:block;padding:1px 5px;border-radius:3px;}
+
+/* ── FLOW NODES ── */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:540px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 15px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--cf-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.4rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin:-2px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:540px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(26,111,196,.25);}
+.n-app .flow-node-title{color:var(--blue-d);}
+.n-cf{background:var(--cf-l);border:1.5px solid rgba(230,126,34,.3);}
+.n-cf .flow-node-title{color:var(--cf-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(26,138,90,.25);}
+.n-green .flow-node-title{color:var(--green-d);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(102,54,200,.2);}
+.n-purple .flow-node-title{color:var(--purple-d);}
+.n-indigo{background:var(--indigo-l);border:1.5px solid rgba(56,72,200,.2);}
+.n-indigo .flow-node-title{color:var(--indigo-d);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(14,122,138,.25);}
+.n-teal .flow-node-title{color:var(--teal-d);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* ── STEPS ── */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:linear-gradient(135deg,var(--cf-d),var(--cf));color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(230,126,34,.3);}
+.step-body{background:var(--surface);padding:12px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--cf);}
+.step-body h4{color:var(--cf-d);margin-bottom:5px;font-size:.88rem;font-weight:700;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--cf-d),var(--cf));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--cf-d);padding:8px 11px;background:var(--cf-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cf-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cf);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cf-l);border:1px solid rgba(230,126,34,.2);border-left:4px solid var(--cf);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cf-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:rgba(230,126,34,.07);border:1px solid rgba(230,126,34,.2);border-left:4px solid var(--cf);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--cf-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(26,138,90,.2);border-left:4px solid var(--green);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(26,111,196,.2);border-left:4px solid var(--blue);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLES ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #1e2333;border-left:3px solid var(--cf);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.75rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#f0a050;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#3d4e6a;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f2a27a;}.attr{color:#f38ba8;}.val{color:#a6e3a1;}.yaml-key{color:#89dceb;}.yaml-val{color:#a6e3a1;}.yaml-str{color:#a6e3a1;}.yaml-cm{color:#3d4e6a;font-style:italic;}.yaml-ex{color:#fab387;}
+code{background:rgba(230,126,34,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--cf-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#1a1a2e 0%,#0f3460 60%,#163060 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'☁️';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.55);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── FEATURE COMPARE ── */
+.feat-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-header{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.76rem;}
+.fc-col.cf-col{background:var(--cf-l);color:var(--cf-d);border-right:1px solid var(--border);}
+.fc-col.other-col{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.better{color:var(--green-d);font-weight:600;}
+.fc-val.worse{color:var(--red);font-weight:600;}
+.fc-val.same{color:var(--muted);}
+
+/* ── ROLLBACK VISUAL ── */
+.rollback-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.rbt-header{background:linear-gradient(90deg,var(--red-l),rgba(192,40,58,.06));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.rbt-body{padding:14px;}
+.rbt-event{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;position:relative;}
+.rbt-event:not(:last-child)::after{content:'';position:absolute;left:14px;top:30px;bottom:-14px;width:2px;background:var(--border);}
+.rbt-dot{width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;z-index:1;}
+.rbt-ok{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.rbt-fail{background:var(--red-l);border:2px solid var(--red);color:var(--red);}
+.rbt-roll{background:var(--cf-l);border:2px solid var(--cf-d);color:var(--cf-d);}
+.rbt-stable{background:var(--indigo-l);border:2px solid var(--indigo-d);color:var(--indigo-d);}
+.rbt-info{flex:1;}
+.rbt-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.rbt-info p{font-size:.7rem;color:var(--muted);}
+.rbt-time{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-left:auto;flex-shrink:0;}
+
+/* ── RESOURCE TYPE BADGE ── */
+.res-badges{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.res-badge{font-family:'JetBrains Mono',monospace;font-size:.62rem;font-weight:600;padding:3px 9px;border-radius:5px;border:1px solid;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.fn-grid,.deploy-row{grid-template-columns:1fr;}
+  .flow-row,.fc-row,.lc-row,.drift-row{flex-direction:column;}
+  .drift-resource{width:auto;}
+  .fc-label{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .cs-row{flex-direction:column;}
+  .cs-action{width:100%;text-align:left;padding:7px 12px;}
+  .cs-resource,.cs-scope,.cs-interrup{border-left:none;width:auto;border-top:1px solid var(--border);}
+  .rbt-event::after{display:none;}
+  .lc-stage{min-width:70px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-noise"></div>
+  <div class="header-glow"></div>
+  <div class="header-glow2"></div>
+  <div class="container">
+    <div class="header-badge">☁️ AWS · Infrastructure as Code</div>
+    <h1>AWS <span>CloudFormation</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# &amp; .NET SDK Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">YAML / JSON Templates</span>
+      <span class="header-tag">Stacks &amp; StackSets</span>
+      <span class="header-tag">Drift Detection</span>
+      <span class="header-tag">Change Sets</span>
+      <span class="header-tag">AWS SDK v3</span>
+      <span class="header-tag">C# .NET</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CFN</button>
+    <button class="tab-btn" onclick="T('template',this)">2 · Template Anatomy</button>
+    <button class="tab-btn" onclick="T('resources',this)">3 · Resources &amp; Types</button>
+    <button class="tab-btn" onclick="T('functions',this)">4 · Intrinsic Functions</button>
+    <button class="tab-btn" onclick="T('stacks',this)">5 · Stacks &amp; Lifecycle</button>
+    <button class="tab-btn" onclick="T('advanced',this)">6 · Advanced Features</button>
+    <button class="tab-btn" onclick="T('console',this)">7 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">8 · C# .NET SDK</button>
+    <button class="tab-btn" onclick="T('best',this)">9 · Best Practices</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CLOUDFORMATION
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>☁️ What is AWS CloudFormation?</h2>
+  <p>CloudFormation is AWS's native <strong>Infrastructure as Code (IaC)</strong> service. You describe your entire AWS infrastructure — EC2 instances, VPCs, S3 buckets, Lambda functions, IAM roles, databases — in a <strong>declarative template</strong> (YAML or JSON). CloudFormation reads that template and provisions, updates, and deletes the real AWS resources for you in the right order, automatically.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>Think of a CloudFormation template as a <em>blueprint</em> and the resulting deployed resources as a <em>Stack</em>. You manage the blueprint; CloudFormation manages the building. Delete the stack → all resources are torn down cleanly.</p>
+  </div>
+
+  <h3>CloudFormation vs Doing It Manually</h3>
+  <div class="feat-compare">
+    <div class="fc-header">
+      <div class="fc-col cf-col">☁️ AWS CloudFormation</div>
+      <div class="fc-col other-col">🖱️ Manual Console / AWS CLI</div>
+    </div>
+    <div class="fc-row"><div class="fc-label">Repeatability</div><div class="fc-val better">Same template = identical env every time</div><div class="fc-val worse">Click differently = different config</div></div>
+    <div class="fc-row"><div class="fc-label">Rollback on failure</div><div class="fc-val better">Automatic — reverts to last good state</div><div class="fc-val worse">Manual cleanup, easy to miss resources</div></div>
+    <div class="fc-row"><div class="fc-label">Dependency ordering</div><div class="fc-val better">CFN resolves graph automatically</div><div class="fc-val worse">You must figure out the right order</div></div>
+    <div class="fc-row"><div class="fc-label">Multi-region deploy</div><div class="fc-val better">StackSets deploy to N accounts/regions</div><div class="fc-val worse">Repeat manual steps in every region</div></div>
+    <div class="fc-row"><div class="fc-label">Audit trail</div><div class="fc-val better">Template in Git = full history</div><div class="fc-val worse">CloudTrail only; hard to diff</div></div>
+    <div class="fc-row"><div class="fc-label">Cost</div><div class="fc-val better">Free — pay only for resources created</div><div class="fc-val better">Free — same resources</div></div>
+    <div class="fc-row"><div class="fc-label">Learning curve</div><div class="fc-val same">Template syntax to learn</div><div class="fc-val better">Instant start</div></div>
+  </div>
+
+  <h3>Key Concepts at a Glance</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📄</span><h4>Template</h4><p>YAML or JSON file describing desired resources. Source of truth.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Stack</h4><p>Running instance of a template. One template → one Stack.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Change Set</h4><p>Preview of what will change before applying an update.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>StackSet</h4><p>Deploy the same stack to multiple accounts &amp; regions at once.</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Drift Detection</h4><p>Detect when actual resources no longer match template.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Nested Stacks</h4><p>Compose large stacks from smaller reusable child stacks.</p></div>
+    <div class="icon-item"><span class="emoji">🗃️</span><h4>Stack Policy</h4><p>Guard critical resources from accidental update or delete.</p></div>
+    <div class="icon-item"><span class="emoji">🧩</span><h4>Custom Resources</h4><p>Use Lambda to manage anything not natively supported by CFN.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>IAM Integration</h4><p>CFN assumes a role to create resources — full IAM control.</p></div>
+  </div>
+
+  <h3>CloudFormation vs Terraform vs CDK</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Dimension</th><th>CloudFormation</th><th>Terraform (HCL)</th><th>AWS CDK</th></tr>
+    <tr><td>Language</td><td>YAML / JSON</td><td>HCL (Terraform-specific)</td><td>TypeScript / C# / Python</td></tr>
+    <tr><td>State file</td><td>Managed by AWS (no file)</td><td>terraform.tfstate — you manage</td><td>Uses CFN under the hood</td></tr>
+    <tr><td>Multi-cloud</td><td>❌ AWS only</td><td>✅ Any provider</td><td>❌ AWS only</td></tr>
+    <tr><td>Native AWS support</td><td>✅ Same-day on new services</td><td>⚠️ Community providers, lag</td><td>✅ Same-day (L1 constructs)</td></tr>
+    <tr><td>Best for</td><td>AWS-native IaC, no new tooling</td><td>Multi-cloud or existing HCL teams</td><td>Developers who prefer real code</td></tr>
+    <tr><td>Cost</td><td>Free</td><td>Free (OSS); paid for Enterprise</td><td>Free (generates CFN)</td></tr>
+  </table></div>
+
+  <div class="success">
+    <h4>✅ When to Choose CloudFormation</h4>
+    <p>You're AWS-only · You want zero extra tooling to install · Your team is already in the AWS console · You need StackSets for multi-account governance · Compliance requires everything in AWS-native services.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — TEMPLATE ANATOMY
+══════════════════════════════════ -->
+<div id="tab-template" class="tab-panel"><div class="section">
+  <h2>📄 Template Anatomy — All 7 Sections</h2>
+  <p>A CloudFormation template is a YAML (or JSON) document with up to 7 top-level sections. Only <strong>Resources</strong> is mandatory — everything else is optional but powerful.</p>
+
+  <!-- ANATOMY VISUAL -->
+  <div class="anatomy">
+    <div class="anatomy-header">🧬 CloudFormation Template Structure <span>Only Resources is required</span></div>
+    <div class="anatomy-body">
+      <div class="template-box">
+        <div class="section-pills">
+          <div class="sec-pill sp-meta">📋 AWSTemplateFormatVersion</div>
+          <div class="sec-pill sp-meta">📝 Description</div>
+          <div class="sec-pill sp-params">⚙️ Parameters</div>
+          <div class="sec-pill sp-mappings">🗺️ Mappings</div>
+          <div class="sec-pill sp-conditions">❓ Conditions</div>
+          <div class="sec-pill sp-resources" style="font-size:.78rem;">⭐ Resources <em style="font-weight:400;font-size:.65rem;">(required)</em></div>
+          <div class="sec-pill sp-outputs">📤 Outputs</div>
+        </div>
+      </div>
+      <div class="arrow-down">↓ CloudFormation Engine</div>
+      <div class="deploy-row">
+        <div class="deploy-item"><span class="di-icon">🖥️</span><h6>EC2 / ECS</h6><p>Compute</p></div>
+        <div class="deploy-item"><span class="di-icon">🗄️</span><h6>RDS / DynamoDB</h6><p>Databases</p></div>
+        <div class="deploy-item"><span class="di-icon">🌐</span><h6>VPC / Subnets</h6><p>Networking</p></div>
+        <div class="deploy-item"><span class="di-icon">🔒</span><h6>IAM Roles</h6><p>Permissions</p></div>
+        <div class="deploy-item"><span class="di-icon">⚡</span><h6>Lambda</h6><p>Serverless</p></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>1 · AWSTemplateFormatVersion &amp; Description</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Header Sections</span>
+    <pre><span class="yaml-key">AWSTemplateFormatVersion</span><span class="yaml-cm">:</span> <span class="yaml-str">"2010-09-09"</span>  <span class="yaml-cm"># Only valid value — always use this</span>
+
+<span class="yaml-key">Description</span><span class="yaml-cm">:</span> <span class="yaml-str">|
+  Team Watson – Core Application Stack.
+  Provisions VPC, ECS cluster, RDS, S3, and IAM roles.</span></pre>
+  </div>
+
+  <h3>2 · Parameters — Runtime Inputs</h3>
+  <p>Parameters let you pass values at deploy time — environment names, instance sizes, passwords — without hardcoding them.</p>
+  <div class="code-block">
+    <span class="code-label">YAML · Parameters</span>
+    <pre><span class="yaml-key">Parameters</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Environment</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>          <span class="yaml-str">String</span>
+    <span class="yaml-key">AllowedValues</span><span class="yaml-cm">:</span> <span class="yaml-cm">[dev, qa, prod]</span>
+    <span class="yaml-key">Default</span><span class="yaml-cm">:</span>       <span class="yaml-str">dev</span>
+    <span class="yaml-key">Description</span><span class="yaml-cm">:</span>   <span class="yaml-str">Deployment environment</span>
+
+  <span class="yaml-key">InstanceType</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>    <span class="yaml-str">String</span>
+    <span class="yaml-key">Default</span><span class="yaml-cm">:</span> <span class="yaml-str">t3.micro</span>
+    <span class="yaml-key">AllowedValues</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- t3.micro</span>
+      <span class="yaml-cm">- t3.small</span>
+      <span class="yaml-cm">- t3.medium</span>
+
+  <span class="yaml-key">DBPassword</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>    <span class="yaml-str">String</span>
+    <span class="yaml-key">NoEcho</span><span class="yaml-cm">:</span>  <span class="yaml-ex">true</span>          <span class="yaml-cm"># Never appears in console or logs</span>
+    <span class="yaml-key">MinLength</span><span class="yaml-cm">:</span> <span class="yaml-ex">12</span></pre>
+  </div>
+
+  <h3>3 · Mappings — Lookup Tables</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Mappings (AMI by region + env)</span>
+    <pre><span class="yaml-key">Mappings</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">RegionAMI</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">us-east-1</span><span class="yaml-cm">:</span>   <span class="yaml-cm">{AMI: ami-0c55b159cbfafe1f0}</span>
+    <span class="yaml-key">eu-west-1</span><span class="yaml-cm">:</span>   <span class="yaml-cm">{AMI: ami-01f14919ba412de34}</span>
+    <span class="yaml-key">ap-southeast-1</span><span class="yaml-cm">:</span> <span class="yaml-cm">{AMI: ami-0b89f7b3f054b957e}</span>
+
+  <span class="yaml-key">EnvConfig</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">dev</span><span class="yaml-cm">:</span>  <span class="yaml-cm">{InstanceType: t3.micro,  MultiAZ: false}</span>
+    <span class="yaml-key">qa</span><span class="yaml-cm">:</span>   <span class="yaml-cm">{InstanceType: t3.small,  MultiAZ: false}</span>
+    <span class="yaml-key">prod</span><span class="yaml-cm">:</span> <span class="yaml-cm">{InstanceType: t3.medium, MultiAZ: true}</span>
+
+<span class="yaml-cm"># Usage: !FindInMap [EnvConfig, !Ref Environment, InstanceType]</span></pre>
+  </div>
+
+  <h3>4 · Conditions — Conditional Resources</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Conditions</span>
+    <pre><span class="yaml-key">Conditions</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">IsProd</span><span class="yaml-cm">:</span>      <span class="yaml-cm">!Equals [!Ref Environment, prod]</span>
+  <span class="yaml-key">IsNotDev</span><span class="yaml-cm">:</span>   <span class="yaml-cm">!Not [!Equals [!Ref Environment, dev]]</span>
+  <span class="yaml-key">EnableAlarms</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Or [!Condition IsProd, !Condition IsNotDev]</span>
+
+<span class="yaml-cm"># Usage in a resource:</span>
+<span class="yaml-key">ReadReplica</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span>      <span class="yaml-str">AWS::RDS::DBInstance</span>
+  <span class="yaml-key">Condition</span><span class="yaml-cm">:</span> <span class="yaml-str">IsProd</span>   <span class="yaml-cm"># Only created in prod</span></pre>
+  </div>
+
+  <h3>5 · Outputs — Cross-Stack Values</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Outputs with Export</span>
+    <pre><span class="yaml-key">Outputs</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Description</span><span class="yaml-cm">:</span> <span class="yaml-str">VPC ID for app stacks to import</span>
+    <span class="yaml-key">Value</span><span class="yaml-cm">:</span>       <span class="yaml-cm">!Ref MyVPC</span>
+    <span class="yaml-key">Export</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Name</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "${AWS::StackName}-VpcId"</span>
+
+  <span class="yaml-key">ApiEndpoint</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Value</span><span class="yaml-cm">:</span> <span class="yaml-cm">!GetAtt MyApi.RootResourceId</span>
+
+<span class="yaml-cm"># Another stack can consume it:</span>
+<span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Fn::ImportValue</span><span class="yaml-cm">:</span> <span class="yaml-str">networking-stack-VpcId</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — RESOURCES & TYPES
+══════════════════════════════════ -->
+<div id="tab-resources" class="tab-panel"><div class="section">
+  <h2>⭐ Resources — The Core of Every Template</h2>
+  <p>Every real AWS resource you want to create lives in the <code>Resources</code> section. Each entry has a <strong>logical ID</strong> (you name it), a <strong>Type</strong> (the AWS resource kind), and <strong>Properties</strong> (the config).</p>
+
+  <div class="code-block">
+    <span class="code-label">YAML · Resources Structure</span>
+    <pre><span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">LogicalId</span><span class="yaml-cm">:</span>         <span class="yaml-cm"># You choose this name (used in !Ref, !GetAtt)</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>            <span class="yaml-str">AWS::Service::ResourceType</span>
+    <span class="yaml-key">DependsOn</span><span class="yaml-cm">:</span>       <span class="yaml-str">AnotherLogicalId</span>   <span class="yaml-cm"># Optional: explicit ordering</span>
+    <span class="yaml-key">DeletionPolicy</span><span class="yaml-cm">:</span>  <span class="yaml-str">Retain</span>             <span class="yaml-cm"># Delete|Retain|Snapshot</span>
+    <span class="yaml-key">UpdateReplacePolicy</span><span class="yaml-cm">:</span> <span class="yaml-str">Retain</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">PropertyName</span><span class="yaml-cm">:</span>  <span class="yaml-str">value</span></pre>
+  </div>
+
+  <h3>Common Resource Types</h3>
+  <div class="res-badges">
+    <span class="res-badge" style="background:var(--blue-l);border-color:rgba(26,111,196,.3);color:var(--blue-d);">AWS::EC2::Instance</span>
+    <span class="res-badge" style="background:var(--blue-l);border-color:rgba(26,111,196,.3);color:var(--blue-d);">AWS::EC2::VPC</span>
+    <span class="res-badge" style="background:var(--blue-l);border-color:rgba(26,111,196,.3);color:var(--blue-d);">AWS::EC2::Subnet</span>
+    <span class="res-badge" style="background:var(--green-l);border-color:rgba(26,138,90,.3);color:var(--green-d);">AWS::S3::Bucket</span>
+    <span class="res-badge" style="background:var(--purple-l);border-color:rgba(102,54,200,.3);color:var(--purple-d);">AWS::Lambda::Function</span>
+    <span class="res-badge" style="background:var(--teal-l);border-color:rgba(14,122,138,.3);color:var(--teal-d);">AWS::RDS::DBInstance</span>
+    <span class="res-badge" style="background:var(--cf-l);border-color:rgba(230,126,34,.3);color:var(--cf-d);">AWS::DynamoDB::Table</span>
+    <span class="res-badge" style="background:var(--indigo-l);border-color:rgba(56,72,200,.3);color:var(--indigo-d);">AWS::IAM::Role</span>
+    <span class="res-badge" style="background:var(--indigo-l);border-color:rgba(56,72,200,.3);color:var(--indigo-d);">AWS::IAM::Policy</span>
+    <span class="res-badge" style="background:var(--red-l);border-color:var(--red-b);color:var(--red);">AWS::SQS::Queue</span>
+    <span class="res-badge" style="background:var(--red-l);border-color:var(--red-b);color:var(--red);">AWS::SNS::Topic</span>
+    <span class="res-badge" style="background:var(--green-l);border-color:rgba(26,138,90,.3);color:var(--green-d);">AWS::ECS::Cluster</span>
+    <span class="res-badge" style="background:var(--green-l);border-color:rgba(26,138,90,.3);color:var(--green-d);">AWS::ECS::TaskDefinition</span>
+    <span class="res-badge" style="background:var(--purple-l);border-color:rgba(102,54,200,.3);color:var(--purple-d);">AWS::ApiGateway::RestApi</span>
+    <span class="res-badge" style="background:var(--teal-l);border-color:rgba(14,122,138,.3);color:var(--teal-d);">AWS::CloudWatch::Alarm</span>
+    <span class="res-badge" style="background:var(--cf-l);border-color:rgba(230,126,34,.3);color:var(--cf-d);">AWS::SecretsManager::Secret</span>
+  </div>
+
+  <h3>Practical Template — VPC + S3 + IAM Role</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Multi-Resource Template</span>
+    <pre><span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+
+  <span class="yaml-cm"># ── VPC ──────────────────────────────</span>
+  <span class="yaml-key">WatsonVPC</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::EC2::VPC</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">CidrBlock</span><span class="yaml-cm">:</span>          <span class="yaml-str">10.0.0.0/16</span>
+      <span class="yaml-key">EnableDnsSupport</span><span class="yaml-cm">:</span>   <span class="yaml-ex">true</span>
+      <span class="yaml-key">EnableDnsHostnames</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+      <span class="yaml-key">Tags</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- Key: Name</span>
+          <span class="yaml-cm">Value: !Sub "watson-vpc-${Environment}"</span>
+
+  <span class="yaml-key">PublicSubnet</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::EC2::Subnet</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>             <span class="yaml-cm">!Ref WatsonVPC</span>   <span class="yaml-cm"># Auto-resolves to VPC ID</span>
+      <span class="yaml-key">CidrBlock</span><span class="yaml-cm">:</span>         <span class="yaml-str">10.0.1.0/24</span>
+      <span class="yaml-key">AvailabilityZone</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!Select [0, !GetAZs ""]</span>
+      <span class="yaml-key">MapPublicIpOnLaunch</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+
+  <span class="yaml-cm"># ── S3 Bucket ────────────────────────</span>
+  <span class="yaml-key">ArtifactBucket</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>           <span class="yaml-str">AWS::S3::Bucket</span>
+    <span class="yaml-key">DeletionPolicy</span><span class="yaml-cm">:</span> <span class="yaml-str">Retain</span>   <span class="yaml-cm"># Keep bucket if stack deleted</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">BucketName</span><span class="yaml-cm">:</span>    <span class="yaml-cm">!Sub "watson-artifacts-${Environment}-${AWS::AccountId}"</span>
+      <span class="yaml-key">VersioningConfiguration</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Status</span><span class="yaml-cm">:</span> <span class="yaml-str">Enabled</span>
+      <span class="yaml-key">BucketEncryption</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">ServerSideEncryptionConfiguration</span><span class="yaml-cm">:</span>
+          <span class="yaml-cm">- ServerSideEncryptionByDefault:</span>
+              <span class="yaml-cm">SSEAlgorithm: AES256</span>
+
+  <span class="yaml-cm"># ── IAM Role for Lambda ──────────────</span>
+  <span class="yaml-key">LambdaExecutionRole</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::IAM::Role</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">RoleName</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "watson-lambda-role-${Environment}"</span>
+      <span class="yaml-key">AssumeRolePolicyDocument</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Version</span><span class="yaml-cm">:</span> <span class="yaml-str">"2012-10-17"</span>
+        <span class="yaml-key">Statement</span><span class="yaml-cm">:</span>
+          <span class="yaml-cm">- Effect: Allow</span>
+            <span class="yaml-cm">Principal: {Service: lambda.amazonaws.com}</span>
+            <span class="yaml-cm">Action: sts:AssumeRole</span>
+      <span class="yaml-key">ManagedPolicyArns</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole</span>
+      <span class="yaml-key">Policies</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- PolicyName: S3ReadAccess</span>
+          <span class="yaml-cm">  PolicyDocument:</span>
+          <span class="yaml-cm">    Version: "2012-10-17"</span>
+          <span class="yaml-cm">    Statement:</span>
+          <span class="yaml-cm">      - Effect: Allow</span>
+          <span class="yaml-cm">        Action: [s3:GetObject, s3:ListBucket]</span>
+          <span class="yaml-cm">        Resource: !Sub "${ArtifactBucket.Arn}/*"</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 DependsOn vs Automatic Ordering</h4>
+    <p>CFN automatically figures out ordering when you use <code>!Ref</code> or <code>!GetAtt</code> — if ResourceB references ResourceA, CFN creates A first. Use <code>DependsOn</code> only when you need ordering without an explicit reference (e.g., wait for an RDS instance before creating a Lambda that populates it).</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — INTRINSIC FUNCTIONS
+══════════════════════════════════ -->
+<div id="tab-functions" class="tab-panel"><div class="section">
+  <h2>🔧 Intrinsic Functions — The Power Tools</h2>
+  <p>Intrinsic functions let templates be dynamic — referencing other resources, building strings, applying conditions, and encoding values at deploy time.</p>
+
+  <div class="fn-grid">
+    <div class="fn-card fn-ref">
+      <div class="fn-name">!Ref</div>
+      <div class="fn-desc">Returns the default value of a parameter or resource (usually its ID/ARN).</div>
+      <div class="fn-ex">!Ref MyBucket → bucket name</div>
+    </div>
+    <div class="fn-card fn-getatt">
+      <div class="fn-name">!GetAtt</div>
+      <div class="fn-desc">Returns a specific attribute of a resource beyond what !Ref provides.</div>
+      <div class="fn-ex">!GetAtt MyLambda.Arn</div>
+    </div>
+    <div class="fn-card fn-sub">
+      <div class="fn-name">!Sub</div>
+      <div class="fn-desc">String interpolation — embed variables and resource references in strings.</div>
+      <div class="fn-ex">!Sub "s3://${MyBucket}/key"</div>
+    </div>
+    <div class="fn-card fn-join">
+      <div class="fn-name">!Join</div>
+      <div class="fn-desc">Joins list values with a delimiter string.</div>
+      <div class="fn-ex">!Join [",", [a, b, c]]</div>
+    </div>
+    <div class="fn-card fn-select">
+      <div class="fn-name">!Select</div>
+      <div class="fn-desc">Returns one object from a list by index.</div>
+      <div class="fn-ex">!Select [0, !GetAZs ""]</div>
+    </div>
+    <div class="fn-card fn-if">
+      <div class="fn-name">!If</div>
+      <div class="fn-desc">Conditionally returns one of two values based on a Condition.</div>
+      <div class="fn-ex">!If [IsProd, m5.large, t3.micro]</div>
+    </div>
+    <div class="fn-card fn-base64">
+      <div class="fn-name">!Base64</div>
+      <div class="fn-desc">Base64-encodes a value — required for EC2 UserData scripts.</div>
+      <div class="fn-ex">!Base64 "#!/bin/bash\nyum update"</div>
+    </div>
+    <div class="fn-card fn-split">
+      <div class="fn-name">!Split</div>
+      <div class="fn-desc">Splits a string into a list by a delimiter.</div>
+      <div class="fn-ex">!Split [",", "a,b,c"]</div>
+    </div>
+  </div>
+
+  <h3>Real-World Patterns</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Common Function Combinations</span>
+    <pre><span class="yaml-cm"># 1. Dynamic resource name with account ID (globally unique)</span>
+<span class="yaml-key">BucketName</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "myapp-${Environment}-${AWS::AccountId}-${AWS::Region}"</span>
+
+<span class="yaml-cm"># 2. Pick AZ from list (multi-AZ subnet)</span>
+<span class="yaml-key">AvailabilityZone</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Select [1, !GetAZs !Ref "AWS::Region"]</span>
+
+<span class="yaml-cm"># 3. Conditional instance type via !If</span>
+<span class="yaml-key">InstanceType</span><span class="yaml-cm">:</span> <span class="yaml-cm">!If [IsProd, m5.large, t3.micro]</span>
+
+<span class="yaml-cm"># 4. EC2 UserData (must be Base64-encoded)</span>
+<span class="yaml-key">UserData</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">!Base64
+    !Sub |
+      #!/bin/bash
+      echo "ENV=${Environment}" >> /etc/app.conf
+      systemctl start myapp</span>
+
+<span class="yaml-cm"># 5. Build an ARN from parts with !Join</span>
+<span class="yaml-key">QueueArn</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">!Join
+    - ":"
+    - [arn, aws, sqs, !Ref "AWS::Region", !Ref "AWS::AccountId", my-queue]</span>
+
+<span class="yaml-cm"># 6. Import a value exported by another stack</span>
+<span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">Fn::ImportValue: !Sub "networking-${Environment}-VpcId"</span>
+
+<span class="yaml-cm"># 7. Pseudo-parameters (no declaration needed)</span>
+<span class="yaml-cm"># AWS::AccountId  AWS::Region  AWS::StackName  AWS::NoValue  AWS::Partition</span>
+<span class="yaml-key">StackNameTag</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref "AWS::StackName"</span></pre>
+  </div>
+
+  <h3>Pseudo-Parameter Reference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Pseudo-Parameter</th><th>Returns</th><th>Example Value</th></tr>
+    <tr><td><code>AWS::AccountId</code></td><td>Current AWS account ID</td><td>123456789012</td></tr>
+    <tr><td><code>AWS::Region</code></td><td>Current region</td><td>us-east-1</td></tr>
+    <tr><td><code>AWS::StackName</code></td><td>Name of the stack being deployed</td><td>watson-prod-stack</td></tr>
+    <tr><td><code>AWS::StackId</code></td><td>Full stack ARN</td><td>arn:aws:cloudformation:...</td></tr>
+    <tr><td><code>AWS::Partition</code></td><td>AWS partition (useful for GovCloud)</td><td>aws / aws-cn / aws-us-gov</td></tr>
+    <tr><td><code>AWS::NoValue</code></td><td>Removes a property (used with !If)</td><td>— (removes the key)</td></tr>
+    <tr><td><code>AWS::URLSuffix</code></td><td>Domain suffix</td><td>amazonaws.com</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — STACKS & LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-stacks" class="tab-panel"><div class="section">
+  <h2>📦 Stacks — Lifecycle, Updates &amp; Rollback</h2>
+  <p>A <strong>Stack</strong> is the deployed instance of a template. Understanding the stack lifecycle — from creation through updates and deletion — is essential for production operations.</p>
+
+  <!-- LIFECYCLE VISUAL -->
+  <div class="lifecycle">
+    <div class="lc-header">📊 Stack Lifecycle — States &amp; Transitions</div>
+    <div class="lc-body">
+      <div class="lc-row">
+        <div class="lc-stage">
+          <div class="lc-num" style="background:var(--blue);">1</div>
+          <span class="lc-icon">📝</span>
+          <h6>Create Initiated</h6>
+          <p>Template submitted</p>
+          <span class="lc-state" style="background:var(--blue-l);color:var(--blue-d);">CREATE_IN_PROGRESS</span>
+        </div>
+        <div class="lc-stage">
+          <div class="lc-num" style="background:var(--green);">2</div>
+          <span class="lc-icon">✅</span>
+          <h6>Create Complete</h6>
+          <p>All resources live</p>
+          <span class="lc-state" style="background:var(--green-l);color:var(--green-d);">CREATE_COMPLETE</span>
+        </div>
+        <div class="lc-stage">
+          <div class="lc-num" style="background:var(--cf);">3</div>
+          <span class="lc-icon">🔄</span>
+          <h6>Update Initiated</h6>
+          <p>New template applied</p>
+          <span class="lc-state" style="background:var(--cf-l);color:var(--cf-d);">UPDATE_IN_PROGRESS</span>
+        </div>
+        <div class="lc-stage">
+          <div class="lc-num" style="background:var(--red);">4</div>
+          <span class="lc-icon">⏪</span>
+          <h6>Rollback</h6>
+          <p>Failure → revert</p>
+          <span class="lc-state" style="background:var(--red-l);color:var(--red);">ROLLBACK_IN_PROGRESS</span>
+        </div>
+        <div class="lc-stage">
+          <div class="lc-num" style="background:var(--indigo);">5</div>
+          <span class="lc-icon">🗑️</span>
+          <h6>Delete</h6>
+          <p>All resources removed</p>
+          <span class="lc-state" style="background:var(--indigo-l);color:var(--indigo-d);">DELETE_COMPLETE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROLLBACK TIMELINE -->
+  <h3>Rollback Timeline — What Happens on Failure</h3>
+  <div class="rollback-timeline">
+    <div class="rbt-header">⏪ CloudFormation Auto-Rollback on Update Failure</div>
+    <div class="rbt-body">
+      <div class="rbt-event">
+        <div class="rbt-dot rbt-ok">✓</div>
+        <div class="rbt-info"><h6>Stack is UPDATE_COMPLETE (v1)</h6><p>Previous stable state — EC2 t3.micro, RDS db.t3.small</p></div>
+        <div class="rbt-time">t=0</div>
+      </div>
+      <div class="rbt-event">
+        <div class="rbt-dot rbt-ok">▶</div>
+        <div class="rbt-info"><h6>Update initiated (v2 template)</h6><p>New template submitted — changing RDS to db.m5.large + new Lambda</p></div>
+        <div class="rbt-time">t=1min</div>
+      </div>
+      <div class="rbt-event">
+        <div class="rbt-dot rbt-fail">✗</div>
+        <div class="rbt-info"><h6>Lambda creation fails</h6><p>IAM permission denied — Lambda can't be created → UPDATE_FAILED</p></div>
+        <div class="rbt-time">t=4min</div>
+      </div>
+      <div class="rbt-event">
+        <div class="rbt-dot rbt-roll">⏪</div>
+        <div class="rbt-info"><h6>Auto-rollback begins</h6><p>CFN reverts RDS back to db.t3.small; removes partially-created resources</p></div>
+        <div class="rbt-time">t=5min</div>
+      </div>
+      <div class="rbt-event">
+        <div class="rbt-dot rbt-stable">✓</div>
+        <div class="rbt-info"><h6>Stack back to UPDATE_ROLLBACK_COMPLETE</h6><p>All resources are exactly as they were in v1. Fix the IAM issue and retry.</p></div>
+        <div class="rbt-time">t=9min</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHANGE SETS -->
+  <h3>Change Sets — Preview Before You Apply</h3>
+  <p>A Change Set shows you exactly what will be added, modified, or removed — and critically, whether any change will <strong>replace</strong> a resource (causing downtime or data loss).</p>
+
+  <div class="changeset">
+    <div class="cs-header">🔍 Change Set Preview · watson-prod-stack</div>
+    <div class="cs-body">
+      <div class="cs-row">
+        <div class="cs-action add">ADD</div>
+        <div class="cs-resource">WatsonDeadLetterQueue <span>AWS::SQS::Queue</span></div>
+        <div class="cs-scope">New Resource</div>
+        <div class="cs-interrup"><span class="ci-none">None</span></div>
+      </div>
+      <div class="cs-row">
+        <div class="cs-action modify">MODIFY</div>
+        <div class="cs-resource">WatsonLambda <span>AWS::Lambda::Function</span></div>
+        <div class="cs-scope">Code + Env</div>
+        <div class="cs-interrup"><span class="ci-none">None</span></div>
+      </div>
+      <div class="cs-row">
+        <div class="cs-action modify">MODIFY</div>
+        <div class="cs-resource">WatsonRDS <span>AWS::RDS::DBInstance</span></div>
+        <div class="cs-scope">InstanceClass</div>
+        <div class="cs-interrup"><span class="ci-some">Some (reboot)</span></div>
+      </div>
+      <div class="cs-row">
+        <div class="cs-action replace">REPLACE</div>
+        <div class="cs-resource">WatsonEC2 <span>AWS::EC2::Instance</span></div>
+        <div class="cs-scope">AMI changed</div>
+        <div class="cs-interrup"><span class="ci-replace">⚠️ Always</span></div>
+      </div>
+      <div class="cs-row">
+        <div class="cs-action remove">REMOVE</div>
+        <div class="cs-resource">LegacySQSQueue <span>AWS::SQS::Queue</span></div>
+        <div class="cs-scope">Removed from template</div>
+        <div class="cs-interrup"><span class="ci-replace">⚠️ Deleted</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ REPLACE = Resource Recreated</h4>
+    <p>When a change set shows REPLACE, the existing resource is <em>deleted</em> then <em>recreated</em>. For EC2 this means a new instance (new IP, if not Elastic IP). For RDS with <code>DeletionPolicy: Retain</code> this means a new empty database! Always review REPLACE rows before executing a change set in production.</p>
+  </div>
+
+  <!-- DRIFT DETECTION -->
+  <h3>Drift Detection — Catching Console Cowboys</h3>
+  <p>If someone manually edits an AWS resource outside CloudFormation (e.g., changes a security group in the console), that resource has <em>drifted</em> from the template. Drift detection finds these mismatches.</p>
+
+  <div class="drift-visual">
+    <div class="dv-header">🔍 Drift Detection Report · watson-prod-stack</div>
+    <div class="dv-body">
+      <div class="drift-row">
+        <div class="drift-resource">WatsonVPC</div>
+        <div class="drift-bar-wrap"><div class="drift-bar" style="width:100%;background:var(--green-d);"></div></div>
+        <div class="drift-status ds-in-sync">In Sync</div>
+      </div>
+      <div class="drift-row">
+        <div class="drift-resource">WatsonSecurityGroup</div>
+        <div class="drift-bar-wrap"><div class="drift-bar" style="width:85%;background:var(--red);"></div></div>
+        <div class="drift-status ds-drifted">Drifted</div>
+      </div>
+      <div class="drift-row">
+        <div class="drift-resource">WatsonLambda</div>
+        <div class="drift-bar-wrap"><div class="drift-bar" style="width:60%;background:var(--cf);"></div></div>
+        <div class="drift-status ds-modified">Modified</div>
+      </div>
+      <div class="drift-row">
+        <div class="drift-resource">ArtifactBucket</div>
+        <div class="drift-bar-wrap"><div class="drift-bar" style="width:100%;background:var(--green-d);"></div></div>
+        <div class="drift-status ds-in-sync">In Sync</div>
+      </div>
+      <div class="drift-row">
+        <div class="drift-resource">WatsonRDS</div>
+        <div class="drift-bar-wrap"><div class="drift-bar" style="width:100%;background:var(--green-d);"></div></div>
+        <div class="drift-status ds-in-sync">In Sync</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Nested Stacks — Composing Large Architectures</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Parent Stack Referencing Child Stacks</span>
+    <pre><span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">NetworkingStack</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CloudFormation::Stack</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">TemplateURL</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "https://s3.amazonaws.com/${TemplateBucket}/networking.yaml"</span>
+      <span class="yaml-key">Parameters</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Environment</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref Environment</span>
+      <span class="yaml-key">TimeoutInMinutes</span><span class="yaml-cm">:</span> <span class="yaml-ex">15</span>
+
+  <span class="yaml-key">AppStack</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CloudFormation::Stack</span>
+    <span class="yaml-key">DependsOn</span><span class="yaml-cm">:</span> <span class="yaml-str">NetworkingStack</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">TemplateURL</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "https://s3.amazonaws.com/${TemplateBucket}/app.yaml"</span>
+      <span class="yaml-key">Parameters</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>         <span class="yaml-cm">!GetAtt NetworkingStack.Outputs.VpcId</span>
+        <span class="yaml-key">PublicSubnet</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!GetAtt NetworkingStack.Outputs.PublicSubnetId</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ADVANCED FEATURES
+══════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🚀 Advanced Features</h2>
+
+  <h3>StackSets — Multi-Account &amp; Multi-Region</h3>
+  <p>StackSets let you deploy a single template to <strong>multiple AWS accounts and/or regions</strong> in one operation — essential for org-wide security baselines, logging, or network setups.</p>
+  <div class="flow">
+    <div class="flow-node n-indigo">
+      <div class="flow-node-title">🏢 Management Account</div>
+      <ul class="flow-items">
+        <li>Creates the StackSet with a template</li>
+        <li>Defines target accounts (all, OU, specific IDs)</li>
+        <li>Defines target regions (us-east-1, eu-west-1 …)</li>
+        <li>Sets max concurrency &amp; failure tolerance</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Deploys in parallel</div>
+    <div class="flow-row">
+      <div class="flow-node n-green"><div class="flow-node-title">📦 Account A · us-east-1</div><ul class="flow-items"><li>Stack Instance created</li><li>Fully managed stack</li></ul></div>
+      <div class="flow-node n-green"><div class="flow-node-title">📦 Account B · eu-west-1</div><ul class="flow-items"><li>Stack Instance created</li><li>Same template applied</li></ul></div>
+      <div class="flow-node n-green"><div class="flow-node-title">📦 Account C · ap-southeast-1</div><ul class="flow-items"><li>Stack Instance created</li><li>Regional isolation</li></ul></div>
+    </div>
+  </div>
+
+  <h3>Custom Resources — Extend CFN to Anything</h3>
+  <p>If a resource type doesn't exist natively (e.g., third-party services, custom DNS records), use a <strong>Custom Resource</strong> backed by Lambda. CFN sends Create/Update/Delete events; your Lambda handles the logic.</p>
+  <div class="code-block">
+    <span class="code-label">YAML · Custom Resource with Lambda Backend</span>
+    <pre><span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">CustomDbInit</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">Custom::DatabaseInitializer</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">ServiceToken</span><span class="yaml-cm">:</span> <span class="yaml-cm">!GetAtt DbInitLambda.Arn</span>  <span class="yaml-cm"># Lambda ARN</span>
+      <span class="yaml-key">DbEndpoint</span><span class="yaml-cm">:</span>   <span class="yaml-cm">!GetAtt WatsonRDS.Endpoint.Address</span>
+      <span class="yaml-key">DbName</span><span class="yaml-cm">:</span>       <span class="yaml-str">watsondb</span></pre>
+  </div>
+
+  <h3>Stack Policies — Protect Critical Resources</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Stack Policy (protect RDS from updates)</span>
+    <pre>{
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: <span class="str">"Update:*"</span>,
+      <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>
+    },
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+      <span class="str">"Action"</span>: [<span class="str">"Update:Replace"</span>, <span class="str">"Update:Delete"</span>],
+      <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"LogicalResourceId/WatsonRDS"</span>  <span class="cm">// Protects RDS</span>
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>CloudFormation Hooks — Pre/Post Resource Validation</h3>
+  <p>Hooks intercept stack operations before a resource is provisioned — run custom logic like security checks, compliance validation, or guardrails.</p>
+  <div class="info">
+    <h4>ℹ️ Hooks Use Cases for Team Watson</h4>
+    <p>• Enforce all S3 buckets have encryption enabled before creation · Deny EC2 instances without required tags · Validate IAM roles don't have wildcard permissions · Check RDS has deletion protection in prod · Require all Lambdas to have reserved concurrency set.</p>
+  </div>
+
+  <h3>CloudFormation Registry — Third-Party Resources</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Resource Type</th><th>Example</th><th>Availability</th></tr>
+    <tr><td>AWS Native</td><td>AWS::S3::Bucket</td><td>Built-in, always available</td></tr>
+    <tr><td>AWS Extensions</td><td>AwsCommunity::S3::BucketNotification</td><td>Registry, activate first</td></tr>
+    <tr><td>Third Party</td><td>Datadog::Monitors::Monitor</td><td>Registry, install + activate</td></tr>
+    <tr><td>Custom (Lambda)</td><td>Custom::MyResource</td><td>Your own Lambda</td></tr>
+    <tr><td>Private Extensions</td><td>MyOrg::App::Config</td><td>Your own type, registered</td></tr>
+  </table></div>
+
+  <h3>Macro — Template-Level Transform</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · SAM Transform (most common macro)</span>
+    <pre><span class="yaml-key">Transform</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless-2016-10-31</span>  <span class="yaml-cm"># SAM macro</span>
+
+<span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">WatsonApi</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>   <span class="yaml-cm"># SAM-specific type</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Handler</span><span class="yaml-cm">:</span>  <span class="yaml-str">bootstrap</span>
+      <span class="yaml-key">Runtime</span><span class="yaml-cm">:</span>  <span class="yaml-str">provided.al2023</span>
+      <span class="yaml-key">Events</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Api</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">Api</span>
+          <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+            <span class="yaml-key">Path</span><span class="yaml-cm">:</span>   <span class="yaml-str">/watson</span>
+            <span class="yaml-key">Method</span><span class="yaml-cm">:</span> <span class="yaml-str">get</span>
+<span class="yaml-cm"># CFN expands SAM → native CFN resources before deploying</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Deploy Your First Stack</h2>
+  <p>Full walkthrough — every field, every click — to deploy a CloudFormation stack from the AWS Console.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to CloudFormation</div>
+      <div class="console-step-path">AWS Console → CloudFormation</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">URL</div><div class="console-field-value">https://console.aws.amazon.com/cloudformation</div></div>
+      <div class="console-note">Ensure you are in the correct region (top-right region selector). CloudFormation stacks are regional.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create Stack</div>
+      <div class="console-step-path">Stacks → Create stack → With new resources (standard)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Template Source</div><div class="console-field-value">Upload a template file</div><div class="console-field-hint">Choose your .yaml or .json template. CFN stores it in an auto-created S3 bucket.</div></div>
+      <div class="console-field"><div class="console-field-label">Alternative</div><div class="console-field-value">Amazon S3 URL → paste your template URL</div><div class="console-field-hint">Use this for large templates or CI/CD pipelines.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Specify Stack Details</div>
+      <div class="console-step-path">Stack name + Parameter values</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Stack Name</div><div class="console-field-value">watson-dev-stack</div><div class="console-field-hint">Use kebab-case. Max 128 chars. Must be unique in this region.</div></div>
+      <div class="console-field"><div class="console-field-label">Environment (Parameter)</div><div class="console-field-value">dev</div><div class="console-field-hint">Your template's AllowedValues appear as a dropdown.</div></div>
+      <div class="console-field"><div class="console-field-label">InstanceType (Parameter)</div><div class="console-field-value">t3.micro</div></div>
+      <div class="console-field"><div class="console-field-label">DBPassword (Parameter)</div><div class="console-field-value">••••••••••••</div><div class="console-field-hint">NoEcho: true — value is masked in the console and events.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Configure Stack Options</div>
+      <div class="console-step-path">Tags, IAM Role, Stack Failure Options</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Tags</div><div class="console-field-value">Team = Watson · CostCenter = Platform · Owner = indhu</div><div class="console-field-hint">Tags propagate to all resources CFN creates. Use these for cost attribution.</div></div>
+      <div class="console-field"><div class="console-field-label">IAM Role (Permissions)</div><div class="console-field-value">Leave blank → CFN uses your IAM user's permissions</div><div class="console-field-hint">For CI/CD, create a dedicated CFN IAM role with only needed permissions.</div></div>
+      <div class="console-field"><div class="console-field-label">Stack Failure Options</div><div class="console-field-value">Roll back all stack resources</div><div class="console-field-hint">In dev, consider "Preserve successfully provisioned resources" for faster iteration.</div></div>
+      <div class="console-field"><div class="console-field-label">Termination Protection</div><div class="console-field-value">Enabled (for prod) · Disabled (for dev/qa)</div><div class="console-field-hint">Prevents accidental deletion. Must be explicitly disabled before deleting stack.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Acknowledge IAM Capabilities</div>
+      <div class="console-step-path">Review page → Capabilities checkbox</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Checkbox Required</div><div class="console-field-value">☑️ I acknowledge that AWS CloudFormation might create IAM resources</div><div class="console-field-hint">Required whenever your template creates IAM Roles, Policies, or Instance Profiles. CFN won't proceed without it.</div></div>
+      <div class="console-note">⚠️ If your template uses custom named IAM resources (e.g. RoleName: watson-role), you must also check: "I acknowledge that AWS CloudFormation might create IAM resources with custom names"</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Monitor Events Tab</div>
+      <div class="console-step-path">Stack → Events tab (auto-refreshes)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Events Tab</div><div class="console-field-value">Shows real-time resource creation — newest events at top</div></div>
+      <div class="console-field"><div class="console-field-label">Failure Diagnosis</div><div class="console-field-value">Status = CREATE_FAILED → read the Status Reason column</div><div class="console-field-hint">99% of failures have a clear message here: IAM permissions, quota limits, or invalid property values.</div></div>
+      <div class="console-note">If the stack rolls back, filter Events by Status = FAILED to find the root cause. Fix, delete the failed stack, and recreate.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <div class="console-step-title">Create a Change Set for Updates</div>
+      <div class="console-step-path">Stack → Update → Create change set for me</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Recommended Workflow</div><div class="console-field-value">Always create + review a Change Set before executing in prod</div></div>
+      <div class="console-field"><div class="console-field-label">Change Set Name</div><div class="console-field-value">add-sqs-dlq-2024-01</div></div>
+      <div class="console-field"><div class="console-field-label">Review</div><div class="console-field-value">Check for REPLACE or DELETE rows — these have production impact</div></div>
+      <div class="console-field"><div class="console-field-label">Execute</div><div class="console-field-value">Click Execute change set → stack updates atomically</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# .NET SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Automate CloudFormation</h2>
+  <p>The AWS SDK for .NET lets you programmatically create stacks, poll status, read outputs, and detect drift — perfect for CI/CD pipelines or internal tooling.</p>
+
+  <h3>Setup — NuGet Package</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Package Install</span>
+    <pre>dotnet add package AWSSDK.CloudFormation
+dotnet add package AWSSDK.S3              <span class="cm">// For template upload</span>
+dotnet add package AWSSDK.SecurityToken  <span class="cm">// Optional: assume role</span></pre>
+  </div>
+
+  <h3>CloudFormation Client Wrapper</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CloudFormation Service</span>
+    <pre><span class="kw">using</span> Amazon.CloudFormation;
+<span class="kw">using</span> Amazon.CloudFormation.Model;
+
+<span class="kw">public class</span> <span class="tp">CloudFormationService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCloudFormation</span> _cfn;
+
+    <span class="kw">public</span> <span class="tp">CloudFormationService</span>(<span class="tp">IAmazonCloudFormation</span> cfn)
+        => _cfn = cfn;
+
+    <span class="cm">// ── CREATE STACK ──────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateStackAsync</span>(
+        <span class="tp">string</span> stackName,
+        <span class="tp">string</span> templateUrl,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt; parameters,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">CreateStackRequest</span>
+        {
+            StackName   = stackName,
+            TemplateURL = templateUrl,
+            Parameters  = parameters
+                .<span class="fn">Select</span>(kv => <span class="kw">new</span> <span class="tp">Parameter</span>
+                {
+                    ParameterKey   = kv.Key,
+                    ParameterValue = kv.Value
+                }).<span class="fn">ToList</span>(),
+            Capabilities = [<span class="str">"CAPABILITY_NAMED_IAM"</span>],
+            Tags = [
+                <span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Team"</span>,  Value = <span class="str">"Watson"</span> },
+                <span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"ManagedBy"</span>, Value = <span class="str">"CloudFormation"</span> }
+            ],
+            OnFailure = OnFailure.ROLLBACK
+        };
+
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cfn.<span class="fn">CreateStackAsync</span>(request, ct);
+        <span class="kw">return</span> resp.StackId;
+    }
+
+    <span class="cm">// ── WAIT FOR COMPLETION ───────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Stack</span>&gt; <span class="fn">WaitForStackAsync</span>(
+        <span class="tp">string</span> stackName,
+        <span class="tp">HashSet</span>&lt;<span class="tp">string</span>&gt; terminalStates,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">while</span> (!ct.IsCancellationRequested)
+        {
+            <span class="kw">var</span> stacks = (<span class="kw">await</span> _cfn.<span class="fn">DescribeStacksAsync</span>(
+                <span class="kw">new</span> <span class="tp">DescribeStacksRequest</span> { StackName = stackName }, ct))
+                .Stacks;
+
+            <span class="kw">var</span> stack = stacks.<span class="fn">First</span>();
+            <span class="kw">var</span> status = stack.StackStatus.Value;
+
+            Console.<span class="fn">WriteLine</span>(<span class="str">$"[{DateTime.UtcNow:HH:mm:ss}] {stackName}: {status}"</span>);
+
+            <span class="kw">if</span> (terminalStates.<span class="fn">Contains</span>(status))
+                <span class="kw">return</span> stack;
+
+            <span class="kw">await</span> Task.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">10</span>), ct);
+        }
+        <span class="kw">throw new</span> <span class="tp">OperationCanceledException</span>(<span class="str">"Timed out waiting for stack."</span>);
+    }
+
+    <span class="cm">// ── READ OUTPUTS ──────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,<span class="tp">string</span>&gt;&gt; <span class="fn">GetOutputsAsync</span>(
+        <span class="tp">string</span> stackName,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cfn.<span class="fn">DescribeStacksAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeStacksRequest</span> { StackName = stackName }, ct);
+
+        <span class="kw">return</span> resp.Stacks
+            .<span class="fn">First</span>()
+            .Outputs
+            .<span class="fn">ToDictionary</span>(o => o.OutputKey, o => o.OutputValue);
+    }
+
+    <span class="cm">// ── CREATE CHANGE SET ─────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">CreateChangeSetAsync</span>(
+        <span class="tp">string</span> stackName,
+        <span class="tp">string</span> changeSetName,
+        <span class="tp">string</span> templateUrl,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,<span class="tp">string</span>&gt; parameters,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cfn.<span class="fn">CreateChangeSetAsync</span>(<span class="kw">new</span> <span class="tp">CreateChangeSetRequest</span>
+        {
+            StackName     = stackName,
+            ChangeSetName = changeSetName,
+            TemplateURL   = templateUrl,
+            Parameters    = parameters
+                .<span class="fn">Select</span>(kv => <span class="kw">new</span> <span class="tp">Parameter</span>
+                    { ParameterKey = kv.Key, ParameterValue = kv.Value })
+                .<span class="fn">ToList</span>(),
+            Capabilities = [<span class="str">"CAPABILITY_NAMED_IAM"</span>]
+        }, ct);
+
+        <span class="kw">return</span> resp.Id;
+    }
+
+    <span class="cm">// ── DETECT DRIFT ──────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">StackResourceDrift</span>&gt;&gt; <span class="fn">DetectDriftAsync</span>(
+        <span class="tp">string</span> stackName,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="cm">// Step 1: Initiate drift detection</span>
+        <span class="kw">var</span> detectResp = <span class="kw">await</span> _cfn.<span class="fn">DetectStackDriftAsync</span>(
+            <span class="kw">new</span> <span class="tp">DetectStackDriftRequest</span> { StackName = stackName }, ct);
+
+        <span class="tp">string</span> detectionId = detectResp.StackDriftDetectionId;
+
+        <span class="cm">// Step 2: Wait for detection to complete</span>
+        <span class="kw">while</span> (<span class="kw">true</span>)
+        {
+            <span class="kw">var</span> status = <span class="kw">await</span> _cfn.<span class="fn">DescribeStackDriftDetectionStatusAsync</span>(
+                <span class="kw">new</span> <span class="tp">DescribeStackDriftDetectionStatusRequest</span>
+                    { StackDriftDetectionId = detectionId }, ct);
+
+            <span class="kw">if</span> (status.DetectionStatus == StackDriftDetectionStatus.DETECTION_COMPLETE)
+                <span class="kw">break</span>;
+
+            <span class="kw">await</span> Task.<span class="fn">Delay</span>(<span class="num">5000</span>, ct);
+        }
+
+        <span class="cm">// Step 3: Get drifted resources</span>
+        <span class="kw">var</span> drifts = <span class="kw">await</span> _cfn.<span class="fn">DescribeStackResourceDriftsAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeStackResourceDriftsRequest</span>
+            {
+                StackName = stackName,
+                StackResourceDriftStatusFilters =
+                    [<span class="str">"MODIFIED"</span>, <span class="str">"DELETED"</span>]
+            }, ct);
+
+        <span class="kw">return</span> drifts.StackResourceDrifts;
+    }
+}</pre>
+  </div>
+
+  <h3>Usage — Deploy &amp; Monitor Pipeline</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Full Deploy Flow</span>
+    <pre><span class="kw">var</span> cfnService = <span class="kw">new</span> <span class="tp">CloudFormationService</span>(
+    <span class="kw">new</span> <span class="tp">AmazonCloudFormationClient</span>(<span class="tp">Amazon.RegionEndpoint</span>.EUWest1));
+
+<span class="kw">var</span> parameters = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>,<span class="tp">string</span>&gt;
+{
+    [<span class="str">"Environment"</span>] = <span class="str">"prod"</span>,
+    [<span class="str">"InstanceType"</span>] = <span class="str">"t3.small"</span>
+};
+
+<span class="cm">// 1. Create stack</span>
+<span class="kw">await</span> cfnService.<span class="fn">CreateStackAsync</span>(
+    stackName:   <span class="str">"watson-prod-stack"</span>,
+    templateUrl: <span class="str">"https://s3.amazonaws.com/templates/main.yaml"</span>,
+    parameters:  parameters);
+
+<span class="cm">// 2. Wait for completion</span>
+<span class="kw">var</span> terminalStates = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;<span class="tp">string</span>&gt;
+{
+    <span class="str">"CREATE_COMPLETE"</span>, <span class="str">"CREATE_FAILED"</span>, <span class="str">"ROLLBACK_COMPLETE"</span>
+};
+
+<span class="kw">var</span> cts = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">30</span>));
+<span class="kw">var</span> stack = <span class="kw">await</span> cfnService.<span class="fn">WaitForStackAsync</span>(
+    <span class="str">"watson-prod-stack"</span>, terminalStates, cts.Token);
+
+<span class="kw">if</span> (stack.StackStatus != StackStatus.CREATE_COMPLETE)
+    <span class="kw">throw new</span> <span class="tp">Exception</span>(<span class="str">$"Stack failed: {stack.StackStatusReason}"</span>);
+
+<span class="cm">// 3. Read outputs</span>
+<span class="kw">var</span> outputs = <span class="kw">await</span> cfnService.<span class="fn">GetOutputsAsync</span>(<span class="str">"watson-prod-stack"</span>);
+Console.<span class="fn">WriteLine</span>(<span class="str">$"API Endpoint: {outputs["ApiEndpoint"]}"</span>);
+Console.<span class="fn">WriteLine</span>(<span class="str">$"VPC ID: {outputs["VpcId"]}"</span>);
+
+<span class="cm">// 4. Run drift detection after 24h (scheduled job)</span>
+<span class="kw">var</span> drifted = <span class="kw">await</span> cfnService.<span class="fn">DetectDriftAsync</span>(<span class="str">"watson-prod-stack"</span>);
+<span class="kw">foreach</span> (<span class="kw">var</span> d <span class="kw">in</span> drifted)
+    Console.<span class="fn">WriteLine</span>(<span class="str">$"DRIFT: {d.LogicalResourceId} — {d.StackResourceDriftStatus}"</span>);</pre>
+  </div>
+
+  <h3>DI Registration (ASP.NET Core)</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs</span>
+    <pre>builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCloudFormation</span>&gt;()  <span class="cm">// from AWSSDK.Extensions.NETCore.Setup</span>
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">CloudFormationService</span>&gt;();
+
+<span class="cm">// appsettings.json — region &amp; credentials auto-resolved from environment</span>
+<span class="cm">// {  "AWS": { "Region": "eu-west-1" }  }</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Template Design</h3>
+  <ul class="checklist">
+    <li>Use YAML over JSON — it supports comments (<code>#</code>), reads cleaner, and is less error-prone for humans</li>
+    <li>Set <code>DeletionPolicy: Retain</code> on stateful resources (RDS, S3, DynamoDB) — prevents data loss if stack is accidentally deleted</li>
+    <li>Use <code>UpdateReplacePolicy: Retain</code> too — applies on stack updates when a resource would be replaced</li>
+    <li>Always tag every resource via the <code>Tags</code> property or stack-level tags — required for cost attribution and org governance</li>
+    <li>Enable <code>TerminationProtection</code> on all production stacks — one-time console/API toggle, saves you from accidents</li>
+    <li>Split large monolith templates into nested stacks by concern (networking, compute, data, IAM) — stays under the 1MB template size limit</li>
+    <li>Use <code>Parameters</code> + <code>Mappings</code> for environment-specific config — never hardcode account IDs, region names, or AMI IDs</li>
+  </ul>
+
+  <h3>Deployment Workflow</h3>
+  <ul class="checklist">
+    <li>Always create and review a <strong>Change Set</strong> before applying any update to a production stack — check for REPLACE rows</li>
+    <li>Store templates in Git — every change to infrastructure is code-reviewed like application code</li>
+    <li>Use <code>cfn-lint</code> in CI to catch template errors before deploy — catches invalid resource types, missing required properties</li>
+    <li>Run <code>aws cloudformation validate-template</code> as a pre-deploy step in all pipelines</li>
+    <li>Use <code>--no-execute-changeset</code> flag in CodePipeline to require manual approval before applying to prod</li>
+    <li>Schedule drift detection (daily or weekly) via CloudWatch Events + Lambda to catch console-cowboy changes</li>
+  </ul>
+
+  <h3>Security</h3>
+  <ul class="checklist">
+    <li>Give CloudFormation a dedicated IAM role with only the permissions it needs — don't use your personal admin role in CI/CD</li>
+    <li>Use <code>NoEcho: true</code> on all sensitive parameters (passwords, API keys) — prevents values appearing in events and console</li>
+    <li>Reference secrets from Secrets Manager or SSM Parameter Store by ARN in templates — never put plaintext secrets as default parameter values</li>
+    <li>Apply Stack Policies to protect production databases from accidental update or replacement</li>
+    <li>Enable CFN Hooks for pre-deployment policy enforcement (S3 encryption, required tags, no wildcard IAM)</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top CloudFormation Mistakes</h4>
+    <p>
+    ❌ <strong>No DeletionPolicy on RDS/S3</strong> — stack delete removes the database and all its data permanently<br>
+    ❌ <strong>Hardcoded AMI IDs</strong> — AMIs are region-specific; your template breaks the moment you deploy to another region<br>
+    ❌ <strong>Ignoring Change Set REPLACE rows</strong> — executing without review causes unplanned downtime or data loss<br>
+    ❌ <strong>One giant 5,000-line template</strong> — impossible to review, hits size limits, hard to reuse; split into nested stacks<br>
+    ❌ <strong>Not using Termination Protection on prod</strong> — a mistyped <code>aws cloudformation delete-stack</code> command destroys everything<br>
+    ❌ <strong>Storing plaintext secrets as Parameter defaults</strong> — visible to anyone with read access to the template in S3<br>
+    ❌ <strong>Circular dependencies</strong> — Resource A references B and B references A → CFN cannot resolve; redesign or use a Custom Resource<br>
+    ❌ <strong>Skipping cfn-lint in CI</strong> — template errors surface only at deploy time; linting catches them in seconds
+    </p>
+  </div>
+
+  <h3>CloudFormation vs Terraform vs CDK — Quick Cheat Sheet</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Best Tool</th><th>Why</th></tr>
+    <tr><td>AWS-only, no extra tooling</td><td>CloudFormation</td><td>Zero install, native service, same-day resource support</td></tr>
+    <tr><td>Multi-cloud (AWS + Azure + GCP)</td><td>Terraform</td><td>Single workflow across providers</td></tr>
+    <tr><td>Developers who prefer real code (loops, OOP)</td><td>AWS CDK</td><td>TypeScript / C# → generates CFN; higher abstraction</td></tr>
+    <tr><td>Serverless apps (Lambda + API GW + DynamoDB)</td><td>SAM (built on CFN)</td><td>Shorthand syntax, local test, sam deploy</td></tr>
+    <tr><td>Multi-account org governance</td><td>CloudFormation StackSets</td><td>Native, no extra tooling, integrates with AWS Organizations</td></tr>
+    <tr><td>Existing large Terraform codebase</td><td>Terraform</td><td>Don't migrate; consistency wins</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CloudFormation Mastery!</h3>
+    <p>What is CloudFormation · IaC vs manual comparison · Full template anatomy (7 sections) · Resources &amp; DeletionPolicy · Intrinsic functions (!Ref !GetAtt !Sub !If !Select) · Pseudo-parameters · Stack lifecycle &amp; status states · Change sets &amp; impact preview · Drift detection · Rollback behaviour · Nested stacks · StackSets · Custom Resources · Stack Policies · CFN Hooks &amp; Registry · Full Console walkthrough (every field) · C# SDK — create/wait/outputs/changeset/drift · cfn-lint &amp; CI/CD integration · Security best practices · DeletionPolicy patterns</p>
+    <p style="margin-top:10px;font-weight:600;color:#f0a050;">Your infrastructure is now code, reviewed, repeatable, and safe. ☁️🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
