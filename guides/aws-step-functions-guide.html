@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Step Functions — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f9;--surface:#eaecf2;--card:#ffffff;--border:#dde0ec;--border2:#c8ccde;
+  --sf:#7c3aed;--sf-l:#f0ebff;--sf-d:#5b21b6;--sf-dk:#3b0764;
+  --blue:#1d6fcc;--blue-l:#dbeafe;--blue-d:#1e40af;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --teal:#0e7490;--teal-l:#cffafe;--teal-d:#155e75;
+  --amber:#b45309;--amber-l:#fef3c7;--amber-d:#92400e;
+  --red:#be123c;--red-l:rgba(190,18,60,.08);--red-b:rgba(190,18,60,.22);
+  --indigo:#4338ca;--indigo-l:#e0e7ff;--indigo-d:#3730a3;
+  --pink:#be185d;--pink-l:#fce7f3;--pink-d:#9d174d;
+  --slate:#475569;
+  --text:#0f172a;--text2:#334155;--muted:#64748b;
+  --code-bg:#0d1117;--r:10px;
+  --sh:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.06);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 28px rgba(0,0,0,.09);
+  --sh-xl:0 4px 16px rgba(0,0,0,.08),0 16px 48px rgba(0,0,0,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#2e1065 0%,#4c1d95 35%,#5b21b6 65%,#7c3aed 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header-orb1{position:absolute;top:-80px;right:-80px;width:320px;height:320px;background:radial-gradient(circle,rgba(167,139,250,.3) 0%,transparent 70%);pointer-events:none;}
+.header-orb2{position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(99,102,241,.2) 0%,transparent 70%);pointer-events:none;}
+.header-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:32px 32px;pointer-events:none;}
+.header-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.35);color:#c4b5fd;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.7rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;line-height:1.15;}
+.header h1 span{background:linear-gradient(90deg,#c4b5fd,#a78bfa,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(244,246,249,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--sf-l);color:var(--sf-d);font-weight:700;box-shadow:0 0 0 1.5px rgba(124,58,237,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--sf-l);letter-spacing:-.02em;}
+.section h3{color:var(--sf-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── STATE MACHINE ANATOMY ── */
+.sm-anatomy{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-xl);}
+.sm-header{background:linear-gradient(90deg,#2e1065,#4c1d95);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #3b1580;display:flex;align-items:center;gap:8px;}
+.sm-header span{background:rgba(167,139,250,.2);border:1px solid rgba(167,139,250,.3);color:#c4b5fd;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.sm-body{padding:18px;}
+
+/* ── STATE TYPE CARDS ── */
+.state-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:10px;margin:14px 0;}
+.state-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;}
+.state-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.state-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-task::before{background:var(--sf);}
+.sc-choice::before{background:var(--amber);}
+.sc-parallel::before{background:var(--blue);}
+.sc-map::before{background:var(--teal);}
+.sc-wait::before{background:var(--indigo);}
+.sc-pass::before{background:var(--green);}
+.sc-success::before{background:var(--green);}
+.sc-fail::before{background:var(--red);}
+.sc-name{font-weight:700;font-size:.8rem;margin-bottom:3px;display:flex;align-items:center;gap:6px;}
+.sc-type{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;margin-left:auto;}
+.sc-desc{font-size:.7rem;color:var(--muted);margin-bottom:6px;}
+.sc-use{font-size:.65rem;color:var(--sf-d);background:var(--sf-l);padding:3px 8px;border-radius:4px;display:inline-block;}
+
+/* ── WORKFLOW VISUAL ── */
+.workflow{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.wf-header{background:linear-gradient(90deg,var(--sf-l),var(--indigo-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.wf-body{padding:16px;}
+
+/* ── STATE MACHINE DIAGRAM ── */
+.sm-diagram{position:relative;padding:10px 0;}
+.sm-node{border-radius:8px;padding:10px 14px;margin:0 auto;position:relative;display:flex;align-items:center;gap:10px;}
+.sm-node-icon{font-size:1.2rem;flex-shrink:0;}
+.sm-node-body{flex:1;}
+.sm-node-name{font-weight:700;font-size:.8rem;}
+.sm-node-desc{font-size:.65rem;color:var(--muted);}
+.sm-node-badge{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 7px;border-radius:3px;flex-shrink:0;font-weight:600;}
+.sm-arrow{text-align:center;padding:3px 0;font-size:1.3rem;color:var(--border2);}
+.sm-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);margin-top:-3px;margin-bottom:2px;}
+.sm-row{display:flex;gap:8px;max-width:520px;margin:0 auto;}
+.sm-row .sm-node{flex:1;margin:0;}
+.sn-task{background:var(--sf-l);border:1.5px solid rgba(124,58,237,.3);max-width:420px;}
+.sn-task .sm-node-name{color:var(--sf-d);}
+.sn-task .sm-node-badge{background:var(--sf-l);color:var(--sf-d);border:1px solid rgba(124,58,237,.2);}
+.sn-choice{background:var(--amber-l);border:1.5px solid rgba(180,83,9,.25);max-width:420px;}
+.sn-choice .sm-node-name{color:var(--amber-d);}
+.sn-parallel{background:var(--blue-l);border:1.5px solid rgba(29,111,204,.25);max-width:420px;}
+.sn-parallel .sm-node-name{color:var(--blue-d);}
+.sn-map{background:var(--teal-l);border:1.5px solid rgba(14,116,144,.25);max-width:420px;}
+.sn-map .sm-node-name{color:var(--teal-d);}
+.sn-wait{background:var(--indigo-l);border:1.5px solid rgba(67,56,202,.2);max-width:420px;}
+.sn-wait .sm-node-name{color:var(--indigo-d);}
+.sn-pass{background:var(--green-l);border:1.5px solid rgba(21,128,61,.2);max-width:420px;}
+.sn-pass .sm-node-name{color:var(--green-d);}
+.sn-success{background:var(--green-l);border:2px solid var(--green-d);max-width:420px;}
+.sn-success .sm-node-name{color:var(--green-d);}
+.sn-fail{background:var(--red-l);border:2px solid var(--red);max-width:420px;}
+.sn-fail .sm-node-name{color:var(--red);}
+
+/* ── EXPRESS vs STANDARD ── */
+.wf-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.wc-header{display:flex;border-bottom:1px solid var(--border);}
+.wc-col{flex:1;padding:12px 14px;text-align:center;font-weight:700;font-size:.78rem;}
+.wc-std{background:var(--sf-l);color:var(--sf-d);border-right:1px solid var(--border);}
+.wc-exp{background:var(--teal-l);color:var(--teal-d);}
+.wc-row{display:flex;border-bottom:1px solid var(--border);}
+.wc-row:last-child{border-bottom:none;}
+.wc-label{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.wc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.wc-val:last-child{border-right:none;}
+.wc-val.good{color:var(--green-d);font-weight:600;}
+.wc-val.warn{color:var(--amber-d);font-weight:600;}
+.wc-val.bad{color:var(--red);font-weight:600;}
+
+/* ── ERROR HANDLING VISUAL ── */
+.error-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.ev-header{background:linear-gradient(90deg,var(--red-l),var(--amber-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.ev-body{padding:14px;}
+.ev-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.ev-row:last-child{border-bottom:none;}
+.ev-error{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--red);font-weight:600;width:200px;flex-shrink:0;}
+.ev-catch{font-size:.7rem;color:var(--text2);flex:1;}
+.ev-retry{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--amber-d);flex-shrink:0;background:var(--amber-l);padding:2px 7px;border-radius:4px;}
+
+/* ── EXECUTION TIMELINE ── */
+.exec-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.et-header{background:linear-gradient(90deg,#2e1065,#4c1d95);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #3b1580;}
+.et-body{padding:14px;}
+.et-event{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px;position:relative;}
+.et-event:not(:last-child)::after{content:'';position:absolute;left:13px;top:28px;bottom:-14px;width:2px;background:var(--border);}
+.et-dot{width:26px;height:26px;min-width:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;z-index:1;}
+.et-start{background:var(--sf-l);border:2px solid var(--sf-d);color:var(--sf-d);}
+.et-running{background:var(--blue-l);border:2px solid var(--blue-d);color:var(--blue-d);}
+.et-retry{background:var(--amber-l);border:2px solid var(--amber-d);color:var(--amber-d);}
+.et-ok{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.et-fail{background:var(--red-l);border:2px solid var(--red);color:var(--red);}
+.et-info{flex:1;}
+.et-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.et-info p{font-size:.7rem;color:var(--muted);}
+.et-time{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);flex-shrink:0;}
+
+/* ── INTEGRATION TILES ── */
+.int-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:8px;margin:14px 0;}
+.int-tile{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 10px;text-align:center;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;}
+.int-tile:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.int-tile .it-icon{font-size:1.5rem;display:block;margin-bottom:5px;}
+.int-tile h5{font-size:.72rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.int-tile p{font-size:.62rem;color:var(--muted);}
+.int-tile .it-mode{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:1px 5px;border-radius:3px;margin-top:4px;display:inline-block;}
+.mode-sync{background:var(--blue-l);color:var(--blue-d);}
+.mode-async{background:var(--teal-l);color:var(--teal-d);}
+.mode-request{background:var(--sf-l);color:var(--sf-d);}
+
+/* ── PARALLEL BRANCH VISUAL ── */
+.parallel-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pv-header{background:linear-gradient(90deg,var(--blue-l),var(--sf-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.pv-body{padding:16px;}
+.pv-start{background:var(--sf-l);border:2px solid var(--sf-d);border-radius:8px;padding:8px 14px;text-align:center;max-width:200px;margin:0 auto;}
+.pv-start h6{font-weight:700;font-size:.75rem;color:var(--sf-d);}
+.pv-fork{text-align:center;color:var(--sf-d);font-size:1.4rem;padding:4px 0;}
+.pv-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr));gap:8px;margin:4px 0;}
+.pv-branch{border:1.5px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.pv-branch.b1{background:var(--blue-l);border-color:rgba(29,111,204,.25);}
+.pv-branch.b2{background:var(--teal-l);border-color:rgba(14,116,144,.25);}
+.pv-branch.b3{background:var(--indigo-l);border-color:rgba(67,56,202,.2);}
+.pv-branch h6{font-weight:700;font-size:.7rem;margin-bottom:3px;}
+.pv-branch.b1 h6{color:var(--blue-d);}
+.pv-branch.b2 h6{color:var(--teal-d);}
+.pv-branch.b3 h6{color:var(--indigo-d);}
+.pv-branch p{font-size:.6rem;color:var(--muted);}
+.pv-join{text-align:center;color:var(--sf-d);font-size:1.4rem;padding:4px 0;}
+.pv-end{background:var(--green-l);border:2px solid var(--green-d);border-radius:8px;padding:8px 14px;text-align:center;max-width:200px;margin:0 auto;}
+.pv-end h6{font-weight:700;font-size:.75rem;color:var(--green-d);}
+
+/* ── MAP STATE VISUAL ── */
+.map-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.mv-header{background:linear-gradient(90deg,var(--teal-l),var(--green-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.mv-body{padding:14px;}
+.mv-input{background:var(--teal-l);border:1.5px solid rgba(14,116,144,.3);border-radius:8px;padding:8px 12px;margin-bottom:8px;}
+.mv-input h6{font-weight:700;font-size:.72rem;color:var(--teal-d);margin-bottom:3px;}
+.mv-items{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;}
+.mv-item{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:4px 9px;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--teal-d);}
+.mv-arrow{text-align:center;color:var(--teal-d);font-size:1.3rem;padding:3px 0;}
+.mv-concurrent{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100px,100%),1fr));gap:6px;margin:4px 0;}
+.mv-worker{background:var(--sf-l);border:1.5px solid rgba(124,58,237,.25);border-radius:6px;padding:7px;text-align:center;}
+.mv-worker p{font-size:.62rem;color:var(--sf-d);font-weight:600;}
+.mv-worker span{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted);display:block;margin-top:2px;}
+.mv-output{background:var(--green-l);border:1.5px solid rgba(21,128,61,.25);border-radius:8px;padding:8px 12px;margin-top:8px;}
+.mv-output h6{font-weight:700;font-size:.72rem;color:var(--green-d);margin-bottom:3px;}
+.mv-output p{font-size:.65rem;color:var(--muted);}
+
+/* ── STEPS ── */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:linear-gradient(135deg,var(--sf-d),var(--sf));color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(124,58,237,.3);}
+.step-body{background:var(--surface);padding:12px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--sf);}
+.step-body h4{color:var(--sf-d);margin-bottom:5px;font-size:.88rem;font-weight:700;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--sf-d),var(--sf));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--sf-d);padding:8px 11px;background:var(--sf-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--sf-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--sf);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--sf-l);border:1px solid rgba(124,58,237,.15);border-left:4px solid var(--sf);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--sf-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(180,83,9,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(21,128,61,.2);border-left:4px solid var(--green);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,111,204,.2);border-left:4px solid var(--blue);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #1c2333;border-left:3px solid var(--sf);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#c4b5fd;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#3d4e6a;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f2a27a;}.attr{color:#f38ba8;}.json-key{color:#89dceb;}.json-str{color:#a6e3a1;}.json-num{color:#fab387;}.json-bool{color:#cba6f7;}.json-cm{color:#3d4e6a;font-style:italic;}
+code{background:rgba(124,58,237,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--sf-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#2e1065 0%,#4c1d95 60%,#3b0764 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'⚙️';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── PRICING METER ── */
+.pricing-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.pricing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc-std::before{background:var(--sf);}
+.pc-exp::before{background:var(--teal);}
+.pricing-card h5{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:8px;}
+.pricing-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.pricing-label{font-size:.68rem;color:var(--muted);}
+.pricing-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:600;color:var(--text);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.state-grid,.int-grid,.pricing-cards,.pv-branches,.mv-concurrent{grid-template-columns:1fr;}
+  .sm-row,.wc-row{flex-direction:column;}
+  .wc-label{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .ev-row{flex-direction:column;gap:4px;}
+  .ev-error{width:auto;}
+  .et-event::after{display:none;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-orb1"></div>
+  <div class="header-orb2"></div>
+  <div class="header-grid"></div>
+  <div class="container">
+    <div class="header-badge">⚙️ AWS · Orchestration &amp; Workflows</div>
+    <h1>AWS <span>Step Functions</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# &amp; .NET SDK Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">State Machines</span>
+      <span class="header-tag">ASL (Amazon States Language)</span>
+      <span class="header-tag">Standard &amp; Express</span>
+      <span class="header-tag">Error Handling</span>
+      <span class="header-tag">SDK Integrations</span>
+      <span class="header-tag">C# .NET</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is SFN</button>
+    <button class="tab-btn" onclick="T('states',this)">2 · State Types</button>
+    <button class="tab-btn" onclick="T('asl',this)">3 · ASL Deep Dive</button>
+    <button class="tab-btn" onclick="T('errors',this)">4 · Error Handling</button>
+    <button class="tab-btn" onclick="T('integrations',this)">5 · Service Integrations</button>
+    <button class="tab-btn" onclick="T('advanced',this)">6 · Advanced Patterns</button>
+    <button class="tab-btn" onclick="T('console',this)">7 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">8 · C# .NET SDK</button>
+    <button class="tab-btn" onclick="T('best',this)">9 · Best Practices</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS STEP FUNCTIONS
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>⚙️ What is AWS Step Functions?</h2>
+  <p>AWS Step Functions is a <strong>serverless workflow orchestration</strong> service. It lets you coordinate multiple AWS services — Lambda, ECS, SQS, DynamoDB, SNS, Glue, and hundreds more — into <strong>visual, auditable workflows</strong> called <em>State Machines</em>. Each step in the workflow is a <em>State</em>. Step Functions handles the sequencing, retries, error handling, and parallel execution automatically.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>Think of Step Functions as a <em>traffic controller</em> for your microservices. Instead of Lambda A calling Lambda B calling Lambda C (tangled spaghetti), you define the flow once in a state machine. Step Functions drives the execution, handles failures, and gives you a visual graph of every run — like a flowchart that actually executes.</p>
+  </div>
+
+  <h3>Without Step Functions vs With</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>❌ Without — Orchestration in Code</h4>
+      <ul>
+        <li>Lambda A hardcodes calls to Lambda B and C</li>
+        <li>Retry logic scattered across every function</li>
+        <li>Failures are invisible — no centralized view</li>
+        <li>Timeouts at 15 min Lambda limit break long workflows</li>
+        <li>Parallel processing requires custom coordination code</li>
+        <li>No way to pause and wait for human approval</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ With Step Functions</h4>
+      <ul>
+        <li>Flow defined once in ASL JSON — services stay simple</li>
+        <li>Built-in retry with exponential backoff per state</li>
+        <li>Visual execution graph — see exactly where it failed</li>
+        <li>Standard workflows run for up to <strong>1 year</strong></li>
+        <li>Parallel and Map states handle concurrency natively</li>
+        <li>Wait for task token — pause until external callback</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🗺️</span><h4>State Machine</h4><p>The workflow definition — a set of states and transitions written in ASL.</p></div>
+    <div class="icon-item"><span class="emoji">▶️</span><h4>Execution</h4><p>One running instance of a state machine with its own input, output, and history.</p></div>
+    <div class="icon-item"><span class="emoji">📍</span><h4>State</h4><p>A single step in the workflow (Task, Choice, Parallel, Map, Wait, Pass, Succeed, Fail).</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>ASL</h4><p>Amazon States Language — the JSON format used to define state machines.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Task Token</h4><p>Token passed to an external system; workflow pauses until SendTaskSuccess/Failure is called.</p></div>
+    <div class="icon-item"><span class="emoji">🌿</span><h4>Input / Output</h4><p>Each state receives JSON input and produces JSON output, passed to the next state.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Express Workflows</h4><p>High-throughput, short-duration (<5 min). Great for real-time or event-driven flows.</p></div>
+    <div class="icon-item"><span class="emoji">🐢</span><h4>Standard Workflows</h4><p>Long-running (up to 1 year), exactly-once execution. Great for business processes.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>SDK Integrations</h4><p>Step Functions can call 200+ AWS services directly — no Lambda needed as a passthrough.</p></div>
+  </div>
+
+  <h3>Standard vs Express Workflows</h3>
+  <div class="wf-compare">
+    <div class="wc-header">
+      <div class="wc-col wc-std">⚙️ Standard Workflows</div>
+      <div class="wc-col wc-exp">⚡ Express Workflows</div>
+    </div>
+    <div class="wc-row"><div class="wc-label">Max Duration</div><div class="wc-val good">1 Year</div><div class="wc-val warn">5 Minutes</div></div>
+    <div class="wc-row"><div class="wc-label">Execution Model</div><div class="wc-val good">Exactly-once</div><div class="wc-val warn">At-least-once</div></div>
+    <div class="wc-row"><div class="wc-label">Throughput</div><div class="wc-val warn">2,000 starts/sec</div><div class="wc-val good">100,000+ starts/sec</div></div>
+    <div class="wc-row"><div class="wc-label">History</div><div class="wc-val good">Step Functions console + API</div><div class="wc-val warn">CloudWatch Logs only</div></div>
+    <div class="wc-row"><div class="wc-label">Pricing</div><div class="wc-val warn">Per state transition</div><div class="wc-val good">Per duration + requests</div></div>
+    <div class="wc-row"><div class="wc-label">Use case</div><div class="wc-val">Order processing, approvals, ETL, long workflows</div><div class="wc-val">Streaming, IoT events, API-backed microservices</div></div>
+  </div>
+
+  <h3>Common Use Cases for Team Watson</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Use Case</th><th>Why Step Functions</th><th>Workflow Type</th></tr>
+    <tr><td>User onboarding pipeline</td><td>Create account → send email → provision resources in sequence</td><td>Standard</td></tr>
+    <tr><td>Batch data processing</td><td>Map over thousands of records concurrently with auto-retry</td><td>Standard</td></tr>
+    <tr><td>Human approval flow</td><td>Pause execution, notify approver, resume on callback</td><td>Standard</td></tr>
+    <tr><td>API request orchestration</td><td>Aggregate calls to 3 services in parallel, merge results</td><td>Express</td></tr>
+    <tr><td>Saga / distributed transaction</td><td>Compensating transactions on failure across microservices</td><td>Standard</td></tr>
+    <tr><td>Scheduled report generation</td><td>Query → transform → email → archive, on a cron schedule</td><td>Standard</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — STATE TYPES
+══════════════════════════════════ -->
+<div id="tab-states" class="tab-panel"><div class="section">
+  <h2>📍 The 8 State Types — Visual Reference</h2>
+  <p>Every node in a Step Functions workflow is one of 8 state types. Choose the right type for the job — each has a specific purpose and ASL structure.</p>
+
+  <div class="state-grid">
+    <div class="state-card sc-task">
+      <div class="sc-name" style="color:var(--sf-d);">⚡ Task <span class="sc-type" style="background:var(--sf-l);color:var(--sf-d);">Task</span></div>
+      <div class="sc-desc">Calls an AWS service or activity. The workhorse of every workflow.</div>
+      <div class="sc-use">Lambda · ECS · DynamoDB · SQS · 200+ more</div>
+    </div>
+    <div class="state-card sc-choice">
+      <div class="sc-name" style="color:var(--amber-d);">🔀 Choice <span class="sc-type" style="background:var(--amber-l);color:var(--amber-d);">Choice</span></div>
+      <div class="sc-desc">Branches based on conditions evaluated against input. Like an if/else or switch.</div>
+      <div class="sc-use">Route by order status, amount, environment</div>
+    </div>
+    <div class="state-card sc-parallel">
+      <div class="sc-name" style="color:var(--blue-d);">⫸ Parallel <span class="sc-type" style="background:var(--blue-l);color:var(--blue-d);">Parallel</span></div>
+      <div class="sc-desc">Runs multiple branches simultaneously. Waits for all to complete before continuing.</div>
+      <div class="sc-use">Send email + SMS + push notification at once</div>
+    </div>
+    <div class="state-card sc-map">
+      <div class="sc-name" style="color:var(--teal-d);">🗂️ Map <span class="sc-type" style="background:var(--teal-l);color:var(--teal-d);">Map</span></div>
+      <div class="sc-desc">Iterates over an array, running the same sub-workflow for each item (configurable concurrency).</div>
+      <div class="sc-use">Process 1,000 orders concurrently</div>
+    </div>
+    <div class="state-card sc-wait">
+      <div class="sc-name" style="color:var(--indigo-d);">⏳ Wait <span class="sc-type" style="background:var(--indigo-l);color:var(--indigo-d);">Wait</span></div>
+      <div class="sc-desc">Pauses execution for a fixed duration or until a timestamp. No Lambda cost during wait.</div>
+      <div class="sc-use">Wait 24h before sending reminder email</div>
+    </div>
+    <div class="state-card sc-pass">
+      <div class="sc-name" style="color:var(--green-d);">➡️ Pass <span class="sc-type" style="background:var(--green-l);color:var(--green-d);">Pass</span></div>
+      <div class="sc-desc">Passes input to output unchanged (or injects fixed data). Useful for testing and data shaping.</div>
+      <div class="sc-use">Inject mock data, stub a state during dev</div>
+    </div>
+    <div class="state-card sc-success">
+      <div class="sc-name" style="color:var(--green-d);">✅ Succeed <span class="sc-type" style="background:var(--green-l);color:var(--green-d);">Succeed</span></div>
+      <div class="sc-desc">Terminates the execution successfully. Output is whatever the last state produced.</div>
+      <div class="sc-use">End of a successful branch in a Choice state</div>
+    </div>
+    <div class="state-card sc-fail">
+      <div class="sc-name" style="color:var(--red);">❌ Fail <span class="sc-type" style="background:var(--red-l);color:var(--red);">Fail</span></div>
+      <div class="sc-desc">Terminates the execution with an error. Specify Error and Cause for debugging.</div>
+      <div class="sc-use">Unsupported input type, business rule violation</div>
+    </div>
+  </div>
+
+  <!-- PARALLEL STATE VISUAL -->
+  <h3>Parallel State — Run Branches Simultaneously</h3>
+  <div class="parallel-vis">
+    <div class="pv-header">⫸ Parallel State — Notification Flow Example</div>
+    <div class="pv-body">
+      <div class="pv-start"><h6>📥 Trigger Notification</h6></div>
+      <div class="pv-fork">⬇ Parallel branches start simultaneously</div>
+      <div class="pv-branches">
+        <div class="pv-branch b1"><h6>📧 Email Branch</h6><p>Invoke Lambda SendEmail</p><p style="font-family:monospace;font-size:.58rem;color:var(--muted);margin-top:4px;">~350ms</p></div>
+        <div class="pv-branch b2"><h6>📱 SMS Branch</h6><p>Invoke SNS PublishSMS</p><p style="font-family:monospace;font-size:.58rem;color:var(--muted);margin-top:4px;">~200ms</p></div>
+        <div class="pv-branch b3"><h6>🔔 Push Branch</h6><p>Invoke Lambda PushAlert</p><p style="font-family:monospace;font-size:.58rem;color:var(--muted);margin-top:4px;">~180ms</p></div>
+      </div>
+      <div class="pv-join">⬇ All branches complete → results merged into array</div>
+      <div class="pv-end"><h6>✅ All Notifications Sent</h6></div>
+    </div>
+  </div>
+
+  <!-- MAP STATE VISUAL -->
+  <h3>Map State — Process Arrays Concurrently</h3>
+  <div class="map-vis">
+    <div class="mv-header">🗂️ Map State — Batch Order Processing</div>
+    <div class="mv-body">
+      <div class="mv-input">
+        <h6>📥 Input Array (from previous state)</h6>
+        <div class="mv-items">
+          <span class="mv-item">order-001</span>
+          <span class="mv-item">order-002</span>
+          <span class="mv-item">order-003</span>
+          <span class="mv-item">order-004</span>
+          <span class="mv-item">+ 996 more</span>
+        </div>
+      </div>
+      <div class="mv-arrow">↓ MaxConcurrency: 10 (process 10 at a time)</div>
+      <div class="mv-concurrent">
+        <div class="mv-worker"><p>ProcessOrder</p><span>order-001</span></div>
+        <div class="mv-worker"><p>ProcessOrder</p><span>order-002</span></div>
+        <div class="mv-worker"><p>ProcessOrder</p><span>order-003</span></div>
+        <div class="mv-worker"><p>ProcessOrder</p><span>order-004</span></div>
+        <div class="mv-worker"><p>ProcessOrder</p><span>…</span></div>
+      </div>
+      <div class="mv-arrow">↓ All items complete</div>
+      <div class="mv-output">
+        <h6>📤 Output Array</h6>
+        <p>[{order: "001", status: "fulfilled"}, {order: "002", status: "fulfilled"}, …]</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXECUTION TIMELINE VISUAL -->
+  <h3>Execution Timeline — What a Real Run Looks Like</h3>
+  <div class="exec-timeline">
+    <div class="et-header">📊 Execution History · watson-order-workflow · run-20240115-abc123</div>
+    <div class="et-body">
+      <div class="et-event">
+        <div class="et-dot et-start">▶</div>
+        <div class="et-info"><h6>ExecutionStarted</h6><p>Input: {"orderId": "ORD-5521", "amount": 149.99, "currency": "GBP"}</p></div>
+        <div class="et-time">09:41:00.001</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-running">⚡</div>
+        <div class="et-info"><h6>ValidateOrder — TaskStateEntered</h6><p>Invoking Lambda watson-validate-order-prod</p></div>
+        <div class="et-time">09:41:00.045</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-ok">✓</div>
+        <div class="et-info"><h6>ValidateOrder — TaskStateExited</h6><p>Output: {"valid": true, "customerId": "CUST-881"}</p></div>
+        <div class="et-time">09:41:00.312</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-running">⚡</div>
+        <div class="et-info"><h6>ChargePayment — TaskStateEntered</h6><p>Invoking Lambda watson-charge-payment (Stripe API)</p></div>
+        <div class="et-time">09:41:00.320</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-retry">↻</div>
+        <div class="et-info"><h6>ChargePayment — Retry 1/3</h6><p>Error: PaymentGatewayTimeout — waiting 2s before retry</p></div>
+        <div class="et-time">09:41:02.580</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-ok">✓</div>
+        <div class="et-info"><h6>ChargePayment — Succeeded on retry 2</h6><p>Output: {"charged": true, "transactionId": "txn_abc123"}</p></div>
+        <div class="et-time">09:41:06.110</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot et-ok">✓</div>
+        <div class="et-info"><h6>ExecutionSucceeded</h6><p>Output: {"orderId": "ORD-5521", "status": "confirmed", "transactionId": "txn_abc123"}</p></div>
+        <div class="et-time">09:41:07.002</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — ASL DEEP DIVE
+══════════════════════════════════ -->
+<div id="tab-asl" class="tab-panel"><div class="section">
+  <h2>📋 Amazon States Language (ASL) — Deep Dive</h2>
+  <p>ASL is the JSON format that defines your state machine. Every state machine is an ASL document with a <code>Comment</code>, <code>StartAt</code>, and <code>States</code> object.</p>
+
+  <h3>ASL Skeleton</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · ASL Structure</span>
+    <pre>{
+  <span class="json-key">"Comment"</span>: <span class="json-str">"Watson Order Processing Workflow"</span>,
+  <span class="json-key">"StartAt"</span>: <span class="json-str">"ValidateOrder"</span>,     <span class="json-cm">// First state to execute</span>
+  <span class="json-key">"TimeoutSeconds"</span>: <span class="json-num">3600</span>,           <span class="json-cm">// Max 1hr for entire execution</span>
+  <span class="json-key">"States"</span>: {
+    <span class="json-key">"ValidateOrder"</span>: { ... },
+    <span class="json-key">"RouteByAmount"</span>: { ... },
+    <span class="json-key">"ChargePayment"</span>: { ... },
+    <span class="json-key">"OrderFulfilled"</span>: { ... }
+  }
+}</pre>
+  </div>
+
+  <h3>Task State — Full Example</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Task State with Retry + Catch</span>
+    <pre><span class="json-key">"ValidateOrder"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:lambda:eu-west-1:123456:function:watson-validate"</span>,
+  <span class="json-key">"Parameters"</span>: {               <span class="json-cm">// Shape the Lambda input</span>
+    <span class="json-key">"orderId.$"</span>: <span class="json-str">"$.orderId"</span>,    <span class="json-cm">// .$ = read from execution input</span>
+    <span class="json-key">"currency.$"</span>: <span class="json-str">"$.currency"</span>,
+    <span class="json-key">"environment"</span>: <span class="json-str">"prod"</span>       <span class="json-cm">// Hardcoded value (no .$)</span>
+  },
+  <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.validation"</span>,  <span class="json-cm">// Merge result into $.validation</span>
+  <span class="json-key">"Retry"</span>: [
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"Lambda.ServiceException"</span>, <span class="json-str">"Lambda.TooManyRequestsException"</span>],
+      <span class="json-key">"IntervalSeconds"</span>: <span class="json-num">2</span>,
+      <span class="json-key">"MaxAttempts"</span>: <span class="json-num">3</span>,
+      <span class="json-key">"BackoffRate"</span>: <span class="json-num">2</span>             <span class="json-cm">// 2s → 4s → 8s</span>
+    }
+  ],
+  <span class="json-key">"Catch"</span>: [
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"ValidationError"</span>],
+      <span class="json-key">"Next"</span>: <span class="json-str">"OrderRejected"</span>,     <span class="json-cm">// Route to rejection state</span>
+      <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.error"</span>
+    },
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"States.ALL"</span>],       <span class="json-cm">// Catch everything else</span>
+      <span class="json-key">"Next"</span>: <span class="json-str">"HandleUnexpectedError"</span>
+    }
+  ],
+  <span class="json-key">"Next"</span>: <span class="json-str">"RouteByAmount"</span>
+}</pre>
+  </div>
+
+  <h3>Choice State — Conditional Routing</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Choice State</span>
+    <pre><span class="json-key">"RouteByAmount"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Choice"</span>,
+  <span class="json-key">"Choices"</span>: [
+    {
+      <span class="json-key">"Variable"</span>: <span class="json-str">"$.amount"</span>,
+      <span class="json-key">"NumericGreaterThan"</span>: <span class="json-num">500</span>,
+      <span class="json-key">"Next"</span>: <span class="json-str">"RequireApproval"</span>     <span class="json-cm">// > £500 needs approval</span>
+    },
+    {
+      <span class="json-key">"And"</span>: [                            <span class="json-cm">// Compound condition</span>
+        { <span class="json-key">"Variable"</span>: <span class="json-str">"$.currency"</span>, <span class="json-key">"StringEquals"</span>: <span class="json-str">"GBP"</span> },
+        { <span class="json-key">"Variable"</span>: <span class="json-str">"$.validation.isTrusted"</span>, <span class="json-key">"BooleanEquals"</span>: <span class="json-bool">true</span> }
+      ],
+      <span class="json-key">"Next"</span>: <span class="json-str">"FastTrackPayment"</span>
+    }
+  ],
+  <span class="json-key">"Default"</span>: <span class="json-str">"StandardPayment"</span>         <span class="json-cm">// Fallback if no choice matches</span>
+}</pre>
+  </div>
+
+  <h3>Input / Output Processing — The Path Operators</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Field</th><th>What It Does</th><th>Example</th></tr>
+    <tr><td><code>InputPath</code></td><td>Filter execution input before passing to state</td><td><code>$.order</code> — only pass the order object</td></tr>
+    <tr><td><code>Parameters</code></td><td>Construct a new input object (mix of static + dynamic)</td><td><code>{"id.$": "$.orderId"}</code></td></tr>
+    <tr><td><code>ResultSelector</code></td><td>Shape the raw task result before merging</td><td><code>{"txnId.$": "$.Payload.transactionId"}</code></td></tr>
+    <tr><td><code>ResultPath</code></td><td>Where to merge the task result into the state input</td><td><code>$.paymentResult</code> — adds as new key</td></tr>
+    <tr><td><code>OutputPath</code></td><td>Filter the final state output before passing to next</td><td><code>$.paymentResult</code> — discard the rest</td></tr>
+  </table></div>
+
+  <div class="code-block">
+    <span class="code-label">JSON · Data Flow Example</span>
+    <pre><span class="json-cm">// Execution input:</span>
+{ <span class="json-key">"orderId"</span>: <span class="json-str">"ORD-5521"</span>, <span class="json-key">"amount"</span>: <span class="json-num">149.99</span>, <span class="json-key">"internalMeta"</span>: {...} }
+
+<span class="json-key">"ChargePayment"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:lambda:..."</span>,
+  <span class="json-key">"InputPath"</span>: <span class="json-str">"$"</span>,                         <span class="json-cm">// Pass full input (default)</span>
+  <span class="json-key">"Parameters"</span>: {                           <span class="json-cm">// Only pass what Lambda needs</span>
+    <span class="json-key">"orderId.$"</span>: <span class="json-str">"$.orderId"</span>,
+    <span class="json-key">"amount.$"</span>:  <span class="json-str">"$.amount"</span>
+  },
+  <span class="json-key">"ResultSelector"</span>: {                      <span class="json-cm">// Shape Lambda's raw response</span>
+    <span class="json-key">"transactionId.$"</span>: <span class="json-str">"$.Payload.txnId"</span>,
+    <span class="json-key">"charged.$"</span>:       <span class="json-str">"$.Payload.success"</span>
+  },
+  <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.payment"</span>,             <span class="json-cm">// Merge into $.payment</span>
+  <span class="json-key">"OutputPath"</span>: <span class="json-str">"$"</span>,                        <span class="json-cm">// Pass everything to next state</span>
+  <span class="json-key">"Next"</span>: <span class="json-str">"FulfillOrder"</span>
+}
+<span class="json-cm">// Output to next state includes original input + $.payment merged in</span></pre>
+  </div>
+
+  <h3>Wait State — Pausing Without Cost</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Wait State Options</span>
+    <pre><span class="json-key">"WaitForReminderTime"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Wait"</span>,
+  <span class="json-key">"Seconds"</span>: <span class="json-num">86400</span>,                <span class="json-cm">// Fixed: 24 hours</span>
+  <span class="json-key">"Next"</span>: <span class="json-str">"SendReminderEmail"</span>
+}
+
+<span class="json-key">"WaitUntilShipDate"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Wait"</span>,
+  <span class="json-key">"TimestampPath"</span>: <span class="json-str">"$.shipDate"</span>,  <span class="json-cm">// Dynamic: read from input</span>
+  <span class="json-key">"Next"</span>: <span class="json-str">"TriggerShipment"</span>          <span class="json-cm">// ISO 8601: "2024-03-15T09:00:00Z"</span>
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — ERROR HANDLING
+══════════════════════════════════ -->
+<div id="tab-errors" class="tab-panel"><div class="section">
+  <h2>⚠️ Error Handling — Retry, Catch &amp; Compensate</h2>
+  <p>Step Functions has first-class support for error handling at the state level. Every Task state can define retry behaviour and error catchers independently — no try/catch scattered across Lambda functions.</p>
+
+  <h3>Built-In Error Names</h3>
+  <div class="error-visual">
+    <div class="ev-header">🚨 Reserved Error Names (States.*)</div>
+    <div class="ev-body">
+      <div class="ev-row"><div class="ev-error">States.ALL</div><div class="ev-catch">Catch any error — use as last-resort catch block</div><div class="ev-retry">use in Catch</div></div>
+      <div class="ev-row"><div class="ev-error">States.Timeout</div><div class="ev-catch">Task ran longer than TimeoutSeconds</div><div class="ev-retry">retry + catch</div></div>
+      <div class="ev-row"><div class="ev-error">States.TaskFailed</div><div class="ev-catch">Task reported a failure (Lambda threw an exception)</div><div class="ev-retry">retry + catch</div></div>
+      <div class="ev-row"><div class="ev-error">States.Permissions</div><div class="ev-catch">Execution role lacks permission to call the resource</div><div class="ev-retry">catch only</div></div>
+      <div class="ev-row"><div class="ev-error">States.ResultPathMatchFailure</div><div class="ev-catch">ResultPath could not be applied to the input</div><div class="ev-retry">catch only</div></div>
+      <div class="ev-row"><div class="ev-error">States.BranchFailed</div><div class="ev-catch">A branch in a Parallel state failed</div><div class="ev-retry">catch only</div></div>
+      <div class="ev-row"><div class="ev-error">States.NoChoiceMatched</div><div class="ev-catch">Choice state had no matching rule and no Default</div><div class="ev-retry">catch only</div></div>
+      <div class="ev-row"><div class="ev-error">States.HeartbeatTimeout</div><div class="ev-catch">Activity task didn't send heartbeat in time</div><div class="ev-retry">retry + catch</div></div>
+      <div class="ev-row"><div class="ev-error">Lambda.ServiceException</div><div class="ev-catch">Lambda service error (throttle, unavailable)</div><div class="ev-retry">always retry</div></div>
+      <div class="ev-row"><div class="ev-error">Lambda.AWSLambdaException</div><div class="ev-catch">Unhandled exception inside Lambda function code</div><div class="ev-retry">retry + catch</div></div>
+    </div>
+  </div>
+
+  <h3>Retry Configuration with Exponential Backoff</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Production Retry Pattern</span>
+    <pre><span class="json-key">"ChargePayment"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:lambda:..."</span>,
+  <span class="json-key">"TimeoutSeconds"</span>: <span class="json-num">30</span>,              <span class="json-cm">// Fail fast — don't wait forever</span>
+  <span class="json-key">"HeartbeatSeconds"</span>: <span class="json-num">10</span>,           <span class="json-cm">// For .waitForTaskToken</span>
+  <span class="json-key">"Retry"</span>: [
+    {
+      <span class="json-key">"ErrorEquals"</span>: [               <span class="json-cm">// Retry transient Lambda errors</span>
+        <span class="json-str">"Lambda.ServiceException"</span>,
+        <span class="json-str">"Lambda.AWSLambdaException"</span>,
+        <span class="json-str">"Lambda.TooManyRequestsException"</span>,
+        <span class="json-str">"Lambda.SdkClientException"</span>
+      ],
+      <span class="json-key">"IntervalSeconds"</span>: <span class="json-num">2</span>,           <span class="json-cm">// First retry after 2s</span>
+      <span class="json-key">"MaxAttempts"</span>: <span class="json-num">3</span>,              <span class="json-cm">// Max 3 retries</span>
+      <span class="json-key">"BackoffRate"</span>: <span class="json-num">2.0</span>,            <span class="json-cm">// 2s → 4s → 8s</span>
+      <span class="json-key">"JitterStrategy"</span>: <span class="json-str">"FULL"</span>       <span class="json-cm">// Randomise to avoid thundering herd</span>
+    },
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"PaymentGatewayTimeout"</span>],
+      <span class="json-key">"IntervalSeconds"</span>: <span class="json-num">5</span>,
+      <span class="json-key">"MaxAttempts"</span>: <span class="json-num">2</span>,
+      <span class="json-key">"BackoffRate"</span>: <span class="json-num">1.5</span>
+    }
+  ],
+  <span class="json-key">"Catch"</span>: [
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"PaymentDeclined"</span>],  <span class="json-cm">// Business logic error</span>
+      <span class="json-key">"Next"</span>: <span class="json-str">"NotifyDeclined"</span>,
+      <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.errorInfo"</span>
+    },
+    {
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"States.ALL"</span>],       <span class="json-cm">// All other failures</span>
+      <span class="json-key">"Next"</span>: <span class="json-str">"CompensateOrder"</span>,     <span class="json-cm">// Saga compensation</span>
+      <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.errorInfo"</span>
+    }
+  ],
+  <span class="json-key">"Next"</span>: <span class="json-str">"FulfillOrder"</span>
+}</pre>
+  </div>
+
+  <h3>Saga Pattern — Compensating Transactions</h3>
+  <p>For distributed transactions across multiple services, use the Saga pattern: each forward action has a compensating action that undoes it if a later step fails.</p>
+  <div class="code-block">
+    <span class="code-label">JSON · Saga Pattern (Order → Payment → Inventory)</span>
+    <pre><span class="json-key">"States"</span>: {
+  <span class="json-key">"ReserveInventory"</span>: {
+    <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>, <span class="json-key">"Resource"</span>: <span class="json-str">"arn:...:reserve-inventory"</span>,
+    <span class="json-key">"Catch"</span>: [{ <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"States.ALL"</span>], <span class="json-key">"Next"</span>: <span class="json-str">"HandleReserveFailure"</span> }],
+    <span class="json-key">"Next"</span>: <span class="json-str">"ChargePayment"</span>
+  },
+  <span class="json-key">"ChargePayment"</span>: {
+    <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>, <span class="json-key">"Resource"</span>: <span class="json-str">"arn:...:charge-payment"</span>,
+    <span class="json-key">"Catch"</span>: [{
+      <span class="json-key">"ErrorEquals"</span>: [<span class="json-str">"States.ALL"</span>],
+      <span class="json-key">"Next"</span>: <span class="json-str">"ReleaseInventory"</span>   <span class="json-cm">// Compensate: release reserved stock</span>
+    }],
+    <span class="json-key">"Next"</span>: <span class="json-str">"ConfirmOrder"</span>
+  },
+  <span class="json-key">"ReleaseInventory"</span>: {                    <span class="json-cm">// Compensation step</span>
+    <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>, <span class="json-key">"Resource"</span>: <span class="json-str">"arn:...:release-inventory"</span>,
+    <span class="json-key">"Next"</span>: <span class="json-str">"OrderFailed"</span>
+  },
+  <span class="json-key">"OrderFailed"</span>: {
+    <span class="json-key">"Type"</span>: <span class="json-str">"Fail"</span>,
+    <span class="json-key">"Error"</span>: <span class="json-str">"PaymentFailed"</span>,
+    <span class="json-key">"Cause"</span>: <span class="json-str">"Payment declined after inventory reserved — inventory released"</span>
+  }
+}</pre>
+  </div>
+
+  <h3>Wait for Task Token — Human Approval &amp; External Callbacks</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Task Token Pattern (Pause for Approval)</span>
+    <pre><span class="json-key">"WaitForApproval"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::sqs:sendMessage.waitForTaskToken"</span>,
+  <span class="json-key">"Parameters"</span>: {
+    <span class="json-key">"QueueUrl"</span>: <span class="json-str">"https://sqs.eu-west-1.amazonaws.com/123/approval-queue"</span>,
+    <span class="json-key">"MessageBody"</span>: {
+      <span class="json-key">"orderId.$"</span>:   <span class="json-str">"$.orderId"</span>,
+      <span class="json-key">"amount.$"</span>:    <span class="json-str">"$.amount"</span>,
+      <span class="json-key">"taskToken.$"</span>: <span class="json-str">"$$.Task.Token"</span>  <span class="json-cm">// $$ = context object</span>
+    }
+  },
+  <span class="json-key">"HeartbeatSeconds"</span>: <span class="json-num">3600</span>,            <span class="json-cm">// Fail if no response in 1hr</span>
+  <span class="json-key">"Next"</span>: <span class="json-str">"ProcessApprovedOrder"</span>
+}
+<span class="json-cm">// Approver calls: sfnClient.SendTaskSuccess(taskToken, output)</span>
+<span class="json-cm">// or:            sfnClient.SendTaskFailure(taskToken, error, cause)</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SERVICE INTEGRATIONS
+══════════════════════════════════ -->
+<div id="tab-integrations" class="tab-panel"><div class="section">
+  <h2>🔗 Service Integrations — No Lambda Passthrough Needed</h2>
+  <p>Step Functions can call AWS services <strong>directly</strong> — without writing a Lambda function just to call another service. This is called <strong>Optimistic SDK Integration</strong>. Over 200 AWS services and 10,000 API actions are supported.</p>
+
+  <div class="int-grid">
+    <div class="int-tile"><span class="it-icon">⚡</span><h5>Lambda</h5><p>Invoke functions</p><span class="it-mode mode-sync">sync</span></div>
+    <div class="int-tile"><span class="it-icon">🗄️</span><h5>DynamoDB</h5><p>GetItem, PutItem, Query</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">📨</span><h5>SQS</h5><p>SendMessage, batch</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">🔔</span><h5>SNS</h5><p>Publish notifications</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">🐳</span><h5>ECS</h5><p>RunTask containers</p><span class="it-mode mode-sync">sync</span></div>
+    <div class="int-tile"><span class="it-icon">🪣</span><h5>S3</h5><p>PutObject, GetObject</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">🗺️</span><h5>Glue</h5><p>Start ETL jobs</p><span class="it-mode mode-sync">sync</span></div>
+    <div class="int-tile"><span class="it-icon">📊</span><h5>Athena</h5><p>Start query execution</p><span class="it-mode mode-sync">sync</span></div>
+    <div class="int-tile"><span class="it-icon">🤖</span><h5>Bedrock</h5><p>Invoke AI models</p><span class="it-mode mode-sync">sync</span></div>
+    <div class="int-tile"><span class="it-icon">📧</span><h5>SES</h5><p>Send emails</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">🔄</span><h5>EventBridge</h5><p>Put events</p><span class="it-mode mode-request">request</span></div>
+    <div class="int-tile"><span class="it-icon">☁️</span><h5>Step Functions</h5><p>Start child executions</p><span class="it-mode mode-sync">sync</span></div>
+  </div>
+
+  <h3>Integration Modes Explained</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Mode</th><th>ARN Suffix</th><th>Behaviour</th><th>Best For</th></tr>
+    <tr><td><strong>Request Response</strong></td><td>(none / default)</td><td>Sends request, moves on immediately without waiting for job to finish</td><td>SQS SendMessage, SNS Publish — fire-and-forget</td></tr>
+    <tr><td><strong>Sync</strong></td><td><code>.sync:2</code></td><td>Waits for the job to complete before moving to next state</td><td>ECS RunTask, Glue StartJobRun, Athena query</td></tr>
+    <tr><td><strong>Wait for Task Token</strong></td><td><code>.waitForTaskToken</code></td><td>Pauses indefinitely; resumes only when external code calls SendTaskSuccess/Failure</td><td>Human approval, external API callback, IoT confirmation</td></tr>
+  </table></div>
+
+  <h3>Direct DynamoDB Call — No Lambda Needed</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · DynamoDB PutItem Direct Integration</span>
+    <pre><span class="json-key">"SaveOrderToDB"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::dynamodb:putItem"</span>,  <span class="json-cm">// Direct SDK call</span>
+  <span class="json-key">"Parameters"</span>: {
+    <span class="json-key">"TableName"</span>: <span class="json-str">"watson-orders"</span>,
+    <span class="json-key">"Item"</span>: {
+      <span class="json-key">"orderId"</span>:   { <span class="json-key">"S.$"</span>: <span class="json-str">"$.orderId"</span> },
+      <span class="json-key">"status"</span>:    { <span class="json-key">"S"</span>:  <span class="json-str">"CONFIRMED"</span> },
+      <span class="json-key">"amount"</span>:    { <span class="json-key">"N.$"</span>: <span class="json-str">"States.JsonToString($.amount)"</span> },
+      <span class="json-key">"createdAt"</span>: { <span class="json-key">"S.$"</span>: <span class="json-str">"$$.Execution.StartTime"</span> }
+    }
+  },
+  <span class="json-key">"ResultPath"</span>: <span class="json-str">"$.dbResult"</span>,
+  <span class="json-key">"Next"</span>: <span class="json-str">"SendConfirmationEmail"</span>
+}</pre>
+  </div>
+
+  <h3>SQS → ECS → S3 Pattern (No Lambda)</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Full Direct SDK Pipeline</span>
+    <pre><span class="json-key">"QueueForProcessing"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::sqs:sendMessage"</span>,
+  <span class="json-key">"Parameters"</span>: {
+    <span class="json-key">"QueueUrl"</span>: <span class="json-str">"https://sqs.eu-west-1.amazonaws.com/123/watson-jobs"</span>,
+    <span class="json-key">"MessageBody.$"</span>: <span class="json-str">"States.JsonToString($)"</span>
+  },
+  <span class="json-key">"Next"</span>: <span class="json-str">"RunECSTask"</span>
+},
+<span class="json-key">"RunECSTask"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::ecs:runTask.sync:2"</span>,  <span class="json-cm">// .sync waits for task end</span>
+  <span class="json-key">"Parameters"</span>: {
+    <span class="json-key">"Cluster"</span>: <span class="json-str">"watson-cluster"</span>,
+    <span class="json-key">"TaskDefinition"</span>: <span class="json-str">"watson-processor"</span>,
+    <span class="json-key">"LaunchType"</span>: <span class="json-str">"FARGATE"</span>,
+    <span class="json-key">"Overrides"</span>: {
+      <span class="json-key">"ContainerOverrides"</span>: [{
+        <span class="json-key">"Name"</span>: <span class="json-str">"processor"</span>,
+        <span class="json-key">"Environment"</span>: [
+          { <span class="json-key">"Name"</span>: <span class="json-str">"ORDER_ID"</span>, <span class="json-key">"Value.$"</span>: <span class="json-str">"$.orderId"</span> }
+        ]
+      }]
+    }
+  },
+  <span class="json-key">"Next"</span>: <span class="json-str">"ArchiveToS3"</span>
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ADVANCED PATTERNS
+══════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🚀 Advanced Patterns</h2>
+
+  <h3>Map State — Inline vs Distributed Mode</h3>
+  <div class="wf-compare">
+    <div class="wc-header">
+      <div class="wc-col wc-std">🗂️ Inline Mode (default)</div>
+      <div class="wc-col wc-exp">🌐 Distributed Mode</div>
+    </div>
+    <div class="wc-row"><div class="wc-label">Max concurrency</div><div class="wc-val warn">40 concurrent</div><div class="wc-val good">Unlimited</div></div>
+    <div class="wc-row"><div class="wc-label">Array size</div><div class="wc-val warn">Max 32,000 items</div><div class="wc-val good">Millions via S3</div></div>
+    <div class="wc-row"><div class="wc-label">Input source</div><div class="wc-val">Execution input array</div><div class="wc-val good">S3 CSV, JSON Lines</div></div>
+    <div class="wc-row"><div class="wc-label">Best for</div><div class="wc-val">Process tens/hundreds of items</div><div class="wc-val">Process millions of records</div></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">JSON · Distributed Map (S3 input, millions of records)</span>
+    <pre><span class="json-key">"ProcessAllOrders"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Map"</span>,
+  <span class="json-key">"ItemReader"</span>: {                       <span class="json-cm">// Read from S3 — not execution input</span>
+    <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::s3:getObject"</span>,
+    <span class="json-key">"ReaderConfig"</span>: { <span class="json-key">"InputType"</span>: <span class="json-str">"CSV"</span>, <span class="json-key">"CSVHeaderLocation"</span>: <span class="json-str">"FIRST_ROW"</span> },
+    <span class="json-key">"Parameters"</span>: { <span class="json-key">"Bucket"</span>: <span class="json-str">"watson-batch"</span>, <span class="json-key">"Key.$"</span>: <span class="json-str">"$.s3Key"</span> }
+  },
+  <span class="json-key">"ItemBatcher"</span>: {
+    <span class="json-key">"MaxItemsPerBatch"</span>: <span class="json-num">100</span>               <span class="json-cm">// Process 100 records per sub-execution</span>
+  },
+  <span class="json-key">"MaxConcurrency"</span>: <span class="json-num">50</span>,
+  <span class="json-key">"ItemProcessor"</span>: {
+    <span class="json-key">"ProcessorConfig"</span>: { <span class="json-key">"Mode"</span>: <span class="json-str">"DISTRIBUTED"</span>, <span class="json-key">"ExecutionType"</span>: <span class="json-str">"STANDARD"</span> },
+    <span class="json-key">"StartAt"</span>: <span class="json-str">"ProcessBatch"</span>,
+    <span class="json-key">"States"</span>: {
+      <span class="json-key">"ProcessBatch"</span>: {
+        <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>, <span class="json-key">"Resource"</span>: <span class="json-str">"arn:...:process-batch"</span>,
+        <span class="json-key">"End"</span>: <span class="json-bool">true</span>
+      }
+    }
+  },
+  <span class="json-key">"ResultWriter"</span>: {                     <span class="json-cm">// Write results back to S3</span>
+    <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::s3:putObject"</span>,
+    <span class="json-key">"Parameters"</span>: { <span class="json-key">"Bucket"</span>: <span class="json-str">"watson-results"</span>, <span class="json-key">"Prefix"</span>: <span class="json-str">"batch-run"</span> }
+  },
+  <span class="json-key">"Next"</span>: <span class="json-str">"GenerateReport"</span>
+}</pre>
+  </div>
+
+  <h3>Nested / Child Workflows</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Start a Child State Machine (sync)</span>
+    <pre><span class="json-key">"RunChildWorkflow"</span>: {
+  <span class="json-key">"Type"</span>: <span class="json-str">"Task"</span>,
+  <span class="json-key">"Resource"</span>: <span class="json-str">"arn:aws:states:::states:startExecution.sync:2"</span>,
+  <span class="json-key">"Parameters"</span>: {
+    <span class="json-key">"StateMachineArn"</span>: <span class="json-str">"arn:aws:states:eu-west-1:123:stateMachine:watson-fulfilment"</span>,
+    <span class="json-key">"Input"</span>: {
+      <span class="json-key">"orderId.$"</span>: <span class="json-str">"$.orderId"</span>,
+      <span class="json-key">"AWS_STEP_FUNCTIONS_STARTED_BY_EXECUTION_ID.$"</span>: <span class="json-str">"$$.Execution.Id"</span>
+    }
+  },
+  <span class="json-key">"Next"</span>: <span class="json-str">"Done"</span>
+}
+<span class="json-cm">// Parent waits for child to complete before moving on</span></pre>
+  </div>
+
+  <h3>EventBridge Trigger — Scheduled Workflows</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · EventBridge Rule targeting Step Functions</span>
+    <pre>{
+  <span class="json-key">"ScheduleExpression"</span>: <span class="json-str">"cron(0 9 * * ? *)"</span>,  <span class="json-cm">// Every day 9am UTC</span>
+  <span class="json-key">"Targets"</span>: [{
+    <span class="json-key">"Arn"</span>: <span class="json-str">"arn:aws:states:eu-west-1:123:stateMachine:watson-report"</span>,
+    <span class="json-key">"RoleArn"</span>: <span class="json-str">"arn:aws:iam::123:role/EventBridgeStepFunctionsRole"</span>,
+    <span class="json-key">"Input"</span>: <span class="json-str">"{\"reportDate\": \"today\", \"env\": \"prod\"}"</span>
+  }]
+}</pre>
+  </div>
+
+  <div class="info">
+    <h4>ℹ️ Workflow Studio — Visual Designer</h4>
+    <p>The Step Functions Workflow Studio in the AWS Console lets you drag-and-drop states to build workflows visually, then export the ASL JSON. It also shows a live preview of the state machine graph. Great for rapid prototyping before committing to code.</p>
+  </div>
+
+  <h3>Pricing at a Glance</h3>
+  <div class="pricing-cards">
+    <div class="pricing-card pc-std">
+      <h5>⚙️ Standard Workflows</h5>
+      <div class="pricing-row"><div class="pricing-label">State transitions</div><div class="pricing-val">$0.025 / 1,000</div></div>
+      <div class="pricing-row"><div class="pricing-label">Free tier</div><div class="pricing-val">4,000 / month</div></div>
+      <div class="pricing-row"><div class="pricing-label">Execution history</div><div class="pricing-val">90 days</div></div>
+      <div class="pricing-row"><div class="pricing-label">Max duration</div><div class="pricing-val">1 year</div></div>
+    </div>
+    <div class="pricing-card pc-exp">
+      <h5>⚡ Express Workflows</h5>
+      <div class="pricing-row"><div class="pricing-label">Per request</div><div class="pricing-val">$1.00 / 1M</div></div>
+      <div class="pricing-row"><div class="pricing-label">Duration</div><div class="pricing-val">$0.00001 / GB-sec</div></div>
+      <div class="pricing-row"><div class="pricing-label">Free tier</div><div class="pricing-val">1M / month</div></div>
+      <div class="pricing-row"><div class="pricing-label">Max duration</div><div class="pricing-val">5 minutes</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First State Machine</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to Step Functions</div>
+      <div class="console-step-path">AWS Console → Step Functions</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">URL</div><div class="console-field-value">https://console.aws.amazon.com/states</div></div>
+      <div class="console-note">Make sure you're in the correct region — state machines are regional. eu-west-1 for Team Watson.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create State Machine</div>
+      <div class="console-step-path">State machines → Create state machine</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Authoring Method</div><div class="console-field-value">Design your workflow visually (Workflow Studio)</div><div class="console-field-hint">Or choose "Write your workflow in code" to paste ASL JSON directly.</div></div>
+      <div class="console-field"><div class="console-field-label">Workflow Type</div><div class="console-field-value">Standard (for order flows, approvals, long-running) · Express (for high-volume real-time)</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Design in Workflow Studio</div>
+      <div class="console-step-path">Drag states from left panel → connect them</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Add a Task State</div><div class="console-field-value">Drag "Lambda Invoke" → configure Resource ARN</div></div>
+      <div class="console-field"><div class="console-field-label">Add a Choice State</div><div class="console-field-value">Drag "Choice" → add rules with conditions on input fields</div></div>
+      <div class="console-field"><div class="console-field-label">Switch to ASL</div><div class="console-field-value">Click "Definition" tab to see / edit raw ASL JSON at any time</div></div>
+      <div class="console-note">Changes in the visual designer immediately update the ASL, and vice versa — they stay in sync.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Configure State Machine Settings</div>
+      <div class="console-step-path">Next → State machine configuration</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">State machine name</div><div class="console-field-value">watson-order-workflow</div><div class="console-field-hint">Max 80 chars, alphanumeric + hyphens + underscores.</div></div>
+      <div class="console-field"><div class="console-field-label">Permissions</div><div class="console-field-value">Create new role — CFN generates a role with exactly the needed permissions</div><div class="console-field-hint">For prod, create a dedicated IAM role manually and select "Choose an existing role".</div></div>
+      <div class="console-field"><div class="console-field-label">Logging</div><div class="console-field-value">CloudWatch Logs → Level: ERROR (prod) or ALL (dev)</div><div class="console-field-hint">Required for Express workflows — execution history is not stored in the console.</div></div>
+      <div class="console-field"><div class="console-field-label">Tracing</div><div class="console-field-value">Enable X-Ray tracing — correlates Lambda + SQS calls in a trace</div></div>
+      <div class="console-field"><div class="console-field-label">Tags</div><div class="console-field-value">Team = Watson · CostCenter = Platform</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Start an Execution</div>
+      <div class="console-step-path">State machine → Start execution</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Execution Name</div><div class="console-field-value">order-ORD-5521-2024-01-15</div><div class="console-field-hint">Optional, auto-generated if blank. Unique per state machine.</div></div>
+      <div class="console-field"><div class="console-field-label">Input (JSON)</div><div class="console-field-value">{"orderId": "ORD-5521", "amount": 149.99, "currency": "GBP"}</div><div class="console-field-hint">This is the $$ input available to all states. Must be valid JSON.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Monitor the Execution Graph</div>
+      <div class="console-step-path">Execution → Graph inspector</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Graph View</div><div class="console-field-value">Live visual — states turn green (succeeded) or red (failed) in real-time</div></div>
+      <div class="console-field"><div class="console-field-label">Event History</div><div class="console-field-value">Chronological list of every state enter/exit event with timestamps and I/O</div></div>
+      <div class="console-field"><div class="console-field-label">Debugging</div><div class="console-field-value">Click a failed state → see exact error, cause, and retry attempt count</div></div>
+      <div class="console-note">For Express workflows, check CloudWatch Logs group /aws/states/watson-order-workflow instead.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# .NET SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Full Step Functions Integration</h2>
+
+  <h3>NuGet Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Packages</span>
+    <pre>dotnet add package AWSSDK.StepFunctions
+dotnet add package AWSSDK.Extensions.NETCore.Setup  <span class="cm">// DI helper</span>
+dotnet add package System.Text.Json</pre>
+  </div>
+
+  <h3>StepFunctions Service — Start, Poll, Send Token</h3>
+  <div class="code-block">
+    <span class="code-label">C# · StepFunctionsService.cs</span>
+    <pre><span class="kw">using</span> Amazon.StepFunctions;
+<span class="kw">using</span> Amazon.StepFunctions.Model;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">StepFunctionsService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonStepFunctions</span> _sfn;
+
+    <span class="kw">public</span> <span class="tp">StepFunctionsService</span>(<span class="tp">IAmazonStepFunctions</span> sfn) => _sfn = sfn;
+
+    <span class="cm">// ── START EXECUTION ───────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">StartExecutionAsync</span>&lt;<span class="tp">TInput</span>&gt;(
+        <span class="tp">string</span> stateMachineArn,
+        <span class="tp">TInput</span>  input,
+        <span class="tp">string</span>? executionName = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _sfn.<span class="fn">StartExecutionAsync</span>(<span class="kw">new</span> <span class="tp">StartExecutionRequest</span>
+        {
+            StateMachineArn = stateMachineArn,
+            Name            = executionName ?? <span class="str">$"exec-{Guid.NewGuid():N}"</span>,
+            Input           = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(input)
+        }, ct);
+
+        <span class="kw">return</span> resp.ExecutionArn;
+    }
+
+    <span class="cm">// ── POLL UNTIL COMPLETE (Standard workflows) ──────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">DescribeExecutionResponse</span>&gt; <span class="fn">WaitForExecutionAsync</span>(
+        <span class="tp">string</span> executionArn,
+        <span class="tp">TimeSpan</span> pollInterval,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">while</span> (!ct.IsCancellationRequested)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _sfn.<span class="fn">DescribeExecutionAsync</span>(
+                <span class="kw">new</span> <span class="tp">DescribeExecutionRequest</span> { ExecutionArn = executionArn }, ct);
+
+            <span class="kw">var</span> status = resp.Status.Value;
+            Console.<span class="fn">WriteLine</span>(<span class="str">$"[{DateTime.UtcNow:T}] Status: {status}"</span>);
+
+            <span class="kw">if</span> (status <span class="kw">is</span> <span class="str">"SUCCEEDED"</span> <span class="kw">or</span> <span class="str">"FAILED"</span> <span class="kw">or</span> <span class="str">"ABORTED"</span> <span class="kw">or</span> <span class="str">"TIMED_OUT"</span>)
+                <span class="kw">return</span> resp;
+
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(pollInterval, ct);
+        }
+        <span class="kw">throw new</span> <span class="tp">OperationCanceledException</span>(<span class="str">"Timed out waiting for execution."</span>);
+    }
+
+    <span class="cm">// ── RESOLVE TASK TOKEN (Human approval / callback) ────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ApproveAsync</span>&lt;<span class="tp">TOutput</span>&gt;(
+        <span class="tp">string</span> taskToken, <span class="tp">TOutput</span> output,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _sfn.<span class="fn">SendTaskSuccessAsync</span>(<span class="kw">new</span> <span class="tp">SendTaskSuccessRequest</span>
+        {
+            TaskToken = taskToken,
+            Output    = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(output)
+        }, ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RejectAsync</span>(
+        <span class="tp">string</span> taskToken, <span class="tp">string</span> error, <span class="tp">string</span> cause,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _sfn.<span class="fn">SendTaskFailureAsync</span>(<span class="kw">new</span> <span class="tp">SendTaskFailureRequest</span>
+        {
+            TaskToken = taskToken,
+            Error     = error,
+            Cause     = cause
+        }, ct);
+
+    <span class="cm">// ── GET EXECUTION HISTORY ─────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">HistoryEvent</span>&gt;&gt; <span class="fn">GetHistoryAsync</span>(
+        <span class="tp">string</span> executionArn,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> events = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">HistoryEvent</span>&gt;();
+        <span class="tp">string</span>? nextToken = <span class="kw">null</span>;
+
+        <span class="kw">do</span>
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _sfn.<span class="fn">GetExecutionHistoryAsync</span>(
+                <span class="kw">new</span> <span class="tp">GetExecutionHistoryRequest</span>
+                {
+                    ExecutionArn = executionArn,
+                    NextToken    = nextToken
+                }, ct);
+
+            events.<span class="fn">AddRange</span>(resp.Events);
+            nextToken = resp.NextToken;
+        }
+        <span class="kw">while</span> (nextToken <span class="kw">is not null</span>);
+
+        <span class="kw">return</span> events;
+    }
+
+    <span class="cm">// ── LIST EXECUTIONS ───────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">ExecutionListItem</span>&gt;&gt; <span class="fn">ListRunningAsync</span>(
+        <span class="tp">string</span> stateMachineArn,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _sfn.<span class="fn">ListExecutionsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListExecutionsRequest</span>
+            {
+                StateMachineArn = stateMachineArn,
+                StatusFilter    = ExecutionStatus.RUNNING
+            }, ct);
+
+        <span class="kw">return</span> resp.Executions;
+    }
+}</pre>
+  </div>
+
+  <h3>Usage — Order Flow in an ASP.NET Core Controller</h3>
+  <div class="code-block">
+    <span class="code-label">C# · OrderController.cs</span>
+    <pre>[<span class="tp">ApiController</span>]
+[<span class="tp">Route</span>(<span class="str">"api/orders"</span>)]
+<span class="kw">public class</span> <span class="tp">OrderController</span>(<span class="tp">StepFunctionsService</span> sfn) : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private const string</span> StateMachineArn =
+        <span class="str">"arn:aws:states:eu-west-1:123456789:stateMachine:watson-order-workflow"</span>;
+
+    [<span class="tp">HttpPost</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="tp">PlaceOrderRequest</span> req)
+    {
+        <span class="kw">var</span> executionArn = <span class="kw">await</span> sfn.<span class="fn">StartExecutionAsync</span>(
+            StateMachineArn,
+            <span class="kw">new</span> { req.OrderId, req.Amount, req.Currency },
+            executionName: <span class="str">$"order-{req.OrderId}"</span>);
+
+        <span class="kw">return</span> <span class="fn">Accepted</span>(<span class="kw">new</span> { executionArn });
+    }
+
+    [<span class="tp">HttpPost</span>(<span class="str">"approve"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">ApproveOrderAsync</span>(<span class="tp">ApprovalRequest</span> req)
+    {
+        <span class="kw">await</span> sfn.<span class="fn">ApproveAsync</span>(req.TaskToken, <span class="kw">new</span>
+        {
+            approved = <span class="kw">true</span>,
+            approvedBy = req.ApproverId,
+            approvedAt = <span class="tp">DateTimeOffset</span>.UtcNow
+        });
+
+        <span class="kw">return</span> <span class="fn">Ok</span>();
+    }
+}
+
+<span class="cm">// DI Registration in Program.cs:</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonStepFunctions</span>&gt;()
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">StepFunctionsService</span>&gt;();</pre>
+  </div>
+
+  <h3>Lambda Handler — Reporting Back to Step Functions</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Lambda function that throws typed exceptions for SFN Catch</span>
+    <pre><span class="kw">public class</span> <span class="tp">ValidateOrderHandler</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">ValidationResult</span>&gt; <span class="fn">FunctionHandler</span>(
+        <span class="tp">OrderInput</span> input, <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="kw">if</span> (input.Amount &lt;= <span class="num">0</span>)
+        {
+            <span class="cm">// Throw named exception — Step Functions Catch can match "ValidationError"</span>
+            <span class="kw">throw new</span> <span class="tp">ValidationException</span>(<span class="str">"Amount must be positive"</span>);
+        }
+
+        <span class="kw">if</span> (!SupportedCurrencies.<span class="fn">Contains</span>(input.Currency))
+        {
+            <span class="kw">throw new</span> <span class="tp">ValidationException</span>(<span class="str">$"Currency {input.Currency} not supported"</span>);
+        }
+
+        <span class="kw">return new</span> <span class="tp">ValidationResult</span>
+        {
+            IsValid    = <span class="kw">true</span>,
+            CustomerId = <span class="kw">await</span> <span class="fn">LookupCustomerAsync</span>(input.OrderId)
+        };
+    }
+}
+
+<span class="cm">// In Lambda, the exception type name becomes the Step Functions Error value</span>
+<span class="cm">// "ValidationException" → caught by "ErrorEquals": ["ValidationException"]</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Workflow Design</h3>
+  <ul class="checklist">
+    <li>Keep Lambda functions <strong>stateless and single-purpose</strong> — use Step Functions for all orchestration logic, not the Lambda itself</li>
+    <li>Use <strong>direct SDK integrations</strong> (DynamoDB, SQS, SNS) instead of Lambda passthroughs — fewer moving parts, lower cost, less latency</li>
+    <li>Always set <code>TimeoutSeconds</code> on Task states — without it, a hung Lambda holds your execution open at full cost indefinitely</li>
+    <li>Use <code>ResultPath</code> to <em>merge</em> results (not overwrite) — set it to <code>$.stepName</code> to keep original input accessible to later states</li>
+    <li>Design state machine inputs to be <em>minimal and explicit</em> — passing huge payloads through state input hits the 256KB limit and inflates execution history size</li>
+    <li>For payloads over 256KB, store in S3 and pass the S3 key as input through the state machine</li>
+  </ul>
+
+  <h3>Error Handling</h3>
+  <ul class="checklist">
+    <li>Always include a <code>States.ALL</code> catch as the final catch block — unexpected errors should always route somewhere sensible</li>
+    <li>Add <code>JitterStrategy: FULL</code> to retry configs — prevents thundering herd when multiple executions fail at the same time and all retry simultaneously</li>
+    <li>Throw <strong>named, typed exceptions</strong> from Lambda — use the exception class name so Step Functions Catch can match them precisely</li>
+    <li>Use <code>ResultPath: "$.error"</code> in Catch — preserves the original execution context so the error handler state knows what failed</li>
+    <li>Set <code>HeartbeatSeconds</code> on long-running tasks using task token — fail fast if external systems stop responding</li>
+  </ul>
+
+  <h3>Observability</h3>
+  <ul class="checklist">
+    <li>Enable CloudWatch Logs at ERROR level minimum — required for Express workflows, strongly recommended for Standard</li>
+    <li>Enable X-Ray tracing — traces span across Step Functions, Lambda, and DynamoDB calls in a single waterfall view</li>
+    <li>Set structured execution names (<code>order-{orderId}</code>) — makes searching execution history dramatically easier than GUIDs</li>
+    <li>Use CloudWatch Metrics alarms on ExecutionsFailed and ExecutionsTimedOut — page on-call when workflows degrade</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top Step Functions Mistakes</h4>
+    <p>
+    ❌ <strong>Putting business logic in the state machine (ASL)</strong> — ASL should orchestrate, not compute. Keep logic in Lambda; keep routing in the state machine<br>
+    ❌ <strong>No TimeoutSeconds on Task states</strong> — a Lambda that hangs keeps the execution open and billing, potentially for 1 year<br>
+    ❌ <strong>Passing large payloads through state input</strong> — the 256KB limit will bite you in production; use S3 for large data<br>
+    ❌ <strong>Using Standard workflow for high-throughput real-time</strong> — 2,000 starts/sec cap and per-transition pricing make it expensive at scale; use Express<br>
+    ❌ <strong>Not using ResultPath — overwriting execution input</strong> — every task result replaces the whole state input by default; use ResultPath to merge<br>
+    ❌ <strong>Forgetting Default in Choice states</strong> — if no rule matches and there's no Default, the execution fails with States.NoChoiceMatched<br>
+    ❌ <strong>Not handling States.ALL in Catch</strong> — unexpected errors crash the execution silently; always have a safety net catcher<br>
+    ❌ <strong>Using one giant monolith state machine</strong> — split complex workflows into nested child state machines for reusability and clarity
+    </p>
+  </div>
+
+  <h3>Step Functions vs Alternatives</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>Step Functions</th><th>EventBridge Pipes</th><th>Lambda Chain</th></tr>
+    <tr><td>Visual workflow graph</td><td>✅ Built-in</td><td>❌ No</td><td>❌ No</td></tr>
+    <tr><td>Execution history + audit</td><td>✅ Full history</td><td>⚠️ CloudWatch only</td><td>❌ Manual</td></tr>
+    <tr><td>Retry with backoff</td><td>✅ Per-state config</td><td>✅ Limited</td><td>❌ Manual code</td></tr>
+    <tr><td>Human approval / pause</td><td>✅ Task token</td><td>❌ No</td><td>❌ Complex hack</td></tr>
+    <tr><td>High-throughput events</td><td>⚠️ Express OK</td><td>✅ Native</td><td>✅ If simple</td></tr>
+    <tr><td>Event routing only (no steps)</td><td>❌ Overkill</td><td>✅ Perfect</td><td>⚠️ Works</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE Step Functions Mastery!</h3>
+    <p>What is Step Functions · Standard vs Express comparison · All 8 state types (Task / Choice / Parallel / Map / Wait / Pass / Succeed / Fail) · Parallel branch visual · Map state inline vs distributed · Real execution timeline · ASL deep dive (Task, Choice, Parallel, Map, Wait) · Input/Output processing (InputPath, Parameters, ResultSelector, ResultPath, OutputPath) · Error handling (Retry + Catch + States.ALL) · JitterStrategy · Saga / compensating transactions · Wait for Task Token (human approval) · All integration modes (sync / request / waitForTaskToken) · Direct SDK integrations (DynamoDB, SQS, ECS, S3) · Nested child workflows · Distributed Map with S3 input · EventBridge scheduling · Pricing (Standard vs Express) · Console walkthrough · Full C# SDK service (start / poll / approve / reject / history) · Best practices &amp; top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#c4b5fd;">Your workflows are now orchestrated, observable, and resilient. ⚙️🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

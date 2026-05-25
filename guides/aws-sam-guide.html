@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS SAM — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0faf6;--surface:#e2f4ec;--card:#ffffff;--border:#c8e6d8;--border2:#a8d4bc;
+  --sam:#059669;--sam-l:#d1fae5;--sam-d:#065f46;--sam-dk:#022c22;
+  --teal:#0891b2;--teal-l:#cffafe;--teal-d:#155e75;
+  --blue:#1d4ed8;--blue-l:#dbeafe;--blue-d:#1e3a8a;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-d:#92400e;
+  --red:#dc2626;--red-l:rgba(220,38,38,.08);--red-b:rgba(220,38,38,.2);
+  --purple:#7c3aed;--purple-l:#ede9fe;--purple-d:#4c1d95;
+  --pink:#db2777;--pink-l:#fce7f3;--pink-d:#831843;
+  --slate:#475569;--slate-l:#f8fafc;
+  --text:#0a1628;--text2:#1e3a2f;--muted:#4b7a62;
+  --code-bg:#0a1628;--r:10px;
+  --sh:0 1px 3px rgba(5,150,105,.06),0 4px 12px rgba(5,150,105,.07);
+  --sh-lg:0 2px 8px rgba(5,150,105,.08),0 8px 28px rgba(5,150,105,.1);
+  --sh-xl:0 4px 16px rgba(5,150,105,.09),0 16px 48px rgba(5,150,105,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#022c22 0%,#064e3b 40%,#065f46 70%,#047857 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-dots{position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.06) 1.5px,transparent 1.5px);background-size:24px 24px;pointer-events:none;}
+.hdr-orb{position:absolute;top:-100px;right:-100px;width:350px;height:350px;background:radial-gradient(circle,rgba(16,185,129,.2) 0%,transparent 65%);pointer-events:none;}
+.hdr-orb2{position:absolute;bottom:-80px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(6,182,212,.12) 0%,transparent 65%);pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.7rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;line-height:1.15;}
+.header h1 span{background:linear-gradient(90deg,#6ee7b7,#34d399,#10b981);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(240,250,246,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--sam-l);color:var(--sam-d);font-weight:700;box-shadow:0 0 0 1.5px rgba(5,150,105,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--sam-l);letter-spacing:-.02em;}
+.section h3{color:var(--sam-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── SAM TRANSFORM VISUAL ── */
+.transform-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-xl);}
+.tv-header{background:linear-gradient(90deg,#022c22,#065f46);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #0a3728;display:flex;align-items:center;gap:8px;}
+.tv-header span{background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.tv-body{padding:18px;}
+.tv-row{display:flex;align-items:stretch;gap:12px;}
+.tv-side{flex:1;min-width:0;}
+.tv-side-label{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px;}
+.tv-box{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:12px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text2);line-height:1.7;}
+.tv-box.sam-box{border-color:rgba(5,150,105,.3);background:var(--sam-l);}
+.tv-box.cfn-box{border-color:rgba(29,78,216,.25);background:var(--blue-l);}
+.tv-arrow-col{display:flex;align-items:center;justify-content:center;flex-direction:column;padding:0 6px;flex-shrink:0;}
+.tv-arrow{font-size:1.6rem;color:var(--sam);line-height:1;}
+.tv-arrow-label{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--muted);text-align:center;margin-top:3px;}
+
+/* ── RESOURCE TYPE CARDS ── */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.res-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;}
+.res-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.res-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.rc-fn::before{background:var(--sam);}
+.rc-api::before{background:var(--teal);}
+.rc-ddb::before{background:var(--amber);}
+.rc-s3::before{background:var(--blue);}
+.rc-app::before{background:var(--purple);}
+.rc-queue::before{background:var(--pink);}
+.rc-name{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:600;margin-bottom:3px;}
+.rc-type{font-size:.65rem;color:var(--muted);margin-bottom:6px;}
+.rc-expands{font-size:.62rem;padding:3px 8px;border-radius:4px;display:inline-block;font-weight:600;}
+
+/* ── CLI PIPELINE ── */
+.cli-pipeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cp-header{background:linear-gradient(90deg,#022c22,#064e3b);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #0a3728;}
+.cp-body{padding:0;}
+.cp-stage{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.cp-stage:last-child{border-bottom:none;}
+.cp-num{background:linear-gradient(135deg,var(--sam-d),var(--sam));color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 6px rgba(5,150,105,.3);}
+.cp-cmd{flex:1;}
+.cp-cmd-text{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--sam-d);background:var(--sam-l);padding:4px 9px;border-radius:5px;display:inline-block;margin-bottom:3px;}
+.cp-cmd-desc{font-size:.7rem;color:var(--muted);}
+.cp-duration{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);flex-shrink:0;}
+
+/* ── LOCAL TESTING VISUAL ── */
+.local-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.lv-header{background:linear-gradient(90deg,var(--sam-l),var(--teal-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.lv-body{padding:14px;}
+.lv-row{display:flex;align-items:stretch;gap:8px;margin-bottom:8px;}
+.lv-box{flex:1;border-radius:8px;padding:10px 12px;min-width:0;}
+.lv-your{background:var(--blue-l);border:1.5px solid rgba(29,78,216,.2);}
+.lv-your h6{font-weight:700;font-size:.72rem;color:var(--blue-d);margin-bottom:4px;}
+.lv-sam{background:var(--sam-l);border:1.5px solid rgba(5,150,105,.25);}
+.lv-sam h6{font-weight:700;font-size:.72rem;color:var(--sam-d);margin-bottom:4px;}
+.lv-aws{background:var(--amber-l);border:1.5px solid rgba(217,119,6,.2);}
+.lv-aws h6{font-weight:700;font-size:.72rem;color:var(--amber-d);margin-bottom:4px;}
+.lv-box p{font-size:.65rem;color:var(--muted);}
+.lv-arrow{display:flex;align-items:center;justify-content:center;color:var(--border2);font-size:1.2rem;padding:0 2px;flex-shrink:0;}
+
+/* ── EVENT SOURCES VISUAL ── */
+.events-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(145px,100%),1fr));gap:8px;margin:14px 0;}
+.ev-tile{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px 10px;text-align:center;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;}
+.ev-tile:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.ev-tile .et-icon{font-size:1.5rem;display:block;margin-bottom:5px;}
+.ev-tile h5{font-size:.72rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.ev-tile p{font-size:.62rem;color:var(--muted);}
+.ev-tile .et-tag{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:1px 6px;border-radius:3px;margin-top:4px;display:inline-block;background:var(--sam-l);color:var(--sam-d);}
+
+/* ── CANARY DEPLOY VISUAL ── */
+.canary-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cv-header{background:linear-gradient(90deg,var(--amber-l),var(--sam-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.cv-body{padding:14px;}
+.cv-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cv-label{font-size:.7rem;font-weight:600;color:var(--text2);width:120px;flex-shrink:0;}
+.cv-bar-wrap{flex:1;height:18px;background:var(--surface);border-radius:5px;overflow:hidden;display:flex;}
+.cv-bar-old{height:100%;background:linear-gradient(90deg,var(--blue-d),var(--blue));display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;color:#fff;}
+.cv-bar-new{height:100%;background:linear-gradient(90deg,var(--sam-d),var(--sam));display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;color:#fff;}
+.cv-time{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);flex-shrink:0;width:55px;text-align:right;}
+
+/* ── FEATURE COMPARE ── */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-head{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.76rem;}
+.fc-sam{background:var(--sam-l);color:var(--sam-d);border-right:1px solid var(--border);}
+.fc-cfn{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.good{color:var(--sam-d);font-weight:600;}
+.fc-val.warn{color:var(--amber-d);font-weight:600;}
+
+/* ── STEPS ── */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:linear-gradient(135deg,var(--sam-d),var(--sam));color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(5,150,105,.3);}
+.step-body{background:var(--surface);padding:12px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--sam);}
+.step-body h4{color:var(--sam-d);margin-bottom:5px;font-size:.88rem;font-weight:700;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--sam-d),var(--sam));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--sam-d);padding:8px 11px;background:var(--sam-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--sam-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--sam);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--sam-l);border:1px solid rgba(5,150,105,.2);border-left:4px solid var(--sam);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--sam-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--sam-l);border:1px solid rgba(5,150,105,.2);border-left:4px solid var(--sam);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--sam-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,78,216,.18);border-left:4px solid var(--blue);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #0f2318;border-left:3px solid var(--sam);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#6ee7b7;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#2d4a36;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f2a27a;}.yaml-key{color:#89dceb;}.yaml-val{color:#a6e3a1;}.yaml-str{color:#a6e3a1;}.yaml-cm{color:#2d4a36;font-style:italic;}.yaml-ex{color:#fab387;}.bash-cmd{color:#a6e3a1;}.bash-flag{color:#89dceb;}.bash-comment{color:#2d4a36;font-style:italic;}
+code{background:rgba(5,150,105,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--sam-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--sam);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--sam-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#022c22 0%,#064e3b 60%,#065f46 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'🚀';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── LAYER VISUAL ── */
+.layer-stack{display:flex;flex-direction:column;gap:6px;margin:14px 0;}
+.layer{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;box-shadow:var(--sh);}
+.layer-bar{width:8px;min-height:36px;border-radius:4px;flex-shrink:0;}
+.layer-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.layer-info p{font-size:.68rem;color:var(--muted);}
+.layer-badge{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:3px 8px;border-radius:4px;flex-shrink:0;}
+
+/* ── PIPELINE FLOW ── */
+.pipeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pl-header{background:linear-gradient(90deg,#022c22,#064e3b);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #0a3728;}
+.pl-body{padding:14px;overflow-x:auto;}
+.pl-row{display:flex;align-items:center;gap:0;min-width:500px;}
+.pl-stage{flex:1;text-align:center;padding:10px 6px;border-right:1px dashed var(--border);position:relative;}
+.pl-stage:last-child{border-right:none;}
+.pl-icon{font-size:1.4rem;display:block;margin-bottom:4px;}
+.pl-stage h6{font-size:.68rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.pl-stage p{font-size:.58rem;color:var(--muted);}
+.pl-stage span{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.res-grid,.events-grid,.fc-head+div{grid-template-columns:1fr;}
+  .fc-row,.tv-row,.lv-row,.cv-row{flex-direction:column;}
+  .fc-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .tv-arrow-col{flex-direction:row;padding:4px 0;}
+  .tv-arrow{transform:rotate(90deg);}
+  .console-step-path{display:none;}
+  .pl-row{min-width:600px;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-dots"></div>
+  <div class="hdr-orb"></div>
+  <div class="hdr-orb2"></div>
+  <div class="container">
+    <div class="hdr-badge">🚀 AWS · Serverless Application Model</div>
+    <h1>AWS <span>SAM</span> — Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET Lambda Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">SAM Templates</span>
+      <span class="header-tag">sam build &amp; deploy</span>
+      <span class="header-tag">Local Testing</span>
+      <span class="header-tag">Canary Deployments</span>
+      <span class="header-tag">Layers &amp; Connectors</span>
+      <span class="header-tag">C# .NET</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is SAM</button>
+    <button class="tab-btn" onclick="T('template',this)">2 · SAM Template</button>
+    <button class="tab-btn" onclick="T('resources',this)">3 · Resource Types</button>
+    <button class="tab-btn" onclick="T('events',this)">4 · Event Sources</button>
+    <button class="tab-btn" onclick="T('local',this)">5 · Local Testing</button>
+    <button class="tab-btn" onclick="T('deploy',this)">6 · Build &amp; Deploy</button>
+    <button class="tab-btn" onclick="T('advanced',this)">7 · Advanced Features</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console &amp; CI/CD</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# .NET</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS SAM
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>🚀 What is AWS SAM?</h2>
+  <p>AWS SAM (Serverless Application Model) is an <strong>open-source framework</strong> built on top of CloudFormation that makes it dramatically faster to build, test, and deploy serverless applications. It provides shorthand syntax for Lambda, API Gateway, DynamoDB, SQS, SNS and more — what would be 50 lines of raw CloudFormation becomes 5 lines of SAM.</p>
+
+  <div class="tip">
+    <h4>💡 SAM = CloudFormation + Serverless Superpowers</h4>
+    <p>SAM is not a separate service — it's a <em>transform</em> that runs before CloudFormation. You write concise SAM YAML; AWS expands it into full CloudFormation and deploys it. The <code>Transform: AWS::Serverless-2016-10-31</code> line at the top of your template is what activates the SAM macro.</p>
+  </div>
+
+  <!-- TRANSFORM VISUAL -->
+  <h3>How the SAM Transform Works</h3>
+  <div class="transform-visual">
+    <div class="tv-header">⚙️ SAM → CloudFormation Transform Pipeline <span>Happens automatically at deploy time</span></div>
+    <div class="tv-body">
+      <div class="tv-row">
+        <div class="tv-side">
+          <div class="tv-side-label">Your SAM Template (concise)</div>
+          <div class="tv-box sam-box">Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  WatsonApi:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: bootstrap
+      Runtime: provided.al2023
+      Events:
+        GetOrders:
+          Type: Api
+          Properties:
+            Path: /orders
+            Method: get</div>
+        </div>
+        <div class="tv-arrow-col">
+          <div class="tv-arrow">→</div>
+          <div class="tv-arrow-label">SAM<br>Transform</div>
+        </div>
+        <div class="tv-side">
+          <div class="tv-side-label">Expanded CloudFormation (~6× longer)</div>
+          <div class="tv-box cfn-box">Resources:
+  WatsonApi:
+    Type: AWS::Lambda::Function
+    Properties: { ... full config ... }
+  WatsonApiRole:
+    Type: AWS::IAM::Role
+    Properties: { ... }
+  WatsonApiGetOrdersPermission:
+    Type: AWS::Lambda::Permission
+    Properties: { ... }
+  ServerlessRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties: { ... }
+  ServerlessRestApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+  ServerlessRestApiProdStage:
+    Type: AWS::ApiGateway::Stage</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>SAM vs Raw CloudFormation vs CDK</h3>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-col fc-sam">🚀 AWS SAM</div>
+      <div class="fc-col fc-cfn" style="flex:2;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 13px;text-align:center;border-right:1px solid var(--border);">☁️ Raw CloudFormation</div>
+        <div style="flex:1;padding:11px 13px;text-align:center;">🔷 AWS CDK</div>
+      </div>
+    </div>
+    <div class="fc-row"><div class="fc-lbl">Syntax</div><div class="fc-val good">Short YAML/JSON (SAM shorthand)</div><div class="fc-val warn">Verbose YAML/JSON</div><div class="fc-val">TypeScript / C# / Python code</div></div>
+    <div class="fc-row"><div class="fc-lbl">Local testing</div><div class="fc-val good">✅ sam local invoke / start-api</div><div class="fc-val warn">❌ No native local testing</div><div class="fc-val">⚠️ Via SAM (CDK → SAM)</div></div>
+    <div class="fc-row"><div class="fc-lbl">Built for</div><div class="fc-val good">Serverless (Lambda, API GW, DDB)</div><div class="fc-val">Any AWS resource</div><div class="fc-val">Any AWS resource, code-first</div></div>
+    <div class="fc-row"><div class="fc-lbl">Install needed</div><div class="fc-val warn">SAM CLI (one-time)</div><div class="fc-val good">Nothing extra</div><div class="fc-val warn">Node.js + CDK CLI</div></div>
+    <div class="fc-row"><div class="fc-lbl">Under the hood</div><div class="fc-val">CloudFormation (transform)</div><div class="fc-val">CloudFormation directly</div><div class="fc-val">CloudFormation (synthesized)</div></div>
+    <div class="fc-row"><div class="fc-lbl">Best for</div><div class="fc-val good">Serverless apps, rapid iteration</div><div class="fc-val">Full infra, no extra tooling</div><div class="fc-val">Devs preferring real code</div></div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🗂️</span><h4>SAM Template</h4><p>YAML file with Transform header and Serverless resource types.</p></div>
+    <div class="icon-item"><span class="emoji">🔨</span><h4>sam build</h4><p>Compiles and packages code into a build artifact folder ready for deploy.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>sam deploy</h4><p>Uploads artifact to S3, runs CloudFormation, creates/updates your stack.</p></div>
+    <div class="icon-item"><span class="emoji">💻</span><h4>sam local</h4><p>Run Lambda functions and API Gateway locally with Docker — no cloud needed.</p></div>
+    <div class="icon-item"><span class="emoji">🔧</span><h4>samconfig.toml</h4><p>Stores default deploy parameters — no need to retype flags every time.</p></div>
+    <div class="icon-item"><span class="emoji">🧩</span><h4>Layers</h4><p>Share code / dependencies across multiple Lambda functions efficiently.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Connectors</h4><p>Auto-generate IAM permissions between SAM resources with one line.</p></div>
+    <div class="icon-item"><span class="emoji">🐦</span><h4>Canary Deploy</h4><p>Gradually shift traffic from old to new Lambda version; auto-rollback on alarms.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Nested Apps</h4><p>Reference SAR (Serverless App Repository) apps in your SAM template.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — SAM TEMPLATE
+══════════════════════════════════ -->
+<div id="tab-template" class="tab-panel"><div class="section">
+  <h2>📄 SAM Template — Full Anatomy</h2>
+
+  <div class="code-block">
+    <span class="code-label">YAML · Complete SAM Template Skeleton</span>
+    <pre><span class="yaml-key">AWSTemplateFormatVersion</span><span class="yaml-cm">:</span> <span class="yaml-str">"2010-09-09"</span>
+<span class="yaml-key">Transform</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless-2016-10-31</span>  <span class="yaml-cm"># ← This line activates SAM</span>
+<span class="yaml-key">Description</span><span class="yaml-cm">:</span> <span class="yaml-str">Team Watson Serverless API</span>
+
+<span class="yaml-cm"># ── Global defaults applied to ALL Functions ──────────</span>
+<span class="yaml-key">Globals</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Function</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Runtime</span><span class="yaml-cm">:</span>      <span class="yaml-str">provided.al2023</span>       <span class="yaml-cm"># .NET Native AOT</span>
+    <span class="yaml-key">Architectures</span><span class="yaml-cm">:</span> <span class="yaml-cm">[arm64]</span>             <span class="yaml-cm"># Graviton — cheaper + faster</span>
+    <span class="yaml-key">MemorySize</span><span class="yaml-cm">:</span>   <span class="yaml-ex">512</span>
+    <span class="yaml-key">Timeout</span><span class="yaml-cm">:</span>      <span class="yaml-ex">30</span>
+    <span class="yaml-key">Tracing</span><span class="yaml-cm">:</span>      <span class="yaml-str">Active</span>               <span class="yaml-cm"># X-Ray on all functions</span>
+    <span class="yaml-key">Environment</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Variables</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">ENVIRONMENT</span><span class="yaml-cm">:</span>   <span class="yaml-cm">!Ref Environment</span>
+        <span class="yaml-key">POWERTOOLS_LOG_LEVEL</span><span class="yaml-cm">:</span> <span class="yaml-str">INFO</span>
+    <span class="yaml-key">Tags</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Team</span><span class="yaml-cm">:</span>  <span class="yaml-str">Watson</span>
+      <span class="yaml-key">Owner</span><span class="yaml-cm">:</span> <span class="yaml-str">indhu</span>
+  <span class="yaml-key">Api</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Cors</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">AllowMethods</span><span class="yaml-cm">:</span> <span class="yaml-str">"'GET,POST,PUT,DELETE,OPTIONS'"</span>
+      <span class="yaml-key">AllowHeaders</span><span class="yaml-cm">:</span> <span class="yaml-str">"'Content-Type,Authorization'"</span>
+      <span class="yaml-key">AllowOrigin</span><span class="yaml-cm">:</span>  <span class="yaml-str">"'*'"</span>
+
+<span class="yaml-key">Parameters</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Environment</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span>          <span class="yaml-str">String</span>
+    <span class="yaml-key">AllowedValues</span><span class="yaml-cm">:</span> <span class="yaml-cm">[dev, qa, prod]</span>
+    <span class="yaml-key">Default</span><span class="yaml-cm">:</span>       <span class="yaml-str">dev</span>
+
+<span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm"># SAM resource types go here (see Tab 3)</span>
+
+<span class="yaml-key">Outputs</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">ApiUrl</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Description</span><span class="yaml-cm">:</span> <span class="yaml-str">API Gateway endpoint URL</span>
+    <span class="yaml-key">Value</span><span class="yaml-cm">:</span>       <span class="yaml-cm">!Sub "https://${WatsonApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"</span></pre>
+  </div>
+
+  <h3>The Globals Section — DRY Config</h3>
+  <p>Globals let you set defaults once instead of repeating them on every function. Any property set at the function level overrides the global.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Global Scope</th><th>Configurable Properties</th></tr>
+    <tr><td><code>Globals.Function</code></td><td>Runtime, Handler, MemorySize, Timeout, Tracing, Environment, Layers, VpcConfig, Tags, CodeUri, AutoPublishAlias</td></tr>
+    <tr><td><code>Globals.Api</code></td><td>Auth, BinaryMediaTypes, Cors, EndpointConfiguration, GatewayResponses, MethodSettings, OpenApiVersion, TracingEnabled</td></tr>
+    <tr><td><code>Globals.HttpApi</code></td><td>Auth, CorsConfiguration, DefaultRouteSettings, FailOnWarnings, RouteSettings</td></tr>
+    <tr><td><code>Globals.SimpleTable</code></td><td>SSESpecification</td></tr>
+  </table></div>
+
+  <h3>samconfig.toml — Persisted Deploy Settings</h3>
+  <div class="code-block">
+    <span class="code-label">TOML · samconfig.toml (auto-generated by sam deploy --guided)</span>
+    <pre>version = 0.1
+
+[default.deploy.parameters]
+stack_name     = "watson-serverless"
+s3_bucket      = "watson-sam-artifacts-eu-west-1"
+s3_prefix      = "watson"
+region         = "eu-west-1"
+confirm_changeset = true
+capabilities   = "CAPABILITY_IAM CAPABILITY_AUTO_EXPAND"
+parameter_overrides = "Environment=prod"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[qa.deploy.parameters]
+stack_name     = "watson-serverless-qa"
+parameter_overrides = "Environment=qa"</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Multiple Environments in samconfig.toml</h4>
+    <p>Use named config environments: <code>sam deploy --config-env qa</code> deploys with QA settings. The <code>[default.*]</code> sections are used when no <code>--config-env</code> flag is given.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — RESOURCE TYPES
+══════════════════════════════════ -->
+<div id="tab-resources" class="tab-panel"><div class="section">
+  <h2>🧩 SAM Resource Types — Serverless Shorthand</h2>
+  <p>SAM introduces 8 new resource types under the <code>AWS::Serverless::</code> namespace. Each one expands into multiple CloudFormation resources automatically.</p>
+
+  <div class="res-grid">
+    <div class="res-card rc-fn">
+      <div class="rc-name">AWS::Serverless::Function</div>
+      <div class="rc-type">Lambda function + IAM role + permissions</div>
+      <div class="rc-expands" style="background:var(--sam-l);color:var(--sam-d);">→ Lambda::Function + IAM::Role + Lambda::Permission</div>
+    </div>
+    <div class="res-card rc-api">
+      <div class="rc-name">AWS::Serverless::Api</div>
+      <div class="rc-type">REST API Gateway (v1) with stages, auth, CORS</div>
+      <div class="rc-expands" style="background:var(--teal-l);color:var(--teal-d);">→ ApiGateway::RestApi + Deployment + Stage</div>
+    </div>
+    <div class="res-card rc-api">
+      <div class="rc-name">AWS::Serverless::HttpApi</div>
+      <div class="rc-type">HTTP API Gateway (v2) — lower latency, cheaper</div>
+      <div class="rc-expands" style="background:var(--teal-l);color:var(--teal-d);">→ ApiGatewayV2::Api + Integration + Stage</div>
+    </div>
+    <div class="res-card rc-ddb">
+      <div class="rc-name">AWS::Serverless::SimpleTable</div>
+      <div class="rc-type">DynamoDB table with simple key schema</div>
+      <div class="rc-expands" style="background:var(--amber-l);color:var(--amber-d);">→ DynamoDB::Table (billing: PAY_PER_REQUEST)</div>
+    </div>
+    <div class="res-card rc-s3">
+      <div class="rc-name">AWS::Serverless::Application</div>
+      <div class="rc-type">Embed a nested SAM app or SAR application</div>
+      <div class="rc-expands" style="background:var(--blue-l);color:var(--blue-d);">→ CloudFormation::Stack (nested)</div>
+    </div>
+    <div class="res-card rc-app">
+      <div class="rc-name">AWS::Serverless::LayerVersion</div>
+      <div class="rc-type">Lambda Layer — shared code/deps across functions</div>
+      <div class="rc-expands" style="background:var(--purple-l);color:var(--purple-d);">→ Lambda::LayerVersion</div>
+    </div>
+    <div class="res-card rc-queue">
+      <div class="rc-name">AWS::Serverless::StateMachine</div>
+      <div class="rc-type">Step Functions state machine from ASL file</div>
+      <div class="rc-expands" style="background:var(--pink-l);color:var(--pink-d);">→ StepFunctions::StateMachine + IAM::Role</div>
+    </div>
+    <div class="res-card rc-fn" style="border-color:rgba(6,182,212,.3);">
+      <div class="rc-name">AWS::Serverless::Connector</div>
+      <div class="rc-type">Auto-generate IAM permissions between resources</div>
+      <div class="rc-expands" style="background:var(--teal-l);color:var(--teal-d);">→ IAM::Policy attached to source resource role</div>
+    </div>
+  </div>
+
+  <h3>Function — Full Example with .NET</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · AWS::Serverless::Function (C# .NET)</span>
+    <pre><span class="yaml-key">GetOrdersFunction</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">FunctionName</span><span class="yaml-cm">:</span>    <span class="yaml-cm">!Sub "watson-get-orders-${Environment}"</span>
+    <span class="yaml-key">CodeUri</span><span class="yaml-cm">:</span>         <span class="yaml-str">./src/WatsonOrders/</span>      <span class="yaml-cm"># folder with .csproj</span>
+    <span class="yaml-key">Handler</span><span class="yaml-cm">:</span>         <span class="yaml-str">bootstrap</span>                <span class="yaml-cm"># Native AOT / ARM64</span>
+    <span class="yaml-key">Runtime</span><span class="yaml-cm">:</span>         <span class="yaml-str">provided.al2023</span>
+    <span class="yaml-key">Architectures</span><span class="yaml-cm">:</span>  <span class="yaml-cm">[arm64]</span>
+    <span class="yaml-key">MemorySize</span><span class="yaml-cm">:</span>      <span class="yaml-ex">512</span>
+    <span class="yaml-key">Timeout</span><span class="yaml-cm">:</span>         <span class="yaml-ex">30</span>
+    <span class="yaml-key">Description</span><span class="yaml-cm">:</span>    <span class="yaml-str">Returns paginated list of orders</span>
+    <span class="yaml-key">Tracing</span><span class="yaml-cm">:</span>         <span class="yaml-str">Active</span>
+    <span class="yaml-key">AutoPublishAlias</span><span class="yaml-cm">:</span> <span class="yaml-str">live</span>                <span class="yaml-cm"># Creates a version + alias</span>
+    <span class="yaml-key">Layers</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- !Ref SharedUtilsLayer</span>
+    <span class="yaml-key">Environment</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Variables</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">ORDERS_TABLE</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref OrdersTable</span>
+        <span class="yaml-key">LOG_LEVEL</span><span class="yaml-cm">:</span>    <span class="yaml-str">INFO</span>
+    <span class="yaml-key">Policies</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- DynamoDBReadPolicy:</span>
+          <span class="yaml-cm">TableName: !Ref OrdersTable</span>
+      <span class="yaml-cm">- SSMParameterReadPolicy:</span>
+          <span class="yaml-cm">ParameterName: /watson/api-key</span>
+    <span class="yaml-key">Events</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">GetOrders</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">HttpApi</span>
+        <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">Path</span><span class="yaml-cm">:</span>   <span class="yaml-str">/orders</span>
+          <span class="yaml-key">Method</span><span class="yaml-cm">:</span> <span class="yaml-str">GET</span>
+          <span class="yaml-key">ApiId</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!Ref WatsonHttpApi</span>
+    <span class="yaml-key">DeploymentPreference</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span>    <span class="yaml-str">Canary10Percent5Minutes</span>
+      <span class="yaml-key">Alarms</span><span class="yaml-cm">:</span> <span class="yaml-cm">[!Ref GetOrdersErrorAlarm]</span></pre>
+  </div>
+
+  <h3>SAM Policy Templates — Built-in IAM Shortcuts</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Policy Template</th><th>Grants</th><th>Required Parameter</th></tr>
+    <tr><td><code>DynamoDBReadPolicy</code></td><td>GetItem, Query, Scan, BatchGetItem</td><td>TableName</td></tr>
+    <tr><td><code>DynamoDBCrudPolicy</code></td><td>Full CRUD on DynamoDB table</td><td>TableName</td></tr>
+    <tr><td><code>S3ReadPolicy</code></td><td>GetObject, ListBucket</td><td>BucketName</td></tr>
+    <tr><td><code>S3CrudPolicy</code></td><td>Full CRUD on S3 bucket</td><td>BucketName</td></tr>
+    <tr><td><code>SQSSendMessagePolicy</code></td><td>sqs:SendMessage</td><td>QueueName</td></tr>
+    <tr><td><code>SQSPollerPolicy</code></td><td>ReceiveMessage, DeleteMessage, GetQueueAttributes</td><td>QueueName</td></tr>
+    <tr><td><code>SNSPublishMessagePolicy</code></td><td>sns:Publish</td><td>TopicName</td></tr>
+    <tr><td><code>SSMParameterReadPolicy</code></td><td>ssm:GetParameter, GetParameters</td><td>ParameterName</td></tr>
+    <tr><td><code>StepFunctionsExecutionPolicy</code></td><td>states:StartExecution</td><td>StateMachineName</td></tr>
+    <tr><td><code>EventBridgePutEventsPolicy</code></td><td>events:PutEvents</td><td>EventBusName</td></tr>
+    <tr><td><code>VPCAccessPolicy</code></td><td>VPC network interface permissions</td><td>—</td></tr>
+  </table></div>
+
+  <h3>Connector — Auto-Permission Between Resources</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · AWS::Serverless::Connector</span>
+    <pre><span class="yaml-cm"># Instead of writing IAM policies manually:</span>
+<span class="yaml-key">FunctionToTableConnector</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Connector</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Source</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Id</span><span class="yaml-cm">:</span> <span class="yaml-str">GetOrdersFunction</span>
+    <span class="yaml-key">Destination</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Id</span><span class="yaml-cm">:</span> <span class="yaml-str">OrdersTable</span>
+    <span class="yaml-key">Permissions</span><span class="yaml-cm">:</span> <span class="yaml-cm">[Read, Write]</span>
+<span class="yaml-cm"># SAM generates the exact least-privilege IAM policy automatically</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — EVENT SOURCES
+══════════════════════════════════ -->
+<div id="tab-events" class="tab-panel"><div class="section">
+  <h2>⚡ Event Sources — Trigger Your Functions</h2>
+  <p>Every SAM Function can be triggered by one or many event sources. Defining an event in SAM automatically creates the trigger, permissions, and mapping — no manual wiring.</p>
+
+  <div class="events-grid">
+    <div class="ev-tile"><span class="et-icon">🌐</span><h5>Api (REST)</h5><p>API Gateway v1 REST endpoint</p><span class="et-tag">Type: Api</span></div>
+    <div class="ev-tile"><span class="et-icon">⚡</span><h5>HttpApi</h5><p>API Gateway v2 HTTP API (faster, cheaper)</p><span class="et-tag">Type: HttpApi</span></div>
+    <div class="ev-tile"><span class="et-icon">📨</span><h5>SQS</h5><p>Poll SQS queue, batch processing</p><span class="et-tag">Type: SQS</span></div>
+    <div class="ev-tile"><span class="et-icon">🔔</span><h5>SNS</h5><p>Subscribe to SNS topic</p><span class="et-tag">Type: SNS</span></div>
+    <div class="ev-tile"><span class="et-icon">🗄️</span><h5>DynamoDB</h5><p>DynamoDB Streams — react to table changes</p><span class="et-tag">Type: DynamoDB</span></div>
+    <div class="ev-tile"><span class="et-icon">🪣</span><h5>S3</h5><p>S3 bucket events (put, delete, etc)</p><span class="et-tag">Type: S3</span></div>
+    <div class="ev-tile"><span class="et-icon">⏰</span><h5>Schedule</h5><p>CloudWatch / EventBridge cron expression</p><span class="et-tag">Type: Schedule</span></div>
+    <div class="ev-tile"><span class="et-icon">🔄</span><h5>EventBridgeRule</h5><p>EventBridge rule pattern matching</p><span class="et-tag">Type: EventBridgeRule</span></div>
+    <div class="ev-tile"><span class="et-icon">📊</span><h5>Kinesis</h5><p>Kinesis Data Streams, with shards</p><span class="et-tag">Type: Kinesis</span></div>
+    <div class="ev-tile"><span class="et-icon">🔔</span><h5>Cognito</h5><p>Cognito User Pool triggers</p><span class="et-tag">Type: Cognito</span></div>
+    <div class="ev-tile"><span class="et-icon">🌍</span><h5>CloudFront</h5><p>Lambda@Edge for CF distributions</p><span class="et-tag">Type: CloudFront</span></div>
+    <div class="ev-tile"><span class="et-icon">📞</span><h5>IoT Rule</h5><p>AWS IoT SQL rule action</p><span class="et-tag">Type: IoTRule</span></div>
+  </div>
+
+  <h3>Key Event Source Configs</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · SQS + Schedule + S3 + DynamoDB Events</span>
+    <pre><span class="yaml-key">Events</span><span class="yaml-cm">:</span>
+
+  <span class="yaml-cm"># ── SQS Trigger ──────────────────────────────────────</span>
+  <span class="yaml-key">OrderQueue</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">SQS</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Queue</span><span class="yaml-cm">:</span>            <span class="yaml-cm">!GetAtt WatsonQueue.Arn</span>
+      <span class="yaml-key">BatchSize</span><span class="yaml-cm">:</span>        <span class="yaml-ex">10</span>
+      <span class="yaml-key">FunctionResponseTypes</span><span class="yaml-cm">:</span> <span class="yaml-cm">[ReportBatchItemFailures]</span>
+      <span class="yaml-key">FilterCriteria</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Filters</span><span class="yaml-cm">:</span>
+          <span class="yaml-cm">- Pattern: '{"body": {"type": ["ORDER"]}}'</span>
+
+  <span class="yaml-cm"># ── Scheduled Trigger ────────────────────────────────</span>
+  <span class="yaml-key">DailyReport</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">Schedule</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Schedule</span><span class="yaml-cm">:</span>     <span class="yaml-str">cron(0 8 * * ? *)</span>       <span class="yaml-cm"># 8am UTC every day</span>
+      <span class="yaml-key">Name</span><span class="yaml-cm">:</span>         <span class="yaml-str">watson-daily-report</span>
+      <span class="yaml-key">Description</span><span class="yaml-cm">:</span>  <span class="yaml-str">Generate daily order report</span>
+      <span class="yaml-key">Enabled</span><span class="yaml-cm">:</span>      <span class="yaml-ex">true</span>
+      <span class="yaml-key">Input</span><span class="yaml-cm">:</span>         <span class="yaml-str">'{"reportType": "daily"}'</span>
+
+  <span class="yaml-cm"># ── S3 Trigger ───────────────────────────────────────</span>
+  <span class="yaml-key">NewUpload</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">S3</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Bucket</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!Ref UploadsBucket</span>
+      <span class="yaml-key">Events</span><span class="yaml-cm">:</span>  <span class="yaml-str">s3:ObjectCreated:*</span>
+      <span class="yaml-key">Filter</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">S3Key</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">Rules</span><span class="yaml-cm">:</span>
+            <span class="yaml-cm">- Name: prefix</span>
+              <span class="yaml-cm">  Value: "uploads/"</span>
+            <span class="yaml-cm">- Name: suffix</span>
+              <span class="yaml-cm">  Value: ".csv"</span>
+
+  <span class="yaml-cm"># ── DynamoDB Stream ──────────────────────────────────</span>
+  <span class="yaml-key">OrdersStream</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">DynamoDB</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Stream</span><span class="yaml-cm">:</span>          <span class="yaml-cm">!GetAtt OrdersTable.StreamArn</span>
+      <span class="yaml-key">StartingPosition</span><span class="yaml-cm">:</span> <span class="yaml-str">LATEST</span>
+      <span class="yaml-key">BatchSize</span><span class="yaml-cm">:</span>         <span class="yaml-ex">100</span>
+      <span class="yaml-key">BisectBatchOnFunctionError</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+      <span class="yaml-key">DestinationConfig</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">OnFailure</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">Destination</span><span class="yaml-cm">:</span> <span class="yaml-cm">!GetAtt StreamDLQ.Arn</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — LOCAL TESTING
+══════════════════════════════════ -->
+<div id="tab-local" class="tab-panel"><div class="section">
+  <h2>💻 Local Testing — Test Without Deploying</h2>
+  <p>SAM's killer feature — run Lambda functions and API Gateway <strong>locally with Docker</strong> before touching the cloud. The local runtime exactly mirrors the Lambda execution environment.</p>
+
+  <div class="local-vis">
+    <div class="lv-header">🖥️ How sam local Works</div>
+    <div class="lv-body">
+      <div class="lv-row">
+        <div class="lv-box lv-your"><h6>Your Code + SAM Template</h6><p>sam local invoke or start-api reads your template.yaml</p></div>
+        <div class="lv-arrow">→</div>
+        <div class="lv-box lv-sam"><h6>SAM CLI + Docker</h6><p>Pulls the correct Lambda runtime image, mounts your build, invokes the handler</p></div>
+        <div class="lv-arrow">→</div>
+        <div class="lv-box lv-aws"><h6>Real AWS Services</h6><p>DynamoDB, SQS, S3 calls hit real AWS (or use local alternatives)</p></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>sam local Commands</h3>
+  <div class="cli-pipeline">
+    <div class="cp-header">🖥️ sam local — All Commands</div>
+    <div class="cp-body">
+      <div class="cp-stage">
+        <div class="cp-num">1</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local invoke WatsonFunction --event events/order.json</div>
+          <div class="cp-cmd-desc">Invoke a single function once with a JSON event file. Prints logs + return value to stdout.</div>
+        </div>
+        <div class="cp-duration">~3s cold</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">2</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local invoke --env-vars env.json WatsonFunction</div>
+          <div class="cp-cmd-desc">Override environment variables for local testing without changing template.yaml.</div>
+        </div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">3</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local start-api --port 3000</div>
+          <div class="cp-cmd-desc">Starts a local HTTP server on port 3000 — test all API routes with curl or Postman in real-time.</div>
+        </div>
+        <div class="cp-duration">hot reload</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">4</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local start-lambda --port 3001</div>
+          <div class="cp-cmd-desc">Starts a local Lambda endpoint — your C# code can call the AWS SDK targeting localhost.</div>
+        </div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">5</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local generate-event s3 put --bucket watson-bucket --key test.csv</div>
+          <div class="cp-cmd-desc">Generate a realistic AWS event JSON — S3, SQS, DynamoDB, SNS, API GW, and many more.</div>
+        </div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">6</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam local invoke WatsonFunction -d 5858</div>
+          <div class="cp-cmd-desc">Attach a debugger — SAM waits on port 5858. Connect VS Code debugger to step through code.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Local Event Files — Realistic Test Inputs</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · events/api-get-orders.json</span>
+    <pre>{
+  <span class="yaml-key">"httpMethod"</span>: <span class="yaml-str">"GET"</span>,
+  <span class="yaml-key">"path"</span>: <span class="yaml-str">"/orders"</span>,
+  <span class="yaml-key">"queryStringParameters"</span>: {
+    <span class="yaml-key">"status"</span>: <span class="yaml-str">"pending"</span>,
+    <span class="yaml-key">"limit"</span>:  <span class="yaml-str">"10"</span>
+  },
+  <span class="yaml-key">"headers"</span>: {
+    <span class="yaml-key">"Authorization"</span>: <span class="yaml-str">"Bearer eyJhbGci..."</span>,
+    <span class="yaml-key">"Content-Type"</span>:   <span class="yaml-str">"application/json"</span>
+  },
+  <span class="yaml-key">"requestContext"</span>: {
+    <span class="yaml-key">"authorizer"</span>: {
+      <span class="yaml-key">"claims"</span>: { <span class="yaml-key">"sub"</span>: <span class="yaml-str">"user-123"</span>, <span class="yaml-key">"email"</span>: <span class="yaml-str">"indhu@watson.io"</span> }
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>Local Environment Variables</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · env.json — Override template env vars locally</span>
+    <pre>{
+  <span class="yaml-key">"GetOrdersFunction"</span>: {
+    <span class="yaml-key">"ORDERS_TABLE"</span>:  <span class="yaml-str">"watson-orders-dev"</span>,
+    <span class="yaml-key">"LOG_LEVEL"</span>:     <span class="yaml-str">"DEBUG"</span>,
+    <span class="yaml-key">"ENVIRONMENT"</span>:   <span class="yaml-str">"local"</span>,
+    <span class="yaml-key">"AWS_REGION"</span>:    <span class="yaml-str">"eu-west-1"</span>
+  }
+}</pre>
+  </div>
+
+  <div class="info">
+    <h4>ℹ️ LocalStack for Fully Offline Testing</h4>
+    <p>Combine SAM local with LocalStack to mock DynamoDB, S3, SQS etc. locally too. Set <code>AWS_ENDPOINT_URL=http://localhost:4566</code> in env.json and point the SDK to LocalStack. Zero cloud calls during dev.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — BUILD & DEPLOY
+══════════════════════════════════ -->
+<div id="tab-deploy" class="tab-panel"><div class="section">
+  <h2>🚀 Build &amp; Deploy — The Full Pipeline</h2>
+
+  <div class="cli-pipeline">
+    <div class="cp-header">🔄 Complete SAM Deploy Pipeline</div>
+    <div class="cp-body">
+      <div class="cp-stage">
+        <div class="cp-num">1</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam build</div>
+          <div class="cp-cmd-desc">Compiles code, resolves dependencies, creates .aws-sam/build. For .NET: runs dotnet publish.</div>
+        </div>
+        <div class="cp-duration">~15s</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">2</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam build --cached --parallel</div>
+          <div class="cp-cmd-desc">Caches unchanged functions + builds all functions in parallel. Much faster for multi-function projects.</div>
+        </div>
+        <div class="cp-duration">~4s (cached)</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">3</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam validate --lint</div>
+          <div class="cp-cmd-desc">Validates template syntax and common issues before deploy. Catches errors without hitting CloudFormation.</div>
+        </div>
+        <div class="cp-duration">&lt;1s</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">4</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam deploy --guided</div>
+          <div class="cp-cmd-desc">Interactive first-time deploy — prompts for stack name, region, params. Saves to samconfig.toml.</div>
+        </div>
+        <div class="cp-duration">~2min</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">5</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam deploy</div>
+          <div class="cp-cmd-desc">Subsequent deploys use saved samconfig.toml. Shows change set, asks for confirmation, then deploys.</div>
+        </div>
+        <div class="cp-duration">~90s</div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">6</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam deploy --no-confirm-changeset</div>
+          <div class="cp-cmd-desc">Skip the confirmation prompt — use in CI/CD pipelines for automated deploys.</div>
+        </div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">7</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam logs -n GetOrdersFunction --stack-name watson-serverless --tail</div>
+          <div class="cp-cmd-desc">Stream CloudWatch logs for a deployed function in real-time. Essential for post-deploy verification.</div>
+        </div>
+      </div>
+      <div class="cp-stage">
+        <div class="cp-num">8</div>
+        <div class="cp-cmd">
+          <div class="cp-cmd-text">sam delete --stack-name watson-serverless</div>
+          <div class="cp-cmd-desc">Tear down the entire stack — deletes all resources and the S3 artifact bucket contents.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Canary Deployment — Zero-Downtime Traffic Shifting</h3>
+  <p>With <code>AutoPublishAlias</code> and <code>DeploymentPreference</code>, SAM orchestrates Lambda traffic shifting with automatic rollback on CloudWatch alarms.</p>
+
+  <div class="canary-vis">
+    <div class="cv-header">🐦 Canary10Percent5Minutes — Traffic Shift Timeline</div>
+    <div class="cv-body">
+      <div class="cv-row">
+        <div class="cv-label">t=0 (deploy starts)</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar-old" style="width:90%">v1 (90%)</div>
+          <div class="cv-bar-new" style="width:10%">v2</div>
+        </div>
+        <div class="cv-time">t+0 min</div>
+      </div>
+      <div class="cv-row">
+        <div class="cv-label">Canary period</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar-old" style="width:90%">v1 monitoring…</div>
+          <div class="cv-bar-new" style="width:10%">v2</div>
+        </div>
+        <div class="cv-time">t+1–5 min</div>
+      </div>
+      <div class="cv-row">
+        <div class="cv-label">Alarm OK → shift all</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar-new" style="width:100%">v2 (100%)</div>
+        </div>
+        <div class="cv-time">t+5 min</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">YAML · DeploymentPreference Options</span>
+    <pre><span class="yaml-key">DeploymentPreference</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span>    <span class="yaml-str">Canary10Percent5Minutes</span>   <span class="yaml-cm"># 10% → wait 5min → 100%</span>
+  <span class="yaml-cm"># Other options:</span>
+  <span class="yaml-cm"># Linear10PercentEvery1Minute  — +10% every minute</span>
+  <span class="yaml-cm"># Linear10PercentEvery10Minutes</span>
+  <span class="yaml-cm"># Canary10Percent10Minutes</span>
+  <span class="yaml-cm"># Canary10Percent30Minutes</span>
+  <span class="yaml-cm"># AllAtOnce                     — instant (no canary)</span>
+  <span class="yaml-key">Alarms</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- !Ref GetOrdersErrorAlarm     # Auto-rollback if this fires</span>
+    <span class="yaml-cm">- !Ref GetOrdersLatencyAlarm</span>
+  <span class="yaml-key">Hooks</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">PreTraffic</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!Ref PreTrafficHookFunction</span>   <span class="yaml-cm"># Run before shifting traffic</span>
+    <span class="yaml-key">PostTraffic</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref PostTrafficHookFunction</span>  <span class="yaml-cm"># Run after full shift</span>
+  <span class="yaml-key">TriggerConfigurations</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- TriggerEvents: [DeploymentRollback]</span>
+      <span class="yaml-cm">  TriggerTargetArn: !Ref AlertSNSTopic</span></pre>
+  </div>
+
+  <h3>SAM Build for .NET (Native AOT + Lambda)</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · BuildProperties for .NET Native AOT</span>
+    <pre><span class="yaml-key">GetOrdersFunction</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>
+  <span class="yaml-key">Metadata</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">BuildMethod</span><span class="yaml-cm">:</span>  <span class="yaml-str">dotnet8</span>               <span class="yaml-cm"># Tells SAM to use .NET builder</span>
+    <span class="yaml-key">BuildProperties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">UseContainer</span><span class="yaml-cm">:</span>    <span class="yaml-ex">false</span>             <span class="yaml-cm"># Build on host (faster)</span>
+      <span class="yaml-key">PublishReadyToRun</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Handler</span><span class="yaml-cm">:</span>      <span class="yaml-str">bootstrap</span>             <span class="yaml-cm"># Native AOT binary name</span>
+    <span class="yaml-key">Runtime</span><span class="yaml-cm">:</span>      <span class="yaml-str">provided.al2023</span>
+    <span class="yaml-key">Architectures</span><span class="yaml-cm">:</span> <span class="yaml-cm">[arm64]</span>             <span class="yaml-cm"># Graviton: 20% cheaper, 34% faster</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — ADVANCED FEATURES
+══════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🔬 Advanced Features</h2>
+
+  <h3>Lambda Layers — Shared Code &amp; Dependencies</h3>
+  <p>Layers let multiple functions share common code, libraries, or binaries without bundling them into each deployment package.</p>
+  <div class="layer-stack">
+    <div class="layer"><div class="layer-bar" style="background:var(--sam-d);"></div><div class="layer-info"><h6>WatsonOrders Function</h6><p>Business logic only — 1.2 MB</p></div><div class="layer-badge" style="background:var(--sam-l);color:var(--sam-d);">Custom Code</div></div>
+    <div class="layer"><div class="layer-bar" style="background:var(--teal-d);"></div><div class="layer-info"><h6>SharedUtilsLayer</h6><p>Logging, auth helpers, common models — shared by all 8 functions</p></div><div class="layer-badge" style="background:var(--teal-l);color:var(--teal-d);">Layer · 4.1 MB</div></div>
+    <div class="layer"><div class="layer-bar" style="background:var(--blue-d);"></div><div class="layer-info"><h6>PowertoolsLayer (AWS-managed)</h6><p>AWS Lambda Powertools for .NET — tracing, logging, metrics</p></div><div class="layer-badge" style="background:var(--blue-l);color:var(--blue-d);">Layer · 8.2 MB</div></div>
+    <div class="layer"><div class="layer-bar" style="background:var(--amber-d);"></div><div class="layer-info"><h6>Lambda Runtime</h6><p>provided.al2023 — managed by AWS</p></div><div class="layer-badge" style="background:var(--amber-l);color:var(--amber-d);">Runtime</div></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">YAML · Layer Definition + Usage</span>
+    <pre><span class="yaml-key">SharedUtilsLayer</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::LayerVersion</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">LayerName</span><span class="yaml-cm">:</span>         <span class="yaml-str">watson-shared-utils</span>
+    <span class="yaml-key">Description</span><span class="yaml-cm">:</span>       <span class="yaml-str">Shared helpers — logging, auth, models</span>
+    <span class="yaml-key">ContentUri</span><span class="yaml-cm">:</span>        <span class="yaml-str">./src/WatsonShared/</span>
+    <span class="yaml-key">CompatibleRuntimes</span><span class="yaml-cm">:</span> <span class="yaml-cm">[provided.al2023]</span>
+    <span class="yaml-key">RetentionPolicy</span><span class="yaml-cm">:</span>   <span class="yaml-str">Retain</span>
+
+<span class="yaml-cm"># Reference in multiple functions:</span>
+<span class="yaml-key">GetOrdersFunction</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Layers</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- !Ref SharedUtilsLayer</span>
+      <span class="yaml-cm">- !Sub "arn:aws:lambda:${AWS::Region}:094274105915:layer:AWSLambdaPowertoolsDotnet:39"</span></pre>
+  </div>
+
+  <h3>SAM StateMachine Resource</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Step Functions inside SAM</span>
+    <pre><span class="yaml-key">WatsonOrderWorkflow</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::StateMachine</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">DefinitionUri</span><span class="yaml-cm">:</span>  <span class="yaml-str">statemachines/order-workflow.asl.json</span>
+    <span class="yaml-key">DefinitionSubstitutions</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">ValidateFunctionArn</span><span class="yaml-cm">:</span> <span class="yaml-cm">!GetAtt ValidateOrderFunction.Arn</span>
+      <span class="yaml-key">ChargeArn</span><span class="yaml-cm">:</span>          <span class="yaml-cm">!GetAtt ChargePaymentFunction.Arn</span>
+      <span class="yaml-key">[OrdersTable</span><span class="yaml-cm">]:</span>      <span class="yaml-cm">!Ref OrdersTable</span>
+    <span class="yaml-key">Logging</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Level</span><span class="yaml-cm">:</span>           <span class="yaml-str">ERROR</span>
+      <span class="yaml-key">IncludeExecutionData</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+      <span class="yaml-key">Destinations</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- CloudWatchLogsLogGroup:</span>
+            <span class="yaml-cm">LogGroupArn: !GetAtt StateMachineLogGroup.Arn</span>
+    <span class="yaml-key">Tracing</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Enabled</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+    <span class="yaml-key">Policies</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- LambdaInvokePolicy:</span>
+          <span class="yaml-cm">FunctionName: !Ref ValidateOrderFunction</span>
+      <span class="yaml-cm">- LambdaInvokePolicy:</span>
+          <span class="yaml-cm">FunctionName: !Ref ChargePaymentFunction</span>
+    <span class="yaml-key">Events</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">OrderCreated</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">EventBridgeRule</span>
+        <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">Pattern</span><span class="yaml-cm">:</span>
+            <span class="yaml-key">source</span><span class="yaml-cm">:</span>      <span class="yaml-cm">["watson.orders"]</span>
+            <span class="yaml-key">detail-type</span><span class="yaml-cm">:</span> <span class="yaml-cm">["OrderCreated"]</span></pre>
+  </div>
+
+  <h3>VPC Configuration</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Lambda in VPC (for RDS / private resources)</span>
+    <pre><span class="yaml-key">Globals</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Function</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">VpcConfig</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">SecurityGroupIds</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- !Ref LambdaSecurityGroup</span>
+      <span class="yaml-key">SubnetIds</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- !Ref PrivateSubnetA</span>
+        <span class="yaml-cm">- !Ref PrivateSubnetB</span>
+    <span class="yaml-key">Policies</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- VPCAccessPolicy: {}</span></pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Lambda in VPC — Cold Start Impact</h4>
+    <p>Adding VPC config to Lambda significantly increases cold start time (500ms–2s extra) because AWS must provision an Elastic Network Interface. Only use VPC when your function <em>must</em> reach private resources (RDS, ElastiCache). For DynamoDB and S3, access via public endpoints — no VPC needed.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE & CI/CD
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup &amp; CI/CD Pipeline</h2>
+
+  <h3>First-Time Project Setup</h3>
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Install SAM CLI</div>
+      <div class="console-step-path">One-time setup</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">macOS</div><div class="console-field-value">brew install aws-sam-cli</div></div>
+      <div class="console-field"><div class="console-field-label">Windows</div><div class="console-field-value">winget install Amazon.SAM-CLI</div></div>
+      <div class="console-field"><div class="console-field-label">Verify</div><div class="console-field-value">sam --version  →  SAM CLI, version 1.x.x</div></div>
+      <div class="console-note">Also requires: AWS CLI configured + Docker Desktop running for local testing</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Initialize a New SAM Project</div>
+      <div class="console-step-path">sam init</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Command</div><div class="console-field-value">sam init --runtime dotnet8 --name watson-api --app-template hello-world</div></div>
+      <div class="console-field"><div class="console-field-label">Template Options</div><div class="console-field-value">hello-world · quick-start-from-scratch · quick-start-s3 · quick-start-sns · quick-start-sqs</div></div>
+      <div class="console-field"><div class="console-field-label">Generated Structure</div><div class="console-field-value">watson-api/ · template.yaml · src/ · events/ · tests/ · samconfig.toml</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">First Guided Deploy</div>
+      <div class="console-step-path">sam build && sam deploy --guided</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Stack Name</div><div class="console-field-value">watson-serverless-dev</div></div>
+      <div class="console-field"><div class="console-field-label">AWS Region</div><div class="console-field-value">eu-west-1</div></div>
+      <div class="console-field"><div class="console-field-label">Confirm changes before deploy</div><div class="console-field-value">Y (shows change set, prompts before applying)</div></div>
+      <div class="console-field"><div class="console-field-label">Allow SAM CLI IAM role creation</div><div class="console-field-value">Y</div></div>
+      <div class="console-field"><div class="console-field-label">Save arguments to samconfig.toml</div><div class="console-field-value">Y (saves all answers — no re-prompting next time)</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">View in AWS Console</div>
+      <div class="console-step-path">Lambda → Applications tab</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Lambda → Applications</div><div class="console-field-value">SAM stacks appear as grouped Applications with all resources listed</div></div>
+      <div class="console-field"><div class="console-field-label">CloudFormation → Stacks</div><div class="console-field-value">watson-serverless-dev → Outputs tab shows API URL</div></div>
+      <div class="console-field"><div class="console-field-label">API Gateway → APIs</div><div class="console-field-value">Find your SAM-created HTTP API → Stages → prod → copy Invoke URL</div></div>
+    </div>
+  </div>
+
+  <h3>GitHub Actions CI/CD Pipeline</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · .github/workflows/deploy.yml</span>
+    <pre><span class="yaml-key">name</span><span class="yaml-cm">:</span> <span class="yaml-str">Deploy Watson Serverless</span>
+
+<span class="yaml-key">on</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">push</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">branches</span><span class="yaml-cm">:</span> <span class="yaml-cm">[main]</span>
+  <span class="yaml-key">pull_request</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">branches</span><span class="yaml-cm">:</span> <span class="yaml-cm">[main]</span>
+
+<span class="yaml-key">jobs</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">deploy</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">runs-on</span><span class="yaml-cm">:</span> <span class="yaml-str">ubuntu-latest</span>
+    <span class="yaml-key">steps</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- uses: actions/checkout@v4</span>
+
+      <span class="yaml-cm">- name: Setup .NET 8</span>
+        <span class="yaml-cm">  uses: actions/setup-dotnet@v4</span>
+        <span class="yaml-cm">  with: { dotnet-version: '8.0.x' }</span>
+
+      <span class="yaml-cm">- name: Setup SAM CLI</span>
+        <span class="yaml-cm">  uses: aws-actions/setup-sam@v2</span>
+
+      <span class="yaml-cm">- name: Configure AWS Credentials</span>
+        <span class="yaml-cm">  uses: aws-actions/configure-aws-credentials@v4</span>
+        <span class="yaml-cm">  with:</span>
+        <span class="yaml-cm">    role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}</span>
+        <span class="yaml-cm">    aws-region: eu-west-1</span>
+
+      <span class="yaml-cm">- name: Run Unit Tests</span>
+        <span class="yaml-cm">  run: dotnet test ./tests/WatsonOrders.Tests/</span>
+
+      <span class="yaml-cm">- name: SAM Build</span>
+        <span class="yaml-cm">  run: sam build --cached --parallel</span>
+
+      <span class="yaml-cm">- name: SAM Deploy (prod)</span>
+        <span class="yaml-cm">  if: github.ref == 'refs/heads/main'</span>
+        <span class="yaml-cm">  run: |</span>
+        <span class="yaml-cm">    sam deploy \</span>
+        <span class="yaml-cm">      --no-confirm-changeset \</span>
+        <span class="yaml-cm">      --no-fail-on-empty-changeset \</span>
+        <span class="yaml-cm">      --parameter-overrides Environment=prod</span></pre>
+  </div>
+
+  <div class="success">
+    <h4>✅ Use OIDC + IAM Role (not access keys) in CI/CD</h4>
+    <p>The example above uses <code>role-to-assume</code> with GitHub OIDC — no long-lived AWS access keys stored in GitHub Secrets. Much more secure. Create an IAM Role with trust policy for <code>token.actions.githubusercontent.com</code> and the minimum CloudFormation + Lambda permissions.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# .NET
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET — SAM Lambda Functions</h2>
+
+  <h3>Project Setup — .NET 8 Native AOT Lambda</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Create .NET 8 Lambda Project</span>
+    <pre><span class="bash-comment"># Install Lambda templates (one-time)</span>
+dotnet new install Amazon.Lambda.Templates
+
+<span class="bash-comment"># Create a new Native AOT Lambda function</span>
+dotnet new lambda.NativeAOT -n WatsonOrders -o src/WatsonOrders
+
+<span class="bash-comment"># Key NuGet packages</span>
+dotnet add package Amazon.Lambda.Core
+dotnet add package Amazon.Lambda.APIGatewayEvents   <span class="bash-comment"># HTTP API events</span>
+dotnet add package Amazon.Lambda.SQSEvents          <span class="bash-comment"># SQS events</span>
+dotnet add package Amazon.Lambda.DynamoDBEvents     <span class="bash-comment"># DynamoDB Streams</span>
+dotnet add package AWSSDK.DynamoDBv2
+dotnet add package AWS.Lambda.Powertools.Logging
+dotnet add package AWS.Lambda.Powertools.Tracing</pre>
+  </div>
+
+  <h3>HTTP API Handler (.NET 8 Native AOT)</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Function.cs — API Gateway HTTP API Handler</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.APIGatewayEvents;
+<span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> Amazon.Lambda.RuntimeSupport;
+<span class="kw">using</span> Amazon.Lambda.Serialization.SystemTextJson;
+<span class="kw">using</span> AWS.Lambda.Powertools.Logging;
+<span class="kw">using</span> AWS.Lambda.Powertools.Tracing;
+
+<span class="cm">// Native AOT entry point</span>
+<span class="kw">var</span> handler = <span class="tp">FunctionHandler</span>.<span class="fn">Handle</span>;
+<span class="kw">await</span> <span class="tp">LambdaBootstrapBuilder</span>
+    .<span class="fn">Create</span>(handler, <span class="kw">new</span> <span class="tp">DefaultLambdaJsonSerializer</span>())
+    .<span class="fn">Build</span>()
+    .<span class="fn">RunAsync</span>();
+
+<span class="kw">public static class</span> <span class="tp">FunctionHandler</span>
+{
+    <span class="kw">private static readonly</span> <span class="tp">IOrderService</span> _orders =
+        <span class="kw">new</span> <span class="tp">DynamoOrderService</span>(<span class="tp">Environment</span>.<span class="fn">GetEnvironmentVariable</span>(<span class="str">"ORDERS_TABLE"</span>)!);
+
+    [<span class="tp">Logging</span>(LogEvent = <span class="kw">true</span>)]
+    [<span class="tp">Tracing</span>]
+    <span class="kw">public static async</span> <span class="tp">Task</span>&lt;<span class="tp">APIGatewayHttpApiV2ProxyResponse</span>&gt; <span class="fn">Handle</span>(
+        <span class="tp">APIGatewayHttpApiV2ProxyRequest</span> request,
+        <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="kw">var</span> status  = request.QueryStringParameters?.<span class="fn">GetValueOrDefault</span>(<span class="str">"status"</span>);
+        <span class="kw">var</span> limit   = <span class="tp">int</span>.<span class="fn">TryParse</span>(
+            request.QueryStringParameters?.<span class="fn">GetValueOrDefault</span>(<span class="str">"limit"</span>), <span class="kw">out var</span> l) ? l : <span class="num">20</span>;
+
+        <span class="kw">var</span> userId  = request.RequestContext.Authorizer?.Jwt?.Claims?[<span class="str">"sub"</span>]
+                      ?? <span class="kw">throw new</span> <span class="tp">UnauthorizedException</span>(<span class="str">"Missing user claim"</span>);
+
+        <span class="tp">Logger</span>.<span class="fn">LogInformation</span>(<span class="str">"Fetching orders"</span>,
+            <span class="kw">new</span> { UserId = userId, Status = status, Limit = limit });
+
+        <span class="kw">var</span> orders = <span class="kw">await</span> _orders.<span class="fn">GetOrdersAsync</span>(userId, status, limit);
+
+        <span class="kw">return new</span> <span class="tp">APIGatewayHttpApiV2ProxyResponse</span>
+        {
+            StatusCode = <span class="num">200</span>,
+            Body       = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(orders),
+            Headers    = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+            {
+                [<span class="str">"Content-Type"</span>] = <span class="str">"application/json"</span>,
+                [<span class="str">"X-Request-Id"</span>] = context.AwsRequestId
+            }
+        };
+    }
+}</pre>
+  </div>
+
+  <h3>SQS Handler — Batch Processing with Partial Failures</h3>
+  <div class="code-block">
+    <span class="code-label">C# · SQS Lambda Handler (.NET)</span>
+    <pre><span class="kw">using</span> Amazon.Lambda.SQSEvents;
+
+<span class="kw">public static class</span> <span class="tp">SqsHandler</span>
+{
+    [<span class="tp">Tracing</span>]
+    <span class="kw">public static async</span> <span class="tp">Task</span>&lt;<span class="tp">SQSBatchResponse</span>&gt; <span class="fn">Handle</span>(
+        <span class="tp">SQSEvent</span> sqsEvent, <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="kw">var</span> failures = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">SQSBatchResponse</span>.<span class="tp">BatchItemFailure</span>&gt;();
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> record <span class="kw">in</span> sqsEvent.Records)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">OrderMessage</span>&gt;(record.Body)!;
+                <span class="kw">await</span> <span class="fn">ProcessOrderAsync</span>(order);
+                <span class="tp">Logger</span>.<span class="fn">LogInformation</span>(<span class="str">$"Processed order {order.OrderId}"</span>);
+            }
+            <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+            {
+                <span class="tp">Logger</span>.<span class="fn">LogError</span>(ex, <span class="str">$"Failed: {record.MessageId}"</span>);
+
+                <span class="cm">// Only this message re-queued, not the whole batch</span>
+                failures.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">SQSBatchResponse</span>.<span class="tp">BatchItemFailure</span>
+                    { ItemIdentifier = record.MessageId });
+            }
+        }
+
+        <span class="kw">return new</span> <span class="tp">SQSBatchResponse</span> { BatchItemFailures = failures };
+    }
+
+    <span class="kw">private static async</span> <span class="tp">Task</span> <span class="fn">ProcessOrderAsync</span>(<span class="tp">OrderMessage</span> order)
+    {
+        <span class="cm">// Business logic here — save to DynamoDB, call payment API, etc.</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">50</span>); <span class="cm">// Simulate async work</span>
+    }
+}
+<span class="cm">// In SAM: FunctionResponseTypes: [ReportBatchItemFailures]</span>
+<span class="cm">// Enables partial batch failure — other messages still succeed</span></pre>
+  </div>
+
+  <h3>Best Practices — .NET Lambda Performance</h3>
+  <ul class="checklist">
+    <li>Use <strong>Native AOT</strong> (<code>provided.al2023</code> + <code>arm64</code>) for the fastest cold starts — typically under 100ms vs 800ms+ for managed runtimes</li>
+    <li>Mark Lambda handler classes and types with <code>[JsonSerializable]</code> for Native AOT — the compiler needs all types to be known at build time</li>
+    <li>Initialise SDK clients (DynamoDB, S3) <strong>outside</strong> the handler method — they are reused across invocations in the same container</li>
+    <li>Use <strong>AWS Lambda Powertools for .NET</strong> — structured logging, X-Ray tracing, and custom metrics with no boilerplate</li>
+    <li>Set <code>MemorySize</code> based on profiling — Lambda allocates CPU proportional to memory; 512MB+ often completes faster and costs the same</li>
+    <li>Use <code>ReportBatchItemFailures</code> on SQS event sources — partial failure support prevents the entire batch from re-queuing on one bad message</li>
+  </ul>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE AWS SAM Mastery!</h3>
+    <p>What is SAM · SAM vs CloudFormation vs CDK · How the Transform macro works · Globals section · samconfig.toml multi-env · All 8 AWS::Serverless:: resource types · SAM policy templates · Connectors (auto-IAM) · All 12 event source types (HttpApi, SQS, SNS, S3, DynamoDB, Schedule, EventBridge…) · sam local invoke / start-api / start-lambda / generate-event / debug · Local env vars override · sam build (cached + parallel) · Canary deployment types with traffic shift visual · .NET Native AOT BuildProperties · Lambda Layers + stack visual · SAM StateMachine resource · VPC config · Console walkthrough · GitHub Actions CI/CD with OIDC · .NET 8 Native AOT HTTP API handler · SQS batch handler with partial failures · Lambda Powertools · Performance best practices</p>
+    <p style="margin-top:10px;font-weight:600;color:#6ee7b7;">Build fast, test locally, deploy safely. 🚀🌿</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
