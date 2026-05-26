@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CodeCommit — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fff8f8;--surface:#fceaea;--card:#ffffff;--border:#f0d0d0;--border2:#e0b0b0;
+  --cc:#c0283a;--cc-l:#fff0f1;--cc-d:#8b0000;--cc-dk:#4a0010;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --blue:#1d6fcc;--blue-l:#dbeafe;--blue-d:#1e40af;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --amber:#d97706;--amber-l:#fefce8;--amber-d:#92400e;
+  --purple:#7c3aed;--purple-l:#f5f3ff;--purple-d:#4c1d95;
+  --teal:#0891b2;--teal-l:#ecfeff;--teal-d:#155e75;
+  --slate:#64748b;
+  --text:#1a0510;--text2:#3b0a1a;--muted:#7a3a4a;
+  --code-bg:#0f0a10;--r:10px;
+  --sh:0 1px 3px rgba(192,40,58,.06),0 4px 12px rgba(192,40,58,.07);
+  --sh-lg:0 2px 8px rgba(192,40,58,.08),0 8px 28px rgba(192,40,58,.1);
+  --sh-xl:0 4px 16px rgba(192,40,58,.09),0 16px 48px rgba(192,40,58,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#4a0010 0%,#7b0020 35%,#a01030 65%,#c0283a 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-circuit{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px),
+  linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);
+  background-size:64px 64px,64px 64px,16px 16px,16px 16px;pointer-events:none;}
+.hdr-orb{position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(255,100,120,.2) 0%,transparent 65%);pointer-events:none;}
+.hdr-orb2{position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(220,40,60,.15) 0%,transparent 65%);pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,150,160,.15);border:1px solid rgba(255,150,160,.3);color:#fca5a5;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#fca5a5,#f87171,#ef4444);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(255,248,248,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cc-l);color:var(--cc-d);font-weight:700;box-shadow:0 0 0 1.5px rgba(192,40,58,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--cc-l);letter-spacing:-.02em;}
+.section h3{color:var(--cc-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── GIT FLOW VISUAL ── */
+.git-flow{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-xl);}
+.gf-header{background:linear-gradient(90deg,#4a0010,#a01030);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #7b0020;display:flex;align-items:center;gap:8px;}
+.gf-header span{background:rgba(255,150,160,.2);border:1px solid rgba(255,150,160,.3);color:#fca5a5;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.gf-body{padding:16px;overflow-x:auto;}
+.gf-track{display:flex;align-items:center;gap:0;min-width:560px;margin-bottom:8px;}
+.gf-track:last-child{margin-bottom:0;}
+.gf-label{width:90px;flex-shrink:0;font-size:.65rem;font-weight:700;color:var(--muted);text-align:right;padding-right:10px;}
+.gf-commits{display:flex;align-items:center;gap:0;flex:1;}
+.gf-commit{width:28px;height:28px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;flex-shrink:0;position:relative;z-index:1;}
+.gf-line{flex:1;height:2px;margin:0 -1px;}
+.gf-branch-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;margin-left:8px;flex-shrink:0;}
+/* main */
+.c-main{background:var(--cc-l);border-color:var(--cc-d);color:var(--cc-d);}
+.l-main{background:var(--cc-d);}
+.b-main{background:var(--cc-l);color:var(--cc-d);}
+/* feature */
+.c-feat{background:var(--blue-l);border-color:var(--blue-d);color:var(--blue-d);}
+.l-feat{background:var(--blue-d);}
+.b-feat{background:var(--blue-l);color:var(--blue-d);}
+/* hotfix */
+.c-hot{background:var(--amber-l);border-color:var(--amber-d);color:var(--amber-d);}
+.l-hot{background:var(--amber-d);}
+.b-hot{background:var(--amber-l);color:var(--amber-d);}
+/* release */
+.c-rel{background:var(--green-l);border-color:var(--green-d);color:var(--green-d);}
+.l-rel{background:var(--green-d);}
+.b-rel{background:var(--green-l);color:var(--green-d);}
+/* merge */
+.c-merge{background:#fff;border-color:var(--cc-d);color:var(--cc-d);}
+
+/* ── PR LIFECYCLE ── */
+.pr-lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pl-header{background:linear-gradient(90deg,var(--cc-l),var(--rose-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.pl-body{padding:0;}
+.pl-stage{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.pl-stage:last-child{border-bottom:none;}
+.pl-dot{width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.pd-open{background:var(--blue-l);border:2px solid var(--blue-d);color:var(--blue-d);}
+.pd-review{background:var(--amber-l);border:2px solid var(--amber-d);color:var(--amber-d);}
+.pd-ci{background:var(--purple-l);border:2px solid var(--purple-d);color:var(--purple-d);}
+.pd-approve{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.pd-merge{background:var(--cc-l);border:2px solid var(--cc-d);color:var(--cc-d);}
+.pd-closed{background:var(--surface);border:2px solid var(--border2);color:var(--muted);}
+.pl-info{flex:1;}
+.pl-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.pl-info p{font-size:.7rem;color:var(--muted);}
+.pl-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 8px;border-radius:4px;flex-shrink:0;}
+
+/* ── REPO STRUCTURE ── */
+.repo-struct{background:var(--code-bg);border:1px solid #2a0a10;border-radius:var(--r);padding:14px 16px;margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:2;overflow-x:auto;}
+.rs-root{color:#fca5a5;font-weight:700;}
+.rs-dir{color:#93c5fd;}
+.rs-file{color:#86efac;}
+.rs-yaml{color:#fde68a;}
+.rs-cs{color:#c4b5fd;}
+.rs-cm{color:#374151;font-style:italic;}
+
+/* ── IAM MATRIX ── */
+.iam-matrix{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.im-header{background:linear-gradient(90deg,var(--cc-l),var(--purple-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.im-body{padding:0;overflow-x:auto;}
+.im-table{width:100%;border-collapse:collapse;min-width:420px;}
+.im-table th{background:var(--surface);padding:7px 12px;font-size:.65rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);font-weight:700;text-align:left;}
+.im-table td{padding:7px 12px;border-bottom:1px solid var(--border);font-size:.73rem;}
+.im-table tr:last-child td{border-bottom:none;}
+.im-table tr:hover td{background:var(--surface);}
+.im-role{font-weight:700;color:var(--text);}
+.im-yes{color:var(--green-d);font-weight:700;}
+.im-no{color:var(--muted);}
+.im-partial{color:var(--amber-d);font-weight:600;}
+
+/* ── TRIGGER VISUAL ── */
+.trigger-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.tv2-header{background:linear-gradient(90deg,var(--purple-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.tv2-body{padding:14px;}
+.tv2-row{display:flex;align-items:stretch;gap:8px;margin-bottom:8px;}
+.tv2-row:last-child{margin-bottom:0;}
+.tv2-event{background:var(--cc-l);border:1.5px solid rgba(192,40,58,.25);border-radius:7px;padding:8px 12px;flex-shrink:0;width:150px;display:flex;align-items:center;}
+.tv2-event p{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cc-d);font-weight:600;}
+.tv2-arrow{display:flex;align-items:center;color:var(--border2);font-size:1.2rem;flex-shrink:0;}
+.tv2-targets{display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center;}
+.tv2-target{font-size:.68rem;font-weight:600;padding:4px 10px;border-radius:5px;border:1px solid;}
+.tt-sns{background:var(--amber-l);border-color:rgba(217,119,6,.3);color:var(--amber-d);}
+.tt-lambda{background:var(--purple-l);border-color:rgba(124,58,237,.25);color:var(--purple-d);}
+.tt-pipe{background:var(--blue-l);border-color:rgba(29,78,216,.25);color:var(--blue-d);}
+.tt-eb{background:var(--teal-l);border-color:rgba(8,145,178,.25);color:var(--teal-d);}
+
+/* ── NOTIFICATION RULES ── */
+.notif-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:8px;margin:14px 0;}
+.notif-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:11px;box-shadow:var(--sh);transition:transform .15s;}
+.notif-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.nc-icon{font-size:1.4rem;margin-bottom:4px;display:block;}
+.nc-title{font-weight:700;font-size:.74rem;color:var(--text);margin-bottom:2px;}
+.nc-desc{font-size:.62rem;color:var(--muted);}
+.nc-event{font-family:'JetBrains Mono',monospace;font-size:.58rem;margin-top:5px;display:block;color:var(--cc-d);background:var(--cc-l);padding:2px 6px;border-radius:3px;}
+
+/* ── MIGRATION VISUAL ── */
+.migrate-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.mv2-header{background:linear-gradient(90deg,var(--amber-l),var(--cc-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.mv2-body{padding:14px;}
+.mv2-row{display:flex;gap:10px;align-items:center;margin-bottom:8px;}
+.mv2-box{flex:1;border-radius:7px;padding:9px 12px;}
+.mv2-from{background:var(--amber-l);border:1.5px solid rgba(217,119,6,.25);}
+.mv2-from h6{font-size:.72rem;font-weight:700;color:var(--amber-d);margin-bottom:3px;}
+.mv2-to{background:var(--cc-l);border:1.5px solid rgba(192,40,58,.25);}
+.mv2-to h6{font-size:.72rem;font-weight:700;color:var(--cc-d);margin-bottom:3px;}
+.mv2-box p{font-size:.65rem;color:var(--muted);}
+.mv2-arrow{color:var(--border2);font-size:1.3rem;flex-shrink:0;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--cc-d),var(--cc));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--cc-d);padding:8px 11px;background:var(--cc-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cc-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cc-l);border:1px solid rgba(192,40,58,.15);border-left:4px solid var(--cc);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cc-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--rose-l);border:1px solid var(--rose-b);border-left:4px solid var(--rose);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--rose);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(21,128,61,.2);border-left:4px solid var(--green-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,111,204,.18);border-left:4px solid var(--blue-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #2a0a10;border-left:3px solid var(--cc);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#fca5a5;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#2d2040;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.bash-cmd{color:#a6e3a1;}.bash-flag{color:#89dceb;}.bash-comment{color:#2d2040;font-style:italic;}.bash-url{color:#f9e2af;}
+code{background:rgba(192,40,58,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--cc-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--cc);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--cc-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#4a0010 0%,#7b0020 60%,#a01030 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'📦';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── COMPARE BAR ── */
+.compare-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cb-head{display:flex;border-bottom:1px solid var(--border);}
+.cb-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.76rem;}
+.cb-cc{background:var(--cc-l);color:var(--cc-d);border-right:1px solid var(--border);}
+.cb-gh{background:var(--surface);color:var(--muted);}
+.cb-row{display:flex;border-bottom:1px solid var(--border);}
+.cb-row:last-child{border-bottom:none;}
+.cb-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.cb-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.cb-val:last-child{border-right:none;}
+.cb-val.good{color:var(--green-d);font-weight:600;}
+.cb-val.warn{color:var(--amber-d);font-weight:600;}
+.cb-val.bad{color:var(--rose);font-weight:600;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.notif-grid{grid-template-columns:1fr;}
+  .cb-row,.gf-track,.tv2-row,.mv2-row{flex-direction:column;}
+  .cb-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .gf-body{padding:10px;}
+  .console-step-path{display:none;}
+  .tv2-event{width:auto;}
+  .mv2-arrow{transform:rotate(90deg);}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-circuit"></div>
+  <div class="hdr-orb"></div>
+  <div class="hdr-orb2"></div>
+  <div class="container">
+    <div class="hdr-badge">📦 AWS · Source Control</div>
+    <h1>AWS <span>CodeCommit</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · Git + C# .NET Integration</p>
+    <div class="header-stack">
+      <span class="header-tag">Git Repositories</span>
+      <span class="header-tag">Pull Requests</span>
+      <span class="header-tag">Branch Policies</span>
+      <span class="header-tag">Triggers &amp; Notifications</span>
+      <span class="header-tag">IAM Access</span>
+      <span class="header-tag">C# SDK</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CodeCommit</button>
+    <button class="tab-btn" onclick="T('repos',this)">2 · Repositories</button>
+    <button class="tab-btn" onclick="T('branching',this)">3 · Branching &amp; Git Flow</button>
+    <button class="tab-btn" onclick="T('prs',this)">4 · Pull Requests</button>
+    <button class="tab-btn" onclick="T('iam',this)">5 · IAM &amp; Access</button>
+    <button class="tab-btn" onclick="T('triggers',this)">6 · Triggers &amp; Notifications</button>
+    <button class="tab-btn" onclick="T('cicd',this)">7 · CI/CD Integration</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# SDK &amp; Automation</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CODECOMMIT
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>📦 What is AWS CodeCommit?</h2>
+  <p>AWS CodeCommit is a fully managed, <strong>private Git repository</strong> service hosted in AWS. It works exactly like GitHub or GitLab — you use the same <code>git clone</code>, <code>git push</code>, <code>git pull</code> commands — but your code stays within your AWS account, behind IAM, never leaving your security boundary.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Value Proposition</h4>
+    <p>CodeCommit is Git — no new skills needed. The difference is that authentication is via <strong>IAM credentials</strong> instead of GitHub tokens, your code never leaves AWS, it natively integrates with CodePipeline / CodeBuild / CodeDeploy, and there are no per-seat fees — you pay only for storage and API calls.</p>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Important — CodeCommit is Being Deprecated</h4>
+    <p>AWS announced in July 2024 that CodeCommit is no longer accepting new customers. Existing customers can continue using it, but AWS recommends migrating to GitHub, GitLab, or Bitbucket. This guide covers CodeCommit fully for existing users and migration paths for those planning to move.</p>
+  </div>
+
+  <h3>CodeCommit vs GitHub vs GitLab</h3>
+  <div class="compare-bar">
+    <div class="cb-head">
+      <div class="cb-col cb-cc">📦 CodeCommit</div>
+      <div class="cb-col cb-gh" style="flex:2;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">🐙 GitHub</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;font-weight:700;font-size:.72rem;color:var(--muted);">🦊 GitLab</div>
+      </div>
+    </div>
+    <div class="cb-row"><div class="cb-lbl">Auth method</div><div class="cb-val good">IAM (GRC + SSH + HTTPS)</div><div class="cb-val">Personal access tokens / OAuth</div><div class="cb-val">Personal access tokens / OAuth</div></div>
+    <div class="cb-row"><div class="cb-lbl">Pricing</div><div class="cb-val good">Pay-per-use (no seats)</div><div class="cb-val warn">Per seat / plan</div><div class="cb-val warn">Per seat / plan</div></div>
+    <div class="cb-row"><div class="cb-lbl">AWS integration</div><div class="cb-val good">Native (CodePipeline, etc.)</div><div class="cb-val warn">Via CodeStar Connections</div><div class="cb-val warn">Via CodeStar Connections</div></div>
+    <div class="cb-row"><div class="cb-lbl">Data residency</div><div class="cb-val good">Stays in your AWS account</div><div class="cb-val bad">GitHub's servers</div><div class="cb-val bad">GitLab's servers (SaaS)</div></div>
+    <div class="cb-row"><div class="cb-lbl">New customers</div><div class="cb-val bad">❌ Closed (Jul 2024)</div><div class="cb-val good">✅ Open</div><div class="cb-val good">✅ Open</div></div>
+    <div class="cb-row"><div class="cb-lbl">PR / Code Review</div><div class="cb-val warn">Basic — no inline comments</div><div class="cb-val good">Rich — full review UX</div><div class="cb-val good">Rich — full review UX</div></div>
+    <div class="cb-row"><div class="cb-lbl">Actions / CI</div><div class="cb-val warn">External (CodeBuild)</div><div class="cb-val good">GitHub Actions (built-in)</div><div class="cb-val good">GitLab CI (built-in)</div></div>
+    <div class="cb-row"><div class="cb-lbl">Storage limit</div><div class="cb-val good">No repo size limit</div><div class="cb-val warn">Recommend &lt;5GB</div><div class="cb-val warn">5–10GB typical limit</div></div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📁</span><h4>Repository</h4><p>A private Git repo hosted in your AWS account. Fully managed — no servers to run.</p></div>
+    <div class="icon-item"><span class="emoji">🌿</span><h4>Branches</h4><p>Standard Git branches. Default branch configurable (main, master, develop).</p></div>
+    <div class="icon-item"><span class="emoji">🔀</span><h4>Pull Request</h4><p>Code review workflow with comments, approvals, and merge strategies.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>IAM Auth</h4><p>Access controlled entirely by IAM policies — no separate user management.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Triggers</h4><p>Fire SNS or Lambda on push, create branch, delete branch events.</p></div>
+    <div class="icon-item"><span class="emoji">🔔</span><h4>Notifications</h4><p>EventBridge-based notifications for PR events, comments, approvals.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Approval Rules</h4><h4></h4><p>Require N approvals before a PR can be merged. Block merges on open threads.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>CodePipeline</h4><p>Native trigger — push to a branch automatically starts a CodePipeline run.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Commit History</h4><p>Full Git history, diffs, blame, file browser — all in the AWS Console.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — REPOSITORIES
+══════════════════════════════════ -->
+<div id="tab-repos" class="tab-panel"><div class="section">
+  <h2>📁 Repositories — Create, Clone &amp; Manage</h2>
+
+  <h3>Repository Structure — Recommended Layout</h3>
+  <div class="repo-struct">
+    <div class="rs-root">watson-api/  <span class="rs-cm"># Your CodeCommit repo root</span></div>
+    <div style="padding-left:16px">
+      <div class="rs-dir">├── src/</div>
+      <div style="padding-left:16px">
+        <div class="rs-dir">├── WatsonOrders/       <span class="rs-cm"># Lambda / service project</span></div>
+        <div class="rs-cs">│   ├── Function.cs</div>
+        <div class="rs-cs">│   ├── OrderService.cs</div>
+        <div class="rs-yaml">│   └── WatsonOrders.csproj</div>
+        <div class="rs-dir">└── WatsonShared/       <span class="rs-cm"># Shared library</span></div>
+      </div>
+      <div class="rs-dir">├── infra/</div>
+      <div style="padding-left:16px">
+        <div class="rs-yaml">├── template.yaml       <span class="rs-cm"># SAM / CloudFormation</span></div>
+        <div class="rs-yaml">└── samconfig.toml</div>
+      </div>
+      <div class="rs-dir">├── tests/</div>
+      <div style="padding-left:16px">
+        <div class="rs-yaml">└── WatsonOrders.Tests/</div>
+      </div>
+      <div class="rs-dir">├── .gitignore</div>
+      <div class="rs-yaml">├── buildspec.yml       <span class="rs-cm"># CodeBuild spec</span></div>
+      <div class="rs-yaml">└── README.md</div>
+    </div>
+  </div>
+
+  <h3>Clone &amp; Setup — Git CLI</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Clone a CodeCommit Repository</span>
+    <pre><span class="bash-comment"># ── Method 1: HTTPS with Git Credentials (IAM generated) ──────</span>
+git clone https://git-codecommit.eu-west-1.amazonaws.com/v1/repos/watson-api
+
+<span class="bash-comment"># ── Method 2: HTTPS with git-remote-codecommit (recommended) ──</span>
+pip install git-remote-codecommit
+git clone codecommit://watson-api                 <span class="bash-comment"># Uses default AWS profile</span>
+git clone codecommit://my-profile@watson-api      <span class="bash-comment"># Uses named AWS profile</span>
+
+<span class="bash-comment"># ── Method 3: SSH ─────────────────────────────────────────────</span>
+<span class="bash-comment"># Upload SSH public key to IAM user → get SSH Key ID</span>
+git clone ssh://APKAAAAAAAAAAAAAAA@git-codecommit.eu-west-1.amazonaws.com/v1/repos/watson-api
+
+<span class="bash-comment"># ── Configure remote for existing repo ────────────────────────</span>
+git remote add origin codecommit://watson-api
+git remote -v
+git push -u origin main
+
+<span class="bash-comment"># ── Standard git workflow — no difference from GitHub ─────────</span>
+git checkout -b feature/add-payment-service
+git add .
+git commit -m "feat: add PaymentService with Stripe integration"
+git push origin feature/add-payment-service</pre>
+  </div>
+
+  <h3>AWS CLI — Create &amp; Manage Repos</h3>
+  <div class="code-block">
+    <span class="code-label">bash · CodeCommit AWS CLI Commands</span>
+    <pre><span class="bash-comment"># Create a new repository</span>
+aws codecommit create-repository \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--repository-description</span> <span class="str">"Watson Team API service"</span> \
+  <span class="bash-flag">--tags</span> Team=Watson,Environment=prod
+
+<span class="bash-comment"># List all repositories</span>
+aws codecommit list-repositories
+
+<span class="bash-comment"># Get repository info (clone URL, ARN)</span>
+aws codecommit get-repository <span class="bash-flag">--repository-name</span> watson-api
+
+<span class="bash-comment"># Delete repository (CAUTION — no recovery!)</span>
+aws codecommit delete-repository <span class="bash-flag">--repository-name</span> watson-old
+
+<span class="bash-comment"># List branches</span>
+aws codecommit list-branches <span class="bash-flag">--repository-name</span> watson-api
+
+<span class="bash-comment"># Get commit details</span>
+aws codecommit get-commit \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--commit-id</span> abc123def456
+
+<span class="bash-comment"># Get differences between two commits</span>
+aws codecommit get-differences \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--before-commit-specifier</span> main \
+  <span class="bash-flag">--after-commit-specifier</span> feature/payments</pre>
+  </div>
+
+  <h3>Repository Limits &amp; Defaults</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Limit</th><th>Default / Max</th><th>Notes</th></tr>
+    <tr><td>Repos per account</td><td>1,000 (soft limit)</td><td>Request increase via support</td></tr>
+    <tr><td>Repo size</td><td>No hard limit</td><td>Individual files max 6MB via console; 2GB via Git</td></tr>
+    <tr><td>Max file size (Git push)</td><td>2 GB</td><td>Single file limit</td></tr>
+    <tr><td>Branches per repo</td><td>1,000 (soft limit)</td><td>Request increase</td></tr>
+    <tr><td>Pull requests per repo</td><td>1,000 open at a time</td><td>Closed PRs don't count</td></tr>
+    <tr><td>Triggers per repo</td><td>10</td><td>Can send to SNS or Lambda</td></tr>
+    <tr><td>Tags per repo</td><td>50</td><td>Standard AWS resource tagging</td></tr>
+    <tr><td>Free tier</td><td>5 active users, 50 GB storage, 10,000 Git requests/month</td><td>Per account, not per repo</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — BRANCHING & GIT FLOW
+══════════════════════════════════ -->
+<div id="tab-branching" class="tab-panel"><div class="section">
+  <h2>🌿 Branching Strategies &amp; Git Flow</h2>
+
+  <h3>Git Flow — Recommended for Team Watson</h3>
+  <div class="git-flow">
+    <div class="gf-header">🌿 Git Flow Branching Model — watson-api <span>Time flows left → right</span></div>
+    <div class="gf-body">
+      <!-- main -->
+      <div class="gf-track">
+        <div class="gf-label">main</div>
+        <div class="gf-commits">
+          <div class="gf-commit c-main">v1</div>
+          <div class="gf-line l-main"></div>
+          <div class="gf-commit c-merge">M1</div>
+          <div class="gf-line l-main"></div>
+          <div class="gf-commit c-merge">M2</div>
+          <div class="gf-line l-main"></div>
+          <div class="gf-commit c-merge">M3</div>
+          <div class="gf-line l-main"></div>
+          <div class="gf-commit c-main">v2</div>
+          <span class="gf-branch-label b-main">protected · requires PR</span>
+        </div>
+      </div>
+      <!-- release -->
+      <div class="gf-track">
+        <div class="gf-label">release/1.2</div>
+        <div class="gf-commits" style="padding-left:90px;">
+          <div class="gf-commit c-rel">R1</div>
+          <div class="gf-line l-rel"></div>
+          <div class="gf-commit c-rel">R2</div>
+          <span class="gf-branch-label b-rel">merge → main + develop</span>
+        </div>
+      </div>
+      <!-- develop -->
+      <div class="gf-track">
+        <div class="gf-label">develop</div>
+        <div class="gf-commits">
+          <div class="gf-commit c-feat">D1</div>
+          <div class="gf-line l-feat"></div>
+          <div class="gf-commit c-feat">D2</div>
+          <div class="gf-line l-feat"></div>
+          <div class="gf-commit c-feat">D3</div>
+          <div class="gf-line l-feat"></div>
+          <div class="gf-commit c-feat">D4</div>
+          <div class="gf-line l-feat"></div>
+          <div class="gf-commit c-feat">D5</div>
+          <span class="gf-branch-label b-feat">integration branch</span>
+        </div>
+      </div>
+      <!-- feature -->
+      <div class="gf-track">
+        <div class="gf-label">feature/payments</div>
+        <div class="gf-commits" style="padding-left:58px;">
+          <div class="gf-commit c-main">F1</div>
+          <div class="gf-line l-main" style="background:var(--cc-d)"></div>
+          <div class="gf-commit c-main">F2</div>
+          <div class="gf-line l-main" style="background:var(--cc-d)"></div>
+          <div class="gf-commit c-main">F3</div>
+          <span class="gf-branch-label b-main">PR → develop</span>
+        </div>
+      </div>
+      <!-- hotfix -->
+      <div class="gf-track">
+        <div class="gf-label">hotfix/order-bug</div>
+        <div class="gf-commits" style="padding-left:175px;">
+          <div class="gf-commit c-hot">H1</div>
+          <div class="gf-line l-hot"></div>
+          <div class="gf-commit c-hot">H2</div>
+          <span class="gf-branch-label b-hot">PR → main + develop</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Branch Naming Conventions</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Branch Type</th><th>Pattern</th><th>Example</th><th>Merges Into</th></tr>
+    <tr><td>Main/Production</td><td><code>main</code></td><td>main</td><td>—</td></tr>
+    <tr><td>Development</td><td><code>develop</code></td><td>develop</td><td>main (via release)</td></tr>
+    <tr><td>Feature</td><td><code>feature/{ticket}-{desc}</code></td><td>feature/WAT-123-add-payments</td><td>develop</td></tr>
+    <tr><td>Bug Fix</td><td><code>fix/{ticket}-{desc}</code></td><td>fix/WAT-456-order-status</td><td>develop</td></tr>
+    <tr><td>Hotfix</td><td><code>hotfix/{ticket}-{desc}</code></td><td>hotfix/WAT-789-payment-crash</td><td>main + develop</td></tr>
+    <tr><td>Release</td><td><code>release/{version}</code></td><td>release/1.2.0</td><td>main + develop</td></tr>
+    <tr><td>Chore / DevOps</td><td><code>chore/{desc}</code></td><td>chore/upgrade-dotnet8</td><td>develop</td></tr>
+  </table></div>
+
+  <h3>Branch Commands</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Branch Management</span>
+    <pre><span class="bash-comment"># Create and switch to a new branch</span>
+git checkout -b feature/WAT-123-add-payments
+<span class="bash-comment"># or (modern Git)</span>
+git switch -c feature/WAT-123-add-payments
+
+<span class="bash-comment"># Push branch to CodeCommit</span>
+git push -u origin feature/WAT-123-add-payments
+
+<span class="bash-comment"># Protect main branch (via AWS CLI) ────────────────────────────</span>
+<span class="bash-comment"># CodeCommit uses approval rules on PRs instead of branch protection</span>
+<span class="bash-comment"># Create an approval rule template that requires 2 approvals on main</span>
+aws codecommit create-approval-rule-template \
+  <span class="bash-flag">--approval-rule-template-name</span> RequireTwoApprovals \
+  <span class="bash-flag">--approval-rule-template-content</span> '{
+    "Version": "2018-11-08",
+    "DestinationReferences": ["refs/heads/main"],
+    "Statements": [{
+      "Type": "Approvers",
+      "NumberOfApprovalsNeeded": 2,
+      "ApprovalPoolMembers": [
+        "arn:aws:iam::123456789012:root"
+      ]
+    }]
+  }'
+
+<span class="bash-comment"># Associate the template with your repo</span>
+aws codecommit associate-approval-rule-template-with-repository \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--approval-rule-template-name</span> RequireTwoApprovals
+
+<span class="bash-comment"># Delete a branch (local + remote)</span>
+git branch -d feature/WAT-123-add-payments
+git push origin --delete feature/WAT-123-add-payments</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Trunk-Based Development Alternative</h4>
+    <p>For smaller teams or microservices, use <strong>trunk-based development</strong> — everyone commits directly to <code>main</code> (or short-lived feature branches &lt;2 days). Combined with feature flags, this keeps the branch count low and reduces merge conflicts. Great for Lambda microservices where each repo has one function.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — PULL REQUESTS
+══════════════════════════════════ -->
+<div id="tab-prs" class="tab-panel"><div class="section">
+  <h2>🔀 Pull Requests — Code Review Workflow</h2>
+
+  <h3>PR Lifecycle</h3>
+  <div class="pr-lifecycle">
+    <div class="pl-header">🔀 Pull Request Lifecycle — watson-api</div>
+    <div class="pl-body">
+      <div class="pl-stage">
+        <div class="pl-dot pd-open">1</div>
+        <div class="pl-info"><h6>PR Opened</h6><p>Developer pushes branch → creates PR from feature/WAT-123 → develop. Adds description, reviewers, and links ticket.</p></div>
+        <div class="pl-badge" style="background:var(--blue-l);color:var(--blue-d);">OPEN</div>
+      </div>
+      <div class="pl-stage">
+        <div class="pl-dot pd-ci">2</div>
+        <div class="pl-info"><h6>CodeBuild CI Triggered</h6><p>EventBridge detects PR event → triggers CodeBuild → runs dotnet test + sam build. Result posted back as a comment on the PR.</p></div>
+        <div class="pl-badge" style="background:var(--purple-l);color:var(--purple-d);">CI RUNNING</div>
+      </div>
+      <div class="pl-stage">
+        <div class="pl-dot pd-review">3</div>
+        <div class="pl-info"><h6>Code Review</h6><p>Reviewers add inline comments on specific lines, reply to threads, request changes. Author pushes new commits to address feedback.</p></div>
+        <div class="pl-badge" style="background:var(--amber-l);color:var(--amber-d);">IN REVIEW</div>
+      </div>
+      <div class="pl-stage">
+        <div class="pl-dot pd-approve">4</div>
+        <div class="pl-info"><h6>Approvals Received</h6><p>Two required approvers click Approve. Approval rule template is satisfied — merge button becomes active.</p></div>
+        <div class="pl-badge" style="background:var(--green-l);color:var(--green-d);">APPROVED</div>
+      </div>
+      <div class="pl-stage">
+        <div class="pl-dot pd-merge">5</div>
+        <div class="pl-info"><h6>Merged</h6><p>Author merges using Squash merge (keeps history clean). Branch auto-deleted. CodePipeline triggers from develop branch push.</p></div>
+        <div class="pl-badge" style="background:var(--cc-l);color:var(--cc-d);">MERGED</div>
+      </div>
+      <div class="pl-stage">
+        <div class="pl-dot pd-closed">6</div>
+        <div class="pl-info"><h6>Pipeline Deploys</h6><p>CodePipeline picks up the merge commit → builds → deploys to dev environment automatically.</p></div>
+        <div class="pl-badge" style="background:var(--surface);color:var(--muted);">DEPLOYED</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>PR via AWS CLI</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Pull Request CLI Commands</span>
+    <pre><span class="bash-comment"># Create a pull request</span>
+aws codecommit create-pull-request \
+  <span class="bash-flag">--title</span> <span class="str">"feat: Add Stripe payment integration (WAT-123)"</span> \
+  <span class="bash-flag">--description</span> <span class="str">"Adds PaymentService with Stripe API, unit tests, and error handling"</span> \
+  <span class="bash-flag">--targets</span> repositoryName=watson-api,sourceReference=feature/WAT-123-payments,destinationReference=develop
+
+<span class="bash-comment"># List open PRs</span>
+aws codecommit list-pull-requests \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--pull-request-status</span> OPEN
+
+<span class="bash-comment"># Get PR details</span>
+aws codecommit get-pull-request <span class="bash-flag">--pull-request-id</span> 42
+
+<span class="bash-comment"># Post a comment on the PR</span>
+aws codecommit post-comment-for-pull-request \
+  <span class="bash-flag">--pull-request-id</span> 42 \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--before-commit-id</span> abc123 \
+  <span class="bash-flag">--after-commit-id</span>  def456 \
+  <span class="bash-flag">--content</span> <span class="str">"✅ Build passed. PaymentService logic looks good. Approved!"</span>
+
+<span class="bash-comment"># Approve a PR</span>
+aws codecommit update-pull-request-approval-state \
+  <span class="bash-flag">--pull-request-id</span> 42 \
+  <span class="bash-flag">--revision-id</span> rev-001 \
+  <span class="bash-flag">--approval-state</span> APPROVE
+
+<span class="bash-comment"># Merge using squash strategy</span>
+aws codecommit create-unreferenced-merge-commit \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--source-commit-specifier</span> feature/WAT-123-payments \
+  <span class="bash-flag">--destination-commit-specifier</span> develop \
+  <span class="bash-flag">--merge-option</span> SQUASH_MERGE \
+  <span class="bash-flag">--commit-message</span> <span class="str">"feat: Add Stripe payment integration (WAT-123)"</span> \
+  <span class="bash-flag">--author-name</span> <span class="str">"Indhu Watson"</span> \
+  <span class="bash-flag">--email</span> <span class="str">"indhu@watson.io"</span></pre>
+  </div>
+
+  <h3>Merge Strategies</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Strategy</th><th>History</th><th>Best For</th><th>CodeCommit Option</th></tr>
+    <tr><td><strong>Fast Forward</strong></td><td>Linear — feature commits appear on target branch as-is</td><td>Simple features, trunk-based dev</td><td>FAST_FORWARD_MERGE</td></tr>
+    <tr><td><strong>Squash</strong></td><td>All feature commits squashed into one commit on target</td><td>Keeping main/develop history clean</td><td>SQUASH_MERGE</td></tr>
+    <tr><td><strong>Three-way</strong></td><td>Merge commit created — full history preserved</td><td>Long-running feature branches</td><td>THREE_WAY_MERGE</td></tr>
+  </table></div>
+
+  <div class="success">
+    <h4>✅ PR Best Practices for Team Watson</h4>
+    <p>Keep PRs small (&lt;400 lines) — easier to review and less likely to conflict · Link a JIRA/ticket ID in the title · Write a meaningful description with what changed and why · Always run tests locally before creating a PR · Respond to reviewer comments within 24h · Use squash merge on develop/main to keep history readable.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — IAM & ACCESS
+══════════════════════════════════ -->
+<div id="tab-iam" class="tab-panel"><div class="section">
+  <h2>🔒 IAM &amp; Access Control</h2>
+  <p>CodeCommit access is controlled entirely through IAM. There are no separate "repo permissions" — everything goes through IAM policies attached to users, groups, or roles.</p>
+
+  <h3>IAM Permission Matrix</h3>
+  <div class="iam-matrix">
+    <div class="im-header">🔒 IAM Roles → CodeCommit Permissions</div>
+    <div class="im-body">
+      <table class="im-table">
+        <tr>
+          <th>Role / Policy</th>
+          <th>Read</th>
+          <th>Push</th>
+          <th>Create Branch</th>
+          <th>Create PR</th>
+          <th>Admin</th>
+        </tr>
+        <tr>
+          <td class="im-role">AWSCodeCommitReadOnly</td>
+          <td class="im-yes">✅</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+        </tr>
+        <tr>
+          <td class="im-role">AWSCodeCommitPowerUser</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-no">—</td>
+        </tr>
+        <tr>
+          <td class="im-role">AWSCodeCommitFullAccess</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+          <td class="im-yes">✅</td>
+        </tr>
+        <tr>
+          <td class="im-role">Custom ReadOnly (specific repo)</td>
+          <td class="im-yes">✅</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+        </tr>
+        <tr>
+          <td class="im-role">CI/CD Role (CodeBuild/Pipeline)</td>
+          <td class="im-yes">✅</td>
+          <td class="im-partial">Clone only</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+          <td class="im-no">—</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <h3>Custom IAM Policy — Restrict to Specific Repo</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · IAM Policy — Specific Repo + Branch Restriction</span>
+    <pre">{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="bash-comment">// Allow read + push to watson-api (all branches)</span>
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: [
+        <span class="str">"codecommit:GitPull"</span>,
+        <span class="str">"codecommit:GitPush"</span>,
+        <span class="str">"codecommit:GetRepository"</span>,
+        <span class="str">"codecommit:ListBranches"</span>,
+        <span class="str">"codecommit:GetBranch"</span>,
+        <span class="str">"codecommit:GetCommit"</span>,
+        <span class="str">"codecommit:CreateBranch"</span>,
+        <span class="str">"codecommit:CreatePullRequest"</span>,
+        <span class="str">"codecommit:PostCommentForPullRequest"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"arn:aws:codecommit:eu-west-1:123456789012:watson-api"</span>
+    },
+    {
+      <span class="bash-comment">// DENY push directly to main (must use PRs)</span>
+      <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+      <span class="str">"Action"</span>: <span class="str">"codecommit:GitPush"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"arn:aws:codecommit:eu-west-1:123456789012:watson-api"</span>,
+      <span class="str">"Condition"</span>: {
+        <span class="str">"StringEqualsIfExists"</span>: {
+          <span class="str">"codecommit:References"</span>: [
+            <span class="str">"refs/heads/main"</span>,
+            <span class="str">"refs/heads/develop"</span>
+          ]
+        },
+        <span class="str">"Null"</span>: {
+          <span class="str">"codecommit:References"</span>: <span class="str">"false"</span>
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>HTTPS Git Credentials Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Generate HTTPS Git Credentials for IAM User</span>
+    <pre"><span class="bash-comment"># Generate credentials (IAM Console → User → Security Credentials)</span>
+<span class="bash-comment"># OR via CLI:</span>
+aws iam create-service-specific-credential \
+  <span class="bash-flag">--user-name</span> indhu \
+  <span class="bash-flag">--service-name</span> codecommit.amazonaws.com
+
+<span class="bash-comment"># Output gives you:</span>
+<span class="bash-comment"># ServiceSpecificCredential.ServiceUserName: indhu-at-123456789012</span>
+<span class="bash-comment"># ServiceSpecificCredential.ServicePassword: abc123xyz...</span>
+
+<span class="bash-comment"># Store in git credential manager</span>
+git config --global credential.helper store
+
+<span class="bash-comment"># ── RECOMMENDED: git-remote-codecommit (no creds needed) ──────</span>
+pip install git-remote-codecommit
+<span class="bash-comment"># Uses your AWS SSO / profile — no username/password management</span>
+git clone codecommit://watson-api</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Use git-remote-codecommit for SSO Teams</h4>
+    <p>If your team uses AWS SSO (IAM Identity Center), <code>git-remote-codecommit</code> automatically uses the active SSO session — no static credentials to manage, rotate, or accidentally commit. Just <code>aws sso login</code> then <code>git clone codecommit://watson-api</code>.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — TRIGGERS & NOTIFICATIONS
+══════════════════════════════════ -->
+<div id="tab-triggers" class="tab-panel"><div class="section">
+  <h2>⚡ Triggers &amp; Notifications</h2>
+  <p>CodeCommit has two distinct event systems: <strong>Triggers</strong> (direct SNS/Lambda calls on Git events) and <strong>Notification Rules</strong> (EventBridge-based, richer PR/review events with Chatbot/SNS).</p>
+
+  <h3>Triggers — Direct Git Event Hooks</h3>
+  <div class="trigger-vis">
+    <div class="tv2-header">⚡ CodeCommit Triggers → Target Services</div>
+    <div class="tv2-body">
+      <div class="tv2-row">
+        <div class="tv2-event"><p>push to any branch</p></div>
+        <div class="tv2-arrow">→</div>
+        <div class="tv2-targets">
+          <span class="tv2-target tt-sns">SNS Topic → email/Slack</span>
+          <span class="tv2-target tt-lambda">Lambda function</span>
+          <span class="tv2-target tt-pipe">CodePipeline trigger</span>
+        </div>
+      </div>
+      <div class="tv2-row">
+        <div class="tv2-event"><p>push to main only</p></div>
+        <div class="tv2-arrow">→</div>
+        <div class="tv2-targets">
+          <span class="tv2-target tt-lambda">Lambda → deploy to prod</span>
+          <span class="tv2-target tt-sns">SNS → ops alert</span>
+        </div>
+      </div>
+      <div class="tv2-row">
+        <div class="tv2-event"><p>create branch</p></div>
+        <div class="tv2-arrow">→</div>
+        <div class="tv2-targets">
+          <span class="tv2-target tt-lambda">Lambda → create JIRA ticket</span>
+          <span class="tv2-target tt-eb">EventBridge → workflow</span>
+        </div>
+      </div>
+      <div class="tv2-row">
+        <div class="tv2-event"><p>delete branch</p></div>
+        <div class="tv2-arrow">→</div>
+        <div class="tv2-targets">
+          <span class="tv2-target tt-lambda">Lambda → cleanup env</span>
+          <span class="tv2-target tt-sns">SNS → team alert</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · Create a Trigger via AWS CLI</span>
+    <pre"><span class="bash-comment"># Trigger Lambda on push to main branch</span>
+aws codecommit put-repository-triggers \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--triggers</span> '[
+    {
+      "name": "TriggerOnMainPush",
+      "destinationArn": "arn:aws:lambda:eu-west-1:123:function:watson-trigger",
+      "customData": "watson-api-main",
+      "branches": ["main"],
+      "events": ["push"]
+    }
+  ]'
+
+<span class="bash-comment"># Trigger SNS on any branch event</span>
+aws codecommit put-repository-triggers \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--triggers</span> '[
+    {
+      "name": "NotifyAllPushes",
+      "destinationArn": "arn:aws:sns:eu-west-1:123:watson-commits",
+      "customData": "",
+      "branches": [],
+      "events": ["all"]
+    }
+  ]'
+
+<span class="bash-comment"># Test a trigger</span>
+aws codecommit test-repository-triggers \
+  <span class="bash-flag">--repository-name</span> watson-api \
+  <span class="bash-flag">--triggers</span> file://triggers.json</pre>
+  </div>
+
+  <h3>Notification Rules — PR &amp; Review Events</h3>
+  <div class="notif-grid">
+    <div class="notif-card">
+      <span class="nc-icon">🔀</span>
+      <div class="nc-title">PR Created</div>
+      <div class="nc-desc">New pull request opened against a branch</div>
+      <span class="nc-event">pullRequestCreated</span>
+    </div>
+    <div class="notif-card">
+      <span class="nc-icon">✅</span>
+      <div class="nc-title">PR Approved</div>
+      <div class="nc-desc">Reviewer clicks Approve on the PR</div>
+      <span class="nc-event">pullRequestApprovalStateChanged</span>
+    </div>
+    <div class="notif-card">
+      <span class="nc-icon">💬</span>
+      <div class="nc-title">Comment Added</div>
+      <div class="nc-desc">Inline or general comment posted</div>
+      <span class="nc-event">commentOnPullRequest</span>
+    </div>
+    <div class="notif-card">
+      <span class="nc-icon">🔀</span>
+      <div class="nc-title">PR Merged</div>
+      <div class="nc-desc">PR merged into destination branch</div>
+      <span class="nc-event">pullRequestMergeStatusUpdated</span>
+    </div>
+    <div class="notif-card">
+      <span class="nc-icon">🌿</span>
+      <div class="nc-title">Branch Created</div>
+      <div class="nc-desc">New branch created in the repo</div>
+      <span class="nc-event">referenceCreated</span>
+    </div>
+    <div class="notif-card">
+      <span class="nc-icon">📦</span>
+      <div class="nc-title">Commit Pushed</div>
+      <div class="nc-desc">New commit pushed to any branch</div>
+      <span class="nc-event">referenceUpdated</span>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · Create Notification Rule → Chatbot / SNS</span>
+    <pre"><span class="bash-comment"># Create a notification rule for PR events</span>
+aws codestar-notifications create-notification-rule \
+  <span class="bash-flag">--name</span> watson-api-pr-notifications \
+  <span class="bash-flag">--resource</span> arn:aws:codecommit:eu-west-1:123:watson-api \
+  <span class="bash-flag">--event-type-ids</span> \
+    codecommit-repository-pull-request-created \
+    codecommit-repository-pull-request-merged \
+    codecommit-repository-comments-on-pull-requests \
+  <span class="bash-flag">--targets</span> '[{
+    "TargetType": "SNS",
+    "TargetAddress": "arn:aws:sns:eu-west-1:123:watson-slack-channel"
+  }]' \
+  <span class="bash-flag">--detail-type</span> FULL</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CI/CD INTEGRATION
+══════════════════════════════════ -->
+<div id="tab-cicd" class="tab-panel"><div class="section">
+  <h2>🔗 CI/CD Integration</h2>
+  <p>CodeCommit integrates natively with the full AWS DevOps suite — CodePipeline, CodeBuild, and CodeDeploy — with no extra connectors or tokens needed.</p>
+
+  <h3>CodeCommit → CodePipeline → CodeBuild → Deploy</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · CodePipeline with CodeCommit Source (CloudFormation)</span>
+    <pre"><span class="bash-comment"># pipeline.yaml — defines source → build → deploy pipeline</span>
+Resources:
+  WatsonPipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: watson-api-pipeline
+      RoleArn: !GetAtt PipelineRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        <span class="bash-comment"># ── Source Stage (CodeCommit) ──────────────────────</span>
+        - Name: Source
+          Actions:
+            - Name: CodeCommitSource
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Provider: CodeCommit       <span class="bash-comment"># Native — no token needed</span>
+                Version: "1"
+              Configuration:
+                RepositoryName: watson-api
+                BranchName: main
+                DetectionMode: EVENTS      <span class="bash-comment"># EventBridge-based (fast)</span>
+                OutputArtifactFormat: CODE_ZIP
+              OutputArtifacts:
+                - Name: SourceOutput
+
+        <span class="bash-comment"># ── Build Stage (CodeBuild) ────────────────────────</span>
+        - Name: Build
+          Actions:
+            - Name: BuildAndTest
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: "1"
+              Configuration:
+                ProjectName: !Ref WatsonBuildProject
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+
+        <span class="bash-comment"># ── Deploy Stage (CloudFormation / SAM) ────────────</span>
+        - Name: Deploy
+          Actions:
+            - Name: DeployStack
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: "1"
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                StackName: watson-api-prod
+                TemplatePath: BuildOutput::packaged.yaml
+                Capabilities: CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND
+                RoleArn: !GetAtt CFNDeployRole.Arn
+              InputArtifacts:
+                - Name: BuildOutput</pre>
+  </div>
+
+  <h3>buildspec.yml — CodeBuild for .NET</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · buildspec.yml (C# .NET 8 + SAM)</span>
+    <pre">version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      dotnet: 8
+    commands:
+      - pip install aws-sam-cli
+      - sam --version
+
+  pre_build:
+    commands:
+      - echo "Running unit tests..."
+      - dotnet test ./tests/WatsonOrders.Tests/ --logger trx --results-directory /tmp/test-results
+
+  build:
+    commands:
+      - echo "Building .NET Lambda..."
+      - sam build --cached --parallel
+      - sam package
+          --output-template-file packaged.yaml
+          --s3-bucket $ARTIFACT_BUCKET
+          --s3-prefix watson-api
+
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+
+reports:
+  TestResults:
+    files:
+      - "**/*.trx"
+    base-directory: /tmp/test-results
+    file-format: VisualStudioTrx
+
+artifacts:
+  files:
+    - packaged.yaml
+    - samconfig.toml
+  name: watson-build-$(date +%Y%m%d%H%M%S)</pre>
+  </div>
+
+  <h3>Migration Paths — Moving Away from CodeCommit</h3>
+  <div class="migrate-vis">
+    <div class="mv2-header">🚀 Migration Options for Existing CodeCommit Users</div>
+    <div class="mv2-body">
+      <div class="mv2-row">
+        <div class="mv2-box mv2-from"><h6>📦 CodeCommit Repo</h6><p>Your existing source of truth</p></div>
+        <div class="mv2-arrow">→</div>
+        <div class="mv2-box mv2-to"><h6>🐙 GitHub (Recommended)</h6><p>git remote add github + git push. Then use CodeStar Connections for CodePipeline integration.</p></div>
+      </div>
+      <div class="mv2-row">
+        <div class="mv2-box mv2-from"><h6>📦 CodeCommit Repo</h6><p>Your existing source of truth</p></div>
+        <div class="mv2-arrow">→</div>
+        <div class="mv2-box" style="background:var(--purple-l);border:1.5px solid rgba(124,58,237,.25);flex:1;border-radius:7px;padding:9px 12px;"><h6 style="font-size:.72rem;font-weight:700;color:var(--purple-d);margin-bottom:3px;">🦊 GitLab / Bitbucket</h6><p style="font-size:.65rem;color:var(--muted);">Same process — git push to new remote. Use CodeStar Connections for pipeline triggers.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · Migrate CodeCommit → GitHub</span>
+    <pre"><span class="bash-comment"># 1. Clone your CodeCommit repo (mirror — gets all branches + tags)</span>
+git clone --mirror codecommit://watson-api watson-api-mirror
+cd watson-api-mirror
+
+<span class="bash-comment"># 2. Add GitHub as new remote</span>
+git remote add github https://github.com/watson-team/watson-api.git
+
+<span class="bash-comment"># 3. Push everything (all branches, tags, history)</span>
+git push github --mirror
+
+<span class="bash-comment"># 4. Verify on GitHub, then update team's local remotes</span>
+cd ../watson-api
+git remote set-url origin https://github.com/watson-team/watson-api.git
+git remote -v
+
+<span class="bash-comment"># 5. Update CodePipeline source to use GitHub via CodeStar Connection</span>
+<span class="bash-comment"># (AWS Console → CodePipeline → Edit Source stage → Change provider to GitHub)</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First Repository</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to CodeCommit</div>
+      <div class="console-step-path">AWS Console → Developer Tools → CodeCommit</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">URL</div><div class="console-field-value">https://console.aws.amazon.com/codesuite/codecommit/repositories</div></div>
+      <div class="console-note">Make sure you're in the right region — CodeCommit repositories are regional. eu-west-1 for Team Watson.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create Repository</div>
+      <div class="console-step-path">Repositories → Create repository</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Repository name</div><div class="console-field-value">watson-api</div><div class="console-field-hint">Unique within the region. Alphanumeric, hyphens, underscores. Max 100 chars.</div></div>
+      <div class="console-field"><div class="console-field-label">Description</div><div class="console-field-value">Team Watson — Orders and Payments API service</div></div>
+      <div class="console-field"><div class="console-field-label">Tags</div><div class="console-field-value">Team = Watson · Environment = all · Owner = indhu</div></div>
+      <div class="console-note">A README is optional — if you add one, CodeCommit initialises with a first commit. Otherwise the repo is empty and you push your first commit via Git.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Set Up IAM Credentials</div>
+      <div class="console-step-path">IAM → Users → indhu → Security Credentials</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">HTTPS Git credentials</div><div class="console-field-value">IAM → Users → [username] → Security Credentials → HTTPS Git credentials for AWS CodeCommit → Generate</div></div>
+      <div class="console-field"><div class="console-field-label">Recommended alternative</div><div class="console-field-value">pip install git-remote-codecommit  (uses AWS SSO / profile — no static credentials)</div></div>
+      <div class="console-field"><div class="console-field-label">SSH (optional)</div><div class="console-field-value">IAM → Users → SSH Keys for CodeCommit → Upload public key → copy SSH Key ID</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Clone and Push Your First Commit</div>
+      <div class="console-step-path">Terminal → git clone + push</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Clone URL (HTTPS)</div><div class="console-field-value">https://git-codecommit.eu-west-1.amazonaws.com/v1/repos/watson-api</div></div>
+      <div class="console-field"><div class="console-field-label">Clone URL (GRC)</div><div class="console-field-value">codecommit://watson-api</div></div>
+      <div class="console-field"><div class="console-field-label">First push</div><div class="console-field-value">git init → git add . → git commit -m "initial" → git push -u origin main</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Create an Approval Rule Template</div>
+      <div class="console-step-path">CodeCommit → Approval rule templates → Create</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Template name</div><div class="console-field-value">WatsonRequireTwoApprovals</div></div>
+      <div class="console-field"><div class="console-field-label">Number of approvals needed</div><div class="console-field-value">2</div></div>
+      <div class="console-field"><div class="console-field-label">Approval pool</div><div class="console-field-value">arn:aws:iam::123456789012:root  (all IAM users in account)</div><div class="console-field-hint">Or specify individual IAM user ARNs to restrict who counts as an approver.</div></div>
+      <div class="console-field"><div class="console-field-label">Destination branch filter</div><div class="console-field-value">refs/heads/main  (only required for PRs targeting main)</div></div>
+      <div class="console-note">After creating the template, associate it with the watson-api repo from the repository settings page.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Set Up a Notification Rule</div>
+      <div class="console-step-path">Repository → Notify → Create notification rule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Notification rule name</div><div class="console-field-value">watson-api-pr-alerts</div></div>
+      <div class="console-field"><div class="console-field-label">Events to notify</div><div class="console-field-value">Pull request: Created, Approved, Merged, Comment added</div></div>
+      <div class="console-field"><div class="console-field-label">Target</div><div class="console-field-value">SNS topic → watson-team-alerts (fan out to email/Slack via Chatbot)</div></div>
+      <div class="console-field"><div class="console-field-label">Detail type</div><div class="console-field-value">Full — includes PR title, author, description in notification</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# SDK & AUTOMATION
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# SDK &amp; Automation</h2>
+
+  <h3>NuGet Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Packages</span>
+    <pre">dotnet add package AWSSDK.CodeCommit
+dotnet add package AWSSDK.Extensions.NETCore.Setup</pre>
+  </div>
+
+  <h3>CodeCommit Service — Full Automation Class</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CodeCommitService.cs</span>
+    <pre"><span class="kw">using</span> Amazon.CodeCommit;
+<span class="kw">using</span> Amazon.CodeCommit.Model;
+
+<span class="kw">public class</span> <span class="tp">CodeCommitService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodeCommit</span> _cc;
+
+    <span class="kw">public</span> <span class="tp">CodeCommitService</span>(<span class="tp">IAmazonCodeCommit</span> cc) => _cc = cc;
+
+    <span class="cm">// ── CREATE REPOSITORY ─────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">RepositoryMetadata</span>&gt; <span class="fn">CreateRepoAsync</span>(
+        <span class="tp">string</span> name, <span class="tp">string</span> description,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cc.<span class="fn">CreateRepositoryAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateRepositoryRequest</span>
+            {
+                RepositoryName        = name,
+                RepositoryDescription = description,
+                Tags = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+                {
+                    [<span class="str">"Team"</span>]      = <span class="str">"Watson"</span>,
+                    [<span class="str">"ManagedBy"</span>] = <span class="str">"Automation"</span>
+                }
+            }, ct);
+
+        <span class="kw">return</span> resp.RepositoryMetadata;
+    }
+
+    <span class="cm">// ── LIST REPOSITORIES ─────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">RepositoryNameIdPair</span>&gt;&gt; <span class="fn">ListReposAsync</span>(
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> repos = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">RepositoryNameIdPair</span>&gt;();
+        <span class="tp">string</span>? nextToken = <span class="kw">null</span>;
+
+        <span class="kw">do</span>
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _cc.<span class="fn">ListRepositoriesAsync</span>(
+                <span class="kw">new</span> <span class="tp">ListRepositoriesRequest</span> { NextToken = nextToken }, ct);
+
+            repos.<span class="fn">AddRange</span>(resp.Repositories);
+            nextToken = resp.NextToken;
+        }
+        <span class="kw">while</span> (nextToken <span class="kw">is not null</span>);
+
+        <span class="kw">return</span> repos;
+    }
+
+    <span class="cm">// ── CREATE PULL REQUEST ───────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PullRequest</span>&gt; <span class="fn">CreatePullRequestAsync</span>(
+        <span class="tp">string</span> repoName,
+        <span class="tp">string</span> title,
+        <span class="tp">string</span> description,
+        <span class="tp">string</span> sourceBranch,
+        <span class="tp">string</span> targetBranch = <span class="str">"develop"</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cc.<span class="fn">CreatePullRequestAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreatePullRequestRequest</span>
+            {
+                Title       = title,
+                Description = description,
+                Targets     = [<span class="kw">new</span> <span class="tp">Target</span>
+                {
+                    RepositoryName       = repoName,
+                    SourceReference      = sourceBranch,
+                    DestinationReference = targetBranch
+                }]
+            }, ct);
+
+        <span class="kw">return</span> resp.PullRequest;
+    }
+
+    <span class="cm">// ── GET FILE CONTENT ──────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">GetFileContentAsync</span>(
+        <span class="tp">string</span> repoName,
+        <span class="tp">string</span> filePath,
+        <span class="tp">string</span> branchName = <span class="str">"main"</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cc.<span class="fn">GetFileAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetFileRequest</span>
+            {
+                RepositoryName = repoName,
+                CommitSpecifier = branchName,
+                FilePath        = filePath
+            }, ct);
+
+        <span class="kw">return</span> <span class="tp">System</span>.<span class="tp">Text</span>.<span class="tp">Encoding</span>.UTF8.<span class="fn">GetString</span>(resp.FileContent.ToArray());
+    }
+
+    <span class="cm">// ── PUT FILE (create/update) ──────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PutFileAsync</span>(
+        <span class="tp">string</span> repoName,
+        <span class="tp">string</span> branchName,
+        <span class="tp">string</span> filePath,
+        <span class="tp">string</span> content,
+        <span class="tp">string</span> commitMessage,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="cm">// Get current commit to use as parent</span>
+        <span class="kw">var</span> branch = <span class="kw">await</span> _cc.<span class="fn">GetBranchAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetBranchRequest</span>
+                { RepositoryName = repoName, BranchName = branchName }, ct);
+
+        <span class="kw">await</span> _cc.<span class="fn">PutFileAsync</span>(<span class="kw">new</span> <span class="tp">PutFileRequest</span>
+        {
+            RepositoryName = repoName,
+            BranchName     = branchName,
+            FilePath       = filePath,
+            FileContent    = <span class="kw">new</span> <span class="tp">System</span>.<span class="tp">IO</span>.<span class="tp">MemoryStream</span>(
+                <span class="tp">System</span>.<span class="tp">Text</span>.<span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(content)),
+            CommitMessage  = commitMessage,
+            ParentCommitId = branch.Branch.CommitId,
+            Name           = <span class="str">"Watson Automation"</span>,
+            Email          = <span class="str">"automation@watson.io"</span>
+        }, ct);
+    }
+
+    <span class="cm">// ── LIST OPEN PRS ─────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">GetOpenPrIdsAsync</span>(
+        <span class="tp">string</span> repoName,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cc.<span class="fn">ListPullRequestsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListPullRequestsRequest</span>
+            {
+                RepositoryName   = repoName,
+                PullRequestStatus = <span class="tp">PullRequestStatusEnum</span>.OPEN
+            }, ct);
+
+        <span class="kw">return</span> resp.PullRequestIds;
+    }
+
+    <span class="cm">// ── POST COMMENT ON PR ────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PostPrCommentAsync</span>(
+        <span class="tp">string</span> pullRequestId,
+        <span class="tp">string</span> repoName,
+        <span class="tp">string</span> beforeCommit,
+        <span class="tp">string</span> afterCommit,
+        <span class="tp">string</span> comment,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">await</span> _cc.<span class="fn">PostCommentForPullRequestAsync</span>(
+            <span class="kw">new</span> <span class="tp">PostCommentForPullRequestRequest</span>
+            {
+                PullRequestId   = pullRequestId,
+                RepositoryName  = repoName,
+                BeforeCommitId  = beforeCommit,
+                AfterCommitId   = afterCommit,
+                Content         = comment
+            }, ct);
+    }
+}</pre>
+  </div>
+
+  <h3>DI Registration + Usage</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs + Usage Example</span>
+    <pre"><span class="cm">// DI registration</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCodeCommit</span>&gt;()
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">CodeCommitService</span>&gt;();
+
+<span class="cm">// Usage — auto-create a PR from a Lambda/scheduled job</span>
+<span class="kw">var</span> service = provider.<span class="fn">GetRequiredService</span>&lt;<span class="tp">CodeCommitService</span>&gt;();
+
+<span class="cm">// Create a PR automatically (e.g., after dependency update)</span>
+<span class="kw">var</span> pr = <span class="kw">await</span> service.<span class="fn">CreatePullRequestAsync</span>(
+    repoName:     <span class="str">"watson-api"</span>,
+    title:        <span class="str">"chore: Bump AWSSDK to 3.7.400"</span>,
+    description:  <span class="str">"Automated dependency update via Renovate pipeline"</span>,
+    sourceBranch: <span class="str">"chore/bump-awssdk-3.7.400"</span>,
+    targetBranch: <span class="str">"develop"</span>);
+
+Console.<span class="fn">WriteLine</span>(<span class="str">$"PR created: {pr.PullRequestId} — {pr.Title}"</span>);
+
+<span class="cm">// Get a config file from the repo at deploy time</span>
+<span class="kw">var</span> config = <span class="kw">await</span> service.<span class="fn">GetFileContentAsync</span>(
+    <span class="str">"watson-api"</span>, <span class="str">"config/feature-flags.json"</span>);
+
+<span class="kw">var</span> flags = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">FeatureFlags</span>&gt;(config);</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Use <code>git-remote-codecommit</code> with AWS SSO — no static credentials to rotate or accidentally commit</li>
+    <li>Protect main and develop branches with Approval Rule Templates — require at least 2 approvals before merging</li>
+    <li>Deny direct pushes to main/develop via IAM Condition on <code>codecommit:References</code> — enforce PR-only workflow</li>
+    <li>Set up Notification Rules (not just Triggers) for PR events — they carry richer metadata and work with Chatbot/Slack</li>
+    <li>Tag every repository with Team, CostCenter, and Owner tags — CodeCommit repos appear in Cost Explorer</li>
+    <li>Use <code>DetectionMode: EVENTS</code> in CodePipeline source — faster than polling, uses EventBridge</li>
+    <li>Keep buildspec.yml in the root of the repository — versioned alongside the code it builds</li>
+    <li>Plan your migration to GitHub/GitLab — CodeCommit is closed to new customers as of July 2024</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CodeCommit Mistakes</h4>
+    <p>
+    ❌ <strong>Storing HTTPS Git credentials in code or CI/CD env vars</strong> — use IAM roles or git-remote-codecommit instead<br>
+    ❌ <strong>No approval rules on main</strong> — anyone with push access can directly commit to production branch<br>
+    ❌ <strong>Using polling in CodePipeline</strong> — polling is slow (1 min delay) and costs money; use EventBridge detection<br>
+    ❌ <strong>Not tagging repositories</strong> — impossible to attribute costs or find repos by team later<br>
+    ❌ <strong>Committing large binary files</strong> — use S3 or Git LFS alternatives; large files slow clone times for the entire team<br>
+    ❌ <strong>Single IAM user for all CI/CD</strong> — use separate IAM roles per pipeline with least-privilege access<br>
+    ❌ <strong>Not planning migration</strong> — CodeCommit is closed to new customers; existing teams should migrate to GitHub/GitLab
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CodeCommit Mastery!</h3>
+    <p>What is CodeCommit · CodeCommit vs GitHub vs GitLab comparison · Deprecation notice &amp; migration paths · Repository creation &amp; structure · Clone via HTTPS / git-remote-codecommit / SSH · AWS CLI commands (create, list, branches, commits, diffs) · Repo limits &amp; free tier · Git Flow branching model visual · Branch naming conventions · Approval rule templates · PR lifecycle (open → CI → review → approve → merge) · PR via CLI (create, comment, approve, squash merge) · Merge strategies (FF / Squash / 3-way) · IAM permission matrix · Custom IAM policy with branch push deny · HTTPS credential setup · Triggers → SNS/Lambda · Notification rules for PR events (6 event types) · CodePipeline integration with CodeCommit source · buildspec.yml for .NET 8 · Migration CodeCommit → GitHub · Console walkthrough (7 steps) · Full C# SDK service (create repo / list / create PR / get file / put file / list PRs / post comment) · Best practices &amp; top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#fca5a5;">Your code is versioned, reviewed, and safely stored. Plan your migration. 📦🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
