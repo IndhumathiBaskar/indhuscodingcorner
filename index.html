@@ -435,46 +435,90 @@ const TOPICS = [
     description: "S3, SQS, ECS, EKS and cloud architecture",
 guides: [
   // ── Domain 1: Development with AWS Services (32%) ──────────────────
-  // Task 2: Lambda is the #1 topic for DVA-C02
-  { title: "AWS Lambda",              file: "guides/aws-lambda-guide.html" },
+
+  // Task 2: Lambda — #1 DVA-C02 topic
+  { title: "AWS Lambda",                    file: "guides/aws-lambda-guide.html" },
+
   // Task 1: APIs, messaging, event-driven, orchestration
-  { title: "Amazon API Gateway",      file: "guides/aws-api-gateway-guide.html" },
-  { title: "Amazon SQS",              file: "guides/aws-sqs-guide.html" },
-  { title: "Amazon SNS",              file: "guides/aws-sns-guide.html" },
-  { title: "Amazon EventBridge",      file: "guides/aws-eventbridge-guide.html" },
-  { title: "Amazon StepFunction",     file: "guides/aws-step-functions-guide.html" },
-  { title: "Amazon AppSync",          file: "guides/aws-appsync-guide.html" },
+  { title: "Amazon API Gateway",            file: "guides/aws-api-gateway-guide.html" },
+  { title: "Amazon SQS",                    file: "guides/aws-sqs-guide.html" },
+  { title: "Amazon SNS",                    file: "guides/aws-sns-guide.html" },
+  { title: "Amazon EventBridge",            file: "guides/aws-eventbridge-guide.html" },
+  { title: "Amazon StepFunction",           file: "guides/aws-step-functions-guide.html" },
+  { title: "Amazon AppSync",                file: "guides/aws-appsync-guide.html" },
+  { title: "Amazon Kinesis",                file: "guides/aws-kinesis-guide.html" },            // NEW
+
   // Task 3: Data stores
-  { title: "Amazon DynamoDB",         file: "guides/aws-dynamodb-guide.html" },
-  { title: "AWS S3",                  file: "guides/aws-s3-guide.html" },
-  { title: "Amazon RDS",              file: "guides/aws-rds-guide.html" },
-  { title: "AWS Athena",              file: "guides/aws-athena-guide.html" },
-  { title: "AWS ECS",                 file: "guides/aws-ecs-guide.html" },
+  { title: "Amazon DynamoDB",               file: "guides/aws-dynamodb-guide.html" },
+  { title: "AWS S3",                        file: "guides/aws-s3-guide.html" },
+  { title: "Amazon S3 Glacier",             file: "guides/aws-s3-glacier-guide.html" },        // NEW
+  { title: "Amazon RDS",                    file: "guides/aws-rds-guide.html" },
+  { title: "Amazon Aurora",                 file: "guides/aws-aurora-guide.html" },            // NEW
+  { title: "Amazon ElastiCache",            file: "guides/aws-elasticache-guide.html" },       // NEW
+  { title: "Amazon MemoryDB",               file: "guides/aws-memorydb-guide.html" },          // NEW
+  { title: "AWS Athena",                    file: "guides/aws-athena-guide.html" },
+  { title: "Amazon OpenSearch",             file: "guides/aws-opensearch-guide.html" },        // NEW
+
+  // Compute & containers for app hosting
+  { title: "Amazon EC2",                    file: "guides/aws-ec2-guide.html" },               // NEW
+  { title: "AWS Elastic Beanstalk",         file: "guides/aws-elastic-beanstalk-guide.html" }, // NEW
+  { title: "Amazon ECS",                    file: "guides/aws-ecs-guide.html" },
+  { title: "Amazon EBS",                    file: "guides/aws-ebs-guide.html" },               // NEW
+  { title: "Amazon EFS",                    file: "guides/aws-efs-guide.html" },               // NEW
 
   // ── Domain 2: Security (26%) ────────────────────────────────────────
+
   // Task 1: AuthN / AuthZ
-  { title: "AWS IAM",                 file: "guides/aws-iam-guide.html" },
-  { title: "AWS Cognito",             file: "guides/aws-cognito-guide.html" },
-  { title: "AWS STS",                 file: "guides/aws-sts-guide.html" },
-  { title: "AWS WAF",                 file: "guides/aws-waf-guide.html" },
+  { title: "AWS IAM",                       file: "guides/aws-iam-guide.html" },
+  { title: "AWS Cognito",                   file: "guides/aws-cognito-guide.html" },
+  { title: "AWS STS",                       file: "guides/aws-sts-guide.html" },
+  { title: "AWS WAF",                       file: "guides/aws-waf-guide.html" },
+
   // Task 2: Encryption & certificates
-  { title: "AWS KMS",                 file: "guides/aws-kms-guide.html" },
-  { title: "AWS ACM",                 file: "guides/aws-acm-guide.html" },
+  { title: "AWS KMS",                       file: "guides/aws-kms-guide.html" },
+  { title: "AWS ACM",                       file: "guides/aws-acm-guide.html" },
+  { title: "AWS Private CA",                file: "guides/aws-private-ca-guide.html" },        // NEW
+
   // Task 3: Secrets & sensitive data
-  { title: "AWS Secrets Manager",     file: "guides/aws-secrets-manager-guide.html" },
+  { title: "AWS Secrets Manager",           file: "guides/aws-secrets-manager-guide.html" },
+  { title: "AWS Systems Manager",           file: "guides/aws-systems-manager-guide.html" },   // NEW (Parameter Store lives here)
+  { title: "AWS CloudTrail",                file: "guides/aws-cloudtrail-guide.html" },        // NEW
 
   // ── Domain 3: Deployment (24%) ──────────────────────────────────────
-  // Task 1/3/4: IaC, packaging, CI/CD
-  { title: "Amazon SAM",              file: "guides/aws-sam-guide.html" },
-  { title: "Amazon CloudFormation",   file: "guides/aws-cloudformation-guide.html" },
-  { title: "Amazon CDK",              file: "guides/aws-cdk-guide.html" },
-  { title: "Amazon Amplify",          file: "guides/aws-amplify-guide.html" },
-  { title: "Amazon ACR",              file: "guides/aws-ecr-guide.html" },
-  { title: "Amazon AKS",              file: "guides/aws-eks-guide.html" },
-  // Networking underpins deployment targets
-  { title: "AWS VPC",                 file: "guides/aws-vpc-guide.html" },
-  { title: "AWS-Load Balancing",      file: "guides/aws-load-balancing-guide.html" },
-  { title: "Amazon Route 53",         file: "guides/aws-route53-guide.html" },
+
+  // Task 1/3: Packaging & IaC
+  { title: "Amazon SAM",                    file: "guides/aws-sam-guide.html" },
+  { title: "Amazon CloudFormation",         file: "guides/aws-cloudformation-guide.html" },
+  { title: "Amazon CDK",                    file: "guides/aws-cdk-guide.html" },
+  { title: "AWS AppConfig",                 file: "guides/aws-appconfig-guide.html" },         // NEW
+
+  // Task 4: CI/CD pipeline
+  { title: "AWS CodePipeline",              file: "guides/aws-codepipeline-guide.html" },      // NEW
+  { title: "AWS CodeBuild",                 file: "guides/aws-codebuild-guide.html" },         // NEW
+  { title: "AWS CodeDeploy",                file: "guides/aws-codedeploy-guide.html" },        // NEW
+  { title: "AWS CodeArtifact",              file: "guides/aws-codeartifact-guide.html" },      // NEW
+  { title: "Amazon CodeGuru",               file: "guides/aws-codeguru-guide.html" },          // NEW
+
+  // Containers & environments
+  { title: "Amazon Amplify",                file: "guides/aws-amplify-guide.html" },
+  { title: "Amazon ECR",                    file: "guides/aws-ecr-guide.html" },
+  { title: "Amazon EKS",                    file: "guides/aws-eks-guide.html" },
+  { title: "AWS Copilot",                   file: "guides/aws-copilot-guide.html" },           // NEW
+
+  // Networking
+  { title: "AWS VPC",                       file: "guides/aws-vpc-guide.html" },
+  { title: "AWS Load Balancing",            file: "guides/aws-load-balancing-guide.html" },
+  { title: "Amazon CloudFront",             file: "guides/aws-cloudfront-guide.html" },        // NEW
+  { title: "Amazon Route 53",               file: "guides/aws-route53-guide.html" },
+
+  // ── Domain 4: Troubleshooting and Optimization (18%) ────────────────
+
+  { title: "Amazon CloudWatch",             file: "guides/aws-cloudwatch-guide.html" },        // NEW
+  { title: "AWS X-Ray",                     file: "guides/aws-xray-guide.html" },              // NEW
+  { title: "AWS CloudShell",                file: "guides/aws-cloudshell-guide.html" },        // NEW
+  { title: "AWS CLI",                       file: "guides/aws-cli-guide.html" },               // NEW
+
+  // ← ADD NEW AWS GUIDES HERE
 ]
   },
   {
