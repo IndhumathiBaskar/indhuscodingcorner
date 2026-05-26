@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CDK — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f7ff;--surface:#eeecfb;--card:#ffffff;--border:#d8d4f5;--border2:#b8b0ec;
+  --cdk:#4f46e5;--cdk-l:#eef2ff;--cdk-d:#3730a3;--cdk-dk:#1e1b4b;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --amber:#d97706;--amber-l:#fefce8;--amber-d:#92400e;
+  --sky:#0284c7;--sky-l:#f0f9ff;--sky-d:#075985;
+  --emerald:#059669;--emerald-l:#ecfdf5;--emerald-d:#065f46;
+  --violet:#7c3aed;--violet-l:#f5f3ff;--violet-d:#4c1d95;
+  --fuchsia:#a21caf;--fuchsia-l:#fdf4ff;--fuchsia-d:#701a75;
+  --slate:#64748b;--slate-l:#f8fafc;
+  --text:#0f0e2a;--text2:#1e1b4b;--muted:#5b5b8a;
+  --code-bg:#0f0e2a;--r:10px;
+  --sh:0 1px 3px rgba(79,70,229,.06),0 4px 12px rgba(79,70,229,.07);
+  --sh-lg:0 2px 8px rgba(79,70,229,.08),0 8px 28px rgba(79,70,229,.1);
+  --sh-xl:0 4px 16px rgba(79,70,229,.09),0 16px 48px rgba(79,70,229,.12);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#1e1b4b 0%,#2d2a7a 35%,#3730a3 65%,#4f46e5 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-hex{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;}
+.hdr-orb{position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(139,92,246,.25) 0%,transparent 65%);pointer-events:none;}
+.hdr-orb2{position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(99,102,241,.15) 0%,transparent 65%);pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.35);color:#c4b5fd;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#a5b4fc,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cdk-l);color:var(--cdk-d);font-weight:700;box-shadow:0 0 0 1.5px rgba(79,70,229,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--cdk-l);letter-spacing:-.02em;}
+.section h3{color:var(--cdk-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── CDK LAYER VISUAL ── */
+.cdk-layers{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-xl);}
+.cl-header{background:linear-gradient(90deg,#1e1b4b,#3730a3);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #2d2a7a;display:flex;align-items:center;gap:8px;}
+.cl-header span{background:rgba(139,92,246,.2);border:1px solid rgba(139,92,246,.3);color:#c4b5fd;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.cl-body{padding:14px;}
+.cl-layer{border-radius:8px;padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;position:relative;}
+.cl-layer:last-child{margin-bottom:0;}
+.cl-icon{font-size:1.5rem;flex-shrink:0;}
+.cl-info{flex:1;}
+.cl-info h6{font-weight:700;font-size:.8rem;margin-bottom:2px;}
+.cl-info p{font-size:.67rem;color:var(--muted);}
+.cl-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:3px 9px;border-radius:4px;flex-shrink:0;font-weight:600;}
+.l1{background:var(--cdk-l);border:1.5px solid rgba(79,70,229,.25);}
+.l1 .cl-info h6{color:var(--cdk-d);}
+.l1 .cl-badge{background:var(--cdk-l);color:var(--cdk-d);}
+.l2{background:var(--violet-l);border:1.5px solid rgba(124,58,237,.2);}
+.l2 .cl-info h6{color:var(--violet-d);}
+.l2 .cl-badge{background:var(--violet-l);color:var(--violet-d);}
+.l3{background:var(--sky-l);border:1.5px solid rgba(2,132,199,.2);}
+.l3 .cl-info h6{color:var(--sky-d);}
+.l3 .cl-badge{background:var(--sky-l);color:var(--sky-d);}
+.l4{background:var(--amber-l);border:1.5px solid rgba(217,119,6,.2);}
+.l4 .cl-info h6{color:var(--amber-d);}
+.l4 .cl-badge{background:var(--amber-l);color:var(--amber-d);}
+.cl-arrow{text-align:center;color:var(--border2);font-size:1.1rem;padding:1px 0;}
+
+/* ── CONSTRUCT TREE ── */
+.construct-tree{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.ct-header{background:linear-gradient(90deg,var(--cdk-l),var(--violet-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.ct-body{padding:14px;font-family:'JetBrains Mono',monospace;font-size:.72rem;line-height:2;}
+.ct-app{color:var(--cdk-d);font-weight:700;}
+.ct-stack{color:var(--violet-d);font-weight:600;padding-left:16px;}
+.ct-construct{color:var(--sky-d);padding-left:32px;}
+.ct-resource{color:var(--muted);padding-left:48px;}
+.ct-dot{color:var(--border2);margin-right:4px;}
+
+/* ── SYNTH VISUAL ── */
+.synth-flow{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.sf-header{background:linear-gradient(90deg,#1e1b4b,#2d2a7a);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #2d2a7a;}
+.sf-body{padding:14px;overflow-x:auto;}
+.sf-row{display:flex;align-items:center;gap:0;min-width:520px;}
+.sf-stage{flex:1;text-align:center;padding:10px 6px;border-right:1px dashed var(--border);position:relative;}
+.sf-stage:last-child{border-right:none;}
+.sf-icon{font-size:1.5rem;display:block;margin-bottom:4px;}
+.sf-stage h6{font-size:.7rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+.sf-stage p{font-size:.58rem;color:var(--muted);}
+.sf-tag{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;}
+
+/* ── ASPECT VISUAL ── */
+.aspect-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.av-header{background:linear-gradient(90deg,var(--fuchsia-l),var(--violet-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.av-body{padding:14px;}
+.av-scope{border:1.5px dashed var(--border2);border-radius:8px;padding:12px;position:relative;margin-bottom:10px;}
+.av-scope-label{position:absolute;top:-9px;left:12px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--cdk-d);font-weight:600;padding:0 6px;}
+.av-resources{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.av-res{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:5px;border:1px solid;}
+.av-arrow{text-align:center;color:var(--cdk);font-size:1.2rem;padding:4px 0;}
+.av-aspect{background:var(--cdk-l);border:2px solid rgba(79,70,229,.3);border-radius:8px;padding:10px 14px;}
+.av-aspect h6{font-weight:700;font-size:.76rem;color:var(--cdk-d);margin-bottom:3px;}
+.av-aspect p{font-size:.68rem;color:var(--muted);}
+
+/* ── DIFF VISUAL ── */
+.diff-vis{background:var(--code-bg);border:1px solid #1e1b4b;border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.dv-header{background:#1e1b4b;padding:10px 16px;font-weight:700;font-size:.78rem;color:#a5b4fc;border-bottom:1px solid #2d2a7a;font-family:'JetBrains Mono',monospace;}
+.dv-body{padding:12px 14px;font-family:'JetBrains Mono',monospace;font-size:.68rem;line-height:1.9;}
+.diff-add{color:#86efac;}
+.diff-remove{color:#fca5a5;}
+.diff-ctx{color:#64748b;}
+.diff-section{color:#93c5fd;font-weight:600;margin-top:6px;}
+
+/* ── CONTEXT / CONFIG ── */
+.config-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cv2-header{background:linear-gradient(90deg,var(--sky-l),var(--cdk-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.cv2-body{padding:0;}
+.cv2-row{display:flex;border-bottom:1px solid var(--border);align-items:center;}
+.cv2-row:last-child{border-bottom:none;}
+.cv2-key{background:var(--surface);padding:8px 13px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--cdk-d);font-weight:600;width:220px;flex-shrink:0;border-right:1px solid var(--border);}
+.cv2-val{padding:8px 13px;font-size:.73rem;color:var(--muted);flex:1;}
+
+/* ── PIPELINE VISUAL ── */
+.pipeline-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pv-header{background:linear-gradient(90deg,#1e1b4b,#3730a3);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #2d2a7a;}
+.pv-body{padding:14px;}
+.pv-stage{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;}
+.pv-stage:last-child{margin-bottom:0;}
+.pv-stage-title{font-weight:700;font-size:.78rem;color:var(--cdk-d);margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.pv-steps{display:flex;flex-wrap:wrap;gap:6px;}
+.pv-step{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:5px;border:1px solid;}
+.ps-source{background:var(--sky-l);border-color:rgba(2,132,199,.25);color:var(--sky-d);}
+.ps-build{background:var(--amber-l);border-color:rgba(217,119,6,.25);color:var(--amber-d);}
+.ps-test{background:var(--violet-l);border-color:rgba(124,58,237,.2);color:var(--violet-d);}
+.ps-deploy{background:var(--cdk-l);border-color:rgba(79,70,229,.25);color:var(--cdk-d);}
+.ps-approve{background:var(--rose-l);border-color:var(--rose-b);color:var(--rose);}
+
+/* ── FEATURE COMPARE ── */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-head{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.76rem;}
+.fc-cdk{background:var(--cdk-l);color:var(--cdk-d);border-right:1px solid var(--border);}
+.fc-other{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.good{color:var(--emerald-d);font-weight:600;}
+.fc-val.warn{color:var(--amber-d);font-weight:600;}
+.fc-val.bad{color:var(--rose);font-weight:600;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--cdk-d),var(--cdk));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--cdk-d);padding:8px 11px;background:var(--cdk-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cdk-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cdk);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cdk-l);border:1px solid rgba(79,70,229,.15);border-left:4px solid var(--cdk);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cdk-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--rose-l);border:1px solid var(--rose-b);border-left:4px solid var(--rose);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--rose);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--emerald-l);border:1px solid rgba(5,150,105,.2);border-left:4px solid var(--emerald-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--emerald-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--sky-l);border:1px solid rgba(2,132,199,.18);border-left:4px solid var(--sky);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--sky-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #1e1b4b;border-left:3px solid var(--cdk);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#a5b4fc;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#2d3a6a;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.bool{color:#cba6f7;}.prop{color:#f2a27a;}.attr{color:#f38ba8;}.iface{color:#89dceb;}.dec{color:#f38ba8;}
+code{background:rgba(79,70,229,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--cdk-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--emerald-d);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--emerald-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#1e1b4b 0%,#2d2a7a 60%,#3730a3 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'🏗️';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── BOOTSTRAP VISUAL ── */
+.bootstrap-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.bv-header{background:linear-gradient(90deg,var(--amber-l),var(--cdk-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.bv-body{padding:14px;}
+.bv-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.bv-box{flex:1;border-radius:7px;padding:9px 12px;}
+.bv-before{background:var(--rose-l);border:1.5px solid var(--rose-b);}
+.bv-before h6{font-size:.72rem;font-weight:700;color:var(--rose);margin-bottom:3px;}
+.bv-after{background:var(--emerald-l);border:1.5px solid rgba(5,150,105,.25);}
+.bv-after h6{font-size:.72rem;font-weight:700;color:var(--emerald-d);margin-bottom:3px;}
+.bv-box p{font-size:.65rem;color:var(--muted);}
+.bv-arrow{color:var(--border2);font-size:1.3rem;flex-shrink:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .fc-row,.sf-row,.bv-row{flex-direction:column;}
+  .fc-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .sf-row{min-width:600px;}
+  .console-step-path{display:none;}
+  .cv2-key{width:160px;}
+  .bv-arrow{transform:rotate(90deg);}
+  .pv-steps{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-hex"></div>
+  <div class="hdr-orb"></div>
+  <div class="hdr-orb2"></div>
+  <div class="container">
+    <div class="hdr-badge">🏗️ AWS · Cloud Development Kit</div>
+    <h1>AWS <span>CDK</span> — Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">Constructs L1/L2/L3</span>
+      <span class="header-tag">cdk synth &amp; deploy</span>
+      <span class="header-tag">CDK Pipelines</span>
+      <span class="header-tag">Aspects</span>
+      <span class="header-tag">Context &amp; Tokens</span>
+      <span class="header-tag">C# .NET 8</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CDK</button>
+    <button class="tab-btn" onclick="T('constructs',this)">2 · Constructs</button>
+    <button class="tab-btn" onclick="T('stacks',this)">3 · Stacks &amp; Apps</button>
+    <button class="tab-btn" onclick="T('patterns',this)">4 · Patterns &amp; Aspects</button>
+    <button class="tab-btn" onclick="T('cli',this)">5 · CDK CLI</button>
+    <button class="tab-btn" onclick="T('testing',this)">6 · Testing</button>
+    <button class="tab-btn" onclick="T('pipelines',this)">7 · CDK Pipelines</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Setup &amp; Bootstrap</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# Deep Dive</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CDK
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>🏗️ What is AWS CDK?</h2>
+  <p>AWS CDK (Cloud Development Kit) lets you define your entire AWS infrastructure using <strong>real programming languages</strong> — C#, TypeScript, Python, Java, Go. You write code; CDK synthesises it into CloudFormation templates and deploys them. You get all the power of a real language: loops, classes, inheritance, unit tests, IDE autocomplete, and refactoring tools — applied to infrastructure.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>CDK sits <em>above</em> CloudFormation. You write C# code → CDK synthesises it into a CloudFormation template (<code>cdk synth</code>) → CloudFormation deploys the real AWS resources. The CDK layer is purely a code-time tool — nothing extra runs in your AWS account.</p>
+  </div>
+
+  <!-- CDK LAYER VISUAL -->
+  <h3>The CDK Abstraction Stack</h3>
+  <div class="cdk-layers">
+    <div class="cl-header">🏗️ CDK Layers — From Code to Real Resources <span>Top = what you write · Bottom = what runs</span></div>
+    <div class="cl-body">
+      <div class="cl-layer l1">
+        <div class="cl-icon">💻</div>
+        <div class="cl-info"><h6>Your C# Code (Constructs + Stacks)</h6><p>Classes, loops, conditions, shared libraries, unit tests — full language power</p></div>
+        <div class="cl-badge">You write this</div>
+      </div>
+      <div class="cl-arrow">↓ cdk synth</div>
+      <div class="cl-layer l2">
+        <div class="cl-icon">📄</div>
+        <div class="cl-info"><h6>CloudFormation Template (JSON)</h6><p>Generated into cdk.out/ — you rarely touch this directly</p></div>
+        <div class="cl-badge">CDK generates</div>
+      </div>
+      <div class="cl-arrow">↓ cdk deploy / CloudFormation</div>
+      <div class="cl-layer l3">
+        <div class="cl-icon">☁️</div>
+        <div class="cl-info"><h6>CloudFormation Stack</h6><p>The deployed state — change sets, rollback, drift detection all work natively</p></div>
+        <div class="cl-badge">CloudFormation manages</div>
+      </div>
+      <div class="cl-arrow">↓ CloudFormation provisions</div>
+      <div class="cl-layer l4">
+        <div class="cl-icon">🖥️</div>
+        <div class="cl-info"><h6>Real AWS Resources</h6><p>Lambda, DynamoDB, VPC, ECS, IAM, S3 — actual running infrastructure</p></div>
+        <div class="cl-badge">AWS runs</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>CDK vs CloudFormation vs SAM vs Terraform</h3>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-col fc-cdk">🏗️ CDK (C#)</div>
+      <div class="fc-col fc-other" style="flex:3;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">☁️ CloudFormation</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">🚀 SAM</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;font-weight:700;font-size:.72rem;color:var(--muted);">🌍 Terraform</div>
+      </div>
+    </div>
+    <div class="fc-row"><div class="fc-lbl">Language</div><div class="fc-val good">C# / TS / Python code</div><div class="fc-val">YAML / JSON</div><div class="fc-val">YAML (SAM shorthand)</div><div class="fc-val">HCL</div></div>
+    <div class="fc-row"><div class="fc-lbl">Loops / Logic</div><div class="fc-val good">✅ Full language</div><div class="fc-val warn">❌ None</div><div class="fc-val warn">❌ None</div><div class="fc-val warn">⚠️ Limited</div></div>
+    <div class="fc-row"><div class="fc-lbl">Unit testing</div><div class="fc-val good">✅ xUnit / NUnit</div><div class="fc-val bad">❌ No native</div><div class="fc-val bad">❌ No native</div><div class="fc-val warn">⚠️ Terratest</div></div>
+    <div class="fc-row"><div class="fc-lbl">IDE support</div><div class="fc-val good">✅ Full IntelliSense</div><div class="fc-val warn">⚠️ Snippets only</div><div class="fc-val warn">⚠️ Snippets only</div><div class="fc-val warn">⚠️ Plugin</div></div>
+    <div class="fc-row"><div class="fc-lbl">Multi-cloud</div><div class="fc-val bad">❌ AWS only</div><div class="fc-val bad">❌ AWS only</div><div class="fc-val bad">❌ AWS only</div><div class="fc-val good">✅ Any provider</div></div>
+    <div class="fc-row"><div class="fc-lbl">Local testing</div><div class="fc-val warn">⚠️ Via SAM</div><div class="fc-val bad">❌ None</div><div class="fc-val good">✅ sam local</div><div class="fc-val bad">❌ None</div></div>
+    <div class="fc-row"><div class="fc-lbl">State file</div><div class="fc-val good">None (AWS managed)</div><div class="fc-val good">None (AWS managed)</div><div class="fc-val good">None (AWS managed)</div><div class="fc-val warn">tfstate (you manage)</div></div>
+  </div>
+
+  <h3>Key Concepts at a Glance</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🧱</span><h4>Construct</h4><p>The basic building block. Represents one or many AWS resources. Three levels: L1, L2, L3.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Stack</h4><p>A deployable unit — maps to one CloudFormation stack. Groups constructs.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>App</h4><p>The root of the construct tree — contains one or more stacks.</p></div>
+    <div class="icon-item"><span class="emoji">⚗️</span><h4>Synth</h4><p>Converts your C# code to CloudFormation JSON in cdk.out/.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Diff</h4><p>Shows what will change before you deploy. Like a preview / change set.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>Bootstrap</h4><p>One-time setup per account/region — creates S3 bucket + ECR repo for CDK assets.</p></div>
+    <div class="icon-item"><span class="emoji">🎯</span><h4>Token</h4><p>A placeholder for a value not yet known at synth time (e.g., a bucket ARN).</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Aspect</h4><p>Visit every construct in a scope — apply policy, tagging, or validation cross-cutting.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>CDK Pipelines</h4><p>Self-mutating CI/CD pipeline — deploys itself and your app using CodePipeline.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — CONSTRUCTS
+══════════════════════════════════ -->
+<div id="tab-constructs" class="tab-panel"><div class="section">
+  <h2>🧱 Constructs — L1, L2, L3</h2>
+  <p>Constructs are the fundamental building blocks of CDK. Every resource in your CDK app is a construct. They come in three abstraction levels.</p>
+
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid var(--sky-d);">
+      <h4 style="color:var(--sky-d);">⬇️ L1 — CloudFormation Resources (Cfn*)</h4>
+      <p>1:1 mapping to CloudFormation resource types. Low-level, verbose, full control. Class names start with <code>Cfn</code>. Every CloudFormation property is available.</p>
+      <br><p style="font-family:monospace;font-size:.7rem;color:var(--sky-d);">CfnBucket, CfnFunction, CfnTable</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--cdk-d);">
+      <h4>⬆️ L2 — Higher-Level Constructs</h4>
+      <p>Opinionated wrappers with sensible defaults, IAM helpers, and event-driven connections. Most common choice — good defaults, still configurable. Classes named naturally.</p>
+      <br><p style="font-family:monospace;font-size:.7rem;color:var(--cdk-d);">Bucket, Function, Table, Queue</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--violet-d);">
+      <h4 style="color:var(--violet-d);">🚀 L3 — Patterns (aws-solutions-constructs)</h4>
+      <p>Multi-resource patterns combining multiple L2 constructs into opinionated, battle-tested architectures. One line deploys a complete pattern.</p>
+      <br><p style="font-family:monospace;font-size:.7rem;color:var(--violet-d);">LambdaToDynamoDB, SqsToLambda</p>
+    </div>
+  </div>
+
+  <!-- CONSTRUCT TREE -->
+  <h3>The Construct Tree</h3>
+  <div class="construct-tree">
+    <div class="ct-header">🌳 Construct Tree — watson-serverless App</div>
+    <div class="ct-body">
+      <div class="ct-app">App  <span style="color:var(--muted);font-weight:400;font-size:.65rem;">// root</span></div>
+      <div class="ct-stack">├── WatsonNetworkStack  <span style="color:var(--muted);font-weight:400;font-size:.65rem;">// CloudFormation stack</span></div>
+      <div class="ct-construct">│   ├── VPC  <span style="color:var(--muted);font-size:.62rem;">// L2 construct</span></div>
+      <div class="ct-resource">│   │   ├── Resource (AWS::EC2::VPC)</div>
+      <div class="ct-resource">│   │   ├── PublicSubnet1 (AWS::EC2::Subnet)</div>
+      <div class="ct-resource">│   │   └── PrivateSubnet1 (AWS::EC2::Subnet)</div>
+      <div class="ct-construct">│   └── SecurityGroup  <span style="color:var(--muted);font-size:.62rem;">// L2 construct</span></div>
+      <div class="ct-resource">│       └── Resource (AWS::EC2::SecurityGroup)</div>
+      <div class="ct-stack">└── WatsonApiStack  <span style="color:var(--muted);font-weight:400;font-size:.65rem;">// CloudFormation stack</span></div>
+      <div class="ct-construct">    ├── GetOrdersFunction  <span style="color:var(--muted);font-size:.62rem;">// L2 construct</span></div>
+      <div class="ct-resource">    │   ├── Resource (AWS::Lambda::Function)</div>
+      <div class="ct-resource">    │   ├── ServiceRole (AWS::IAM::Role)</div>
+      <div class="ct-resource">    │   └── LogGroup (AWS::Logs::LogGroup)</div>
+      <div class="ct-construct">    ├── OrdersTable  <span style="color:var(--muted);font-size:.62rem;">// L2 construct</span></div>
+      <div class="ct-resource">    │   └── Resource (AWS::DynamoDB::Table)</div>
+      <div class="ct-construct">    └── WatsonApi  <span style="color:var(--muted);font-size:.62rem;">// L2 HttpApi</span></div>
+      <div class="ct-resource">        ├── Resource (AWS::ApiGatewayV2::Api)</div>
+      <div class="ct-resource">        └── DefaultStage (AWS::ApiGatewayV2::Stage)</div>
+    </div>
+  </div>
+
+  <h3>L1 vs L2 vs L3 — Side-by-Side C#</h3>
+  <div class="code-block">
+    <span class="code-label">C# · L1 vs L2 vs L3 DynamoDB Table</span>
+    <pre><span class="cm">// ── L1 — Raw CloudFormation (verbose, full control) ──────────</span>
+<span class="kw">var</span> l1Table = <span class="kw">new</span> <span class="tp">CfnTable</span>(<span class="kw">this</span>, <span class="str">"L1OrdersTable"</span>, <span class="kw">new</span> <span class="tp">CfnTableProps</span>
+{
+    TableName = <span class="str">"watson-orders"</span>,
+    AttributeDefinitions = <span class="kw">new</span>[]
+    {
+        <span class="kw">new</span> <span class="tp">CfnTable</span>.<span class="tp">AttributeDefinitionProperty</span>
+            { AttributeName = <span class="str">"orderId"</span>, AttributeType = <span class="str">"S"</span> }
+    },
+    KeySchema = <span class="kw">new</span>[]
+    {
+        <span class="kw">new</span> <span class="tp">CfnTable</span>.<span class="tp">KeySchemaProperty</span>
+            { AttributeName = <span class="str">"orderId"</span>, KeyType = <span class="str">"HASH"</span> }
+    },
+    BillingMode = <span class="str">"PAY_PER_REQUEST"</span>
+});
+
+<span class="cm">// ── L2 — Sensible defaults, IAM helpers (recommended) ────────</span>
+<span class="kw">var</span> l2Table = <span class="kw">new</span> <span class="tp">Table</span>(<span class="kw">this</span>, <span class="str">"OrdersTable"</span>, <span class="kw">new</span> <span class="tp">TableProps</span>
+{
+    TableName      = <span class="str">"watson-orders"</span>,
+    PartitionKey   = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"orderId"</span>, Type = <span class="tp">AttributeType</span>.STRING },
+    BillingMode    = <span class="tp">BillingMode</span>.PAY_PER_REQUEST,
+    RemovalPolicy  = <span class="tp">RemovalPolicy</span>.RETAIN,         <span class="cm">// Keep on stack delete</span>
+    PointInTimeRecovery = <span class="bool">true</span>,
+    Encryption     = <span class="tp">TableEncryption</span>.AWS_MANAGED
+});
+
+<span class="cm">// Grant Lambda access — L2 generates least-privilege IAM policy</span>
+l2Table.<span class="fn">GrantReadWriteData</span>(myFunction);
+
+<span class="cm">// ── L3 — Complete pattern (SQS → Lambda → DynamoDB) ──────────</span>
+<span class="kw">var</span> pattern = <span class="kw">new</span> <span class="tp">SqsToLambdaToDynamoDb</span>(<span class="kw">this</span>, <span class="str">"OrderPattern"</span>,
+    <span class="kw">new</span> <span class="tp">SqsToLambdaToDynamoDbProps</span>
+    {
+        LambdaFunctionProps = <span class="kw">new</span> <span class="tp">FunctionProps</span>
+        {
+            Runtime = <span class="tp">Runtime</span>.PROVIDED_AL2023,
+            Handler = <span class="str">"bootstrap"</span>,
+            Code    = <span class="tp">Code</span>.<span class="fn">FromAsset</span>(<span class="str">"./src/WatsonOrders"</span>)
+        },
+        DynamoTableProps = <span class="kw">new</span> <span class="tp">TableProps</span>
+        {
+            PartitionKey = <span class="kw">new</span> <span class="tp">Attribute</span>
+                { Name = <span class="str">"orderId"</span>, Type = <span class="tp">AttributeType</span>.STRING }
+        }
+    });
+<span class="cm">// Creates: SQS Queue + DLQ + Lambda + DynamoDB + all IAM wiring automatically</span></pre>
+  </div>
+
+  <h3>Custom Constructs — Reusable Components</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Custom L2-style Construct for Team Watson</span>
+    <pre><span class="cm">/// &lt;summary&gt;
+/// Reusable construct: Lambda + DynamoDB + CloudWatch Alarm
+/// Use this instead of wiring all three manually every time.
+/// &lt;/summary&gt;</span>
+<span class="kw">public class</span> <span class="tp">WatsonLambdaWithStorage</span> : <span class="tp">Construct</span>
+{
+    <span class="kw">public</span> <span class="tp">Function</span> LambdaFunction { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">Table</span>    StorageTable   { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="tp">WatsonLambdaWithStorage</span>(
+        <span class="tp">Construct</span> scope, <span class="tp">string</span> id,
+        <span class="tp">WatsonLambdaWithStorageProps</span> props) : <span class="kw">base</span>(scope, id)
+    {
+        <span class="cm">// Table</span>
+        StorageTable = <span class="kw">new</span> <span class="tp">Table</span>(<span class="kw">this</span>, <span class="str">"Table"</span>, <span class="kw">new</span> <span class="tp">TableProps</span>
+        {
+            PartitionKey  = props.PartitionKey,
+            BillingMode   = <span class="tp">BillingMode</span>.PAY_PER_REQUEST,
+            RemovalPolicy = <span class="tp">RemovalPolicy</span>.RETAIN
+        });
+
+        <span class="cm">// Lambda</span>
+        LambdaFunction = <span class="kw">new</span> <span class="tp">Function</span>(<span class="kw">this</span>, <span class="str">"Function"</span>, <span class="kw">new</span> <span class="tp">FunctionProps</span>
+        {
+            Runtime     = <span class="tp">Runtime</span>.PROVIDED_AL2023,
+            Architecture= <span class="tp">Architecture</span>.ARM_64,
+            Handler     = <span class="str">"bootstrap"</span>,
+            Code        = <span class="tp">Code</span>.<span class="fn">FromAsset</span>(props.CodePath),
+            MemorySize  = props.MemorySize ?? <span class="num">512</span>,
+            Timeout     = <span class="tp">Duration</span>.<span class="fn">Seconds</span>(<span class="num">30</span>),
+            Tracing     = <span class="tp">Tracing</span>.ACTIVE,
+            Environment = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+            {
+                [<span class="str">"TABLE_NAME"</span>] = StorageTable.TableName,
+                [<span class="str">"ENVIRONMENT"</span>] = props.Environment
+            }
+        });
+
+        <span class="cm">// Grant least-privilege access</span>
+        StorageTable.<span class="fn">GrantReadWriteData</span>(LambdaFunction);
+
+        <span class="cm">// CloudWatch Alarm — auto-wired</span>
+        LambdaFunction.<span class="fn">MetricErrors</span>().<span class="fn">CreateAlarm</span>(<span class="kw">this</span>, <span class="str">"ErrorAlarm"</span>,
+            <span class="kw">new</span> <span class="tp">CreateAlarmOptions</span>
+            {
+                AlarmName          = <span class="str">$"{id}-errors"</span>,
+                Threshold          = <span class="num">5</span>,
+                EvaluationPeriods  = <span class="num">1</span>,
+                TreatMissingData   = <span class="tp">TreatMissingData</span>.NOT_BREACHING
+            });
+    }
+}
+
+<span class="cm">// Usage — one line instead of 30+</span>
+<span class="kw">var</span> orders = <span class="kw">new</span> <span class="tp">WatsonLambdaWithStorage</span>(<span class="kw">this</span>, <span class="str">"Orders"</span>,
+    <span class="kw">new</span> <span class="tp">WatsonLambdaWithStorageProps</span>
+    {
+        CodePath     = <span class="str">"./src/WatsonOrders"</span>,
+        PartitionKey = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"orderId"</span>, Type = <span class="tp">AttributeType</span>.STRING },
+        Environment  = <span class="str">"prod"</span>
+    });</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — STACKS & APPS
+══════════════════════════════════ -->
+<div id="tab-stacks" class="tab-panel"><div class="section">
+  <h2>📦 Stacks, Apps &amp; Environments</h2>
+
+  <h3>App + Stack Structure</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs — CDK App Entry Point</span>
+    <pre><span class="kw">using</span> Amazon.CDK;
+
+<span class="kw">var</span> app = <span class="kw">new</span> <span class="tp">App</span>();
+
+<span class="cm">// Deploy to dev (account from CLI credentials)</span>
+<span class="kw">new</span> <span class="tp">WatsonApiStack</span>(app, <span class="str">"WatsonApiDev"</span>, <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span>
+{
+    Env = <span class="kw">new</span> <span class="tp">Amazon.CDK.Environment</span>
+    {
+        Account = <span class="str">"111122223333"</span>,
+        Region  = <span class="str">"eu-west-1"</span>
+    },
+    EnvironmentName = <span class="str">"dev"</span>,
+    InstanceClass   = <span class="tp">InstanceClass</span>.T3,
+    InstanceSize    = <span class="tp">InstanceSize</span>.MICRO
+});
+
+<span class="cm">// Prod stack — different account, different config</span>
+<span class="kw">new</span> <span class="tp">WatsonApiStack</span>(app, <span class="str">"WatsonApiProd"</span>, <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span>
+{
+    Env = <span class="kw">new</span> <span class="tp">Amazon.CDK.Environment</span>
+    {
+        Account = <span class="str">"444455556666"</span>,
+        Region  = <span class="str">"eu-west-1"</span>
+    },
+    EnvironmentName = <span class="str">"prod"</span>,
+    InstanceClass   = <span class="tp">InstanceClass</span>.M5,
+    InstanceSize    = <span class="tp">InstanceSize</span>.LARGE
+});
+
+app.<span class="fn">Synth</span>();</pre>
+  </div>
+
+  <h3>Stack Class</h3>
+  <div class="code-block">
+    <span class="code-label">C# · WatsonApiStack.cs</span>
+    <pre"><span class="kw">public class</span> <span class="tp">WatsonApiStackProps</span> : <span class="tp">StackProps</span>
+{
+    <span class="kw">public required string</span> EnvironmentName { <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public required</span> <span class="tp">InstanceClass</span> InstanceClass { <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public required</span> <span class="tp">InstanceSize</span>  InstanceSize  { <span class="kw">get</span>; <span class="kw">init</span>; }
+}
+
+<span class="kw">public class</span> <span class="tp">WatsonApiStack</span> : <span class="tp">Stack</span>
+{
+    <span class="kw">public</span> <span class="tp">WatsonApiStack</span>(
+        <span class="tp">Construct</span> scope, <span class="tp">string</span> id,
+        <span class="tp">WatsonApiStackProps</span> props) : <span class="kw">base</span>(scope, id, props)
+    {
+        <span class="cm">// DynamoDB Table</span>
+        <span class="kw">var</span> table = <span class="kw">new</span> <span class="tp">Table</span>(<span class="kw">this</span>, <span class="str">"OrdersTable"</span>, <span class="kw">new</span> <span class="tp">TableProps</span>
+        {
+            PartitionKey   = <span class="kw">new</span> <span class="tp">Attribute</span>
+                { Name = <span class="str">"orderId"</span>, Type = <span class="tp">AttributeType</span>.STRING },
+            BillingMode    = <span class="tp">BillingMode</span>.PAY_PER_REQUEST,
+            RemovalPolicy  = props.EnvironmentName == <span class="str">"prod"</span>
+                ? <span class="tp">RemovalPolicy</span>.RETAIN
+                : <span class="tp">RemovalPolicy</span>.DESTROY     <span class="cm">// Clean up dev stacks</span>
+        });
+
+        <span class="cm">// Lambda Function</span>
+        <span class="kw">var</span> fn = <span class="kw">new</span> <span class="tp">Function</span>(<span class="kw">this</span>, <span class="str">"GetOrders"</span>, <span class="kw">new</span> <span class="tp">FunctionProps</span>
+        {
+            Runtime     = <span class="tp">Runtime</span>.PROVIDED_AL2023,
+            Architecture= <span class="tp">Architecture</span>.ARM_64,
+            Handler     = <span class="str">"bootstrap"</span>,
+            Code        = <span class="tp">Code</span>.<span class="fn">FromAsset</span>(<span class="str">"./src/WatsonOrders/publish"</span>),
+            Environment = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+            {
+                [<span class="str">"TABLE_NAME"</span>]   = table.TableName,
+                [<span class="str">"ENVIRONMENT"</span>]  = props.EnvironmentName
+            }
+        });
+
+        <span class="cm">// Grant table access — generates least-privilege IAM</span>
+        table.<span class="fn">GrantReadWriteData</span>(fn);
+
+        <span class="cm">// HTTP API</span>
+        <span class="kw">var</span> api = <span class="kw">new</span> <span class="tp">HttpApi</span>(<span class="kw">this</span>, <span class="str">"WatsonApi"</span>, <span class="kw">new</span> <span class="tp">HttpApiProps</span>
+        {
+            ApiName     = <span class="str">$"watson-api-{props.EnvironmentName}"</span>,
+            CorsPreflight = <span class="kw">new</span> <span class="tp">CorsPreflightOptions</span>
+            {
+                AllowMethods = [<span class="tp">CorsHttpMethod</span>.GET, <span class="tp">CorsHttpMethod</span>.POST],
+                AllowOrigins = [<span class="str">"*"</span>]
+            }
+        });
+
+        api.<span class="fn">AddRoutes</span>(<span class="kw">new</span> <span class="tp">AddRoutesOptions</span>
+        {
+            Path        = <span class="str">"/orders"</span>,
+            Methods     = [<span class="tp">HttpMethod</span>.GET],
+            Integration = <span class="kw">new</span> <span class="tp">HttpLambdaIntegration</span>(<span class="str">"GetOrdersInteg"</span>, fn)
+        });
+
+        <span class="cm">// Stack Outputs</span>
+        <span class="kw">new</span> <span class="tp">CfnOutput</span>(<span class="kw">this</span>, <span class="str">"ApiUrl"</span>, <span class="kw">new</span> <span class="tp">CfnOutputProps</span>
+        {
+            Value       = api.ApiEndpoint,
+            Description = <span class="str">$"Watson API URL ({props.EnvironmentName})"</span>,
+            ExportName  = <span class="str">$"watson-api-url-{props.EnvironmentName}"</span>
+        });
+    }
+}</pre>
+  </div>
+
+  <h3>Cross-Stack References</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Sharing VPC between stacks</span>
+    <pre"><span class="kw">public class</span> <span class="tp">NetworkStack</span> : <span class="tp">Stack</span>
+{
+    <span class="kw">public</span> <span class="tp">Vpc</span> Vpc { <span class="kw">get</span>; }   <span class="cm">// Expose as public property</span>
+
+    <span class="kw">public</span> <span class="tp">NetworkStack</span>(<span class="tp">Construct</span> scope, <span class="tp">string</span> id) : <span class="kw">base</span>(scope, id)
+    {
+        Vpc = <span class="kw">new</span> <span class="tp">Vpc</span>(<span class="kw">this</span>, <span class="str">"WatsonVpc"</span>, <span class="kw">new</span> <span class="tp">VpcProps</span>
+        {
+            MaxAzs          = <span class="num">2</span>,
+            NatGateways     = <span class="num">1</span>,
+            SubnetConfiguration = <span class="kw">new</span>[]
+            {
+                <span class="kw">new</span> <span class="tp">SubnetConfiguration</span>
+                    { Name = <span class="str">"Public"</span>,  SubnetType = <span class="tp">SubnetType</span>.PUBLIC,           CidrMask = <span class="num">24</span> },
+                <span class="kw">new</span> <span class="tp">SubnetConfiguration</span>
+                    { Name = <span class="str">"Private"</span>, SubnetType = <span class="tp">SubnetType</span>.PRIVATE_WITH_EGRESS, CidrMask = <span class="num">24</span> }
+            }
+        });
+    }
+}
+
+<span class="cm">// In Program.cs — CDK auto-generates CloudFormation Export/ImportValue</span>
+<span class="kw">var</span> networkStack = <span class="kw">new</span> <span class="tp">NetworkStack</span>(app, <span class="str">"WatsonNetwork"</span>);
+<span class="kw">var</span> apiStack     = <span class="kw">new</span> <span class="tp">WatsonApiStack</span>(app, <span class="str">"WatsonApi"</span>,
+    <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span> { Vpc = networkStack.Vpc });
+<span class="cm">// CDK adds apiStack.AddDependency(networkStack) automatically</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — PATTERNS & ASPECTS
+══════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel"><div class="section">
+  <h2>🎯 Patterns, Aspects &amp; Tokens</h2>
+
+  <h3>Aspects — Cross-Cutting Concerns</h3>
+  <p>An Aspect visits every construct in a scope. Use them for policy enforcement, tagging, or compliance checks that should apply everywhere — without touching every construct individually.</p>
+
+  <div class="aspect-vis">
+    <div class="av-header">🔍 Aspect — Visiting All Constructs in a Stack</div>
+    <div class="av-body">
+      <div class="av-scope">
+        <div class="av-scope-label">WatsonApiStack (scope)</div>
+        <div class="av-resources">
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">OrdersTable</span>
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">GetOrdersFunction</span>
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">WatsonApi</span>
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">ServiceRole</span>
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">LogGroup</span>
+          <span class="av-res" style="background:var(--cdk-l);border-color:rgba(79,70,229,.3);color:var(--cdk-d);">SecurityGroup</span>
+        </div>
+      </div>
+      <div class="av-arrow">↓ Aspects.Of(stack).Add(new WatsonTaggingAspect())</div>
+      <div class="av-aspect">
+        <h6>🏷️ WatsonTaggingAspect — visits every construct above</h6>
+        <p>Adds Team=Watson, CostCenter=Platform, ManagedBy=CDK to every resource. No need to set Tags on each construct individually.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# · Aspects — Tagging + Compliance Enforcement</span>
+    <pre"><span class="cm">// ── Tagging Aspect ────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">WatsonTaggingAspect</span> : <span class="tp">IAspect</span>
+{
+    <span class="kw">private readonly string</span> _env;
+    <span class="kw">public</span> <span class="tp">WatsonTaggingAspect</span>(<span class="tp">string</span> env) => _env = env;
+
+    <span class="kw">public void</span> <span class="fn">Visit</span>(<span class="tp">IConstruct</span> node)
+    {
+        <span class="kw">if</span> (node <span class="kw">is</span> <span class="tp">CfnResource</span> cfn)
+        {
+            <span class="tp">Tags</span>.<span class="fn">Of</span>(node).<span class="fn">Add</span>(<span class="str">"Team"</span>,       <span class="str">"Watson"</span>);
+            <span class="tp">Tags</span>.<span class="fn">Of</span>(node).<span class="fn">Add</span>(<span class="str">"CostCenter"</span>, <span class="str">"Platform"</span>);
+            <span class="tp">Tags</span>.<span class="fn">Of</span>(node).<span class="fn">Add</span>(<span class="str">"Environment"</span>, _env);
+            <span class="tp">Tags</span>.<span class="fn">Of</span>(node).<span class="fn">Add</span>(<span class="str">"ManagedBy"</span>,  <span class="str">"CDK"</span>);
+        }
+    }
+}
+
+<span class="cm">// ── Security Compliance Aspect ────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">BucketEncryptionAspect</span> : <span class="tp">IAspect</span>
+{
+    <span class="kw">public void</span> <span class="fn">Visit</span>(<span class="tp">IConstruct</span> node)
+    {
+        <span class="cm">// Enforce encryption on all S3 buckets</span>
+        <span class="kw">if</span> (node <span class="kw">is</span> <span class="tp">CfnBucket</span> bucket)
+        {
+            bucket.BucketEncryption = <span class="kw">new</span> <span class="tp">CfnBucket</span>.<span class="tp">BucketEncryptionProperty</span>
+            {
+                ServerSideEncryptionConfiguration = <span class="kw">new</span>[]
+                {
+                    <span class="kw">new</span> <span class="tp">CfnBucket</span>.<span class="tp">ServerSideEncryptionRuleProperty</span>
+                    {
+                        ServerSideEncryptionByDefault =
+                            <span class="kw">new</span> <span class="tp">CfnBucket</span>.<span class="tp">ServerSideEncryptionByDefaultProperty</span>
+                                { SseAlgorithm = <span class="str">"AES256"</span> }
+                    }
+                }
+            };
+        }
+
+        <span class="cm">// Fail synth if public Lambda found without approval</span>
+        <span class="kw">if</span> (node <span class="kw">is</span> <span class="tp">CfnFunction</span> fn &amp;&amp; fn.ReservedConcurrentExecutions <span class="kw">is null</span>)
+        {
+            <span class="tp">Annotations</span>.<span class="fn">Of</span>(node).<span class="fn">AddWarning</span>(
+                <span class="str">"Lambda function missing ReservedConcurrentExecutions — set to prevent runaway cost"</span>);
+        }
+    }
+}
+
+<span class="cm">// Apply aspects to entire app in Program.cs</span>
+<span class="tp">Aspects</span>.<span class="fn">Of</span>(app).<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">WatsonTaggingAspect</span>(<span class="str">"prod"</span>));
+<span class="tp">Aspects</span>.<span class="fn">Of</span>(app).<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">BucketEncryptionAspect</span>());
+<span class="cm">// Every construct in every stack gets visited — zero duplication</span></pre>
+  </div>
+
+  <h3>Tokens — Late-Bound Values</h3>
+  <p>A Token is a placeholder for a value not known at synth time — like a bucket ARN, which only exists after deployment. CDK encodes these as special strings and resolves them in the CloudFormation template.</p>
+  <div class="code-block">
+    <span class="code-label">C# · Understanding Tokens</span>
+    <pre"><span class="kw">var</span> bucket = <span class="kw">new</span> <span class="tp">Bucket</span>(<span class="kw">this</span>, <span class="str">"Artifacts"</span>);
+
+<span class="cm">// bucket.BucketArn is a TOKEN at synth time — not the real ARN yet</span>
+<span class="cm">// It looks like: "${Token[TOKEN.12]}"</span>
+<span class="cm">// CloudFormation resolves it to the real ARN at deploy time</span>
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(bucket.BucketArn);
+<span class="cm">// → "${Token[AWS.Arn.2]}"  ← NOT a real ARN yet</span>
+
+<span class="cm">// ✅ Safe: pass token to another construct — CDK resolves it</span>
+fn.<span class="fn">AddEnvironment</span>(<span class="str">"BUCKET_ARN"</span>, bucket.BucketArn);
+
+<span class="cm">// ❌ Unsafe: don't try to use token value at synth time</span>
+<span class="kw">if</span> (bucket.BucketArn.Contains(<span class="str">"my-bucket"</span>)) <span class="cm">// WRONG — token is a placeholder!</span>
+{
+    <span class="cm">// This will never work as expected</span>
+}
+
+<span class="cm">// ✅ Use CfnOutput to expose values after deployment</span>
+<span class="kw">new</span> <span class="tp">CfnOutput</span>(<span class="kw">this</span>, <span class="str">"BucketArn"</span>, <span class="kw">new</span> <span class="tp">CfnOutputProps</span>
+{
+    Value = bucket.BucketArn
+});
+
+<span class="cm">// Check if a value is a token</span>
+<span class="tp">Token</span>.<span class="fn">IsUnresolved</span>(bucket.BucketArn); <span class="cm">// → true (before synth)</span></pre>
+  </div>
+
+  <h3>Context &amp; cdk.json</h3>
+  <div class="config-vis">
+    <div class="cv2-header">⚙️ cdk.json — Context Keys</div>
+    <div class="cv2-body">
+      <div class="cv2-row"><div class="cv2-key">@aws-cdk/core:newStyleStackSynthesis</div><div class="cv2-val">true — use modern bootstrap (recommended for new projects)</div></div>
+      <div class="cv2-row"><div class="cv2-key">@aws-cdk/aws-ecs:enableDefaultLogDriver</div><div class="cv2-val">true — auto-adds CloudWatch log driver to ECS tasks</div></div>
+      <div class="cv2-row"><div class="cv2-key">@aws-cdk/aws-lambda:recognizeLayerVersion</div><div class="cv2-val">true — tracks layer version changes for better diff output</div></div>
+      <div class="cv2-row"><div class="cv2-key">@aws-cdk/aws-rds:databaseProxyUniqueResourceName</div><div class="cv2-val">true — avoid resource naming conflicts in RDS proxy</div></div>
+      <div class="cv2-row"><div class="cv2-key">context.env</div><div class="cv2-val">Custom: pass --context env=prod on CLI, read with app.Node.TryGetContext("env")</div></div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# · Reading Context at Synth Time</span>
+    <pre"><span class="kw">var</span> app = <span class="kw">new</span> <span class="tp">App</span>();
+
+<span class="cm">// Read from: cdk deploy --context env=prod</span>
+<span class="kw">var</span> env = app.Node.<span class="fn">TryGetContext</span>(<span class="str">"env"</span>)?.ToString() ?? <span class="str">"dev"</span>;
+
+<span class="kw">new</span> <span class="tp">WatsonApiStack</span>(app, <span class="str">$"WatsonApi-{env}"</span>,
+    <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span> { EnvironmentName = env });</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — CDK CLI
+══════════════════════════════════ -->
+<div id="tab-cli" class="tab-panel"><div class="section">
+  <h2>🖥️ CDK CLI — Essential Commands</h2>
+
+  <h3>cdk synth — Generate CloudFormation</h3>
+  <div class="synth-flow">
+    <div class="sf-header">⚗️ cdk synth Pipeline — Code to CloudFormation</div>
+    <div class="sf-body">
+      <div class="sf-row">
+        <div class="sf-stage"><span class="sf-icon">💻</span><h6>C# Code</h6><p>Stacks + Constructs</p><span class="sf-tag" style="background:var(--cdk-l);color:var(--cdk-d);">dotnet run</span></div>
+        <div class="sf-stage"><span class="sf-icon">🔨</span><h6>Build</h6><p>dotnet build</p><span class="sf-tag" style="background:var(--amber-l);color:var(--amber-d);">compile</span></div>
+        <div class="sf-stage"><span class="sf-icon">🌳</span><h6>Construct Tree</h6><p>Graph resolved</p><span class="sf-tag" style="background:var(--violet-l);color:var(--violet-d);">in-memory</span></div>
+        <div class="sf-stage"><span class="sf-icon">📄</span><h6>CFN Template</h6><p>JSON in cdk.out/</p><span class="sf-tag" style="background:var(--sky-l);color:var(--sky-d);">JSON</span></div>
+        <div class="sf-stage"><span class="sf-icon">✅</span><h6>Manifest</h6><p>Assets + metadata</p><span class="sf-tag" style="background:var(--emerald-l);color:var(--emerald-d);">manifest.json</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · CDK CLI — All Essential Commands</span>
+    <pre"><span class="cm"># ── Project Init ──────────────────────────────────────────────</span>
+cdk init app --language csharp        <span class="cm"># New CDK project in C#</span>
+cdk init lib  --language csharp       <span class="cm"># New CDK library (constructs only)</span>
+
+<span class="cm"># ── Synth &amp; Diff ──────────────────────────────────────────────</span>
+cdk synth                             <span class="cm"># Synth all stacks → cdk.out/</span>
+cdk synth WatsonApiProd               <span class="cm"># Synth one stack by name</span>
+cdk diff                              <span class="cm"># Compare deployed vs local (like change set preview)</span>
+cdk diff WatsonApiProd                <span class="cm"># Diff one stack</span>
+cdk diff --context env=prod           <span class="cm"># Diff with context override</span>
+
+<span class="cm"># ── Bootstrap (one-time per account/region) ───────────────────</span>
+cdk bootstrap aws://111122223333/eu-west-1
+cdk bootstrap --cloudformation-execution-policies arn:aws:iam::aws:policy/AdministratorAccess
+
+<span class="cm"># ── Deploy ────────────────────────────────────────────────────</span>
+cdk deploy                            <span class="cm"># Deploy all stacks (asks confirmation)</span>
+cdk deploy WatsonApiProd              <span class="cm"># Deploy one stack</span>
+cdk deploy --require-approval never   <span class="cm"># Skip confirmation (CI/CD)</span>
+cdk deploy --hotswap                  <span class="cm"># Fast update Lambda code only (dev only!)</span>
+cdk deploy --context env=prod         <span class="cm"># Pass context</span>
+cdk deploy --parameters InstanceType=t3.small  <span class="cm"># Pass CloudFormation parameters</span>
+cdk deploy --all --concurrency 5      <span class="cm"># Deploy all stacks, 5 at a time</span>
+
+<span class="cm"># ── Watch Mode (dev) ──────────────────────────────────────────</span>
+cdk watch                             <span class="cm"># Watches code, auto-hotswap Lambda on save</span>
+
+<span class="cm"># ── Destroy ───────────────────────────────────────────────────</span>
+cdk destroy                           <span class="cm"># Delete all stacks</span>
+cdk destroy WatsonApiDev              <span class="cm"># Delete one stack</span>
+
+<span class="cm"># ── Inspect ───────────────────────────────────────────────────</span>
+cdk ls                                <span class="cm"># List all stacks in the app</span>
+cdk doctor                            <span class="cm"># Diagnose CDK + CLI version issues</span>
+cdk metadata                          <span class="cm"># Show stack metadata</span>
+cdk acknowledge &lt;id&gt;                  <span class="cm"># Acknowledge a deprecation notice</span></pre>
+  </div>
+
+  <h3>cdk diff Output — Reading the Change Preview</h3>
+  <div class="diff-vis">
+    <div class="dv-header">$ cdk diff WatsonApiProd</div>
+    <div class="dv-body">
+      <div class="diff-section">Stack WatsonApiProd</div>
+      <div class="diff-ctx">IAM Statement Changes</div>
+      <div class="diff-add">  + Statement[0]: Effect=Allow Action=[dynamodb:GetItem dynamodb:PutItem] Resource=arn:aws:dynamodb:...</div>
+      <br>
+      <div class="diff-ctx">Resources</div>
+      <div class="diff-add">  + AWS::DynamoDB::Table  WatsonApiProdOrdersTable (new resource)</div>
+      <div class="diff-add">  + AWS::IAM::Role        WatsonApiProdGetOrdersServiceRole</div>
+      <div class="diff-ctx">  ~ AWS::Lambda::Function WatsonApiProdGetOrders (update)</div>
+      <div class="diff-ctx">      Code.S3Key: old-hash → new-hash</div>
+      <div class="diff-ctx">      Environment.TABLE_NAME: &lt;unchanged&gt;</div>
+      <div class="diff-remove">  - AWS::Lambda::Function WatsonApiProdLegacyFunction (destroy)</div>
+      <br>
+      <div class="diff-ctx">Outputs</div>
+      <div class="diff-add">  + WatsonApiProdApiUrl: https://abc123.execute-api.eu-west-1.amazonaws.com</div>
+      <br>
+      <div class="diff-ctx" style="color:#86efac;">✨ Number of stacks with differences: 1</div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Always Run cdk diff Before cdk deploy in Prod</h4>
+    <p>The diff output shows IAM changes, resource additions, modifications (<code>~</code>), and deletions (<code>-</code>). Deletions of stateful resources (DynamoDB, RDS, S3) are highlighted — always check before deploying. Use <code>RemovalPolicy.RETAIN</code> on critical resources as a safety net.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — TESTING
+══════════════════════════════════ -->
+<div id="tab-testing" class="tab-panel"><div class="section">
+  <h2>🧪 Testing CDK Infrastructure</h2>
+  <p>CDK's killer advantage over YAML-based tools — you can write <strong>unit tests</strong> for your infrastructure using familiar test frameworks. Tests run in milliseconds without touching AWS.</p>
+
+  <h3>Three Types of CDK Tests</h3>
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid var(--sky-d);">
+      <h4 style="color:var(--sky-d);">✅ Assertion Tests</h4>
+      <p>Assert that the synthesised CloudFormation template contains expected resources, properties, and counts. Most common type.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--amber-d);">
+      <h4 style="color:var(--amber-d);">📸 Snapshot Tests</h4>
+      <p>Capture the full synthesised template as a snapshot. Fail if it changes unexpectedly — great for detecting accidental diffs.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--violet-d);">
+      <h4 style="color:var(--violet-d);">✔️ Validation Tests</h4>
+      <p>Test that invalid inputs throw exceptions during construction. Verifies guardrails and error messages in custom constructs.</p>
+    </div>
+  </div>
+
+  <h3>CDK Assertions — xUnit Tests in C#</h3>
+  <div class="code-block">
+    <span class="code-label">C# · WatsonApiStack.Tests.cs (xUnit)</span>
+    <pre"><span class="kw">using</span> Amazon.CDK;
+<span class="kw">using</span> Amazon.CDK.Assertions;
+<span class="kw">using</span> Xunit;
+
+<span class="kw">public class</span> <span class="tp">WatsonApiStackTests</span>
+{
+    <span class="kw">private</span> <span class="kw">readonly</span> <span class="tp">Template</span> _template;
+
+    <span class="kw">public</span> <span class="tp">WatsonApiStackTests</span>()
+    {
+        <span class="kw">var</span> app   = <span class="kw">new</span> <span class="tp">App</span>();
+        <span class="kw">var</span> stack = <span class="kw">new</span> <span class="tp">WatsonApiStack</span>(app, <span class="str">"TestStack"</span>,
+            <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span> { EnvironmentName = <span class="str">"test"</span> });
+
+        <span class="cm">// Synthesise to CloudFormation template in memory (no AWS calls)</span>
+        _template = <span class="tp">Template</span>.<span class="fn">FromStack</span>(stack);
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">DynamoDbTable_HasCorrectKeySchema</span>()
+    {
+        _template.<span class="fn">HasResourceProperties</span>(<span class="str">"AWS::DynamoDB::Table"</span>,
+            <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+            {
+                [<span class="str">"BillingMode"</span>] = <span class="str">"PAY_PER_REQUEST"</span>,
+                [<span class="str">"KeySchema"</span>] = <span class="kw">new</span>[]
+                {
+                    <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+                    {
+                        [<span class="str">"AttributeName"</span>] = <span class="str">"orderId"</span>,
+                        [<span class="str">"KeyType"</span>]       = <span class="str">"HASH"</span>
+                    }
+                }
+            }));
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">Lambda_IsArm64WithCorrectRuntime</span>()
+    {
+        _template.<span class="fn">HasResourceProperties</span>(<span class="str">"AWS::Lambda::Function"</span>,
+            <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+            {
+                [<span class="str">"Runtime"</span>]       = <span class="str">"provided.al2023"</span>,
+                [<span class="str">"Architectures"</span>] = <span class="kw">new</span>[] { <span class="str">"arm64"</span> },
+                [<span class="str">"Tracing"</span>]       = <span class="str">"Active"</span>
+            }));
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">Stack_HasExactlyOneTable_AndOneFunction</span>()
+    {
+        _template.<span class="fn">ResourceCountIs</span>(<span class="str">"AWS::DynamoDB::Table"</span>,   <span class="num">1</span>);
+        _template.<span class="fn">ResourceCountIs</span>(<span class="str">"AWS::Lambda::Function"</span>, <span class="num">1</span>);
+        _template.<span class="fn">ResourceCountIs</span>(<span class="str">"AWS::ApiGatewayV2::Api"</span>, <span class="num">1</span>);
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">Lambda_HasTableNameEnvironmentVariable</span>()
+    {
+        _template.<span class="fn">HasResourceProperties</span>(<span class="str">"AWS::Lambda::Function"</span>,
+            <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+            {
+                [<span class="str">"Environment"</span>] = <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+                {
+                    [<span class="str">"Variables"</span>] = <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+                    {
+                        [<span class="str">"TABLE_NAME"</span>] = <span class="tp">Match</span>.<span class="fn">AnyValue</span>()  <span class="cm">// Token — value resolved at deploy</span>
+                    })
+                })
+            }));
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">DevStack_TableHasDestroyRemovalPolicy</span>()
+    {
+        <span class="cm">// DeletionPolicy should be Delete in dev</span>
+        _template.<span class="fn">HasResource</span>(<span class="str">"AWS::DynamoDB::Table"</span>,
+            <span class="tp">Match</span>.<span class="fn">ObjectLike</span>(<span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="kw">object</span>&gt;
+            {
+                [<span class="str">"DeletionPolicy"</span>] = <span class="str">"Delete"</span>
+            }));
+    }
+
+    [<span class="dec">Fact</span>]
+    <span class="kw">public void</span> <span class="fn">Snapshot_MatchesBaseline</span>()
+    {
+        <span class="cm">// Snapshot — fails if anything changes unexpectedly</span>
+        _template.<span class="fn">ToJSON</span>(); <span class="cm">// Serialise; compare with stored snapshot in CI</span>
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CDK PIPELINES
+══════════════════════════════════ -->
+<div id="tab-pipelines" class="tab-panel"><div class="section">
+  <h2>🚀 CDK Pipelines — Self-Mutating CI/CD</h2>
+  <p>CDK Pipelines is a high-level construct that creates a <strong>self-mutating CodePipeline</strong>. "Self-mutating" means the pipeline updates itself when you change the pipeline definition — you never manually update the pipeline in the console.</p>
+
+  <div class="pipeline-vis">
+    <div class="pv-header">🔄 CDK Pipeline — Full Multi-Stage Flow</div>
+    <div class="pv-body">
+      <div class="pv-stage">
+        <div class="pv-stage-title">📥 Source</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-source">GitHub / CodeCommit</span>
+          <span class="pv-step ps-source">main branch push</span>
+          <span class="pv-step ps-source">CodeConnections</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">🔨 Build &amp; Synth</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-build">dotnet build</span>
+          <span class="pv-step ps-build">cdk synth</span>
+          <span class="pv-step ps-build">cdk.out uploaded</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">🔧 Self-Mutate</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-build">Pipeline updates itself</span>
+          <span class="pv-step ps-build">if pipeline code changed</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">🧪 Test Wave</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-test">xUnit tests</span>
+          <span class="pv-step ps-test">cdk diff check</span>
+          <span class="pv-step ps-test">ShellStep validation</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">🚀 Deploy Dev</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-deploy">WatsonApiDev</span>
+          <span class="pv-step ps-deploy">Integration tests</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">⏸️ Approve</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-approve">Manual approval</span>
+          <span class="pv-step ps-approve">SNS notification</span>
+        </div>
+      </div>
+      <div class="pv-stage">
+        <div class="pv-stage-title">🏭 Deploy Prod</div>
+        <div class="pv-steps">
+          <span class="pv-step ps-deploy">WatsonApiProd</span>
+          <span class="pv-step ps-deploy">Smoke tests</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# · CDK Pipelines Setup</span>
+    <pre"><span class="kw">using</span> Amazon.CDK.Pipelines;
+
+<span class="kw">public class</span> <span class="tp">WatsonPipelineStack</span> : <span class="tp">Stack</span>
+{
+    <span class="kw">public</span> <span class="tp">WatsonPipelineStack</span>(<span class="tp">Construct</span> scope, <span class="tp">string</span> id) : <span class="kw">base</span>(scope, id)
+    {
+        <span class="cm">// Source — GitHub via CodeStar Connection</span>
+        <span class="kw">var</span> source = <span class="tp">CodePipelineSource</span>.<span class="fn">Connection</span>(
+            <span class="str">"watson-team/watson-api"</span>, <span class="str">"main"</span>,
+            <span class="kw">new</span> <span class="tp">ConnectionSourceOptions</span>
+            {
+                ConnectionArn = <span class="str">"arn:aws:codestar-connections:eu-west-1:123:connection/abc"</span>
+            });
+
+        <span class="cm">// Pipeline</span>
+        <span class="kw">var</span> pipeline = <span class="kw">new</span> <span class="tp">CodePipeline</span>(<span class="kw">this</span>, <span class="str">"WatsonPipeline"</span>,
+            <span class="kw">new</span> <span class="tp">CodePipelineProps</span>
+            {
+                PipelineName = <span class="str">"watson-pipeline"</span>,
+                Synth = <span class="kw">new</span> <span class="tp">ShellStep</span>(<span class="str">"Synth"</span>, <span class="kw">new</span> <span class="tp">ShellStepProps</span>
+                {
+                    Input   = source,
+                    Commands =
+                    [
+                        <span class="str">"npm install -g aws-cdk"</span>,
+                        <span class="str">"dotnet build"</span>,
+                        <span class="str">"cdk synth"</span>
+                    ]
+                }),
+                DockerEnabledForSynth = <span class="bool">true</span>,
+                CrossAccountKeys      = <span class="bool">true</span>
+            });
+
+        <span class="cm">// Dev Stage</span>
+        <span class="kw">var</span> devStage = pipeline.<span class="fn">AddStage</span>(
+            <span class="kw">new</span> <span class="tp">WatsonDeployStage</span>(app, <span class="str">"Dev"</span>, <span class="kw">new</span> <span class="tp">StageProps</span>
+            {
+                Env = <span class="kw">new</span> <span class="tp">Amazon.CDK.Environment</span>
+                    { Account = <span class="str">"111122223333"</span>, Region = <span class="str">"eu-west-1"</span> }
+            }));
+
+        <span class="cm">// Integration test after dev deploy</span>
+        devStage.<span class="fn">AddPost</span>(<span class="kw">new</span> <span class="tp">ShellStep</span>(<span class="str">"IntegTest"</span>, <span class="kw">new</span> <span class="tp">ShellStepProps</span>
+        {
+            Commands = [<span class="str">"dotnet test ./tests/WatsonApi.IntegTests/ --no-build"</span>],
+            EnvFromCfnOutputs = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">CfnOutput</span>&gt;
+            {
+                [<span class="str">"API_URL"</span>] = devStage.ApiStack.ApiUrlOutput
+            }
+        }));
+
+        <span class="cm">// Prod Stage — with manual approval gate</span>
+        pipeline.<span class="fn">AddStage</span>(
+            <span class="kw">new</span> <span class="tp">WatsonDeployStage</span>(app, <span class="str">"Prod"</span>, <span class="kw">new</span> <span class="tp">StageProps</span>
+            {
+                Env = <span class="kw">new</span> <span class="tp">Amazon.CDK.Environment</span>
+                    { Account = <span class="str">"444455556666"</span>, Region = <span class="str">"eu-west-1"</span> }
+            }),
+            <span class="kw">new</span> <span class="tp">AddStageOpts</span>
+            {
+                Pre = [<span class="kw">new</span> <span class="tp">ManualApprovalStep</span>(<span class="str">"ApproveProduction"</span>)]
+            });
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">WatsonDeployStage</span> : <span class="tp">Stage</span>
+{
+    <span class="kw">public</span> <span class="tp">WatsonApiStack</span> ApiStack { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="tp">WatsonDeployStage</span>(<span class="tp">Construct</span> scope, <span class="tp">string</span> id, <span class="tp">StageProps</span> props)
+        : <span class="kw">base</span>(scope, id, props)
+    {
+        ApiStack = <span class="kw">new</span> <span class="tp">WatsonApiStack</span>(<span class="kw">this</span>, <span class="str">"WatsonApi"</span>,
+            <span class="kw">new</span> <span class="tp">WatsonApiStackProps</span> { EnvironmentName = id.<span class="fn">ToLower</span>() });
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — SETUP & BOOTSTRAP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🔧 Setup &amp; Bootstrap — Getting Started</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Install Prerequisites</div>
+      <div class="console-step-path">One-time setup</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Node.js (CDK CLI runs on Node)</div><div class="console-field-value">winget install OpenJS.NodeJS.LTS  →  node --version ≥ 18</div></div>
+      <div class="console-field"><div class="console-field-label">CDK CLI</div><div class="console-field-value">npm install -g aws-cdk  →  cdk --version</div></div>
+      <div class="console-field"><div class="console-field-label">.NET 8 SDK</div><div class="console-field-value">winget install Microsoft.DotNet.SDK.8  →  dotnet --version</div></div>
+      <div class="console-field"><div class="console-field-label">AWS CLI + credentials</div><div class="console-field-value">aws configure  (or use AWS SSO / env vars)</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Init a New CDK Project</div>
+      <div class="console-step-path">mkdir + cdk init</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Commands</div><div class="console-field-value">mkdir watson-cdk && cd watson-cdk</div></div>
+      <div class="console-field"><div class="console-field-label">Init</div><div class="console-field-value">cdk init app --language csharp</div></div>
+      <div class="console-field"><div class="console-field-label">Generated structure</div><div class="console-field-value">src/WatsonCdk/ · cdk.json · .gitignore · README.md</div><div class="console-field-hint">The src/ folder contains your C# solution with App.cs and one Stack class.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Bootstrap Your Account &amp; Region</div>
+      <div class="console-step-path">cdk bootstrap (one-time per account/region)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Command</div><div class="console-field-value">cdk bootstrap aws://$(aws sts get-caller-identity --query Account --output text)/eu-west-1</div></div>
+      <div class="console-field"><div class="console-field-label">What it creates</div><div class="console-field-value">S3 bucket for assets · ECR repo for Docker images · IAM roles for CDK deploys · SSM parameter /cdk-bootstrap/hnb659fds/version</div></div>
+      <div class="console-note">Bootstrap only needed once per account+region. Re-run when CDK major versions change (cdk bootstrap --force).</div>
+    </div>
+  </div>
+
+  <!-- BOOTSTRAP VISUAL -->
+  <h3>Bootstrap — Before vs After</h3>
+  <div class="bootstrap-vis">
+    <div class="bv-header">⚙️ What cdk bootstrap Creates in Your Account</div>
+    <div class="bv-body">
+      <div class="bv-row">
+        <div class="bv-box bv-before"><h6>❌ Without Bootstrap</h6><p>cdk deploy fails — CDK can't upload Lambda code, Docker images, or large templates to CloudFormation</p></div>
+        <div class="bv-arrow">→</div>
+        <div class="bv-box bv-after"><h6>✅ After Bootstrap</h6><p>cdk-hnb659fds-assets-{account}-{region} S3 bucket, ECR repo, IAM roles all ready. CDK deploys freely.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Add CDK NuGet Packages</div>
+      <div class="console-step-path">dotnet add package</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Core (always needed)</div><div class="console-field-value">dotnet add package Amazon.CDK.Lib</div><div class="console-field-hint">This single package contains ALL AWS construct libraries — no need to add individual service packages.</div></div>
+      <div class="console-field"><div class="console-field-label">Constructs</div><div class="console-field-value">dotnet add package Constructs</div></div>
+      <div class="console-field"><div class="console-field-label">CDK Pipelines</div><div class="console-field-value">dotnet add package Amazon.CDK.Pipelines</div></div>
+      <div class="console-field"><div class="console-field-label">Assertions (testing)</div><div class="console-field-value">dotnet add package Amazon.CDK.Assertions</div></div>
+      <div class="console-field"><div class="console-field-label">Solutions Constructs (L3)</div><div class="console-field-value">dotnet add package Amazon.CDK.AWS.Solutions.Constructs.AwsSqsLambda</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">First Deploy</div>
+      <div class="console-step-path">cdk deploy</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Build + Synth</div><div class="console-field-value">cdk synth → generates cdk.out/ with CloudFormation template</div></div>
+      <div class="console-field"><div class="console-field-label">Deploy</div><div class="console-field-value">cdk deploy  →  shows IAM changes, asks Do you wish to deploy? y/n</div></div>
+      <div class="console-field"><div class="console-field-label">Watch in Console</div><div class="console-field-value">CloudFormation → Stacks → WatsonCdkStack → Events tab</div></div>
+      <div class="console-note">Run cdk diff first to preview changes before any deploy — especially in prod.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# DEEP DIVE
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET — CDK Deep Dive</h2>
+
+  <h3>Complete Watson API Stack — Production-Ready</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Full Production Stack — VPC + Lambda + DDB + API + Alarms</span>
+    <pre"><span class="kw">public class</span> <span class="tp">WatsonProductionStack</span> : <span class="tp">Stack</span>
+{
+    <span class="kw">public</span> <span class="tp">CfnOutput</span> ApiUrlOutput { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="tp">WatsonProductionStack</span>(
+        <span class="tp">Construct</span> scope, <span class="tp">string</span> id,
+        <span class="tp">WatsonProductionProps</span> props) : <span class="kw">base</span>(scope, id, props)
+    {
+        <span class="cm">// ── Secrets Manager ───────────────────────────────────</span>
+        <span class="kw">var</span> dbSecret = <span class="tp">Secret</span>.<span class="fn">FromSecretNameV2</span>(
+            <span class="kw">this</span>, <span class="str">"DbSecret"</span>, <span class="str">$"/watson/{props.Env}/db-password"</span>);
+
+        <span class="cm">// ── DynamoDB ──────────────────────────────────────────</span>
+        <span class="kw">var</span> table = <span class="kw">new</span> <span class="tp">Table</span>(<span class="kw">this</span>, <span class="str">"Orders"</span>, <span class="kw">new</span> <span class="tp">TableProps</span>
+        {
+            PartitionKey        = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"pk"</span>,     Type = <span class="tp">AttributeType</span>.STRING },
+            SortKey             = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"sk"</span>,     Type = <span class="tp">AttributeType</span>.STRING },
+            BillingMode         = <span class="tp">BillingMode</span>.PAY_PER_REQUEST,
+            PointInTimeRecovery = <span class="bool">true</span>,
+            RemovalPolicy       = <span class="tp">RemovalPolicy</span>.RETAIN,
+            Encryption          = <span class="tp">TableEncryption</span>.AWS_MANAGED,
+            Stream              = <span class="tp">StreamViewType</span>.NEW_AND_OLD_IMAGES
+        });
+
+        table.<span class="fn">AddGlobalSecondaryIndex</span>(<span class="kw">new</span> <span class="tp">GlobalSecondaryIndexProps</span>
+        {
+            IndexName  = <span class="str">"status-index"</span>,
+            PartitionKey = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"status"</span>, Type = <span class="tp">AttributeType</span>.STRING },
+            SortKey    = <span class="kw">new</span> <span class="tp">Attribute</span> { Name = <span class="str">"createdAt"</span>, Type = <span class="tp">AttributeType</span>.STRING }
+        });
+
+        <span class="cm">// ── Lambda + SQS DLQ ─────────────────────────────────</span>
+        <span class="kw">var</span> dlq = <span class="kw">new</span> <span class="tp">Queue</span>(<span class="kw">this</span>, <span class="str">"DLQ"</span>, <span class="kw">new</span> <span class="tp">QueueProps</span>
+        {
+            RetentionPeriod = <span class="tp">Duration</span>.<span class="fn">Days</span>(<span class="num">14</span>),
+            Encryption      = <span class="tp">QueueEncryption</span>.KMS_MANAGED
+        });
+
+        <span class="kw">var</span> fn = <span class="kw">new</span> <span class="tp">Function</span>(<span class="kw">this</span>, <span class="str">"GetOrders"</span>, <span class="kw">new</span> <span class="tp">FunctionProps</span>
+        {
+            Runtime         = <span class="tp">Runtime</span>.PROVIDED_AL2023,
+            Architecture    = <span class="tp">Architecture</span>.ARM_64,
+            Handler         = <span class="str">"bootstrap"</span>,
+            Code            = <span class="tp">Code</span>.<span class="fn">FromAsset</span>(<span class="str">"./publish/WatsonOrders"</span>),
+            MemorySize      = <span class="num">512</span>,
+            Timeout         = <span class="tp">Duration</span>.<span class="fn">Seconds</span>(<span class="num">30</span>),
+            Tracing         = <span class="tp">Tracing</span>.ACTIVE,
+            DeadLetterQueue = dlq,
+            ReservedConcurrentExecutions = <span class="num">100</span>,
+            Environment = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+            {
+                [<span class="str">"TABLE_NAME"</span>]     = table.TableName,
+                [<span class="str">"ENVIRONMENT"</span>]   = props.Env,
+                [<span class="str">"POWERTOOLS_SERVICE_NAME"</span>] = <span class="str">"watson-orders"</span>
+            }
+        });
+
+        table.<span class="fn">GrantReadWriteData</span>(fn);
+        dbSecret.<span class="fn">GrantRead</span>(fn);
+
+        <span class="cm">// ── CloudWatch Alarms ─────────────────────────────────</span>
+        <span class="kw">var</span> errorAlarm = fn.<span class="fn">MetricErrors</span>(<span class="kw">new</span> <span class="tp">MetricOptions</span>
+        {
+            Period    = <span class="tp">Duration</span>.<span class="fn">Minutes</span>(<span class="num">1</span>),
+            Statistic = <span class="str">"Sum"</span>
+        }).<span class="fn">CreateAlarm</span>(<span class="kw">this</span>, <span class="str">"ErrorAlarm"</span>, <span class="kw">new</span> <span class="tp">CreateAlarmOptions</span>
+        {
+            Threshold         = <span class="num">5</span>,
+            EvaluationPeriods = <span class="num">1</span>,
+            AlarmDescription  = <span class="str">"Watson GetOrders Lambda errors"</span>,
+            TreatMissingData  = <span class="tp">TreatMissingData</span>.NOT_BREACHING
+        });
+
+        <span class="kw">var</span> alertTopic = <span class="kw">new</span> <span class="tp">Topic</span>(<span class="kw">this</span>, <span class="str">"Alerts"</span>);
+        alertTopic.<span class="fn">AddSubscription</span>(<span class="kw">new</span> <span class="tp">EmailSubscription</span>(<span class="str">"team-watson@company.com"</span>));
+        errorAlarm.<span class="fn">AddAlarmAction</span>(<span class="kw">new</span> <span class="tp">SnsAction</span>(alertTopic));
+
+        <span class="cm">// ── HTTP API ──────────────────────────────────────────</span>
+        <span class="kw">var</span> api = <span class="kw">new</span> <span class="tp">HttpApi</span>(<span class="kw">this</span>, <span class="str">"Api"</span>, <span class="kw">new</span> <span class="tp">HttpApiProps</span>
+        {
+            ApiName         = <span class="str">$"watson-api-{props.Env}"</span>,
+            DefaultAuthorizer = <span class="kw">new</span> <span class="tp">HttpJwtAuthorizer</span>(<span class="str">"CognitoAuth"</span>,
+                <span class="str">$"https://cognito-idp.eu-west-1.amazonaws.com/{props.UserPoolId}"</span>,
+                <span class="kw">new</span> <span class="tp">HttpJwtAuthorizerProps</span>
+                {
+                    JwtAudience = [props.UserPoolClientId]
+                })
+        });
+
+        api.<span class="fn">AddRoutes</span>(<span class="kw">new</span> <span class="tp">AddRoutesOptions</span>
+        {
+            Path        = <span class="str">"/orders"</span>,
+            Methods     = [<span class="tp">HttpMethod</span>.GET, <span class="tp">HttpMethod</span>.POST],
+            Integration = <span class="kw">new</span> <span class="tp">HttpLambdaIntegration</span>(<span class="str">"OrdersInteg"</span>, fn)
+        });
+
+        <span class="cm">// ── Stack Output ──────────────────────────────────────</span>
+        ApiUrlOutput = <span class="kw">new</span> <span class="tp">CfnOutput</span>(<span class="kw">this</span>, <span class="str">"ApiUrl"</span>, <span class="kw">new</span> <span class="tp">CfnOutputProps</span>
+        {
+            Value       = api.ApiEndpoint,
+            ExportName  = <span class="str">$"watson-api-{props.Env}"</span>
+        });
+
+        <span class="cm">// ── Apply Aspects ─────────────────────────────────────</span>
+        <span class="tp">Aspects</span>.<span class="fn">Of</span>(<span class="kw">this</span>).<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">WatsonTaggingAspect</span>(props.Env));
+    }
+}</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Set <code>RemovalPolicy.RETAIN</code> on all stateful resources (DynamoDB, RDS, S3) in prod — CDK's default for some is DESTROY</li>
+    <li>Use <code>Amazon.CDK.Lib</code> (the unified package) — not the old per-service packages like <code>Amazon.CDK.AWS.Lambda</code></li>
+    <li>Write unit tests for every stack — tests run in milliseconds and catch breaking changes before deployment</li>
+    <li>Never use <code>Stack.of(this).Account</code> or <code>Region</code> as a concrete string at synth time — they may return tokens; use environment-specific configuration instead</li>
+    <li>Run <code>cdk diff</code> before every production deploy — especially watch for resource replacements or deletions</li>
+    <li>Keep stacks under ~200 resources — split large stacks into nested or sibling stacks to avoid CloudFormation limits</li>
+    <li>Use <code>cdk watch</code> with <code>--hotswap</code> during Lambda development — avoids a full CloudFormation deploy for code-only changes</li>
+    <li>Store <code>cdk.context.json</code> in Git — it caches VPC lookups and other AWS API calls for reproducible synth</li>
+    <li>Use Aspects for cross-cutting concerns (tags, encryption enforcement) — don't repeat config on every construct</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CDK Mistakes to Avoid</h4>
+    <p>
+    ❌ <strong>Using RemovalPolicy.DESTROY on prod databases</strong> — a cdk destroy wipes your data permanently<br>
+    ❌ <strong>Renaming construct IDs after deploy</strong> — CDK uses the ID in the CloudFormation logical ID; renaming = delete + recreate the resource<br>
+    ❌ <strong>Not bootstrapping before first deploy</strong> — cdk deploy fails without the CDK bootstrap stack in that account/region<br>
+    ❌ <strong>Treating Token strings as real values</strong> — don't parse bucket.BucketName at synth time; it's a placeholder<br>
+    ❌ <strong>Deploying without cdk diff in prod</strong> — you might miss a resource replacement that causes downtime<br>
+    ❌ <strong>Using --hotswap in production</strong> — hotswap bypasses CloudFormation change sets; for dev only<br>
+    ❌ <strong>Putting secrets as plain strings in code</strong> — use Secrets Manager or SSM Parameter Store and reference by ARN
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE AWS CDK Mastery!</h3>
+    <p>What is CDK · CDK vs CFN vs SAM vs Terraform · CDK abstraction layer visual · Construct Tree · L1/L2/L3 constructs · Custom reusable construct · Stack + App setup · Cross-stack references · Aspects (tagging + compliance enforcement) · Tokens + late binding · cdk.json context · cdk synth pipeline visual · All CLI commands (init, synth, diff, deploy, watch, hotswap, destroy) · cdk diff output reading · Snapshot + assertion + validation tests · CDK Assertions with xUnit · CDK Pipelines (self-mutating) · Multi-stage pipeline with manual approval · Bootstrap setup (before/after visual) · Full production C# stack (Lambda + DDB + API + Alarms + Cognito JWT auth) · RemovalPolicy patterns · Best practices &amp; top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#a5b4fc;">Infrastructure is code. Code is tested. Tests give confidence. 🏗️🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
