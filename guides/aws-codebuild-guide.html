@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CodeBuild — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fffbf0;--surface:#fef3d0;--card:#ffffff;--border:#f0d878;--border2:#dbb840;
+  --cb:#b45309;--cb-l:#fffbeb;--cb-d:#92400e;--cb-dk:#451a03;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-d:#92400e;
+  --blue:#1d6fcc;--blue-l:#dbeafe;--blue-d:#1e40af;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --red:#dc2626;--red-l:rgba(220,38,38,.08);--red-b:rgba(220,38,38,.2);
+  --purple:#7c3aed;--purple-l:#f5f3ff;--purple-d:#4c1d95;
+  --teal:#0891b2;--teal-l:#ecfeff;--teal-d:#155e75;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --slate:#64748b;
+  --text:#1a1000;--text2:#3b2000;--muted:#7a5a00;
+  --code-bg:#0f0c00;--r:10px;
+  --sh:0 1px 3px rgba(180,83,9,.07),0 4px 12px rgba(180,83,9,.08);
+  --sh-lg:0 2px 8px rgba(180,83,9,.09),0 8px 28px rgba(180,83,9,.11);
+  --sh-xl:0 4px 16px rgba(180,83,9,.1),0 16px 48px rgba(180,83,9,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#451a03 0%,#78350f 35%,#92400e 65%,#b45309 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-wave{position:absolute;inset:0;background:
+  repeating-linear-gradient(45deg,transparent,transparent 20px,rgba(255,255,255,.02) 20px,rgba(255,255,255,.02) 40px);
+  pointer-events:none;}
+.hdr-orb{position:absolute;top:-80px;right:-80px;width:380px;height:380px;background:radial-gradient(circle,rgba(251,191,36,.2) 0%,transparent 65%);pointer-events:none;}
+.hdr-orb2{position:absolute;bottom:-60px;left:-60px;width:280px;height:280px;background:radial-gradient(circle,rgba(245,158,11,.12) 0%,transparent 65%);pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.3);color:#fde68a;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#fde68a,#fbbf24,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(255,251,240,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cb-l);color:var(--cb-d);font-weight:800;box-shadow:0 0 0 1.5px rgba(180,83,9,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--cb-l);letter-spacing:-.02em;}
+.section h3{color:var(--cb-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── BUILD LIFECYCLE VISUAL ── */
+.build-lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-xl);}
+.bl-header{background:linear-gradient(90deg,#451a03,#92400e);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #78350f;display:flex;align-items:center;gap:8px;}
+.bl-header span{background:rgba(251,191,36,.2);border:1px solid rgba(251,191,36,.3);color:#fde68a;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.bl-body{padding:14px;overflow-x:auto;}
+.bl-row{display:flex;align-items:stretch;gap:0;min-width:520px;}
+.bl-phase{flex:1;text-align:center;padding:12px 8px;border-right:1px dashed var(--border);position:relative;}
+.bl-phase:last-child{border-right:none;}
+.bl-icon{font-size:1.5rem;display:block;margin-bottom:5px;}
+.bl-phase h6{font-size:.7rem;font-weight:800;color:var(--text);margin-bottom:3px;}
+.bl-phase p{font-size:.58rem;color:var(--muted);}
+.bl-tag{font-family:'JetBrains Mono',monospace;font-size:.54rem;padding:2px 6px;border-radius:3px;margin-top:4px;display:inline-block;font-weight:600;}
+.bt-install{background:var(--blue-l);color:var(--blue-d);}
+.bt-prebuild{background:var(--purple-l);color:var(--purple-d);}
+.bt-build{background:var(--cb-l);color:var(--cb-d);}
+.bt-post{background:var(--green-l);color:var(--green-d);}
+.bt-reports{background:var(--teal-l);color:var(--teal-d);}
+.bt-artifacts{background:var(--amber-l);color:var(--amber-d);}
+
+/* ── BUILDSPEC ANATOMY ── */
+.bs-anatomy{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.bsa-header{background:linear-gradient(90deg,var(--cb-l),var(--amber-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.bsa-body{padding:14px;}
+.bsa-section{border-radius:7px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;}
+.bsa-section:last-child{margin-bottom:0;}
+.bsa-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:700;width:120px;flex-shrink:0;margin-top:2px;}
+.bsa-desc{font-size:.73rem;color:var(--muted);flex:1;}
+.bsa-optional{font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;}
+
+/* ── ENV COMPARE ── */
+.env-compare{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.ec-head{display:flex;border-bottom:1px solid var(--border);}
+.ec-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.74rem;}
+.ec-managed{background:var(--cb-l);color:var(--cb-d);border-right:1px solid var(--border);}
+.ec-custom{background:var(--blue-l);color:var(--blue-d);border-right:1px solid var(--border);}
+.ec-lambda{background:var(--green-l);color:var(--green-d);}
+.ec-row{display:flex;border-bottom:1px solid var(--border);}
+.ec-row:last-child{border-bottom:none;}
+.ec-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:130px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.ec-val{flex:1;padding:7px 12px;font-size:.73rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.ec-val:last-child{border-right:none;}
+.ec-val.good{color:var(--green-d);font-weight:600;}
+.ec-val.warn{color:var(--amber-d);font-weight:600;}
+.ec-val.bad{color:var(--red);font-weight:600;}
+
+/* ── PHASE TIMELINE ── */
+.phase-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.pt-header{background:linear-gradient(90deg,#451a03,#78350f);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #78350f;}
+.pt-body{padding:14px;}
+.pt-event{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;position:relative;}
+.pt-event:not(:last-child)::after{content:'';position:absolute;left:13px;top:28px;bottom:-12px;width:2px;background:var(--border);}
+.pt-dot{width:26px;height:26px;min-width:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;z-index:1;}
+.pd-queue{background:var(--surface);border:2px solid var(--border2);color:var(--muted);}
+.pd-prov{background:var(--blue-l);border:2px solid var(--blue-d);color:var(--blue-d);}
+.pd-dl{background:var(--purple-l);border:2px solid var(--purple-d);color:var(--purple-d);}
+.pd-build{background:var(--cb-l);border:2px solid var(--cb-d);color:var(--cb-d);}
+.pd-upload{background:var(--teal-l);border:2px solid var(--teal-d);color:var(--teal-d);}
+.pd-ok{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.pd-fail{background:var(--red-l);border:2px solid var(--red);color:var(--red);}
+.pt-info{flex:1;}
+.pt-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.pt-info p{font-size:.7rem;color:var(--muted);}
+.pt-time{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);flex-shrink:0;}
+
+/* ── CACHE VISUAL ── */
+.cache-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.cv-header{background:linear-gradient(90deg,var(--teal-l),var(--cb-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.cv-body{padding:14px;}
+.cv-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.cv-row:last-child{margin-bottom:0;}
+.cv-label{font-size:.7rem;font-weight:700;color:var(--text2);width:130px;flex-shrink:0;}
+.cv-bar-wrap{flex:1;height:20px;background:var(--surface);border-radius:5px;overflow:hidden;display:flex;align-items:center;}
+.cv-bar{height:100%;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:.6rem;font-weight:700;color:#fff;white-space:nowrap;}
+.cv-time{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);flex-shrink:0;width:70px;text-align:right;}
+
+/* ── VPC DIAGRAM ── */
+.vpc-diag{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.vd-header{background:linear-gradient(90deg,var(--blue-l),var(--cb-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.vd-body{padding:14px;}
+.vd-outer{border:2px dashed var(--border2);border-radius:var(--r);padding:12px;position:relative;margin-bottom:8px;}
+.vd-outer-label{position:absolute;top:-9px;left:12px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--cb-d);font-weight:700;padding:0 6px;}
+.vd-inner{border:1.5px solid var(--border);border-radius:8px;padding:10px;background:var(--surface);}
+.vd-inner-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin-bottom:6px;display:block;}
+.vd-resources{display:flex;flex-wrap:wrap;gap:6px;}
+.vd-res{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:5px;border:1px solid;}
+.vr-cb{background:var(--cb-l);border-color:rgba(180,83,9,.3);color:var(--cb-d);}
+.vr-rds{background:var(--blue-l);border-color:rgba(29,78,216,.25);color:var(--blue-d);}
+.vr-es{background:var(--purple-l);border-color:rgba(124,58,237,.2);color:var(--purple-d);}
+.vd-arrow{text-align:center;color:var(--border2);font-size:1.2rem;padding:3px 0;}
+
+/* ── REPORT VISUAL ── */
+.report-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.rv-header{background:linear-gradient(90deg,var(--green-l),var(--cb-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.rv-body{padding:14px;}
+.rv-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100px,100%),1fr));gap:8px;margin-bottom:12px;}
+.rv-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;}
+.rv-stat .rs-num{font-size:1.4rem;font-weight:800;display:block;line-height:1.2;}
+.rv-stat .rs-label{font-size:.62rem;color:var(--muted);display:block;margin-top:2px;}
+.rv-pass{color:var(--green-d);}
+.rv-fail{color:var(--red);}
+.rv-skip{color:var(--amber-d);}
+.rv-dur{color:var(--cb-d);}
+.rv-test-row{display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--border);font-size:.72rem;}
+.rv-test-row:last-child{border-bottom:none;}
+.rv-test-name{flex:1;color:var(--text2);}
+.rv-test-time{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);width:55px;text-align:right;}
+.rv-status{font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:4px;flex-shrink:0;width:52px;text-align:center;}
+.rs-ok{background:var(--green-l);color:var(--green-d);}
+.rs-fail{background:var(--red-l);color:var(--red);}
+.rs-skip{background:var(--amber-l);color:var(--amber-d);}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:linear-gradient(135deg,var(--cb-d),var(--cb));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:13px 15px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:5px 10px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--cb-d);padding:8px 11px;background:var(--cb-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cb-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:15px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cb);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cb-l);border:1px solid rgba(180,83,9,.15);border-left:4px solid var(--cb);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cb-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(21,128,61,.2);border-left:4px solid var(--green-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,111,204,.18);border-left:4px solid var(--blue-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CODE ── */
+.code-block{background:var(--code-bg);border:1px solid #1a1000;border-left:3px solid var(--cb);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.25rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#fde68a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px;display:flex;align-items:center;gap:8px;}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#2a1a00;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.yaml-key{color:#89dceb;}.yaml-val{color:#a6e3a1;}.yaml-str{color:#a6e3a1;}.yaml-cm{color:#2a1a00;font-style:italic;}.yaml-ex{color:#fab387;}.bash-comment{color:#2a1a00;font-style:italic;}.bash-flag{color:#89dceb;}
+code{background:rgba(180,83,9,.1);padding:1px 6px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--cb-d);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:4px 0;background:var(--surface);border-left:3px solid var(--cb);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--cb-d);font-weight:700;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#451a03 0%,#78350f 60%,#92400e 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'🔨';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── PRICING CARDS ── */
+.pricing-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.pricing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc-a::before{background:var(--cb);}
+.pc-b::before{background:var(--blue-d);}
+.pc-c::before{background:var(--green-d);}
+.pricing-card h5{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:8px;}
+.p-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.p-label{font-size:.68rem;color:var(--muted);}
+.p-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;color:var(--text);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.pricing-row,.rv-summary{grid-template-columns:1fr;}
+  .ec-row,.bl-row,.pt-event::after{flex-direction:column;}
+  .ec-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .bl-row{min-width:520px;}
+  .cv-row{flex-direction:column;gap:5px;}
+  .cv-label{width:auto;}
+  .console-step-path{display:none;}
+  .pt-event::after{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-wave"></div>
+  <div class="hdr-orb"></div>
+  <div class="hdr-orb2"></div>
+  <div class="container">
+    <div class="hdr-badge">🔨 AWS · Continuous Integration</div>
+    <h1>AWS <span>CodeBuild</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET Build Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">buildspec.yml</span>
+      <span class="header-tag">Build Phases</span>
+      <span class="header-tag">Caching</span>
+      <span class="header-tag">Test Reports</span>
+      <span class="header-tag">VPC Builds</span>
+      <span class="header-tag">C# .NET 8</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CodeBuild</button>
+    <button class="tab-btn" onclick="T('buildspec',this)">2 · buildspec.yml</button>
+    <button class="tab-btn" onclick="T('envs',this)">3 · Build Environments</button>
+    <button class="tab-btn" onclick="T('cache',this)">4 · Caching</button>
+    <button class="tab-btn" onclick="T('reports',this)">5 · Test Reports</button>
+    <button class="tab-btn" onclick="T('advanced',this)">6 · Advanced Features</button>
+    <button class="tab-btn" onclick="T('cicd',this)">7 · CI/CD Integration</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# .NET SDK</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CODEBUILD
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>🔨 What is AWS CodeBuild?</h2>
+  <p>AWS CodeBuild is a fully managed <strong>continuous integration (CI) service</strong> that compiles source code, runs unit tests, and produces deployment-ready artifacts. You pay only per build minute — no servers, no agents, no Jenkins to maintain. CodeBuild spins up a fresh container for each build, runs your <code>buildspec.yml</code>, and shuts down.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>Think of CodeBuild as a <em>clean room on demand</em>. Every build starts from a pristine container image (Amazon Linux, Ubuntu, Windows, or your own Docker image), runs your commands in order, uploads results to S3, and disappears. No state bleeds between builds — unless you configure caching.</p>
+  </div>
+
+  <h3>Build Lifecycle — Phase by Phase</h3>
+  <div class="build-lifecycle">
+    <div class="bl-header">🔄 CodeBuild Execution Lifecycle <span>Phases run in order · Failure in any phase stops the build</span></div>
+    <div class="bl-body">
+      <div class="bl-row">
+        <div class="bl-phase">
+          <span class="bl-icon">📥</span>
+          <h6>INSTALL</h6>
+          <p>Install runtimes, tools, global packages</p>
+          <span class="bl-tag bt-install">optional</span>
+        </div>
+        <div class="bl-phase">
+          <span class="bl-icon">🔍</span>
+          <h6>PRE_BUILD</h6>
+          <p>Login to ECR, restore cache, set env vars</p>
+          <span class="bl-tag bt-prebuild">optional</span>
+        </div>
+        <div class="bl-phase">
+          <span class="bl-icon">🔨</span>
+          <h6>BUILD</h6>
+          <p>Compile, run tests, package artifacts</p>
+          <span class="bl-tag bt-build">required</span>
+        </div>
+        <div class="bl-phase">
+          <span class="bl-icon">📤</span>
+          <h6>POST_BUILD</h6>
+          <p>Push images, tag, send notifications</p>
+          <span class="bl-tag bt-post">optional</span>
+        </div>
+        <div class="bl-phase">
+          <span class="bl-icon">📊</span>
+          <h6>REPORTS</h6>
+          <p>Publish test + coverage reports</p>
+          <span class="bl-tag bt-reports">optional</span>
+        </div>
+        <div class="bl-phase">
+          <span class="bl-icon">📦</span>
+          <h6>ARTIFACTS</h6>
+          <p>Upload output files to S3</p>
+          <span class="bl-tag bt-artifacts">optional</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Build Execution Timeline</h3>
+  <div class="phase-timeline">
+    <div class="pt-header">⏱️ Build Run — watson-api — Build #47</div>
+    <div class="pt-body">
+      <div class="pt-event">
+        <div class="pt-dot pd-queue">⏳</div>
+        <div class="pt-info"><h6>Queued</h6><p>Build triggered by CodePipeline source stage — waiting for available compute</p></div>
+        <div class="pt-time">t=0s</div>
+      </div>
+      <div class="pt-event">
+        <div class="pt-dot pd-prov">⚙️</div>
+        <div class="pt-info"><h6>Provisioning</h6><p>Spinning up Amazon Linux 2023 container (arm64, 3 GB RAM). Allocating network + storage.</p></div>
+        <div class="pt-time">t=8s</div>
+      </div>
+      <div class="pt-event">
+        <div class="pt-dot pd-dl">📥</div>
+        <div class="pt-info"><h6>Downloading Source</h6><p>Pulling source from CodeCommit / S3 zip. Restoring NuGet cache from S3 (saved 45s).</p></div>
+        <div class="pt-time">t=18s</div>
+      </div>
+      <div class="pt-event">
+        <div class="pt-dot pd-build">🔨</div>
+        <div class="pt-info"><h6>BUILD Phase</h6><p>dotnet restore → dotnet build → dotnet test → sam build → sam package</p></div>
+        <div class="pt-time">t=32s</div>
+      </div>
+      <div class="pt-event">
+        <div class="pt-dot pd-upload">📤</div>
+        <div class="pt-info"><h6>Uploading Artifacts</h6><p>Saving packaged.yaml + test results to S3. Updating cache. Publishing test report.</p></div>
+        <div class="pt-time">t=1m 48s</div>
+      </div>
+      <div class="pt-event">
+        <div class="pt-dot pd-ok">✓</div>
+        <div class="pt-info"><h6>SUCCEEDED</h6><p>All 47 tests passed. Artifacts available at s3://watson-artifacts/build-47/. Duration: 2m 04s.</p></div>
+        <div class="pt-time">t=2m 04s</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📄</span><h4>buildspec.yml</h4><p>YAML file defining phases, env vars, cache, artifacts. Lives in your repo root.</p></div>
+    <div class="icon-item"><span class="emoji">🏗️</span><h4>Build Project</h4><p>The CodeBuild configuration — source, environment, service role, artifacts, cache.</p></div>
+    <div class="icon-item"><span class="emoji">▶️</span><h4>Build Run</h4><p>One execution of a project. Has its own logs, status, and artifact output.</p></div>
+    <div class="icon-item"><span class="emoji">🐳</span><h4>Build Environment</h4><p>The container image + compute type used. Managed images or your own Docker image.</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Cache</h4><p>Speed up builds by caching dependencies (NuGet, npm) in S3 between runs.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Artifacts</h4><p>Output files uploaded to S3. Consumed by next pipeline stage (CodeDeploy, CFN).</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Test Reports</h4><p>Publish JUnit/NUnit/Surefire XML results to CodeBuild — visual pass/fail in console.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>IAM Service Role</h4><p>Role assumed by CodeBuild for S3, ECR, SSM, SecretsManager access during build.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>VPC Support</h4><p>Run builds inside your VPC to access RDS, ElastiCache, or private endpoints.</p></div>
+  </div>
+
+  <h3>CodeBuild vs GitHub Actions vs Jenkins</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>CodeBuild</th><th>GitHub Actions</th><th>Jenkins</th></tr>
+    <tr><td>Servers to manage</td><td>✅ None</td><td>✅ None (hosted runners)</td><td>❌ Yes — Jenkins master + agents</td></tr>
+    <tr><td>Pricing</td><td>Per build-minute</td><td>Free tier; then per-minute</td><td>Free (but infra costs)</td></tr>
+    <tr><td>AWS IAM integration</td><td>✅ Native IAM roles</td><td>⚠️ OIDC or access keys</td><td>⚠️ Plugin + credentials</td></tr>
+    <tr><td>Private VPC builds</td><td>✅ Native</td><td>⚠️ Self-hosted runner needed</td><td>✅ Agent in VPC</td></tr>
+    <tr><td>Source support</td><td>CodeCommit, S3, GitHub, GitLab, Bitbucket</td><td>GitHub only (native)</td><td>Any via plugins</td></tr>
+    <tr><td>Ecosystem / plugins</td><td>AWS-native only</td><td>50,000+ Actions marketplace</td><td>1,800+ plugins</td></tr>
+    <tr><td>Local testing</td><td>⚠️ CodeBuild Local agent</td><td>⚠️ act (unofficial)</td><td>✅ Run locally</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — BUILDSPEC.YML
+══════════════════════════════════ -->
+<div id="tab-buildspec" class="tab-panel"><div class="section">
+  <h2>📄 buildspec.yml — Full Anatomy</h2>
+
+  <!-- SECTION BREAKDOWN -->
+  <div class="bs-anatomy">
+    <div class="bsa-header">🧬 buildspec.yml Top-Level Sections</div>
+    <div class="bsa-body">
+      <div class="bsa-section" style="background:var(--cb-l);border:1px solid rgba(180,83,9,.2);">
+        <div class="bsa-label" style="color:var(--cb-d);">version</div>
+        <div class="bsa-desc">Always <code>0.2</code> — the current format. Required.</div>
+        <span class="bsa-optional" style="background:var(--cb-l);color:var(--cb-d);">Required</span>
+      </div>
+      <div class="bsa-section" style="background:var(--blue-l);border:1px solid rgba(29,78,216,.15);">
+        <div class="bsa-label" style="color:var(--blue-d);">env</div>
+        <div class="bsa-desc">Variables, secrets from SSM / Secrets Manager, exported variables for downstream phases.</div>
+        <span class="bsa-optional" style="background:var(--blue-l);color:var(--blue-d);">Optional</span>
+      </div>
+      <div class="bsa-section" style="background:var(--purple-l);border:1px solid rgba(124,58,237,.15);">
+        <div class="bsa-label" style="color:var(--purple-d);">phases</div>
+        <div class="bsa-desc">install, pre_build, build, post_build — commands run in sequence. This is your CI logic.</div>
+        <span class="bsa-optional" style="background:var(--purple-l);color:var(--purple-d);">Required</span>
+      </div>
+      <div class="bsa-section" style="background:var(--teal-l);border:1px solid rgba(8,145,178,.15);">
+        <div class="bsa-label" style="color:var(--teal-d);">reports</div>
+        <div class="bsa-desc">Paths to test result XML files (JUnit, NUnit, Cucumber). Shown visually in the console.</div>
+        <span class="bsa-optional" style="background:var(--teal-l);color:var(--teal-d);">Optional</span>
+      </div>
+      <div class="bsa-section" style="background:var(--amber-l);border:1px solid rgba(217,119,6,.15);">
+        <div class="bsa-label" style="color:var(--amber-d);">artifacts</div>
+        <div class="bsa-desc">Files to upload to S3 after a successful build. Consumed by CodeDeploy / CloudFormation deploy stages.</div>
+        <span class="bsa-optional" style="background:var(--amber-l);color:var(--amber-d);">Optional</span>
+      </div>
+      <div class="bsa-section" style="background:var(--green-l);border:1px solid rgba(21,128,61,.15);">
+        <div class="bsa-label" style="color:var(--green-d);">cache</div>
+        <div class="bsa-desc">Directories to cache in S3 or locally between builds. Dramatically reduces build times.</div>
+        <span class="bsa-optional" style="background:var(--green-l);color:var(--green-d);">Optional</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Complete buildspec.yml — .NET 8 + SAM</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · buildspec.yml — Team Watson Full Build</span>
+    <pre><span class="yaml-key">version</span><span class="yaml-cm">:</span> <span class="yaml-ex">0.2</span>
+
+<span class="yaml-key">env</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm"># Plain environment variables</span>
+  <span class="yaml-key">variables</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">DOTNET_CLI_TELEMETRY_OPTOUT</span><span class="yaml-cm">:</span> <span class="yaml-str">"1"</span>
+    <span class="yaml-key">ARTIFACT_BUCKET</span><span class="yaml-cm">:</span>           <span class="yaml-str">"watson-artifacts-eu-west-1"</span>
+    <span class="yaml-key">ENVIRONMENT</span><span class="yaml-cm">:</span>               <span class="yaml-str">"dev"</span>
+
+  <span class="yaml-cm"># Secrets from SSM Parameter Store (value NOT shown in logs)</span>
+  <span class="yaml-key">parameter-store</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">SONAR_TOKEN</span><span class="yaml-cm">:</span> <span class="yaml-str">"/watson/ci/sonar-token"</span>
+    <span class="yaml-key">SLACK_HOOK</span><span class="yaml-cm">:</span>  <span class="yaml-str">"/watson/ci/slack-webhook"</span>
+
+  <span class="yaml-cm"># Secrets from Secrets Manager</span>
+  <span class="yaml-key">secrets-manager</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">NUGET_API_KEY</span><span class="yaml-cm">:</span> <span class="yaml-str">"watson/nuget-api-key:apiKey"</span>
+
+  <span class="yaml-cm"># Export variables to be available in later phases</span>
+  <span class="yaml-key">exported-variables</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- IMAGE_TAG</span>
+    <span class="yaml-cm">- BUILD_VERSION</span>
+
+<span class="yaml-key">phases</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">install</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">runtime-versions</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">dotnet</span><span class="yaml-cm">:</span> <span class="yaml-ex">8</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- pip install aws-sam-cli</span>
+      <span class="yaml-cm">- sam --version</span>
+      <span class="yaml-cm">- dotnet tool install --global dotnet-coverage</span>
+
+  <span class="yaml-key">pre_build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- echo "Pre-build started at $(date)"</span>
+      <span class="yaml-cm"># Set build version from git tag or commit short SHA</span>
+      <span class="yaml-cm">- export BUILD_VERSION=$(git describe --tags --always --dirty)</span>
+      <span class="yaml-cm">- export IMAGE_TAG=${CODEBUILD_BUILD_NUMBER}</span>
+      <span class="yaml-cm"># Login to ECR for Docker base images</span>
+      <span class="yaml-cm">- aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin 123456789012.dkr.ecr.eu-west-1.amazonaws.com</span>
+      <span class="yaml-cm"># Restore NuGet packages (uses cache)</span>
+      <span class="yaml-cm">- dotnet restore ./src/WatsonOrders/WatsonOrders.csproj</span>
+
+  <span class="yaml-key">build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">on-failure</span><span class="yaml-cm">:</span> <span class="yaml-str">ABORT</span>   <span class="yaml-cm"># Stop immediately on build failure</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- echo "Building .NET Lambda..."</span>
+      <span class="yaml-cm">- dotnet build ./src/WatsonOrders/ --configuration Release --no-restore</span>
+
+      <span class="yaml-cm"># Run unit tests with coverage</span>
+      <span class="yaml-cm">- dotnet-coverage collect "dotnet test ./tests/WatsonOrders.Tests/ --no-build --logger trx --results-directory /tmp/test-results" --output /tmp/coverage.xml --output-format xml</span>
+
+      <span class="yaml-cm"># SAM build (compiles + packages Lambda)</span>
+      <span class="yaml-cm">- sam build --cached --parallel</span>
+
+      <span class="yaml-cm"># SAM package — upload to S3, generate packaged template</span>
+      <span class="yaml-cm">- sam package --output-template-file packaged.yaml --s3-bucket $ARTIFACT_BUCKET --s3-prefix watson-api/$BUILD_VERSION</span>
+
+  <span class="yaml-key">post_build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- echo "Build completed: $BUILD_VERSION"</span>
+      <span class="yaml-cm"># Notify Slack on success</span>
+      <span class="yaml-cm">- |</span>
+        <span class="yaml-cm">  if [ "$CODEBUILD_BUILD_SUCCEEDING" = "1" ]; then</span>
+        <span class="yaml-cm">    curl -s -X POST -H 'Content-type: application/json' \</span>
+        <span class="yaml-cm">      --data "{\"text\":\"✅ Watson build $BUILD_VERSION succeeded\"}" \</span>
+        <span class="yaml-cm">      $SLACK_HOOK</span>
+        <span class="yaml-cm">  fi</span>
+
+<span class="yaml-key">reports</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">WatsonTestResults</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- "**/*.trx"</span>
+    <span class="yaml-key">base-directory</span><span class="yaml-cm">:</span>  <span class="yaml-str">/tmp/test-results</span>
+    <span class="yaml-key">file-format</span><span class="yaml-cm">:</span>     <span class="yaml-str">VisualStudioTrx</span>
+  <span class="yaml-key">WatsonCoverage</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- "/tmp/coverage.xml"</span>
+    <span class="yaml-key">file-format</span><span class="yaml-cm">:</span>     <span class="yaml-str">CloverXml</span>
+
+<span class="yaml-key">artifacts</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- packaged.yaml</span>
+    <span class="yaml-cm">- samconfig.toml</span>
+  <span class="yaml-key">name</span><span class="yaml-cm">:</span>             <span class="yaml-str">watson-build-$BUILD_VERSION</span>
+  <span class="yaml-key">discard-paths</span><span class="yaml-cm">:</span>    <span class="yaml-ex">yes</span>
+
+<span class="yaml-key">cache</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">paths</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- "/root/.nuget/packages/**/*"</span>
+    <span class="yaml-cm">- "/root/.dotnet/**/*"</span>
+    <span class="yaml-cm">- ".aws-sam/cache/**/*"</span></pre>
+  </div>
+
+  <h3>Built-in Environment Variables</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Variable</th><th>Value / Description</th></tr>
+    <tr><td><code>CODEBUILD_BUILD_ID</code></td><td>Unique build ID: watson-api:abc123-def456</td></tr>
+    <tr><td><code>CODEBUILD_BUILD_NUMBER</code></td><td>Sequential build number within the project</td></tr>
+    <tr><td><code>CODEBUILD_BUILD_SUCCEEDING</code></td><td>1 if succeeding so far, 0 if failed — useful in post_build</td></tr>
+    <tr><td><code>CODEBUILD_SOURCE_VERSION</code></td><td>Commit ID / branch that triggered the build</td></tr>
+    <tr><td><code>CODEBUILD_RESOLVED_SOURCE_VERSION</code></td><td>The exact git commit SHA</td></tr>
+    <tr><td><code>CODEBUILD_SRC_DIR</code></td><td>Path to the checked-out source code</td></tr>
+    <tr><td><code>CODEBUILD_START_TIME</code></td><td>Unix timestamp of when build started</td></tr>
+    <tr><td><code>AWS_DEFAULT_REGION</code></td><td>Region the build is running in</td></tr>
+    <tr><td><code>AWS_ACCOUNT_ID</code></td><td>AWS account ID — useful for ECR image URIs</td></tr>
+    <tr><td><code>CODEBUILD_WEBHOOK_TRIGGER</code></td><td>Branch/PR that triggered the build via webhook</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — BUILD ENVIRONMENTS
+══════════════════════════════════ -->
+<div id="tab-envs" class="tab-panel"><div class="section">
+  <h2>🐳 Build Environments</h2>
+  <p>CodeBuild runs every build in a container. You choose between AWS-managed images (ready-to-go, no maintenance) or your own custom Docker image (full control).</p>
+
+  <h3>Environment Type Comparison</h3>
+  <div class="env-compare">
+    <div class="ec-head">
+      <div class="ec-col ec-managed">📦 Managed Images</div>
+      <div class="ec-col ec-custom">🐳 Custom Docker</div>
+      <div class="ec-col ec-lambda">⚡ Lambda Compute</div>
+    </div>
+    <div class="ec-row"><div class="ec-lbl">Setup effort</div><div class="ec-val good">Zero — ready to use</div><div class="ec-val warn">Build + maintain image</div><div class="ec-val good">Zero — serverless</div></div>
+    <div class="ec-row"><div class="ec-lbl">Startup time</div><div class="ec-val warn">~15–30s provisioning</div><div class="ec-val warn">~15–30s + image pull</div><div class="ec-val good">~1–3s (sub-second for warm)</div></div>
+    <div class="ec-row"><div class="ec-lbl">Max build time</div><div class="ec-val good">8 hours</div><div class="ec-val good">8 hours</div><div class="ec-val bad">15 minutes</div></div>
+    <div class="ec-row"><div class="ec-lbl">Custom tools</div><div class="ec-val warn">Install in buildspec</div><div class="ec-val good">Pre-baked in image</div><div class="ec-val bad">Very limited</div></div>
+    <div class="ec-row"><div class="ec-lbl">Privileged mode</div><div class="ec-val good">✅ For Docker-in-Docker</div><div class="ec-val good">✅ For Docker-in-Docker</div><div class="ec-val bad">❌ Not supported</div></div>
+    <div class="ec-row"><div class="ec-lbl">VPC support</div><div class="ec-val good">✅</div><div class="ec-val good">✅</div><div class="ec-val good">✅</div></div>
+    <div class="ec-row"><div class="ec-lbl">Best for</div><div class="ec-val">Most .NET / standard builds</div><div class="ec-val">Specific tool versions, fast start</div><div class="ec-val">Quick scripts, linting, low-cost</div></div>
+  </div>
+
+  <h3>AWS Managed Image Options</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Image</th><th>Available Runtimes</th><th>Arch</th><th>Recommended For</th></tr>
+    <tr><td>aws/codebuild/standard:7.0</td><td>.NET 6/7/8, Java 17/21, Python 3.12, Node 20, Go 1.21</td><td>x86_64</td><td>Most builds — latest standard</td></tr>
+    <tr><td>aws/codebuild/amazonlinux2-aarch64-standard:3.0</td><td>.NET 6/8, Java 17, Python 3.12, Node 20</td><td>arm64</td><td>Arm64 Lambda builds, Graviton</td></tr>
+    <tr><td>aws/codebuild/amazonlinux-x86_64-standard:4.0</td><td>.NET 6/8, Java 17/21, Python 3.12</td><td>x86_64</td><td>AL2023-based projects</td></tr>
+    <tr><td>aws/codebuild/windows-base:2019-2.0</td><td>.NET Framework 4.8, .NET 6/8</td><td>x86_64</td><td>Windows/.NET Framework builds</td></tr>
+  </table></div>
+
+  <h3>Compute Types — Size vs Cost</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Compute Type</th><th>vCPU</th><th>RAM</th><th>$/min (Linux)</th><th>Best For</th></tr>
+    <tr><td>BUILD_LAMBDA_1GB</td><td>—</td><td>1 GB</td><td>$0.00003</td><td>Linting, scripts, very small builds</td></tr>
+    <tr><td>BUILD_GENERAL1_SMALL</td><td>2</td><td>3 GB</td><td>$0.005</td><td>Small .NET projects, unit tests</td></tr>
+    <tr><td>BUILD_GENERAL1_MEDIUM</td><td>4</td><td>7 GB</td><td>$0.01</td><td>Standard Watson API builds ← recommended</td></tr>
+    <tr><td>BUILD_GENERAL1_LARGE</td><td>8</td><td>15 GB</td><td>$0.02</td><td>Docker image builds, heavy compilation</td></tr>
+    <tr><td>BUILD_GENERAL1_2XLARGE</td><td>72</td><td>145 GB</td><td>$0.20</td><td>Massive parallel test suites</td></tr>
+  </table></div>
+
+  <h3>Custom Docker Image in ECR</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Build + Push Custom CodeBuild Image to ECR</span>
+    <pre><span class="bash-comment"># Dockerfile for custom CodeBuild image</span>
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+
+RUN dnf install -y \
+  dotnet-sdk-8.0 \
+  python3-pip \
+  git \
+  docker \
+  && pip3 install aws-sam-cli \
+  && dotnet tool install --global dotnet-coverage
+
+<span class="bash-comment"># Build and push to ECR</span>
+aws ecr create-repository --repository-name watson-build-image
+docker build -t watson-build-image .
+docker tag watson-build-image:latest \
+  123456789012.dkr.ecr.eu-west-1.amazonaws.com/watson-build-image:latest
+docker push \
+  123456789012.dkr.ecr.eu-west-1.amazonaws.com/watson-build-image:latest
+
+<span class="bash-comment"># Reference in CodeBuild project</span>
+aws codebuild create-project \
+  <span class="bash-flag">--name</span> watson-api-build \
+  <span class="bash-flag">--environment</span> type=LINUX_CONTAINER,\
+computeType=BUILD_GENERAL1_MEDIUM,\
+image=123456789012.dkr.ecr.eu-west-1.amazonaws.com/watson-build-image:latest,\
+imagePullCredentialsType=SERVICE_ROLE</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — CACHING
+══════════════════════════════════ -->
+<div id="tab-cache" class="tab-panel"><div class="section">
+  <h2>💾 Caching — Speed Up Every Build</h2>
+  <p>Without caching, CodeBuild downloads NuGet packages, npm modules, and pip packages on every build — adding 30–90 seconds. With S3 caching, subsequent builds restore the cache in ~5 seconds.</p>
+
+  <h3>Build Time Comparison — With vs Without Cache</h3>
+  <div class="cache-vis">
+    <div class="cv-header">⚡ Build Time Before vs After Cache — watson-api</div>
+    <div class="cv-body">
+      <div class="cv-row">
+        <div class="cv-label">Without cache</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar" style="width:100%;background:linear-gradient(90deg,#92400e,#b45309);">dotnet restore 45s · build 38s · test 28s · sam build 22s · package 11s</div>
+        </div>
+        <div class="cv-time">2m 24s</div>
+      </div>
+      <div class="cv-row">
+        <div class="cv-label">With S3 cache</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar" style="width:62%;background:linear-gradient(90deg,#166534,#15803d);">restore 4s · build 38s · test 28s · sam 22s · pkg 11s</div>
+        </div>
+        <div class="cv-time">1m 23s</div>
+      </div>
+      <div class="cv-row">
+        <div class="cv-label">Local cache (same host)</div>
+        <div class="cv-bar-wrap">
+          <div class="cv-bar" style="width:55%;background:linear-gradient(90deg,#155e75,#0891b2);">restore 1s · build 38s · test 28s · sam 18s · pkg 11s</div>
+        </div>
+        <div class="cv-time">1m 16s</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Cache Types</h3>
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid var(--cb);">
+      <h4>☁️ S3 Cache</h4>
+      <p>Cache stored in S3. Shared across all builds regardless of which compute instance runs. Best for teams with concurrent builds. Slight overhead (~5s) to download/upload cache.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--blue-d);">
+      <h4>💻 Local Cache</h4>
+      <p>Cache kept on the build host between builds. Faster restore (~1s) but only works if the same host runs your next build — not guaranteed. Three modes: SOURCE, DOCKER_LAYER, CUSTOM.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--green-d);">
+      <h4>🔀 Combined</h4>
+      <p>Use both S3 + local. Local cache used when available (same host), S3 cache used as fallback. Best of both worlds for high-frequency build projects.</p>
+    </div>
+  </div>
+
+  <h3>Cache Configuration — buildspec.yml</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Cache Configuration for .NET + SAM</span>
+    <pre><span class="yaml-cm"># In buildspec.yml</span>
+<span class="yaml-key">cache</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">paths</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm"># NuGet package cache</span>
+    <span class="yaml-cm">- "/root/.nuget/packages/**/*"</span>
+    <span class="yaml-cm"># .NET SDK + tools</span>
+    <span class="yaml-cm">- "/root/.dotnet/**/*"</span>
+    <span class="yaml-cm"># SAM build cache</span>
+    <span class="yaml-cm">- ".aws-sam/cache/**/*"</span>
+    <span class="yaml-cm"># npm packages (if you have a frontend)</span>
+    <span class="yaml-cm">- "node_modules/**/*"</span>
+    <span class="yaml-cm"># pip packages</span>
+    <span class="yaml-cm">- "/root/.cache/pip/**/*"</span>
+
+<span class="yaml-cm"># In CodeBuild project definition (CloudFormation)</span>
+<span class="yaml-key">Cache</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span>     <span class="yaml-str">S3</span>
+  <span class="yaml-key">Location</span><span class="yaml-cm">:</span> <span class="yaml-str">watson-artifacts-eu-west-1/codebuild-cache</span>
+
+<span class="yaml-cm"># Or local cache with Docker layer support (for Docker builds)</span>
+<span class="yaml-key">Cache</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span>  <span class="yaml-str">LOCAL</span>
+  <span class="yaml-key">Modes</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- LOCAL_SOURCE_CACHE</span>    <span class="yaml-cm"># Caches the source code download</span>
+    <span class="yaml-cm">- LOCAL_DOCKER_LAYER_CACHE</span> <span class="yaml-cm"># Caches Docker image layers</span>
+    <span class="yaml-cm">- LOCAL_CUSTOM_CACHE</span>    <span class="yaml-cm"># Uses paths from buildspec cache section</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Cache Invalidation Strategy</h4>
+    <p>Cache is keyed by project + branch. To force a full refresh, either delete the cache from S3 manually, or temporarily rename the cache path in buildspec.yml. The cache updates automatically at the end of each successful build — so a cache miss on build #1 will be a cache hit on build #2.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — TEST REPORTS
+══════════════════════════════════ -->
+<div id="tab-reports" class="tab-panel"><div class="section">
+  <h2>📊 Test Reports — Visual CI Feedback</h2>
+  <p>CodeBuild can parse test result files and display them visually in the console — pass/fail counts, duration, individual test results, and trends across builds.</p>
+
+  <h3>Supported Report Formats</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Format</th><th>buildspec file-format value</th><th>Generated by</th></tr>
+    <tr><td>JUnit XML</td><td>JUNITXML</td><td>xUnit (via xunit.runner.visualstudio), NUnit, MSTest</td></tr>
+    <tr><td>Visual Studio TRX</td><td>VisualStudioTrx</td><td>dotnet test --logger trx (C# native)</td></tr>
+    <tr><td>NUnit XML</td><td>NUNITXML</td><td>NUnit 3 XML report</td></tr>
+    <tr><td>Cucumber JSON</td><td>CUCUMBERJSON</td><td>SpecFlow, BDD frameworks</td></tr>
+    <tr><td>TestNG XML</td><td>TESTNGXML</td><td>Java TestNG</td></tr>
+    <tr><td>Clover XML (coverage)</td><td>CLOVERXML</td><td>dotnet-coverage, JaCoCo</td></tr>
+    <tr><td>SimpleCov (coverage)</td><td>SIMPLECOV</td><td>Ruby SimpleCov</td></tr>
+  </table></div>
+
+  <h3>Sample Test Report — Visual</h3>
+  <div class="report-vis">
+    <div class="rv-header">📊 Test Report — watson-api · Build #47 · WatsonTestResults</div>
+    <div class="rv-body">
+      <div class="rv-summary">
+        <div class="rv-stat"><span class="rs-num rv-pass">44</span><span class="rs-label">Passed</span></div>
+        <div class="rv-stat"><span class="rs-num rv-fail">2</span><span class="rs-label">Failed</span></div>
+        <div class="rv-stat"><span class="rs-num rv-skip">1</span><span class="rs-label">Skipped</span></div>
+        <div class="rv-stat"><span class="rs-num rv-dur">4.2s</span><span class="rs-label">Duration</span></div>
+      </div>
+      <div class="rv-test-row"><div class="rv-test-name">OrderService_CreateOrder_Returns201_WhenValid</div><div class="rv-test-time">0.12s</div><div class="rv-status rs-ok">PASSED</div></div>
+      <div class="rv-test-row"><div class="rv-test-name">OrderService_CreateOrder_Returns400_WhenAmountNegative</div><div class="rv-test-time">0.08s</div><div class="rv-status rs-ok">PASSED</div></div>
+      <div class="rv-test-row"><div class="rv-test-name">PaymentService_Charge_ThrowsOnDeclined</div><div class="rv-test-time">1.84s</div><div class="rv-status rs-fail">FAILED</div></div>
+      <div class="rv-test-row"><div class="rv-test-name">PaymentService_Charge_StripeTimeout_Retries</div><div class="rv-test-time">2.01s</div><div class="rv-status rs-fail">FAILED</div></div>
+      <div class="rv-test-row"><div class="rv-test-name">NotificationService_SendEmail_Integration</div><div class="rv-test-time">—</div><div class="rv-status rs-skip">SKIPPED</div></div>
+    </div>
+  </div>
+
+  <h3>Test + Coverage Setup — C# .NET</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · buildspec.yml — .NET Test with TRX + Coverage</span>
+    <pre><span class="yaml-key">phases</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">install</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- dotnet tool install --global dotnet-coverage</span>
+      <span class="yaml-cm">- dotnet tool install --global dotnet-reportgenerator-globaltool</span>
+
+  <span class="yaml-key">build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm"># Run tests and generate TRX + coverage in one command</span>
+      <span class="yaml-cm">- |</span>
+        <span class="yaml-cm">  dotnet-coverage collect \</span>
+        <span class="yaml-cm">    "dotnet test ./tests/ \</span>
+        <span class="yaml-cm">      --logger trx \</span>
+        <span class="yaml-cm">      --results-directory /tmp/test-results \</span>
+        <span class="yaml-cm">      --blame-hang-timeout 60s \</span>
+        <span class="yaml-cm">      --no-build" \</span>
+        <span class="yaml-cm">    --output /tmp/coverage.xml \</span>
+        <span class="yaml-cm">    --output-format xml</span>
+
+      <span class="yaml-cm"># Generate HTML coverage report</span>
+      <span class="yaml-cm">- reportgenerator -reports:/tmp/coverage.xml -targetdir:/tmp/coverage-report -reporttypes:Html</span>
+
+      <span class="yaml-cm"># Fail build if coverage &lt; 80%</span>
+      <span class="yaml-cm">- |</span>
+        <span class="yaml-cm">  COVERAGE=$(grep -oP 'line-rate="\K[^"]+' /tmp/coverage.xml | head -1)</span>
+        <span class="yaml-cm">  echo "Coverage: $COVERAGE"</span>
+        <span class="yaml-cm">  if (( $(echo "$COVERAGE < 0.80" | bc -l) )); then</span>
+        <span class="yaml-cm">    echo "❌ Coverage $COVERAGE is below 80% threshold"</span>
+        <span class="yaml-cm">    exit 1</span>
+        <span class="yaml-cm">  fi</span>
+
+<span class="yaml-key">reports</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">TestResults</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- "**/*.trx"</span>
+    <span class="yaml-key">base-directory</span><span class="yaml-cm">:</span> <span class="yaml-str">/tmp/test-results</span>
+    <span class="yaml-key">file-format</span><span class="yaml-cm">:</span>   <span class="yaml-str">VisualStudioTrx</span>
+  <span class="yaml-key">CodeCoverage</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- "/tmp/coverage.xml"</span>
+    <span class="yaml-key">file-format</span><span class="yaml-cm">:</span>   <span class="yaml-str">CloverXml</span>
+
+<span class="yaml-key">artifacts</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">secondary-artifacts</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">CoverageReport</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">files</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- "/tmp/coverage-report/**/*"</span>
+      <span class="yaml-key">name</span><span class="yaml-cm">:</span> <span class="yaml-str">coverage-report</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ADVANCED FEATURES
+══════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🚀 Advanced Features</h2>
+
+  <h3>VPC Builds — Access Private Resources</h3>
+  <p>When your build needs to connect to RDS, ElastiCache, or private API endpoints, run CodeBuild inside your VPC.</p>
+  <div class="vpc-diag">
+    <div class="vd-header">🌐 CodeBuild in VPC — Architecture</div>
+    <div class="vd-body">
+      <div class="vd-outer">
+        <div class="vd-outer-label">Watson VPC (10.0.0.0/16)</div>
+        <div class="vd-inner">
+          <span class="vd-inner-label">Private Subnet (10.0.2.0/24)</span>
+          <div class="vd-resources">
+            <span class="vd-res vr-cb">CodeBuild Container</span>
+            <span class="vd-res vr-rds">RDS (integration tests)</span>
+            <span class="vd-res vr-es">ElastiCache</span>
+          </div>
+        </div>
+      </div>
+      <div class="vd-arrow">↓ via NAT Gateway (private subnet → internet for S3/ECR/CodeCommit)</div>
+      <div class="vd-inner" style="background:var(--cb-l);border:1px solid rgba(180,83,9,.2);">
+        <span class="vd-inner-label" style="color:var(--cb-d);">AWS Services (via VPC Endpoints or NAT)</span>
+        <div class="vd-resources">
+          <span class="vd-res" style="background:var(--cb-l);border-color:rgba(180,83,9,.3);color:var(--cb-d);">S3 (artifacts)</span>
+          <span class="vd-res" style="background:var(--cb-l);border-color:rgba(180,83,9,.3);color:var(--cb-d);">ECR (images)</span>
+          <span class="vd-res" style="background:var(--cb-l);border-color:rgba(180,83,9,.3);color:var(--cb-d);">Secrets Manager</span>
+          <span class="vd-res" style="background:var(--cb-l);border-color:rgba(180,83,9,.3);color:var(--cb-d);">CodeCommit</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">YAML · CloudFormation — VPC-enabled CodeBuild Project</span>
+    <pre"><span class="yaml-key">WatsonBuildProject</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CodeBuild::Project</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Name</span><span class="yaml-cm">:</span>           <span class="yaml-str">watson-api-build</span>
+    <span class="yaml-key">ServiceRole</span><span class="yaml-cm">:</span>   <span class="yaml-cm">!GetAtt CodeBuildRole.Arn</span>
+    <span class="yaml-key">Artifacts</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">CODEPIPELINE</span>
+    <span class="yaml-key">Environment</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span>            <span class="yaml-str">LINUX_CONTAINER</span>
+      <span class="yaml-key">ComputeType</span><span class="yaml-cm">:</span>    <span class="yaml-str">BUILD_GENERAL1_MEDIUM</span>
+      <span class="yaml-key">Image</span><span class="yaml-cm">:</span>          <span class="yaml-str">aws/codebuild/standard:7.0</span>
+      <span class="yaml-key">PrivilegedMode</span><span class="yaml-cm">:</span> <span class="yaml-ex">false</span>   <span class="yaml-cm"># true only if building Docker images</span>
+      <span class="yaml-key">EnvironmentVariables</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- Name: ENVIRONMENT  Type: PLAINTEXT    Value: prod</span>
+        <span class="yaml-cm">- Name: DB_PASSWORD  Type: PARAMETER_STORE Value: /watson/db-pass</span>
+    <span class="yaml-key">Source</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span>           <span class="yaml-str">CODEPIPELINE</span>
+      <span class="yaml-key">BuildSpec</span><span class="yaml-cm">:</span>     <span class="yaml-str">buildspec.yml</span>      <span class="yaml-cm"># Or inline YAML</span>
+    <span class="yaml-key">VpcConfig</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>            <span class="yaml-cm">!Ref WatsonVpc</span>
+      <span class="yaml-key">Subnets</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- !Ref PrivateSubnetA</span>
+        <span class="yaml-cm">- !Ref PrivateSubnetB</span>
+      <span class="yaml-key">SecurityGroupIds</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- !Ref CodeBuildSecurityGroup</span>
+    <span class="yaml-key">Cache</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span>     <span class="yaml-str">S3</span>
+      <span class="yaml-key">Location</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "${ArtifactBucket}/codebuild-cache"</span>
+    <span class="yaml-key">LogsConfig</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">CloudWatchLogs</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Status</span><span class="yaml-cm">:</span>       <span class="yaml-str">ENABLED</span>
+        <span class="yaml-key">GroupName</span><span class="yaml-cm">:</span>   <span class="yaml-str">/aws/codebuild/watson-api</span>
+        <span class="yaml-key">StreamName</span><span class="yaml-cm">:</span>  <span class="yaml-str">build</span>
+      <span class="yaml-key">S3Logs</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Status</span><span class="yaml-cm">:</span>   <span class="yaml-str">ENABLED</span>
+        <span class="yaml-key">Location</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "${ArtifactBucket}/build-logs"</span></pre>
+  </div>
+
+  <h3>Batch Builds — Run Tests in Parallel</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · buildspec.yml — Batch Build Configuration</span>
+    <pre"><span class="yaml-key">batch</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">fast-fail</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>    <span class="yaml-cm"># Stop all if any batch job fails</span>
+  <span class="yaml-key">build-list</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm"># Run unit tests</span>
+    <span class="yaml-cm">- identifier: unit_tests</span>
+      <span class="yaml-cm">  buildspec: buildspec-unit.yml</span>
+      <span class="yaml-cm">  env:</span>
+      <span class="yaml-cm">    compute-type: BUILD_GENERAL1_SMALL</span>
+
+    <span class="yaml-cm"># Run integration tests (needs VPC)</span>
+    <span class="yaml-cm">- identifier: integration_tests</span>
+      <span class="yaml-cm">  buildspec: buildspec-integ.yml</span>
+      <span class="yaml-cm">  env:</span>
+      <span class="yaml-cm">    compute-type: BUILD_GENERAL1_MEDIUM</span>
+
+    <span class="yaml-cm"># Security scan</span>
+    <span class="yaml-cm">- identifier: security_scan</span>
+      <span class="yaml-cm">  buildspec: buildspec-security.yml</span>
+      <span class="yaml-cm">  env:</span>
+      <span class="yaml-cm">    compute-type: BUILD_GENERAL1_SMALL</span>
+
+  <span class="yaml-cm"># Package only after all above succeed</span>
+  <span class="yaml-key">build-graph</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- identifier: package</span>
+      <span class="yaml-cm">  depend-on: [unit_tests, integration_tests, security_scan]</span>
+      <span class="yaml-cm">  buildspec: buildspec-package.yml</span></pre>
+  </div>
+
+  <h3>Webhooks — Build on PR Events</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Create CodeBuild Webhook for GitHub / CodeCommit</span>
+    <pre"><span class="bash-comment"># Trigger build on any PR targeting main</span>
+aws codebuild create-webhook \
+  <span class="bash-flag">--project-name</span> watson-api-build \
+  <span class="bash-flag">--filter-groups</span> \
+    '[
+      [
+        {"type": "EVENT", "pattern": "PULL_REQUEST_CREATED,PULL_REQUEST_UPDATED"},
+        {"type": "BASE_REF", "pattern": "refs/heads/main"}
+      ]
+    ]'
+
+<span class="bash-comment"># Trigger on push to any feature branch</span>
+aws codebuild create-webhook \
+  <span class="bash-flag">--project-name</span> watson-feature-build \
+  <span class="bash-flag">--filter-groups</span> \
+    '[
+      [
+        {"type": "EVENT", "pattern": "PUSH"},
+        {"type": "HEAD_REF", "pattern": "refs/heads/feature/.*"}
+      ]
+    ]'</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CI/CD INTEGRATION
+══════════════════════════════════ -->
+<div id="tab-cicd" class="tab-panel"><div class="section">
+  <h2>🔗 CI/CD Integration</h2>
+
+  <h3>Full CodePipeline + CodeBuild + SAM Deploy</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · pipeline.yaml — Source → Build → Deploy</span>
+    <pre"><span class="yaml-key">WatsonPipeline</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CodePipeline::Pipeline</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Stages</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm"># ── Source ─────────────────────────────────────────</span>
+      <span class="yaml-cm">- Name: Source</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">    - Name: CodeCommitSource</span>
+          <span class="yaml-cm">      ActionTypeId: {Category: Source, Provider: CodeCommit, Version: "1"}</span>
+          <span class="yaml-cm">      Configuration:</span>
+          <span class="yaml-cm">        RepositoryName: watson-api</span>
+          <span class="yaml-cm">        BranchName: main</span>
+          <span class="yaml-cm">        DetectionMode: EVENTS</span>
+          <span class="yaml-cm">      OutputArtifacts: [{Name: SourceOutput}]</span>
+
+      <span class="yaml-cm"># ── Build (CodeBuild) ──────────────────────────────</span>
+      <span class="yaml-cm">- Name: Build</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">    - Name: BuildAndTest</span>
+          <span class="yaml-cm">      ActionTypeId: {Category: Build, Provider: CodeBuild, Version: "1"}</span>
+          <span class="yaml-cm">      Configuration:</span>
+          <span class="yaml-cm">        ProjectName: !Ref WatsonBuildProject</span>
+          <span class="yaml-cm">        EnvironmentVariables: '[{"name":"ENVIRONMENT","value":"prod"}]'</span>
+          <span class="yaml-cm">      InputArtifacts:  [{Name: SourceOutput}]</span>
+          <span class="yaml-cm">      OutputArtifacts: [{Name: BuildOutput}]</span>
+
+      <span class="yaml-cm"># ── Approve ────────────────────────────────────────</span>
+      <span class="yaml-cm">- Name: Approve</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">    - Name: ManualApproval</span>
+          <span class="yaml-cm">      ActionTypeId: {Category: Approval, Provider: Manual, Version: "1"}</span>
+          <span class="yaml-cm">      Configuration:</span>
+          <span class="yaml-cm">        NotificationArn: !Ref AlertTopic</span>
+          <span class="yaml-cm">        CustomData: "Review test results before deploying to prod"</span>
+
+      <span class="yaml-cm"># ── Deploy (CloudFormation via SAM) ────────────────</span>
+      <span class="yaml-cm">- Name: Deploy</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">    - Name: DeploySAMStack</span>
+          <span class="yaml-cm">      ActionTypeId: {Category: Deploy, Provider: CloudFormation, Version: "1"}</span>
+          <span class="yaml-cm">      Configuration:</span>
+          <span class="yaml-cm">        ActionMode:       CREATE_UPDATE</span>
+          <span class="yaml-cm">        StackName:        watson-api-prod</span>
+          <span class="yaml-cm">        TemplatePath:     BuildOutput::packaged.yaml</span>
+          <span class="yaml-cm">        Capabilities:     CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND</span>
+          <span class="yaml-cm">        RoleArn:          !GetAtt CFNDeployRole.Arn</span>
+          <span class="yaml-cm">      InputArtifacts: [{Name: BuildOutput}]</span></pre>
+  </div>
+
+  <h3>Pricing — How to Estimate</h3>
+  <div class="pricing-row">
+    <div class="pricing-card pc-a">
+      <h5>🔨 General1 Medium</h5>
+      <div class="p-row"><div class="p-label">Rate</div><div class="p-val">$0.01 / min</div></div>
+      <div class="p-row"><div class="p-label">Build time</div><div class="p-val">~2 min</div></div>
+      <div class="p-row"><div class="p-label">Per build</div><div class="p-val">~$0.02</div></div>
+      <div class="p-row"><div class="p-label">100 builds/day</div><div class="p-val">~$60/month</div></div>
+    </div>
+    <div class="pricing-card pc-b">
+      <h5>⚡ Lambda 1GB</h5>
+      <div class="p-row"><div class="p-label">Rate</div><div class="p-val">$0.00003 / min</div></div>
+      <div class="p-row"><div class="p-label">Build time</div><div class="p-val">~5 min (slow)</div></div>
+      <div class="p-row"><div class="p-label">Per build</div><div class="p-val">~$0.00015</div></div>
+      <div class="p-row"><div class="p-label">100 builds/day</div><div class="p-val">~$0.45/month</div></div>
+    </div>
+    <div class="pricing-card pc-c">
+      <h5>🎁 Free Tier</h5>
+      <div class="p-row"><div class="p-label">General1 Small</div><div class="p-val">100 min/month</div></div>
+      <div class="p-row"><div class="p-label">Lambda</div><div class="p-val">100 min/month</div></div>
+      <div class="p-row"><div class="p-label">Resets</div><div class="p-val">Monthly</div></div>
+      <div class="p-row"><div class="p-label">Per account</div><div class="p-val">Not per project</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First Build Project</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to CodeBuild</div>
+      <div class="console-step-path">AWS Console → Developer Tools → CodeBuild</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">URL</div><div class="console-field-value">https://console.aws.amazon.com/codesuite/codebuild/projects</div></div>
+      <div class="console-note">Ensure you're in the correct region. CodeBuild projects are regional.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create Build Project — Source</div>
+      <div class="console-step-path">Create build project → Source section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Project name</div><div class="console-field-value">watson-api-build</div></div>
+      <div class="console-field"><div class="console-field-label">Source provider</div><div class="console-field-value">AWS CodeCommit (or GitHub, S3, Bitbucket)</div></div>
+      <div class="console-field"><div class="console-field-label">Repository</div><div class="console-field-value">watson-api</div></div>
+      <div class="console-field"><div class="console-field-label">Branch</div><div class="console-field-value">main</div><div class="console-field-hint">Or leave blank — CodePipeline will pass the correct commit.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Environment Configuration</div>
+      <div class="console-step-path">Environment section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Environment image</div><div class="console-field-value">Managed image</div></div>
+      <div class="console-field"><div class="console-field-label">Operating system</div><div class="console-field-value">Amazon Linux 2023</div></div>
+      <div class="console-field"><div class="console-field-label">Runtime(s)</div><div class="console-field-value">Standard</div></div>
+      <div class="console-field"><div class="console-field-label">Image</div><div class="console-field-value">aws/codebuild/standard:7.0</div></div>
+      <div class="console-field"><div class="console-field-label">Compute</div><div class="console-field-value">EC2 · 3 GB memory, 2 vCPUs (BUILD_GENERAL1_SMALL) for dev / MEDIUM for prod</div></div>
+      <div class="console-field"><div class="console-field-label">Service role</div><div class="console-field-value">New service role → watson-codebuild-role (auto-creates with basic permissions)</div></div>
+      <div class="console-note">If you need Docker-in-Docker (building Docker images), enable Privileged mode.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Buildspec Configuration</div>
+      <div class="console-step-path">Buildspec section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Build specifications</div><div class="console-field-value">Use a buildspec file (recommended)</div><div class="console-field-hint">CodeBuild looks for buildspec.yml in the root of your source. Alternatively, specify a different path like infra/buildspec.yml.</div></div>
+      <div class="console-field"><div class="console-field-label">Buildspec name</div><div class="console-field-value">buildspec.yml  (leave blank to use default)</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Artifacts + Cache</div>
+      <div class="console-step-path">Artifacts + Cache sections</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">Artifacts type</div><div class="console-field-value">Amazon S3 → watson-artifacts-eu-west-1 → path: watson-api/</div><div class="console-field-hint">Or set to "No artifacts" if integrated with CodePipeline (pipeline manages artifacts).</div></div>
+      <div class="console-field"><div class="console-field-label">Cache type</div><div class="console-field-value">Amazon S3 → watson-artifacts-eu-west-1/codebuild-cache</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Logs + Create</div>
+      <div class="console-step-path">Logs section → Create build project</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field"><div class="console-field-label">CloudWatch Logs</div><div class="console-field-value">Enabled · Log group: /aws/codebuild/watson-api-build</div></div>
+      <div class="console-field"><div class="console-field-label">S3 Logs</div><div class="console-field-value">Optional — useful for long-lived audit trail of build logs</div></div>
+      <div class="console-field"><div class="console-field-label">Start first build</div><div class="console-field-value">Create build project → Start build</div></div>
+      <div class="console-note">Monitor the build in the Phase details tab — each phase shows duration, status, and logs. Failures show the exact command that failed and its stderr.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# .NET SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Automate CodeBuild</h2>
+
+  <h3>NuGet Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Packages</span>
+    <pre>dotnet add package AWSSDK.CodeBuild
+dotnet add package AWSSDK.Extensions.NETCore.Setup</pre>
+  </div>
+
+  <h3>CodeBuild Automation Service</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CodeBuildService.cs — Start, Poll, List, Report</span>
+    <pre><span class="kw">using</span> Amazon.CodeBuild;
+<span class="kw">using</span> Amazon.CodeBuild.Model;
+
+<span class="kw">public class</span> <span class="tp">CodeBuildService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodeBuild</span> _cb;
+
+    <span class="kw">public</span> <span class="tp">CodeBuildService</span>(<span class="tp">IAmazonCodeBuild</span> cb) => _cb = cb;
+
+    <span class="cm">// ── START A BUILD ─────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">StartBuildAsync</span>(
+        <span class="tp">string</span> projectName,
+        <span class="tp">string</span>? sourceVersion = <span class="kw">null</span>,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? envOverrides = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">StartBuildRequest</span>
+        {
+            ProjectName   = projectName,
+            SourceVersion = sourceVersion   <span class="cm">// branch, tag, or commit SHA</span>
+        };
+
+        <span class="kw">if</span> (envOverrides?.Count > <span class="num">0</span>)
+        {
+            request.EnvironmentVariablesOverride = envOverrides
+                .<span class="fn">Select</span>(kv => <span class="kw">new</span> <span class="tp">EnvironmentVariable</span>
+                {
+                    Name  = kv.Key,
+                    Value = kv.Value,
+                    Type  = <span class="tp">EnvironmentVariableType</span>.PLAINTEXT
+                }).<span class="fn">ToList</span>();
+        }
+
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cb.<span class="fn">StartBuildAsync</span>(request, ct);
+        <span class="kw">return</span> resp.Build.Id;
+    }
+
+    <span class="cm">// ── WAIT FOR BUILD TO COMPLETE ────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Build</span>&gt; <span class="fn">WaitForBuildAsync</span>(
+        <span class="tp">string</span> buildId,
+        <span class="tp">TimeSpan</span>? pollInterval = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> interval = pollInterval ?? <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">15</span>);
+
+        <span class="kw">while</span> (!ct.IsCancellationRequested)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _cb.<span class="fn">BatchGetBuildsAsync</span>(
+                <span class="kw">new</span> <span class="tp">BatchGetBuildsRequest</span> { Ids = [buildId] }, ct);
+
+            <span class="kw">var</span> build = resp.Builds.<span class="fn">First</span>();
+
+            Console.<span class="fn">WriteLine</span>(<span class="str">$"[{DateTime.UtcNow:T}] Build {buildId}: {build.BuildStatus} — Phase: {build.CurrentPhase}"</span>);
+
+            <span class="kw">if</span> (build.BuildComplete)
+                <span class="kw">return</span> build;
+
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(interval, ct);
+        }
+
+        <span class="kw">throw new</span> <span class="tp">OperationCanceledException</span>(<span class="str">"Timed out waiting for build."</span>);
+    }
+
+    <span class="cm">// ── GET BUILD PHASES ──────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">BuildPhase</span>&gt;&gt; <span class="fn">GetPhasesAsync</span>(
+        <span class="tp">string</span> buildId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cb.<span class="fn">BatchGetBuildsAsync</span>(
+            <span class="kw">new</span> <span class="tp">BatchGetBuildsRequest</span> { Ids = [buildId] }, ct);
+
+        <span class="kw">return</span> resp.Builds.<span class="fn">First</span>().Phases;
+    }
+
+    <span class="cm">// ── LIST BUILDS FOR PROJECT ───────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">string</span>&gt;&gt; <span class="fn">ListBuildsAsync</span>(
+        <span class="tp">string</span> projectName,
+        <span class="tp">int</span> maxResults = <span class="num">10</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cb.<span class="fn">ListBuildsForProjectAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListBuildsForProjectRequest</span>
+            {
+                ProjectName = projectName,
+                SortOrder   = <span class="tp">SortOrderType</span>.DESCENDING
+            }, ct);
+
+        <span class="kw">return</span> resp.Ids.<span class="fn">Take</span>(maxResults).<span class="fn">ToList</span>();
+    }
+
+    <span class="cm">// ── STOP A RUNNING BUILD ──────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">StopBuildAsync</span>(
+        <span class="tp">string</span> buildId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _cb.<span class="fn">StopBuildAsync</span>(
+            <span class="kw">new</span> <span class="tp">StopBuildRequest</span> { Id = buildId }, ct);
+
+    <span class="cm">// ── FULL BUILD + WAIT CONVENIENCE METHOD ──────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Build</span>&gt; <span class="fn">BuildAndWaitAsync</span>(
+        <span class="tp">string</span> projectName,
+        <span class="tp">string</span>? branch = <span class="kw">null</span>,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? env = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> buildId = <span class="kw">await</span> <span class="fn">StartBuildAsync</span>(projectName, branch, env, ct);
+        Console.<span class="fn">WriteLine</span>(<span class="str">$"Started build: {buildId}"</span>);
+
+        <span class="kw">var</span> result = <span class="kw">await</span> <span class="fn">WaitForBuildAsync</span>(buildId, ct: ct);
+
+        <span class="kw">if</span> (result.BuildStatus != <span class="str">"SUCCEEDED"</span>)
+        {
+            <span class="cm">// Log failed phases</span>
+            <span class="kw">var</span> failedPhases = result.Phases
+                .<span class="fn">Where</span>(p => p.PhaseStatus == <span class="str">"FAILED"</span>)
+                .<span class="fn">Select</span>(p => <span class="str">$"{p.PhaseType}: {string.Join(", ", p.Contexts.Select(c => c.Message))}"</span>);
+
+            <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                <span class="str">$"Build {buildId} {result.BuildStatus}.\nFailed phases:\n{string.Join("\n", failedPhases)}"</span>);
+        }
+
+        <span class="kw">return</span> result;
+    }
+}</pre>
+  </div>
+
+  <h3>Usage Example</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Trigger Build from API Endpoint</span>
+    <pre"><span class="cm">// DI registration</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCodeBuild</span>&gt;()
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">CodeBuildService</span>&gt;();
+
+<span class="cm">// Trigger build from an API endpoint or scheduled job</span>
+<span class="kw">var</span> cbService = provider.<span class="fn">GetRequiredService</span>&lt;<span class="tp">CodeBuildService</span>&gt;();
+
+<span class="kw">var</span> cts = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">30</span>));
+
+<span class="kw">var</span> build = <span class="kw">await</span> cbService.<span class="fn">BuildAndWaitAsync</span>(
+    projectName: <span class="str">"watson-api-build"</span>,
+    branch:      <span class="str">"main"</span>,
+    env: <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+    {
+        [<span class="str">"ENVIRONMENT"</span>] = <span class="str">"prod"</span>,
+        [<span class="str">"DEPLOY_FLAG"</span>]  = <span class="str">"true"</span>
+    },
+    ct: cts.Token);
+
+Console.<span class="fn">WriteLine</span>(<span class="str">$"✅ Build succeeded: {build.Id}"</span>);
+Console.<span class="fn">WriteLine</span>(<span class="str">$"Duration: {build.EndTime - build.StartTime}"</span>);</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Always use <code>runtime-versions</code> in the install phase — specifying <code>dotnet: 8</code> ensures the correct SDK version, regardless of which image version is used</li>
+    <li>Use SSM Parameter Store or Secrets Manager for secrets in <code>env.parameter-store</code> or <code>env.secrets-manager</code> — never hardcode secrets in buildspec.yml or project config</li>
+    <li>Enable S3 caching for NuGet packages — reduces build time by 40–60% on typical .NET projects</li>
+    <li>Set <code>on-failure: ABORT</code> in the build phase — stops wasting build minutes when compilation fails</li>
+    <li>Always publish test results via the <code>reports</code> section — gives you trend visibility across builds</li>
+    <li>Use <code>CODEBUILD_BUILD_SUCCEEDING</code> in post_build to conditionally run steps (e.g., only notify Slack on success)</li>
+    <li>Grant CodeBuild's IAM role only the permissions it needs — S3 for artifacts, ECR for images, SSM for parameters</li>
+    <li>Use <code>BUILD_GENERAL1_MEDIUM</code> (4 vCPU / 7 GB) for standard .NET builds — SMALL is often CPU-bottlenecked on compilation</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CodeBuild Mistakes</h4>
+    <p>
+    ❌ <strong>Hardcoding secrets in buildspec.yml</strong> — visible to anyone with repo access; use SSM/Secrets Manager<br>
+    ❌ <strong>No cache configured</strong> — downloading all NuGet packages every build wastes minutes and money<br>
+    ❌ <strong>Privileged mode always on</strong> — only enable when building Docker images; it's a security risk otherwise<br>
+    ❌ <strong>Using General1_LARGE for simple builds</strong> — 4x cost of MEDIUM; only use for Docker builds or massive test suites<br>
+    ❌ <strong>No timeout configured</strong> — default is 60 min; a hung build costs money; set a realistic timeout (e.g., 10 min)<br>
+    ❌ <strong>Not publishing test reports</strong> — failing builds with no visible test output make debugging slow<br>
+    ❌ <strong>Running integration tests in unit test phase</strong> — slow tests in every PR build; separate fast unit tests from slower integration tests using batch builds
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CodeBuild Mastery!</h3>
+    <p>What is CodeBuild · Build lifecycle (6 phases visual) · Phase execution timeline · CodeBuild vs GitHub Actions vs Jenkins · Full buildspec.yml anatomy · All env sections (variables, parameter-store, secrets-manager, exported-variables) · Complete .NET 8 + SAM buildspec · All built-in environment variables · Managed images vs Custom Docker vs Lambda compute · Compute type comparison + pricing · Custom Docker image in ECR · Build time comparison with vs without cache · S3 vs Local vs Combined cache · VPC builds (architecture diagram) · Batch builds with build-graph dependencies · Webhooks for PR builds · Test report formats (TRX, JUnit, Clover) · Coverage enforcement in build · CodePipeline integration · Pricing estimates · Console walkthrough (6 steps) · Full C# SDK service (start/wait/phases/list/stop/buildAndWait) · Best practices checklist · Top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#fde68a;">Build fast, test thoroughly, ship with confidence. 🔨🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
