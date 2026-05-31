@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CodeArtifact — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0fdf8;--surface:#d1fae5;--card:#ffffff;--border:#6ee7b7;--border2:#34d399;
+  --ca:#047857;--ca-l:#ecfdf5;--ca-d:#064e3b;--ca-dk:#022c22;
+  --teal:#0891b2;--teal-l:#ecfeff;--teal-d:#155e75;
+  --blue:#1d4ed8;--blue-l:#dbeafe;--blue-d:#1e3a8a;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-d:#92400e;
+  --red:#dc2626;--red-l:rgba(220,38,38,.09);--red-b:rgba(220,38,38,.22);
+  --purple:#7c3aed;--purple-l:#f5f3ff;--purple-d:#4c1d95;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --indigo:#4338ca;--indigo-l:#e0e7ff;--indigo-d:#3730a3;
+  --text:#022c22;--text2:#064e3b;--muted:#065f46;
+  --code-bg:#011a0f;--r:10px;
+  --sh:0 1px 3px rgba(4,120,87,.07),0 4px 12px rgba(4,120,87,.08);
+  --sh-lg:0 2px 8px rgba(4,120,87,.09),0 8px 28px rgba(4,120,87,.11);
+  --sh-xl:0 4px 16px rgba(4,120,87,.1),0 16px 48px rgba(4,120,87,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#022c22 0%,#064e3b 35%,#047857 65%,#059669 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-diamonds{position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='none' stroke='rgba(255,255,255,0.03)' stroke-width='1'/%3E%3C/svg%3E");
+  background-size:40px 40px;pointer-events:none;}
+.hdr-glow1{position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(52,211,153,.2) 0%,transparent 65%);pointer-events:none;}
+.hdr-glow2{position:absolute;bottom:-60px;left:-60px;width:260px;height:260px;background:radial-gradient(circle,rgba(16,185,129,.12) 0%,transparent 65%);pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#a7f3d0,#6ee7b7,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(240,253,248,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--ca-l);color:var(--ca-d);font-weight:800;box-shadow:0 0 0 1.5px rgba(4,120,87,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--surface);letter-spacing:-.02em;}
+.section h3{color:var(--ca-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ── IMPROVED CODE BLOCKS ── */
+.code-block{
+  background:#011a0f;
+  border:1px solid #0a3320;
+  border-left:4px solid var(--ca);
+  border-radius:var(--r);
+  padding:clamp(1rem,2.5vw,1.4rem);
+  margin:14px 0;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
+}
+.code-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;color:#6ee7b7;
+  text-transform:uppercase;letter-spacing:.1em;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;font-weight:600;
+}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(110,231,183,.18);}
+.code-block pre{
+  margin:0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(.73rem,1.8vw,.83rem);
+  line-height:1.9;
+  color:#d1fae5;
+  white-space:pre;
+  letter-spacing:.01em;
+}
+.kw   {color:#c084fc;font-weight:700;}
+.tp   {color:#67e8f9;}
+.fn   {color:#93c5fd;}
+.str  {color:#86efac;}
+.num  {color:#fdba74;}
+.cm   {color:#1a4d30;font-style:italic;}
+.prop {color:#fde68a;}
+.bool {color:#c084fc;font-weight:700;}
+.attr {color:#f9a8d4;}
+.yaml-key{color:#67e8f9;font-weight:600;}
+.yaml-val{color:#86efac;}
+.yaml-str{color:#86efac;}
+.yaml-cm {color:#1a4d30;font-style:italic;}
+.yaml-ex {color:#fdba74;}
+.bash-comment{color:#1a4d30;font-style:italic;}
+.bash-flag   {color:#67e8f9;}
+.bash-str    {color:#86efac;}
+code{background:rgba(4,120,87,.13);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--ca-d);font-weight:700;}
+
+/* ── ARTIFACT FLOW VISUAL ── */
+.artifact-flow{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-xl);}
+.af-header{background:linear-gradient(90deg,#022c22,#047857);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #064e3b;display:flex;align-items:center;gap:8px;}
+.af-header span{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.af-body{padding:16px;overflow-x:auto;}
+.af-flow{display:flex;align-items:center;gap:0;min-width:560px;}
+.af-node{flex:1;text-align:center;padding:10px 6px;}
+.af-node-box{border-radius:8px;padding:10px 8px;border:1.5px solid;}
+.af-icon{font-size:1.4rem;display:block;margin-bottom:5px;}
+.af-name{font-size:.72rem;font-weight:800;margin-bottom:2px;}
+.af-sub{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);}
+.af-arrow{font-size:1.3rem;color:var(--border);padding:0 4px;flex-shrink:0;}
+.an-dev{background:var(--blue-l);border-color:rgba(29,78,216,.3);}
+.an-dev .af-name{color:var(--blue-d);}
+.an-ca{background:var(--ca-l);border-color:rgba(4,120,87,.3);}
+.an-ca .af-name{color:var(--ca-d);}
+.an-upstream{background:var(--amber-l);border-color:rgba(217,119,6,.3);}
+.an-upstream .af-name{color:var(--amber-d);}
+.an-ci{background:var(--purple-l);border-color:rgba(124,58,237,.25);}
+.an-ci .af-name{color:var(--purple-d);}
+
+/* ── DOMAIN/REPO VISUAL ── */
+.domain-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.dv-header{background:linear-gradient(90deg,#022c22,#064e3b);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #022c22;}
+.dv-body{padding:14px;}
+.dv-domain{border:2px dashed var(--border2);border-radius:var(--r);padding:12px;position:relative;margin-bottom:10px;}
+.dv-domain-label{position:absolute;top:-10px;left:12px;background:var(--card);font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--ca-d);font-weight:700;padding:0 6px;}
+.dv-repos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(120px,100%),1fr));gap:8px;margin-top:6px;}
+.dv-repo{background:var(--surface);border:1.5px solid var(--border);border-radius:7px;padding:8px 10px;text-align:center;}
+.dv-repo h6{font-weight:800;font-size:.7rem;color:var(--ca-d);margin-bottom:2px;}
+.dv-repo p{font-size:.6rem;color:var(--muted);}
+.dv-repo span{font-family:'JetBrains Mono',monospace;font-size:.55rem;padding:1px 5px;border-radius:3px;margin-top:3px;display:inline-block;background:var(--ca-l);color:var(--ca-d);}
+
+/* ── UPSTREAM CHAIN VISUAL ── */
+.upstream-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.uv-header{background:linear-gradient(90deg,var(--amber-l),var(--ca-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.uv-body{padding:14px;}
+.uv-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.uv-row:last-child{margin-bottom:0;}
+.uv-box{flex:1;border-radius:7px;padding:9px 12px;min-width:0;}
+.uv-local{background:var(--ca-l);border:1.5px solid rgba(4,120,87,.3);}
+.uv-local h6{font-weight:700;font-size:.72rem;color:var(--ca-d);margin-bottom:3px;}
+.uv-upstream{background:var(--amber-l);border:1.5px solid rgba(217,119,6,.25);}
+.uv-upstream h6{font-weight:700;font-size:.72rem;color:var(--amber-d);margin-bottom:3px;}
+.uv-ext{background:var(--blue-l);border:1.5px solid rgba(29,78,216,.2);}
+.uv-ext h6{font-weight:700;font-size:.72rem;color:var(--blue-d);margin-bottom:3px;}
+.uv-box p{font-size:.65rem;color:var(--muted);}
+.uv-arrow{color:var(--border2);font-size:1.2rem;flex-shrink:0;}
+
+/* ── FORMAT CARDS ── */
+.format-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.format-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .15s;}
+.format-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.format-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.fc-nuget::before{background:#004880;}
+.fc-npm::before{background:#cc3534;}
+.fc-pypi::before{background:#3572a5;}
+.fc-maven::before{background:#c71a36;}
+.fc-generic::before{background:var(--ca);}
+.fc-swift::before{background:#f05138;}
+.format-card .fc-name{font-weight:800;font-size:.8rem;margin-bottom:3px;}
+.format-card .fc-pm{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:5px;background:var(--surface);color:var(--ca-d);}
+.format-card .fc-desc{font-size:.7rem;color:var(--muted);}
+
+/* ── FEATURE COMPARE ── */
+.fc-comp{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fcc-head{display:flex;border-bottom:1px solid var(--border);}
+.fcc-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.74rem;}
+.fcc-ca{background:var(--ca-l);color:var(--ca-d);border-right:1px solid var(--border);}
+.fcc-other{background:var(--surface);color:var(--muted);}
+.fcc-row{display:flex;border-bottom:1px solid var(--border);}
+.fcc-row:last-child{border-bottom:none;}
+.fcc-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fcc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fcc-val:last-child{border-right:none;}
+.fcc-val.good{color:var(--green-d,#166534);font-weight:600;}
+.fcc-val.warn{color:var(--amber-d);font-weight:600;}
+.fcc-val.bad{color:var(--red);font-weight:600;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.cs-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.cs-num{background:linear-gradient(135deg,var(--ca-d),var(--ca));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.cs-title{font-weight:700;font-size:.86rem;color:var(--text);}
+.cs-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.cs-body{padding:13px 15px;}
+.cs-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.cs-field:last-child{margin-bottom:0;}
+.cs-field-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.cs-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:6px 11px;}
+.cs-field-hint{font-size:.72rem;color:var(--muted);}
+.cs-note{font-size:.76rem;color:var(--ca-d);padding:9px 12px;background:var(--ca-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--ca-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:16px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--ca);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--ca-l);border:1px solid rgba(4,120,87,.18);border-left:4px solid var(--ca);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--ca-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--ca-l);border:1px solid rgba(4,120,87,.2);border-left:4px solid var(--ca-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--ca-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,78,216,.18);border-left:4px solid var(--blue-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--ca);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--ca-d);font-weight:800;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#022c22 0%,#064e3b 60%,#047857 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'📦';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── PRICING ── */
+.pricing-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.pricing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc-req::before{background:var(--ca);}
+.pc-stor::before{background:var(--blue-d);}
+.pc-free::before{background:var(--amber-d);}
+.pc-h5{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:8px;}
+.p-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.p-label{font-size:.68rem;color:var(--muted);}
+.p-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;color:var(--text);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.format-grid,.pricing-row,.dv-repos{grid-template-columns:1fr;}
+  .fcc-row,.af-flow,.uv-row{flex-direction:column;}
+  .fcc-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .af-flow{min-width:520px;}
+  .uv-arrow{transform:rotate(90deg);}
+  .cs-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-diamonds"></div>
+  <div class="hdr-glow1"></div>
+  <div class="hdr-glow2"></div>
+  <div class="container">
+    <div class="hdr-badge">📦 AWS · Artifact Management</div>
+    <h1>AWS <span>CodeArtifact</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET &amp; NuGet Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">NuGet · npm · PyPI · Maven</span>
+      <span class="header-tag">Domains &amp; Repositories</span>
+      <span class="header-tag">Upstream Sources</span>
+      <span class="header-tag">Package Versions</span>
+      <span class="header-tag">IAM Auth</span>
+      <span class="header-tag">C# .NET 8</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CodeArtifact</button>
+    <button class="tab-btn" onclick="T('concepts',this)">2 · Domains &amp; Repos</button>
+    <button class="tab-btn" onclick="T('nuget',this)">3 · NuGet Setup</button>
+    <button class="tab-btn" onclick="T('upstream',this)">4 · Upstream Sources</button>
+    <button class="tab-btn" onclick="T('packages',this)">5 · Package Management</button>
+    <button class="tab-btn" onclick="T('iam',this)">6 · IAM &amp; Auth</button>
+    <button class="tab-btn" onclick="T('cicd',this)">7 · CI/CD Integration</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# SDK</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CODEARTIFACT
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>📦 What is AWS CodeArtifact?</h2>
+  <p>AWS CodeArtifact is a fully managed <strong>artifact repository service</strong>. It stores, publishes, and shares software packages — NuGet, npm, PyPI, Maven, Gradle, Swift, and generic binaries. It acts as a <strong>private proxy</strong> in front of public registries (nuget.org, npmjs.com, pypi.org) so your CI/CD pipelines never need direct internet access to pull dependencies.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>Think of CodeArtifact as your company's <em>private package registry</em>. Your .NET projects reference it instead of nuget.org. When they request a package, CodeArtifact checks its local cache first — instant. If not cached, it fetches from nuget.org, stores a copy, and returns it. Future requests are served from cache. Your internal NuGet packages (shared libraries, utilities) are published directly here and never go to the public internet.</p>
+  </div>
+
+  <h3>How CodeArtifact Fits in Your Pipeline</h3>
+  <div class="artifact-flow">
+    <div class="af-header">📦 CodeArtifact — Package Flow <span>Private + Proxied</span></div>
+    <div class="af-body">
+      <div class="af-flow">
+        <div class="af-node">
+          <div class="af-node-box an-dev">
+            <span class="af-icon">💻</span>
+            <div class="af-name">Developer</div>
+            <div class="af-sub">dotnet restore</div>
+          </div>
+        </div>
+        <div class="af-arrow">→</div>
+        <div class="af-node">
+          <div class="af-node-box an-ca">
+            <span class="af-icon">📦</span>
+            <div class="af-name">CodeArtifact</div>
+            <div class="af-sub">watson-nuget-repo</div>
+          </div>
+        </div>
+        <div class="af-arrow">→</div>
+        <div class="af-node">
+          <div class="af-node-box an-upstream">
+            <span class="af-icon">🌐</span>
+            <div class="af-name">nuget.org</div>
+            <div class="af-sub">if not cached</div>
+          </div>
+        </div>
+        <div class="af-arrow">↑</div>
+        <div class="af-node">
+          <div class="af-node-box an-ci">
+            <span class="af-icon">🔨</span>
+            <div class="af-name">CodeBuild</div>
+            <div class="af-sub">dotnet publish</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>CodeArtifact vs Self-hosted Nexus/Artifactory vs NuGet.Server</h3>
+  <div class="fc-comp">
+    <div class="fcc-head">
+      <div class="fcc-col fcc-ca">📦 CodeArtifact</div>
+      <div class="fcc-col fcc-other" style="flex:2;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">🏢 Nexus / Artifactory</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;font-weight:700;font-size:.72rem;color:var(--muted);">📂 NuGet.Server</div>
+      </div>
+    </div>
+    <div class="fcc-row"><div class="fcc-lbl">Infrastructure</div><div class="fcc-val good">✅ Fully managed — zero servers</div><div class="fcc-val bad">❌ EC2/K8s you manage</div><div class="fcc-val bad">❌ Windows Server you manage</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">Package formats</div><div class="fcc-val good">NuGet, npm, PyPI, Maven, Swift, Generic</div><div class="fcc-val good">All formats + Docker</div><div class="fcc-val bad">NuGet only</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">IAM integration</div><div class="fcc-val good">✅ Native — roles + tokens</div><div class="fcc-val warn">⚠️ LDAP/SAML plugin</div><div class="fcc-val bad">❌ Basic auth only</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">Upstream proxying</div><div class="fcc-val good">✅ Built-in (nuget.org, npmjs)</div><div class="fcc-val good">✅ Built-in</div><div class="fcc-val bad">❌ Manual</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">Pricing</div><div class="fcc-val warn">Per-request + storage</div><div class="fcc-val bad">EC2 + license costs</div><div class="fcc-val good">Free (but self-managed)</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">Cross-account sharing</div><div class="fcc-val good">✅ Resource-based policy</div><div class="fcc-val warn">⚠️ Network/VPN required</div><div class="fcc-val bad">❌ Not supported</div></div>
+    <div class="fcc-row"><div class="fcc-lbl">Best for</div><div class="fcc-val">AWS-native teams, no ops overhead</div><div class="fcc-val">Large enterprise, all formats + Docker</div><div class="fcc-val">Tiny team, NuGet-only, free</div></div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🏢</span><h4>Domain</h4><p>Top-level container. Groups all repositories for an org. One domain per company.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>Repository</h4><p>Stores packages of one format (NuGet, npm, etc.). A domain can have many repos.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Upstream Source</h4><p>Public registry (nuget.org) or another repo that packages are fetched from if not cached locally.</p></div>
+    <div class="icon-item"><span class="emoji">📄</span><h4>Package</h4><p>A named artifact (e.g., WatsonShared) across all its versions.</p></div>
+    <div class="icon-item"><span class="emoji">🏷️</span><h4>Package Version</h4><p>A specific release (e.g., WatsonShared 1.2.3). Has its own assets, tags, and status.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Auth Token</h4><p>Short-lived token (12h) generated via AWS CLI/SDK for NuGet/npm/pip authentication.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>IAM Policy</h4><p>Fine-grained access — read-only, read-write, or admin per repo or package.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Package Origin</h4><p>Control whether packages can be ingested from upstream or only published internally.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Cross-account</h4><p>Share repos across AWS accounts via resource-based domain/repo policies.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — DOMAINS & REPOS
+══════════════════════════════════ -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🏢 Domains &amp; Repositories — Structure</h2>
+
+  <h3>Domain → Repository Hierarchy</h3>
+  <div class="domain-vis">
+    <div class="dv-header">🏢 watson-domain — Multi-Repo Structure</div>
+    <div class="dv-body">
+      <div class="dv-domain">
+        <div class="dv-domain-label">watson-domain (AWS Account 123456789012)</div>
+        <div class="dv-repos">
+          <div class="dv-repo">
+            <h6>watson-nuget</h6>
+            <p>Internal NuGet packages</p>
+            <span>nuget</span>
+          </div>
+          <div class="dv-repo">
+            <h6>nuget-store</h6>
+            <p>Proxy for nuget.org</p>
+            <span>nuget</span>
+          </div>
+          <div class="dv-repo">
+            <h6>watson-npm</h6>
+            <p>Internal npm packages</p>
+            <span>npm</span>
+          </div>
+          <div class="dv-repo">
+            <h6>npm-store</h6>
+            <p>Proxy for npmjs.com</p>
+            <span>npm</span>
+          </div>
+          <div class="dv-repo">
+            <h6>watson-pypi</h6>
+            <p>Internal Python packages</p>
+            <span>pypi</span>
+          </div>
+          <div class="dv-repo">
+            <h6>shared-libs</h6>
+            <p>Cross-team shared NuGet</p>
+            <span>nuget</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Recommended Repo Pattern — NuGet</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🗄️ watson-nuget (Internal)</h4>
+      <ul>
+        <li>Your team's private NuGet packages only</li>
+        <li>WatsonShared, WatsonCore, WatsonLogging</li>
+        <li>Published by your CI/CD pipeline</li>
+        <li>Upstream: nuget-store (for proxied public packages)</li>
+        <li>Access: devs can read/write, CI/CD can publish</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌐 nuget-store (Proxy)</h4>
+      <ul>
+        <li>Caches packages from nuget.org</li>
+        <li>AWSSDK, Newtonsoft.Json, Microsoft.Extensions.*</li>
+        <li>Never publish to this repo directly</li>
+        <li>Upstream: nuget.org public registry</li>
+        <li>Access: devs read-only, no publish permissions</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Create Domain + Repos via AWS CLI</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Create Domain and Repositories</span>
+    <pre><span class="bash-comment"># ── Step 1: Create the Domain ─────────────────────────────────</span>
+aws codeartifact create-domain \
+  --domain watson-domain \
+  --tags Team=Watson,CostCenter=Platform
+
+<span class="bash-comment"># Get domain ARN</span>
+aws codeartifact describe-domain \
+  --domain watson-domain \
+  --query domain.arn \
+  --output text
+
+<span class="bash-comment"># ── Step 2: Create the proxy repo (nuget.org upstream) ────────</span>
+aws codeartifact create-repository \
+  --domain        watson-domain \
+  --repository    nuget-store \
+  --description   <span class="bash-str">"Proxy cache for nuget.org"</span> \
+  --upstreams     repositoryName=nuget-org-upstream
+
+<span class="bash-comment"># Add nuget.org as an external connection to nuget-store</span>
+aws codeartifact associate-external-connection \
+  --domain     watson-domain \
+  --repository nuget-store \
+  --external-connection <span class="bash-str">"public:nuget-org"</span>
+
+<span class="bash-comment"># ── Step 3: Create the internal repo ──────────────────────────</span>
+aws codeartifact create-repository \
+  --domain      watson-domain \
+  --repository  watson-nuget \
+  --description <span class="bash-str">"Watson team private NuGet packages"</span> \
+  --upstreams   repositoryName=nuget-store
+
+<span class="bash-comment"># ── List repositories ──────────────────────────────────────────</span>
+aws codeartifact list-repositories \
+  --domain watson-domain
+
+<span class="bash-comment"># ── Get the NuGet endpoint URL ─────────────────────────────────</span>
+aws codeartifact get-repository-endpoint \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --query repositoryEndpoint \
+  --output text</pre>
+  </div>
+
+  <h3>Supported External Connections (Public Registries)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>External Connection</th><th>Format</th><th>Public Registry</th></tr>
+    <tr><td><code>public:nuget-org</code></td><td>nuget</td><td>nuget.org</td></tr>
+    <tr><td><code>public:npmjs</code></td><td>npm</td><td>registry.npmjs.org</td></tr>
+    <tr><td><code>public:pypi</code></td><td>pypi</td><td>pypi.org</td></tr>
+    <tr><td><code>public:maven-central</code></td><td>maven</td><td>repo1.maven.org</td></tr>
+    <tr><td><code>public:maven-googleandroid</code></td><td>maven</td><td>dl.google.com/dl/android/maven2</td></tr>
+    <tr><td><code>public:maven-gradleplugins</code></td><td>maven</td><td>plugins.gradle.org/m2</td></tr>
+    <tr><td><code>public:maven-commonsware</code></td><td>maven</td><td>maven.commonsware.com</td></tr>
+    <tr><td><code>public:swift-registry</code></td><td>swift</td><td>swiftpackageindex.com</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — NUGET SETUP
+══════════════════════════════════ -->
+<div id="tab-nuget" class="tab-panel"><div class="section">
+  <h2>🟦 NuGet Setup — .NET Configuration</h2>
+  <p>Configuring .NET to use CodeArtifact as a NuGet source requires three things: getting an auth token, adding the feed to NuGet config, and pointing your projects at it.</p>
+
+  <h3>Step 1 — Get an Auth Token</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Get CodeArtifact Auth Token (expires in 12 hours)</span>
+    <pre"><span class="bash-comment"># Get token and store in environment variable</span>
+export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token \
+  --domain        watson-domain \
+  --domain-owner  123456789012 \
+  --query         authorizationToken \
+  --output        text)
+
+echo <span class="bash-str">"Token obtained: ${CODEARTIFACT_TOKEN:0:20}..."</span>
+
+<span class="bash-comment"># Get the NuGet endpoint URL</span>
+export NUGET_SOURCE=$(aws codeartifact get-repository-endpoint \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --query      repositoryEndpoint \
+  --output     text)
+
+echo <span class="bash-str">"NuGet endpoint: $NUGET_SOURCE"</span>
+<span class="bash-comment"># → https://watson-domain-123456789012.d.codeartifact.eu-west-1.amazonaws.com/nuget/watson-nuget/v3/index.json</span></pre>
+  </div>
+
+  <h3>Step 2 — Add to NuGet Config</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Add CodeArtifact as NuGet Source</span>
+    <pre"><span class="bash-comment"># Add the source (run once per machine)</span>
+dotnet nuget add source \
+  "$NUGET_SOURCE" \
+  --name     "watson-nuget" \
+  --username "aws" \
+  --password "$CODEARTIFACT_TOKEN" \
+  --store-password-in-clear-text
+
+<span class="bash-comment"># Verify sources</span>
+dotnet nuget list source
+
+<span class="bash-comment"># Remove old source if needed</span>
+dotnet nuget remove source "old-source-name"
+
+<span class="bash-comment"># Update the token when it expires (12h)</span>
+dotnet nuget update source "watson-nuget" \
+  --username "aws" \
+  --password "$CODEARTIFACT_TOKEN" \
+  --store-password-in-clear-text</pre>
+  </div>
+
+  <h3>nuget.config — Per-Project or Global</h3>
+  <div class="code-block">
+    <span class="code-label">XML · nuget.config — Check into your repo root</span>
+    <pre">&lt;?xml version=<span class="str">"1.0"</span> encoding=<span class="str">"utf-8"</span>?&gt;
+&lt;configuration&gt;
+  &lt;packageSources&gt;
+    <span class="bash-comment">&lt;!-- Clear default sources so ONLY CodeArtifact is used --&gt;</span>
+    &lt;clear /&gt;
+
+    <span class="bash-comment">&lt;!-- Watson internal + proxied packages --&gt;</span>
+    &lt;add key=<span class="str">"watson-nuget"</span>
+         value=<span class="str">"https://watson-domain-123456789012.d.codeartifact.eu-west-1.amazonaws.com/nuget/watson-nuget/v3/index.json"</span> /&gt;
+  &lt;/packageSources&gt;
+
+  &lt;packageSourceCredentials&gt;
+    &lt;watson-nuget&gt;
+      <span class="bash-comment">&lt;!-- Token injected from environment variable at runtime --&gt;</span>
+      &lt;add key=<span class="str">"Username"</span> value=<span class="str">"aws"</span> /&gt;
+      &lt;add key=<span class="str">"ClearTextPassword"</span> value=<span class="str">"%CODEARTIFACT_TOKEN%"</span> /&gt;
+    &lt;/watson-nuget&gt;
+  &lt;/packageSourceCredentials&gt;
+&lt;/configuration&gt;</pre>
+  </div>
+
+  <h3>Publish a NuGet Package to CodeArtifact</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Pack and Publish WatsonShared Library</span>
+    <pre"><span class="bash-comment"># In your library project directory</span>
+cd src/WatsonShared/
+
+<span class="bash-comment"># Pack with version from build (use semantic versioning)</span>
+dotnet pack \
+  --configuration Release \
+  --output ./nupkg \
+  -p:PackageVersion=1.2.3
+
+<span class="bash-comment"># Push to CodeArtifact</span>
+dotnet nuget push \
+  ./nupkg/WatsonShared.1.2.3.nupkg \
+  --source "watson-nuget" \
+  --api-key "aws"
+
+<span class="bash-comment"># Or use the full URL directly (useful in scripts)</span>
+dotnet nuget push \
+  ./nupkg/WatsonShared.1.2.3.nupkg \
+  --source "$NUGET_SOURCE" \
+  --api-key "$CODEARTIFACT_TOKEN"
+
+<span class="bash-comment"># Verify published</span>
+aws codeartifact list-packages \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget</pre>
+  </div>
+
+  <h3>Package Formats — Full Support</h3>
+  <div class="format-grid">
+    <div class="format-card fc-nuget">
+      <div class="fc-name">🟦 NuGet</div>
+      <span class="fc-pm">nuget.org</span>
+      <div class="fc-desc">dotnet add package · .nupkg files · .NET / .NET Framework</div>
+    </div>
+    <div class="format-card fc-npm">
+      <div class="fc-name">🟥 npm</div>
+      <span class="fc-pm">npmjs.com</span>
+      <div class="fc-desc">npm install · package.json · Node.js / TypeScript / React</div>
+    </div>
+    <div class="format-card fc-pypi">
+      <div class="fc-name">🐍 PyPI</div>
+      <span class="fc-pm">pypi.org</span>
+      <div class="fc-desc">pip install · setup.py / pyproject.toml · Python</div>
+    </div>
+    <div class="format-card fc-maven">
+      <div class="fc-name">☕ Maven</div>
+      <span class="fc-pm">maven-central</span>
+      <div class="fc-desc">mvn install · pom.xml · Java / Kotlin / Gradle</div>
+    </div>
+    <div class="format-card fc-swift">
+      <div class="fc-name">🍎 Swift</div>
+      <span class="fc-pm">swift-registry</span>
+      <div class="fc-desc">swift package · Package.swift · iOS / macOS</div>
+    </div>
+    <div class="format-card fc-generic">
+      <div class="fc-name">📁 Generic</div>
+      <span class="fc-pm">any binary</span>
+      <div class="fc-desc">Any binary artifact — binaries, configs, ML models, zip files</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — UPSTREAM SOURCES
+══════════════════════════════════ -->
+<div id="tab-upstream" class="tab-panel"><div class="section">
+  <h2>🔗 Upstream Sources — Package Resolution Chain</h2>
+  <p>Upstream sources define where CodeArtifact looks for packages it doesn't have locally. When a package is requested, CodeArtifact checks its own cache first, then walks up the upstream chain.</p>
+
+  <h3>Resolution Chain — How Package Lookup Works</h3>
+  <div class="upstream-vis">
+    <div class="uv-header">🔗 Package Resolution Chain — watson-nuget</div>
+    <div class="uv-body">
+      <div class="uv-row">
+        <div class="uv-box uv-local">
+          <h6>1️⃣ watson-nuget (local)</h6>
+          <p>Check internal repo first — private packages (WatsonShared, WatsonCore) found here</p>
+        </div>
+        <div class="uv-arrow">↓ not found</div>
+      </div>
+      <div class="uv-row">
+        <div class="uv-box uv-upstream">
+          <h6>2️⃣ nuget-store (upstream repo)</h6>
+          <p>Check the proxy cache — previously fetched packages from nuget.org served from here</p>
+        </div>
+        <div class="uv-arrow">↓ not cached</div>
+      </div>
+      <div class="uv-row">
+        <div class="uv-box uv-ext">
+          <h6>3️⃣ nuget.org (external connection)</h6>
+          <p>Fetch from public registry → store in nuget-store cache → return to developer</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Cache-Once, Serve-Forever</h4>
+    <p>Once a package version is fetched from nuget.org and stored in your nuget-store, it's permanently cached. Even if nuget.org removes the package or goes offline, your builds keep working. This also means no package can be silently mutated under your feet — the stored version is immutable.</p>
+  </div>
+
+  <h3>Upstream Priority Order</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Configure Upstream Priority</span>
+    <pre"><span class="bash-comment"># Update upstreams on watson-nuget (order matters!)</span>
+<span class="bash-comment"># CodeArtifact searches upstreams in the order listed</span>
+aws codeartifact update-repository \
+  --domain      watson-domain \
+  --repository  watson-nuget \
+  --upstreams \
+    repositoryName=shared-libs \    <span class="bash-comment"># Search shared libs first</span>
+    repositoryName=nuget-store      <span class="bash-comment"># Then public proxy cache</span>
+
+<span class="bash-comment"># Describe repository upstreams</span>
+aws codeartifact describe-repository \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --query      repository.upstreams</pre>
+  </div>
+
+  <h3>Package Origin Control — Prevent Supply Chain Attacks</h3>
+  <p>Package origin controls let you restrict whether a package can come from upstream (public) sources or must be published internally. This prevents <strong>dependency confusion attacks</strong> where an attacker publishes a malicious package with the same name as your internal package on nuget.org.</p>
+  <div class="code-block">
+    <span class="code-label">bash · Set Package Origin — Block External Versions of Internal Package</span>
+    <pre"><span class="bash-comment"># BLOCK upstream ingestion for WatsonShared</span>
+<span class="bash-comment"># Only allow versions published directly to watson-nuget</span>
+aws codeartifact put-package-origin-configuration \
+  --domain      watson-domain \
+  --repository  watson-nuget \
+  --format      nuget \
+  --package     WatsonShared \
+  --restrictions upstream=BLOCK,publish=ALLOW
+
+<span class="bash-comment"># Check current origin config for a package</span>
+aws codeartifact describe-package \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --package    WatsonShared \
+  --query      package.originConfiguration</pre>
+  </div>
+
+  <h3>Retention Policy — Auto-Delete Old Versions</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Package Group Retention Policy</span>
+    <pre"><span class="bash-comment"># Set retention policy — keep only latest 5 versions of internal packages</span>
+aws codeartifact put-package-origin-configuration \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --package    WatsonShared \
+  --restrictions upstream=BLOCK,publish=ALLOW
+
+<span class="bash-comment"># List all versions of a package</span>
+aws codeartifact list-package-versions \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --package    WatsonShared \
+  --status     Published
+
+<span class="bash-comment"># Delete a specific old version</span>
+aws codeartifact delete-package-versions \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --package    WatsonShared \
+  --versions   1.0.0 1.0.1 1.0.2</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — PACKAGE MANAGEMENT
+══════════════════════════════════ -->
+<div id="tab-packages" class="tab-panel"><div class="section">
+  <h2>📄 Package Management — Versions, Tags &amp; Search</h2>
+
+  <h3>Package Version Statuses</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Status</th><th>Meaning</th><th>Can Be Used?</th><th>Can Delete?</th></tr>
+    <tr><td><code>Published</code></td><td>Active, available for download</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+    <tr><td><code>Unfinished</code></td><td>Upload started but not completed</td><td>❌ No</td><td>✅ Yes</td></tr>
+    <tr><td><code>Unlisted</code></td><td>Hidden from search but still downloadable by exact name</td><td>✅ Yes (direct)</td><td>✅ Yes</td></tr>
+    <tr><td><code>Archived</code></td><td>Deprecated, still accessible but not recommended</td><td>⚠️ Technically yes</td><td>✅ Yes</td></tr>
+    <tr><td><code>Disposed</code></td><td>Pending deletion — not accessible</td><td>❌ No</td><td>Soon deleted</td></tr>
+  </table></div>
+
+  <h3>Package Version Management CLI</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Package Version Operations</span>
+    <pre"><span class="bash-comment"># List all packages in a repo</span>
+aws codeartifact list-packages \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --query      "packages[*].{Name:name,Format:format}"
+
+<span class="bash-comment"># List all versions of WatsonShared</span>
+aws codeartifact list-package-versions \
+  --domain     watson-domain \
+  --repository watson-nuget \
+  --format     nuget \
+  --package    WatsonShared \
+  --status     Published \
+  --sort-by    VERSION \
+  --query      "versions[*].{Version:version,Status:status}"
+
+<span class="bash-comment"># Describe a specific version</span>
+aws codeartifact describe-package-version \
+  --domain          watson-domain \
+  --repository      watson-nuget \
+  --format          nuget \
+  --package         WatsonShared \
+  --package-version 1.2.3
+
+<span class="bash-comment"># Copy a package version to another repo</span>
+aws codeartifact copy-package-versions \
+  --domain            watson-domain \
+  --source-repository watson-nuget \
+  --destination-repository watson-nuget-staging \
+  --format            nuget \
+  --package           WatsonShared \
+  --versions          1.2.3
+
+<span class="bash-comment"># Mark a version as unlisted (hide from search)</span>
+aws codeartifact update-package-versions-status \
+  --domain          watson-domain \
+  --repository      watson-nuget \
+  --format          nuget \
+  --package         WatsonShared \
+  --versions        1.0.0 \
+  --target-status   Unlisted
+
+<span class="bash-comment"># Get download URL for a specific package asset</span>
+aws codeartifact get-package-version-asset \
+  --domain          watson-domain \
+  --repository      watson-nuget \
+  --format          nuget \
+  --package         WatsonShared \
+  --package-version 1.2.3 \
+  --asset           "WatsonShared.1.2.3.nupkg" \
+  WatsonShared.1.2.3.nupkg</pre>
+  </div>
+
+  <h3>Search for Packages</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Search Packages Across Repos</span>
+    <pre"><span class="bash-comment"># Search all packages with "Watson" in the name</span>
+aws codeartifact search-packages \
+  --domain     watson-domain \
+  --format     nuget \
+  --search-query Watson \
+  --query      "packages[*].{Name:package,Version:latestVersion}"
+
+<span class="bash-comment"># List packages with a specific namespace (npm scoped packages)</span>
+aws codeartifact list-packages \
+  --domain     watson-domain \
+  --repository watson-npm \
+  --format     npm \
+  --namespace  "@watson"</pre>
+  </div>
+
+  <h3>Tagging Package Versions</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Tag Packages for Governance</span>
+    <pre"><span class="bash-comment"># Tag a package version with metadata</span>
+aws codeartifact tag-resource \
+  --resource-arn arn:aws:codeartifact:eu-west-1:123:package/watson-domain/watson-nuget/nuget/WatsonShared/1.2.3 \
+  --tags \
+    ApprovedForProd=true \
+    ReviewedBy=indhu \
+    ReviewDate=2024-01-15
+
+<span class="bash-comment"># List tags on a package</span>
+aws codeartifact list-tags-for-resource \
+  --resource-arn arn:aws:codeartifact:eu-west-1:123:package/watson-domain/watson-nuget/nuget/WatsonShared/1.2.3</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — IAM & AUTH
+══════════════════════════════════ -->
+<div id="tab-iam" class="tab-panel"><div class="section">
+  <h2>🔒 IAM &amp; Authentication</h2>
+  <p>CodeArtifact uses <strong>two-layer authentication</strong>: IAM controls access to the CodeArtifact API, and a short-lived <strong>auth token</strong> (derived from IAM) authenticates NuGet/npm/pip tool calls against the package endpoint.</p>
+
+  <h3>IAM Permissions — Developer vs CI/CD vs Admin</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Role</th><th>IAM Actions</th><th>Use Case</th></tr>
+    <tr><td><strong>Read-Only Dev</strong></td><td>codeartifact:GetAuthorizationToken, codeartifact:ReadFromRepository, codeartifact:GetRepositoryEndpoint, sts:GetServiceBearerToken</td><td>Download packages during local dev</td></tr>
+    <tr><td><strong>Publisher (CI/CD)</strong></td><td>All above + codeartifact:PublishPackageVersion, codeartifact:PutPackageMetadata</td><td>Build pipeline pushing new package versions</td></tr>
+    <tr><td><strong>Admin</strong></td><td>All above + codeartifact:CreateRepository, codeartifact:DeletePackageVersions, codeartifact:PutDomainPermissionsPolicy</td><td>Platform team managing the domain</td></tr>
+    <tr><td><strong>Cross-account Read</strong></td><td>codeartifact:GetAuthorizationToken + domain policy allows the external account</td><td>Another account reads shared-libs repo</td></tr>
+  </table></div>
+
+  <h3>IAM Policy — CI/CD Publisher Role</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · IAM Policy — CodeBuild Publish Role</span>
+    <pre">{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: [
+        <span class="str">"codeartifact:GetAuthorizationToken"</span>,
+        <span class="str">"codeartifact:GetRepositoryEndpoint"</span>,
+        <span class="str">"codeartifact:ReadFromRepository"</span>,
+        <span class="str">"codeartifact:PublishPackageVersion"</span>,
+        <span class="str">"codeartifact:PutPackageMetadata"</span>,
+        <span class="str">"codeartifact:DescribePackageVersion"</span>,
+        <span class="str">"codeartifact:ListPackageVersions"</span>
+      ],
+      <span class="str">"Resource"</span>: [
+        <span class="bash-comment">// Domain ARN</span>
+        <span class="str">"arn:aws:codeartifact:eu-west-1:123:domain/watson-domain"</span>,
+        <span class="bash-comment">// Specific repo ARN</span>
+        <span class="str">"arn:aws:codeartifact:eu-west-1:123:repository/watson-domain/watson-nuget"</span>,
+        <span class="bash-comment">// All packages in that repo</span>
+        <span class="str">"arn:aws:codeartifact:eu-west-1:123:package/watson-domain/watson-nuget/*"</span>
+      ]
+    },
+    {
+      <span class="bash-comment">// Required for GetAuthorizationToken</span>
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: <span class="str">"sts:GetServiceBearerToken"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>,
+      <span class="str">"Condition"</span>: {
+        <span class="str">"StringEquals"</span>: {
+          <span class="str">"sts:AWSServiceName"</span>: <span class="str">"codeartifact.amazonaws.com"</span>
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>Domain Permission Policy — Cross-Account Access</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Domain Policy — Allow Another Account to Read</span>
+    <pre">{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::444455556666:root"</span>
+        <span class="bash-comment">// Allow all principals in account 444455556666</span>
+      },
+      <span class="str">"Action"</span>: [
+        <span class="str">"codeartifact:GetAuthorizationToken"</span>,
+        <span class="str">"codeartifact:ReadFromRepository"</span>,
+        <span class="str">"codeartifact:DescribePackageVersion"</span>,
+        <span class="str">"codeartifact:GetRepositoryEndpoint"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>
+    }
+  ]
+}
+
+<span class="bash-comment"># Apply domain policy via CLI</span>
+aws codeartifact put-domain-permissions-policy \
+  --domain        watson-domain \
+  --domain-owner  123456789012 \
+  --policy-document file://domain-policy.json</pre>
+  </div>
+
+  <h3>Auth Token — Lifetime &amp; Refresh</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Token with Custom Duration</span>
+    <pre"><span class="bash-comment"># Default: 12 hours (43200 seconds)</span>
+aws codeartifact get-authorization-token \
+  --domain       watson-domain \
+  --domain-owner 123456789012 \
+  --query        authorizationToken \
+  --output       text
+
+<span class="bash-comment"># Max duration: 12 hours</span>
+<span class="bash-comment"># Minimum: 15 minutes (for short-lived CI builds)</span>
+aws codeartifact get-authorization-token \
+  --domain        watson-domain \
+  --domain-owner  123456789012 \
+  --duration-seconds 900 \      <span class="bash-comment"># 15 minutes</span>
+  --query         authorizationToken \
+  --output        text</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CI/CD INTEGRATION
+══════════════════════════════════ -->
+<div id="tab-cicd" class="tab-panel"><div class="section">
+  <h2>🔗 CI/CD Integration — CodeBuild + CodePipeline</h2>
+
+  <h3>buildspec.yml — Restore + Build + Publish</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · buildspec.yml — Full NuGet CI/CD Flow</span>
+    <pre"><span class="yaml-key">version</span><span class="yaml-cm">:</span> <span class="yaml-ex">0.2</span>
+
+<span class="yaml-key">env</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">variables</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">CODEARTIFACT_DOMAIN</span><span class="yaml-cm">:</span>       <span class="yaml-str">watson-domain</span>
+    <span class="yaml-key">CODEARTIFACT_DOMAIN_OWNER</span><span class="yaml-cm">:</span> <span class="yaml-str">"123456789012"</span>
+    <span class="yaml-key">CODEARTIFACT_REPO</span><span class="yaml-cm">:</span>         <span class="yaml-str">watson-nuget</span>
+    <span class="yaml-key">AWS_REGION</span><span class="yaml-cm">:</span>                <span class="yaml-str">eu-west-1</span>
+
+<span class="yaml-key">phases</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">install</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">runtime-versions</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">dotnet</span><span class="yaml-cm">:</span> <span class="yaml-ex">8</span>
+
+  <span class="yaml-key">pre_build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm"># Get CodeArtifact auth token</span>
+      <span class="yaml-cm">- export CODEARTIFACT_TOKEN=$(aws codeartifact get-authorization-token \</span>
+      <span class="yaml-cm">    --domain       $CODEARTIFACT_DOMAIN \</span>
+      <span class="yaml-cm">    --domain-owner $CODEARTIFACT_DOMAIN_OWNER \</span>
+      <span class="yaml-cm">    --query        authorizationToken \</span>
+      <span class="yaml-cm">    --output       text)</span>
+
+      <span class="yaml-cm"># Get NuGet endpoint URL</span>
+      <span class="yaml-cm">- export NUGET_SOURCE=$(aws codeartifact get-repository-endpoint \</span>
+      <span class="yaml-cm">    --domain     $CODEARTIFACT_DOMAIN \</span>
+      <span class="yaml-cm">    --repository $CODEARTIFACT_REPO \</span>
+      <span class="yaml-cm">    --format     nuget \</span>
+      <span class="yaml-cm">    --query      repositoryEndpoint \</span>
+      <span class="yaml-cm">    --output     text)</span>
+
+      <span class="yaml-cm"># Configure NuGet source</span>
+      <span class="yaml-cm">- dotnet nuget add source "$NUGET_SOURCE" \</span>
+      <span class="yaml-cm">    --name     watson-nuget \</span>
+      <span class="yaml-cm">    --username aws \</span>
+      <span class="yaml-cm">    --password "$CODEARTIFACT_TOKEN" \</span>
+      <span class="yaml-cm">    --store-password-in-clear-text</span>
+
+      <span class="yaml-cm"># Restore NuGet packages from CodeArtifact</span>
+      <span class="yaml-cm">- dotnet restore ./src/WatsonOrders/WatsonOrders.csproj</span>
+
+  <span class="yaml-key">build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- dotnet build --configuration Release --no-restore</span>
+      <span class="yaml-cm">- dotnet test ./tests/ --no-build --logger trx --results-directory /tmp/test-results</span>
+
+      <span class="yaml-cm"># Pack shared library for publishing</span>
+      <span class="yaml-cm">- dotnet pack ./src/WatsonShared/ \</span>
+      <span class="yaml-cm">    --configuration Release \</span>
+      <span class="yaml-cm">    --output /tmp/nupkg \</span>
+      <span class="yaml-cm">    -p:PackageVersion=$BUILD_VERSION</span>
+
+  <span class="yaml-key">post_build</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">commands</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm"># Publish package to CodeArtifact (only on main branch)</span>
+      <span class="yaml-cm">- |</span>
+      <span class="yaml-cm">  if [ "$CODEBUILD_SOURCE_VERSION" = "refs/heads/main" ]; then</span>
+      <span class="yaml-cm">    dotnet nuget push /tmp/nupkg/*.nupkg \</span>
+      <span class="yaml-cm">      --source "$NUGET_SOURCE" \</span>
+      <span class="yaml-cm">      --api-key "$CODEARTIFACT_TOKEN"</span>
+      <span class="yaml-cm">    echo "✅ Package published to CodeArtifact"</span>
+      <span class="yaml-cm">  fi</span>
+
+<span class="yaml-key">reports</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">TestResults</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">files</span><span class="yaml-cm">:</span> <span class="yaml-cm">["**/*.trx"]</span>
+    <span class="yaml-key">base-directory</span><span class="yaml-cm">:</span> <span class="yaml-str">/tmp/test-results</span>
+    <span class="yaml-key">file-format</span><span class="yaml-cm">:</span>    <span class="yaml-str">VisualStudioTrx</span></pre>
+  </div>
+
+  <h3>Pricing at a Glance</h3>
+  <div class="pricing-row">
+    <div class="pricing-card pc-req">
+      <div class="pc-h5">📤 Requests</div>
+      <div class="p-row"><div class="p-label">Per 10,000 requests</div><div class="p-val">$0.05</div></div>
+      <div class="p-row"><div class="p-label">10 devs, 20 restores/day</div><div class="p-val">~$0.30/month</div></div>
+      <div class="p-row"><div class="p-label">Free tier</div><div class="p-val">First 6 months free</div></div>
+      <div class="p-row"><div class="p-label">Max requests/month free</div><div class="p-val">100,000</div></div>
+    </div>
+    <div class="pricing-card pc-stor">
+      <div class="pc-h5">💾 Storage</div>
+      <div class="p-row"><div class="p-label">Per GB/month</div><div class="p-val">$0.05</div></div>
+      <div class="p-row"><div class="p-label">10 GB of packages</div><div class="p-val">$0.50/month</div></div>
+      <div class="p-row"><div class="p-label">Free tier (6 months)</div><div class="p-val">2 GB free</div></div>
+      <div class="p-row"><div class="p-label">Cached upstream pkgs</div><div class="p-val">Count toward storage</div></div>
+    </div>
+    <div class="pricing-card pc-free">
+      <div class="pc-h5">🎁 Free Tier</div>
+      <div class="p-row"><div class="p-label">Duration</div><div class="p-val">First 6 months</div></div>
+      <div class="p-row"><div class="p-label">Storage</div><div class="p-val">2 GB free</div></div>
+      <div class="p-row"><div class="p-label">Requests</div><div class="p-val">100,000 free</div></div>
+      <div class="p-row"><div class="p-label">Data transfer</div><div class="p-val">Standard AWS rates</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First Repository</h2>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">1</div><div class="cs-title">Navigate to CodeArtifact</div><div class="cs-path">AWS Console → Developer Tools → CodeArtifact</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">URL</div><div class="cs-field-value">https://console.aws.amazon.com/codesuite/codeartifact/domains</div></div>
+      <div class="cs-note">CodeArtifact is regional. Create your domain in eu-west-1 (or wherever your CodeBuild runs) to avoid data transfer costs.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">2</div><div class="cs-title">Create a Domain</div><div class="cs-path">Domains → Create domain</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Domain name</div><div class="cs-field-value">watson-domain</div><div class="cs-field-hint">Globally unique within your account. Lowercase letters, numbers, and hyphens only.</div></div>
+      <div class="cs-field"><div class="cs-field-label">Encryption key</div><div class="cs-field-value">AWS managed key (default) · or your own KMS key</div></div>
+      <div class="cs-field"><div class="cs-field-label">Tags</div><div class="cs-field-value">Team = Watson · CostCenter = Platform</div></div>
+      <div class="cs-note">One domain per organisation is recommended. You can have multiple repositories inside one domain — no need to create separate domains per team.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">3</div><div class="cs-title">Create the Proxy Repository (nuget.org)</div><div class="cs-path">Domain → Repositories → Create repository</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Repository name</div><div class="cs-field-value">nuget-store</div></div>
+      <div class="cs-field"><div class="cs-field-label">Public upstream repository</div><div class="cs-field-value">NuGet.org  (adds public:nuget-org external connection automatically)</div></div>
+      <div class="cs-field"><div class="cs-field-label">AWS upstream repositories</div><div class="cs-field-value">None — this IS the proxy</div></div>
+      <div class="cs-note">This repo acts as the cache between your team and nuget.org. Do NOT publish your own packages here.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">4</div><div class="cs-title">Create the Internal Repository</div><div class="cs-path">Domain → Repositories → Create repository</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Repository name</div><div class="cs-field-value">watson-nuget</div></div>
+      <div class="cs-field"><div class="cs-field-label">Package format</div><div class="cs-field-value">NuGet</div></div>
+      <div class="cs-field"><div class="cs-field-label">AWS upstream repositories</div><div class="cs-field-value">nuget-store  (pulls from nuget.org via proxy if package not found locally)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Public upstream</div><div class="cs-field-value">None  (your internal packages live here; public ones come via nuget-store)</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">5</div><div class="cs-title">Connect to the Repository</div><div class="cs-path">Repository → View connection instructions</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Operating system</div><div class="cs-field-value">Linux / macOS / Windows</div></div>
+      <div class="cs-field"><div class="cs-field-label">Package manager</div><div class="cs-field-value">NuGet</div></div>
+      <div class="cs-field"><div class="cs-field-label">Console generates</div><div class="cs-field-value">Ready-to-copy commands for getting token + adding NuGet source</div></div>
+      <div class="cs-note">The console generates exact CLI commands pre-filled with your domain, account ID, region, and repo name. Copy and run them in your terminal.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">6</div><div class="cs-title">Test — Restore a Package</div><div class="cs-path">Your .NET project directory</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Run in your project</div><div class="cs-field-value">dotnet add package AWSSDK.S3 && dotnet restore</div></div>
+      <div class="cs-field"><div class="cs-field-label">Expected result</div><div class="cs-field-value">Package resolves via watson-nuget → nuget-store → nuget.org → cached in CodeArtifact</div></div>
+      <div class="cs-field"><div class="cs-field-label">Verify in console</div><div class="cs-field-value">nuget-store → Packages → AWSSDK.S3 should appear as a cached package</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Automate CodeArtifact</h2>
+
+  <h3>NuGet Package</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Install SDK</span>
+    <pre">dotnet add package AWSSDK.CodeArtifact
+dotnet add package AWSSDK.Extensions.NETCore.Setup</pre>
+  </div>
+
+  <h3>CodeArtifact Service — Token, Publish, Search</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CodeArtifactService.cs</span>
+    <pre"><span class="kw">using</span> Amazon.CodeArtifact;
+<span class="kw">using</span> Amazon.CodeArtifact.Model;
+
+<span class="kw">public class</span> <span class="tp">CodeArtifactService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodeArtifact</span> _ca;
+    <span class="kw">private readonly</span> <span class="tp">string</span> _domain;
+    <span class="kw">private readonly</span> <span class="tp">string</span> _domainOwner;
+
+    <span class="kw">public</span> <span class="tp">CodeArtifactService</span>(
+        <span class="tp">IAmazonCodeArtifact</span> ca,
+        <span class="tp">string</span> domain,
+        <span class="tp">string</span> domainOwner)
+    {
+        _ca          = ca;
+        _domain      = domain;
+        _domainOwner = domainOwner;
+    }
+
+    <span class="cm">// ── GET AUTH TOKEN ────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">GetTokenAsync</span>(
+        <span class="num">long</span> durationSeconds = <span class="num">43200</span>,  <span class="cm">// 12 hours default</span>
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ca.<span class="fn">GetAuthorizationTokenAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetAuthorizationTokenRequest</span>
+            {
+                Domain           = _domain,
+                DomainOwner      = _domainOwner,
+                DurationSeconds  = durationSeconds
+            }, ct);
+
+        <span class="kw">return</span> resp.AuthorizationToken;
+    }
+
+    <span class="cm">// ── GET REPOSITORY ENDPOINT ───────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">GetEndpointAsync</span>(
+        <span class="tp">string</span> repository,
+        <span class="tp">string</span> format = <span class="str">"nuget"</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ca.<span class="fn">GetRepositoryEndpointAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetRepositoryEndpointRequest</span>
+            {
+                Domain      = _domain,
+                DomainOwner = _domainOwner,
+                Repository  = repository,
+                Format      = format
+            }, ct);
+
+        <span class="kw">return</span> resp.RepositoryEndpoint;
+    }
+
+    <span class="cm">// ── LIST PACKAGES ─────────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">PackageSummary</span>&gt;&gt; <span class="fn">ListPackagesAsync</span>(
+        <span class="tp">string</span> repository,
+        <span class="tp">string</span> format = <span class="str">"nuget"</span>,
+        <span class="tp">string</span>? namePrefix = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> packages = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">PackageSummary</span>&gt;();
+        <span class="tp">string</span>? nextToken = <span class="kw">null</span>;
+
+        <span class="kw">do</span>
+        {
+            <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">ListPackagesRequest</span>
+            {
+                Domain      = _domain,
+                DomainOwner = _domainOwner,
+                Repository  = repository,
+                Format      = format,
+                NextToken   = nextToken
+            };
+
+            <span class="kw">if</span> (namePrefix <span class="kw">is not null</span>)
+                request.PackagePrefix = namePrefix;
+
+            <span class="kw">var</span> resp = <span class="kw">await</span> _ca.<span class="fn">ListPackagesAsync</span>(request, ct);
+            packages.<span class="fn">AddRange</span>(resp.Packages);
+            nextToken = resp.NextToken;
+        }
+        <span class="kw">while</span> (nextToken <span class="kw">is not null</span>);
+
+        <span class="kw">return</span> packages;
+    }
+
+    <span class="cm">// ── LIST PACKAGE VERSIONS ─────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">PackageVersionSummary</span>&gt;&gt; <span class="fn">ListVersionsAsync</span>(
+        <span class="tp">string</span> repository,
+        <span class="tp">string</span> packageName,
+        <span class="tp">string</span> format = <span class="str">"nuget"</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _ca.<span class="fn">ListPackageVersionsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListPackageVersionsRequest</span>
+            {
+                Domain      = _domain,
+                DomainOwner = _domainOwner,
+                Repository  = repository,
+                Format      = format,
+                Package     = packageName,
+                SortBy      = PackageVersionSortType.PUBLISHED_TIME,
+                Status      = PackageVersionStatus.Published
+            }, ct);
+
+        <span class="kw">return</span> resp.Versions;
+    }
+
+    <span class="cm">// ── DELETE OLD PACKAGE VERSIONS ──────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeleteVersionsAsync</span>(
+        <span class="tp">string</span> repository,
+        <span class="tp">string</span> packageName,
+        <span class="tp">List</span>&lt;<span class="tp">string</span>&gt; versions,
+        <span class="tp">string</span> format = <span class="str">"nuget"</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _ca.<span class="fn">DeletePackageVersionsAsync</span>(
+            <span class="kw">new</span> <span class="tp">DeletePackageVersionsRequest</span>
+            {
+                Domain      = _domain,
+                DomainOwner = _domainOwner,
+                Repository  = repository,
+                Format      = format,
+                Package     = packageName,
+                Versions    = versions
+            }, ct);
+
+    <span class="cm">// ── CONVENIENCE: GET TOKEN + ENDPOINT ────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;(<span class="tp">string</span> Token, <span class="tp">string</span> Endpoint)&gt; <span class="fn">GetNuGetCredentialsAsync</span>(
+        <span class="tp">string</span> repository,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> tokenTask    = <span class="fn">GetTokenAsync</span>(ct: ct);
+        <span class="kw">var</span> endpointTask = <span class="fn">GetEndpointAsync</span>(repository, ct: ct);
+
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(tokenTask, endpointTask);
+
+        <span class="kw">return</span> (tokenTask.Result, endpointTask.Result);
+    }
+}</pre>
+  </div>
+
+  <h3>DI Registration + Usage</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs + Usage</span>
+    <pre"><span class="cm">// DI registration</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCodeArtifact</span>&gt;()
+    .<span class="fn">AddScoped</span>(<span class="tp">sp</span> =>
+        <span class="kw">new</span> <span class="tp">CodeArtifactService</span>(
+            sp.<span class="fn">GetRequiredService</span>&lt;<span class="tp">IAmazonCodeArtifact</span>&gt;(),
+            domain:      <span class="str">"watson-domain"</span>,
+            domainOwner: <span class="str">"123456789012"</span>));
+
+<span class="cm">// Usage — get credentials for CI script</span>
+<span class="kw">var</span> caService = provider.<span class="fn">GetRequiredService</span>&lt;<span class="tp">CodeArtifactService</span>&gt;();
+
+<span class="kw">var</span> (token, endpoint) = <span class="kw">await</span> caService
+    .<span class="fn">GetNuGetCredentialsAsync</span>(<span class="str">"watson-nuget"</span>);
+
+Console.<span class="fn">WriteLine</span>(<span class="str">$"Endpoint: {endpoint}"</span>);
+Console.<span class="fn">WriteLine</span>(<span class="str">$"Token: {token[..20]}..."</span>);
+
+<span class="cm">// List all Watson packages</span>
+<span class="kw">var</span> packages = <span class="kw">await</span> caService.<span class="fn">ListPackagesAsync</span>(
+    repository:  <span class="str">"watson-nuget"</span>,
+    namePrefix:  <span class="str">"Watson"</span>);
+
+<span class="kw">foreach</span> (<span class="kw">var</span> pkg <span class="kw">in</span> packages)
+    Console.<span class="fn">WriteLine</span>(<span class="str">$"{pkg.Package}  (format: {pkg.Format})"</span>);</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Create a <strong>separate proxy repo</strong> (nuget-store) and <strong>internal repo</strong> (watson-nuget) — don't mix proxied and internal packages in one repo</li>
+    <li>Use <strong>Package Origin Controls</strong> on all internal package names — block upstream ingestion to prevent dependency confusion attacks</li>
+    <li>Always set <code>--store-password-in-clear-text</code> flag when adding source in Linux CI — required because Linux NuGet doesn't have a secure credential store</li>
+    <li>Refresh the token in CI before each build — tokens are valid for 12h but a long-running pipeline may expire mid-build</li>
+    <li>Grant <strong>least-privilege IAM</strong> — developers get read-only, CI/CD gets publish, admins get delete/manage</li>
+    <li>Use the <strong>nuget.config</strong> file in your repo with <code>&lt;clear /&gt;</code> — ensures all devs and CI use only CodeArtifact, never nuget.org directly</li>
+    <li>Tag package versions with <code>ApprovedForProd</code> — gives you a governance audit trail for compliance</li>
+    <li>Delete old package versions regularly — cached upstream packages count toward storage billing</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CodeArtifact Mistakes</h4>
+    <p>
+    ❌ <strong>Publishing to the proxy repo (nuget-store)</strong> — this repo is read-only from a proxy perspective; publish only to watson-nuget<br>
+    ❌ <strong>Not setting up Package Origin Controls</strong> — leaves you vulnerable to dependency confusion attacks where public package names shadow your internal ones<br>
+    ❌ <strong>Hardcoding the auth token in CI</strong> — tokens expire in 12h; always generate fresh using <code>aws codeartifact get-authorization-token</code> at build start<br>
+    ❌ <strong>Missing sts:GetServiceBearerToken in IAM policy</strong> — GetAuthorizationToken silently fails without this permission<br>
+    ❌ <strong>Using the same repo for all teams</strong> — separate repos per team gives better access control, cost attribution, and retention policies<br>
+    ❌ <strong>Not using nuget.config <code>&lt;clear /&gt;</code></strong> — NuGet may still fall back to nuget.org and pull packages, bypassing your controls<br>
+    ❌ <strong>Forgetting to associate external connection</strong> — upstream repo won't proxy nuget.org until <code>associate-external-connection</code> is called
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CodeArtifact Mastery!</h3>
+    <p>What is CodeArtifact · Package flow visual · CodeArtifact vs Nexus/Artifactory vs NuGet.Server · Domain → Repository hierarchy visual · Recommended repo pattern (internal + proxy) · Create domain + repos via CLI · All supported external connections (nuget.org, npmjs, pypi, maven-central, swift) · NuGet auth token (get + refresh) · dotnet nuget add source / update source · nuget.config with &lt;clear /&gt; · dotnet pack + dotnet nuget push · All 6 package formats (NuGet, npm, PyPI, Maven, Swift, Generic) · Upstream resolution chain visual · Package Origin Controls (dependency confusion prevention) · Package version statuses · Package version operations (list, describe, copy, unlist, delete) · Package tagging for governance · IAM policy for read-only dev vs CI publisher vs admin · Domain permission policy for cross-account · Auth token with custom duration · buildspec.yml full NuGet CI/CD flow · Pricing (requests + storage) · Console setup (6 steps) · Full C# SDK service (token/endpoint/list packages/list versions/delete/credentials) · Best practices · Top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#6ee7b7;">Your packages are private, cached, and safe from supply chain attacks. 📦🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

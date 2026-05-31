@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CodeDeploy — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f0fffe;--surface:#d8f5f2;--card:#ffffff;--border:#9de0da;--border2:#5cc8c0;
+  --cd:#0e7490;--cd-l:#ecfeff;--cd-d:#155e75;--cd-dk:#083344;
+  --blue:#1d6fcc;--blue-l:#dbeafe;--blue-d:#1e40af;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-d:#92400e;
+  --red:#dc2626;--red-l:rgba(220,38,38,.09);--red-b:rgba(220,38,38,.22);
+  --purple:#7c3aed;--purple-l:#f5f3ff;--purple-d:#4c1d95;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --slate:#475569;
+  --text:#031a1e;--text2:#0a3540;--muted:#1e6070;
+  --code-bg:#0d1f24;--r:10px;
+  --sh:0 1px 3px rgba(14,116,144,.07),0 4px 12px rgba(14,116,144,.08);
+  --sh-lg:0 2px 8px rgba(14,116,144,.09),0 8px 28px rgba(14,116,144,.11);
+  --sh-xl:0 4px 16px rgba(14,116,144,.1),0 16px 48px rgba(14,116,144,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#083344 0%,#0e4f6b 35%,#0e7490 70%,#0891b2 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-rings{position:absolute;inset:0;background-image:
+  radial-gradient(circle at 80% 20%,rgba(34,211,238,.08) 0%,transparent 40%),
+  radial-gradient(circle at 20% 80%,rgba(6,182,212,.06) 0%,transparent 40%);
+  pointer-events:none;}
+.hdr-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,211,238,.14);border:1px solid rgba(34,211,238,.3);color:#67e8f9;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#a5f3fc,#22d3ee,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(240,255,254,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cd-l);color:var(--cd-d);font-weight:800;box-shadow:0 0 0 1.5px rgba(14,116,144,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--cd-l);letter-spacing:-.02em;}
+.section h3{color:var(--cd-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ══════════════════════════════════════════════
+   IMPROVED CODE BLOCKS — High contrast, readable
+══════════════════════════════════════════════ */
+.code-block{
+  background:#0d1f24;
+  border:1px solid #1a3a42;
+  border-left:4px solid var(--cd);
+  border-radius:var(--r);
+  padding:clamp(1rem,2.5vw,1.4rem);
+  margin:14px 0;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);
+}
+.code-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;
+  color:#67e8f9;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+  margin-bottom:8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:600;
+}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(103,232,249,.2);}
+.code-block pre{
+  margin:0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(.72rem,1.8vw,.82rem);  /* ← Larger font */
+  line-height:1.85;                       /* ← More line spacing */
+  color:#e2f8fa;                          /* ← Bright base text */
+  white-space:pre;
+  letter-spacing:.01em;
+}
+
+/* Syntax colours — high contrast on dark teal background */
+.kw   { color:#c792ea; font-weight:600; }  /* keywords — purple */
+.tp   { color:#80cbc4; font-weight:600; }  /* types — teal */
+.fn   { color:#82aaff; }                   /* functions — blue */
+.str  { color:#c3e88d; }                   /* strings — green */
+.num  { color:#f78c6c; }                   /* numbers — orange */
+.cm   { color:#4a7c88; font-style:italic;} /* comments — dim teal */
+.prop { color:#ffcb6b; }                   /* properties — yellow */
+.bool { color:#c792ea; font-weight:600; }  /* booleans — purple */
+.attr { color:#f07178; }                   /* attributes/decorators */
+.yaml-key { color:#80cbc4; font-weight:600; } /* yaml keys — teal */
+.yaml-val { color:#c3e88d; }               /* yaml values — green */
+.yaml-str { color:#c3e88d; }
+.yaml-cm  { color:#4a7c88; font-style:italic; }
+.yaml-ex  { color:#f78c6c; }
+.bash-comment { color:#4a7c88; font-style:italic; }
+.bash-flag    { color:#80cbc4; }
+.bash-str     { color:#c3e88d; }
+.json-key { color:#80cbc4; font-weight:600; }
+.json-str { color:#c3e88d; }
+.json-num { color:#f78c6c; }
+.json-bool{ color:#c792ea; font-weight:600; }
+.json-cm  { color:#4a7c88; font-style:italic; }
+
+code{background:rgba(14,116,144,.12);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--cd-d);font-weight:600;}
+
+/* ── DEPLOY LIFECYCLE ── */
+.deploy-lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-xl);}
+.dl-header{background:linear-gradient(90deg,#083344,#0e7490);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #0e4f6b;display:flex;align-items:center;gap:8px;}
+.dl-header span{background:rgba(34,211,238,.18);border:1px solid rgba(34,211,238,.3);color:#67e8f9;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.dl-body{padding:14px;overflow-x:auto;}
+.dl-row{display:flex;align-items:stretch;gap:0;min-width:540px;}
+.dl-phase{flex:1;text-align:center;padding:12px 8px;border-right:1px dashed var(--border);position:relative;}
+.dl-phase:last-child{border-right:none;}
+.dl-icon{font-size:1.5rem;display:block;margin-bottom:5px;}
+.dl-phase h6{font-size:.7rem;font-weight:800;color:var(--text);margin-bottom:3px;}
+.dl-phase p{font-size:.58rem;color:var(--muted);}
+.dl-tag{font-family:'JetBrains Mono',monospace;font-size:.54rem;padding:2px 6px;border-radius:3px;margin-top:4px;display:inline-block;font-weight:600;}
+
+/* ── DEPLOYMENT TYPE CARDS ── */
+.deploy-types{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.dt-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);transition:transform .15s,box-shadow .15s;}
+.dt-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.dt-bar{height:4px;}
+.dt-body{padding:13px;}
+.dt-name{font-weight:800;font-size:.82rem;margin-bottom:4px;}
+.dt-desc{font-size:.7rem;color:var(--muted);margin-bottom:8px;}
+.dt-use{font-size:.65rem;font-weight:700;padding:3px 9px;border-radius:4px;display:inline-block;}
+
+/* ── TRAFFIC SHIFT VISUAL ── */
+.traffic-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.tv-header{background:linear-gradient(90deg,var(--cd-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.tv-body{padding:14px;}
+.tv-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.tv-row:last-child{margin-bottom:0;}
+.tv-label{font-size:.7rem;font-weight:700;color:var(--text2);width:110px;flex-shrink:0;}
+.tv-bar-wrap{flex:1;height:20px;background:var(--surface);border-radius:5px;overflow:hidden;display:flex;}
+.tv-old{height:100%;background:linear-gradient(90deg,var(--blue-d),var(--blue));display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;}
+.tv-new{height:100%;background:linear-gradient(90deg,var(--cd-d),var(--cd));display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff;}
+.tv-time{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);flex-shrink:0;width:65px;text-align:right;}
+
+/* ── APPSPEC VISUAL ── */
+.appspec-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.av-header{background:linear-gradient(90deg,var(--cd-l),var(--green-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.av-body{padding:14px;}
+.av-section{border-radius:7px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:flex-start;gap:10px;}
+.av-section:last-child{margin-bottom:0;}
+.av-key{font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;width:130px;flex-shrink:0;margin-top:2px;}
+.av-desc{font-size:.73rem;color:var(--muted);flex:1;}
+.av-req{font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;flex-shrink:0;}
+
+/* ── HOOK LIFECYCLE ── */
+.hook-lifecycle{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.hl-header{background:linear-gradient(90deg,#083344,#0e4f6b);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #083344;}
+.hl-body{padding:0;}
+.hl-row{display:flex;align-items:stretch;border-bottom:1px solid var(--border);}
+.hl-row:last-child{border-bottom:none;}
+.hl-hook{background:var(--surface);padding:9px 13px;font-family:'JetBrains Mono',monospace;font-size:.7rem;font-weight:700;color:var(--cd-d);width:200px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.hl-desc{padding:9px 13px;font-size:.73rem;color:var(--text2);flex:1;display:flex;align-items:center;}
+.hl-platform{padding:9px 10px;font-size:.62rem;color:var(--muted);border-left:1px solid var(--border);width:100px;text-align:center;display:flex;align-items:center;justify-content:center;}
+
+/* ── ROLLBACK VISUAL ── */
+.rollback-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.rv-header{background:linear-gradient(90deg,var(--red-l),rgba(220,38,38,.06));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.rv-body{padding:14px;}
+.rv-event{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;position:relative;}
+.rv-event:not(:last-child)::after{content:'';position:absolute;left:12px;top:26px;bottom:-12px;width:2px;background:var(--border);}
+.rv-dot{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;flex-shrink:0;z-index:1;}
+.rd-ok{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.rd-fail{background:var(--red-l);border:2px solid var(--red);color:var(--red);}
+.rd-roll{background:var(--amber-l);border:2px solid var(--amber-d);color:var(--amber-d);}
+.rd-stable{background:var(--cd-l);border:2px solid var(--cd-d);color:var(--cd-d);}
+.rv-info{flex:1;}
+.rv-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.rv-info p{font-size:.7rem;color:var(--muted);}
+.rv-time{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);flex-shrink:0;}
+
+/* ── FEATURE COMPARE ── */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-head{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.74rem;}
+.fc-cd{background:var(--cd-l);color:var(--cd-d);border-right:1px solid var(--border);}
+.fc-other{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.good{color:var(--green-d);font-weight:600;}
+.fc-val.warn{color:var(--amber-d);font-weight:600;}
+.fc-val.bad{color:var(--red);font-weight:600;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.cs-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.cs-num{background:linear-gradient(135deg,var(--cd-d),var(--cd));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.cs-title{font-weight:700;font-size:.86rem;color:var(--text);}
+.cs-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.cs-body{padding:13px 15px;}
+.cs-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.cs-field:last-child{margin-bottom:0;}
+.cs-field-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.cs-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:6px 11px;}
+.cs-field-hint{font-size:.72rem;color:var(--muted);}
+.cs-note{font-size:.76rem;color:var(--cd-d);padding:9px 12px;background:var(--cd-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cd-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:16px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cd);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cd-l);border:1px solid rgba(14,116,144,.18);border-left:4px solid var(--cd);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cd-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(21,128,61,.2);border-left:4px solid var(--green-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,111,204,.18);border-left:4px solid var(--blue-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--cd);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--cd-d);font-weight:800;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#083344 0%,#0e4f6b 60%,#0e7490 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'🚢';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.deploy-types{grid-template-columns:1fr;}
+  .fc-row,.dl-row,.tv-row{flex-direction:column;}
+  .fc-lbl{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .dl-row{min-width:540px;}
+  .hl-row{flex-direction:column;}
+  .hl-hook{width:auto;border-right:none;border-bottom:1px solid var(--border);}
+  .hl-platform{border-left:none;border-top:1px solid var(--border);width:auto;}
+  .cs-path{display:none;}
+  .rv-event::after{display:none;}
+  .tv-row{flex-direction:column;gap:5px;}
+  .tv-label{width:auto;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-rings"></div>
+  <div class="hdr-grid"></div>
+  <div class="container">
+    <div class="hdr-badge">🚀 AWS · Automated Deployments</div>
+    <h1>AWS <span>CodeDeploy</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">EC2 / On-Premises</span>
+      <span class="header-tag">Lambda Deployments</span>
+      <span class="header-tag">ECS Blue/Green</span>
+      <span class="header-tag">appspec.yml</span>
+      <span class="header-tag">Lifecycle Hooks</span>
+      <span class="header-tag">C# .NET</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CodeDeploy</button>
+    <button class="tab-btn" onclick="T('types',this)">2 · Deployment Types</button>
+    <button class="tab-btn" onclick="T('appspec',this)">3 · appspec.yml</button>
+    <button class="tab-btn" onclick="T('hooks',this)">4 · Lifecycle Hooks</button>
+    <button class="tab-btn" onclick="T('lambda',this)">5 · Lambda Deployments</button>
+    <button class="tab-btn" onclick="T('ecs',this)">6 · ECS Blue/Green</button>
+    <button class="tab-btn" onclick="T('rollback',this)">7 · Rollback &amp; Alarms</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# SDK</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CODEDEPLOY
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>🚀 What is AWS CodeDeploy?</h2>
+  <p>AWS CodeDeploy is a fully managed <strong>deployment service</strong> that automates software deployments to EC2 instances, on-premises servers, Lambda functions, and ECS services. It handles the coordination of rolling updates, blue/green traffic switching, lifecycle hooks, health checks, and automatic rollback — without you writing any orchestration code.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>CodeDeploy is the <em>last mile</em> of your CI/CD pipeline. CodeBuild compiles and packages your app. CodeDeploy takes that package and safely delivers it to your compute targets — tracking health at each step and rolling back automatically if something goes wrong.</p>
+  </div>
+
+  <h3>Deploy Lifecycle — How a Deployment Runs</h3>
+  <div class="deploy-lifecycle">
+    <div class="dl-header">🔄 CodeDeploy Lifecycle — EC2 Deployment <span>Failure in any phase → auto rollback</span></div>
+    <div class="dl-body">
+      <div class="dl-row">
+        <div class="dl-phase">
+          <span class="dl-icon">📋</span>
+          <h6>ApplicationStop</h6>
+          <p>Gracefully stop running app</p>
+          <span class="dl-tag" style="background:var(--amber-l);color:var(--amber-d);">hook</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">📥</span>
+          <h6>DownloadBundle</h6>
+          <p>Pull artifact from S3 / GitHub</p>
+          <span class="dl-tag" style="background:var(--blue-l);color:var(--blue-d);">agent</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">🔧</span>
+          <h6>BeforeInstall</h6>
+          <p>Pre-install tasks, backup</p>
+          <span class="dl-tag" style="background:var(--amber-l);color:var(--amber-d);">hook</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">📦</span>
+          <h6>Install</h6>
+          <p>Copy files to destination</p>
+          <span class="dl-tag" style="background:var(--cd-l);color:var(--cd-d);">agent</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">✅</span>
+          <h6>AfterInstall</h6>
+          <p>Config, set permissions</p>
+          <span class="dl-tag" style="background:var(--amber-l);color:var(--amber-d);">hook</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">▶️</span>
+          <h6>ApplicationStart</h6>
+          <p>Start application service</p>
+          <span class="dl-tag" style="background:var(--amber-l);color:var(--amber-d);">hook</span>
+        </div>
+        <div class="dl-phase">
+          <span class="dl-icon">🏥</span>
+          <h6>ValidateService</h6>
+          <p>Health check, smoke test</p>
+          <span class="dl-tag" style="background:var(--green-l);color:var(--green-d);">hook</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📱</span><h4>Application</h4><p>Top-level CodeDeploy entity — groups deployment groups under a logical app name.</p></div>
+    <div class="icon-item"><span class="emoji">🎯</span><h4>Deployment Group</h4><p>Defines the target compute (EC2 tags, ASG, Lambda alias, ECS service) and deployment config.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Revision</h4><p>The application bundle (zip in S3 or GitHub commit) being deployed. Contains appspec.yml + code.</p></div>
+    <div class="icon-item"><span class="emoji">📄</span><h4>appspec.yml</h4><p>Deployment instructions — file mappings, hook scripts, Lambda versions, ECS task defs.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Lifecycle Hook</h4><p>Scripts that run at specific points in the deployment — validate, stop/start services, run tests.</p></div>
+    <div class="icon-item"><span class="emoji">🤖</span><h4>CodeDeploy Agent</h4><p>Daemon running on EC2/on-prem instances — polls for deployments and executes appspec.yml.</p></div>
+    <div class="icon-item"><span class="emoji">🔁</span><h4>Deployment Config</h4><p>Speed of rollout — AllAtOnce, HalfAtATime, OneAtATime, or custom canary percentages.</p></div>
+    <div class="icon-item"><span class="emoji">⏪</span><h4>Auto Rollback</h4><p>Revert to last working revision if deployment fails or a CloudWatch alarm fires.</p></div>
+    <div class="icon-item"><span class="emoji">🔵🟢</span><h4>Blue/Green</h4><p>New version deployed to a new environment. Traffic shifted after validation. Old env kept as fallback.</p></div>
+  </div>
+
+  <h3>CodeDeploy vs Manual Deploy vs Elastic Beanstalk</h3>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-col fc-cd">🚀 CodeDeploy</div>
+      <div class="fc-col fc-other" style="flex:2;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">🖐️ Manual Deploy</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;font-weight:700;font-size:.72rem;color:var(--muted);">🌱 Elastic Beanstalk</div>
+      </div>
+    </div>
+    <div class="fc-row"><div class="fc-lbl">Rollback</div><div class="fc-val good">✅ Auto on failure/alarm</div><div class="fc-val bad">❌ Manual re-deploy</div><div class="fc-val good">✅ Auto supported</div></div>
+    <div class="fc-row"><div class="fc-lbl">Deployment control</div><div class="fc-val good">Full lifecycle hooks</div><div class="fc-val warn">None — you script it</div><div class="fc-val warn">Limited customization</div></div>
+    <div class="fc-row"><div class="fc-lbl">Traffic shifting</div><div class="fc-val good">✅ Canary, Linear, All-at-once</div><div class="fc-val bad">❌ No</div><div class="fc-val good">✅ Rolling, Immutable</div></div>
+    <div class="fc-row"><div class="fc-lbl">Multi-target</div><div class="fc-val good">EC2 + Lambda + ECS</div><div class="fc-val warn">Whatever you script</div><div class="fc-val warn">EC2/Docker only</div></div>
+    <div class="fc-row"><div class="fc-lbl">Learning curve</div><div class="fc-val warn">Medium — appspec.yml</div><div class="fc-val good">None</div><div class="fc-val good">Low</div></div>
+    <div class="fc-row"><div class="fc-lbl">Best for</div><div class="fc-val">Controlled multi-env deployments</div><div class="fc-val">Quick one-off updates</div><div class="fc-val">Full managed PaaS</div></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — DEPLOYMENT TYPES
+══════════════════════════════════ -->
+<div id="tab-types" class="tab-panel"><div class="section">
+  <h2>🎯 Deployment Types &amp; Configurations</h2>
+
+  <div class="deploy-types">
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#1e40af,#1d6fcc);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--blue-d);">⚡ In-Place (Rolling)</div>
+        <div class="dt-desc">Deploys new version on existing instances one-by-one (or in batches). Instance is taken out of LB, updated, re-added.</div>
+        <div class="dt-use" style="background:var(--blue-l);color:var(--blue-d);">EC2 · On-Premises</div>
+      </div>
+    </div>
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#065f46,#15803d);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--green-d);">🔵🟢 Blue/Green (EC2)</div>
+        <div class="dt-desc">New instances provisioned with new version. Traffic switched after health check. Old instances kept as fallback, then terminated.</div>
+        <div class="dt-use" style="background:var(--green-l);color:var(--green-d);">EC2 · Auto Scaling</div>
+      </div>
+    </div>
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#4c1d95,#7c3aed);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--purple-d);">🐦 Lambda Canary</div>
+        <div class="dt-desc">Shifts N% of Lambda traffic to new version for T minutes, then shifts 100% if no alarms fire. Auto-rollback if alarm triggers.</div>
+        <div class="dt-use" style="background:var(--purple-l);color:var(--purple-d);">Lambda Functions</div>
+      </div>
+    </div>
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#083344,#0e7490);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--cd-d);">📊 Lambda Linear</div>
+        <div class="dt-desc">Gradually shifts traffic +N% every T minutes until 100%. Slow, safe rollout ideal for critical Lambda functions.</div>
+        <div class="dt-use" style="background:var(--cd-l);color:var(--cd-d);">Lambda Functions</div>
+      </div>
+    </div>
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#92400e,#d97706);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--amber-d);">🐳 ECS Blue/Green</div>
+        <div class="dt-desc">New ECS task definition deployed alongside old. ALB/NLB listener rules shifted. Old tasks drained then stopped.</div>
+        <div class="dt-use" style="background:var(--amber-l);color:var(--amber-d);">ECS / Fargate</div>
+      </div>
+    </div>
+    <div class="dt-card">
+      <div class="dt-bar" style="background:linear-gradient(90deg,#831843,#e11d48);"></div>
+      <div class="dt-body">
+        <div class="dt-name" style="color:var(--rose);">⚡ AllAtOnce</div>
+        <div class="dt-desc">Deploy to all targets simultaneously. Fastest but highest risk — downtime if deploy fails on all instances.</div>
+        <div class="dt-use" style="background:var(--rose-l);color:var(--rose);">Dev / Test envs</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Built-in Deployment Configurations</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Config Name</th><th>Platform</th><th>Behaviour</th><th>Risk</th></tr>
+    <tr><td><code>CodeDeployDefault.AllAtOnce</code></td><td>EC2 / Lambda / ECS</td><td>Deploy to all targets simultaneously</td><td>High</td></tr>
+    <tr><td><code>CodeDeployDefault.HalfAtATime</code></td><td>EC2</td><td>Deploy to 50% at a time</td><td>Medium</td></tr>
+    <tr><td><code>CodeDeployDefault.OneAtATime</code></td><td>EC2</td><td>Deploy one instance at a time</td><td>Low (slow)</td></tr>
+    <tr><td><code>CodeDeployDefault.LambdaCanary10Percent5Minutes</code></td><td>Lambda</td><td>10% for 5 min → 100%</td><td>Low</td></tr>
+    <tr><td><code>CodeDeployDefault.LambdaCanary10Percent30Minutes</code></td><td>Lambda</td><td>10% for 30 min → 100%</td><td>Very Low</td></tr>
+    <tr><td><code>CodeDeployDefault.LambdaLinear10PercentEvery1Minute</code></td><td>Lambda</td><td>+10% every minute</td><td>Very Low</td></tr>
+    <tr><td><code>CodeDeployDefault.LambdaLinear10PercentEvery10Minutes</code></td><td>Lambda</td><td>+10% every 10 minutes</td><td>Very Low</td></tr>
+    <tr><td><code>CodeDeployDefault.LambdaAllAtOnce</code></td><td>Lambda</td><td>Instant 100% shift</td><td>High</td></tr>
+    <tr><td><code>CodeDeployDefault.ECSCanary10Percent5Minutes</code></td><td>ECS</td><td>10% for 5 min → 100%</td><td>Low</td></tr>
+    <tr><td><code>CodeDeployDefault.ECSLinear10PercentEvery1Minutes</code></td><td>ECS</td><td>+10% every minute</td><td>Very Low</td></tr>
+  </table></div>
+
+  <h3>Traffic Shift Visual — Lambda Canary 10% / 5 min</h3>
+  <div class="traffic-vis">
+    <div class="tv-header">🐦 Canary10Percent5Minutes — Lambda Traffic Shift</div>
+    <div class="tv-body">
+      <div class="tv-row">
+        <div class="tv-label">t=0 (deploy starts)</div>
+        <div class="tv-bar-wrap">
+          <div class="tv-old" style="width:90%">v1 · 90%</div>
+          <div class="tv-new" style="width:10%">v2</div>
+        </div>
+        <div class="tv-time">t + 0 min</div>
+      </div>
+      <div class="tv-row">
+        <div class="tv-label">Canary window</div>
+        <div class="tv-bar-wrap">
+          <div class="tv-old" style="width:90%">v1 · monitoring…</div>
+          <div class="tv-new" style="width:10%">v2</div>
+        </div>
+        <div class="tv-time">t + 1–5 min</div>
+      </div>
+      <div class="tv-row">
+        <div class="tv-label">Alarm OK → shift</div>
+        <div class="tv-bar-wrap">
+          <div class="tv-new" style="width:100%">v2 · 100% ✅</div>
+        </div>
+        <div class="tv-time">t + 5 min</div>
+      </div>
+      <div class="tv-row">
+        <div class="tv-label">Alarm FIRES → rollback</div>
+        <div class="tv-bar-wrap">
+          <div class="tv-old" style="width:100%">v1 · 100% (rolled back) ⏪</div>
+        </div>
+        <div class="tv-time">t + 2 min</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — APPSPEC.YML
+══════════════════════════════════ -->
+<div id="tab-appspec" class="tab-panel"><div class="section">
+  <h2>📄 appspec.yml — Deployment Blueprint</h2>
+  <p>The <code>appspec.yml</code> file is the heart of every CodeDeploy deployment. It lives in the root of your revision bundle and tells CodeDeploy what to copy, where to put it, and which scripts to run at each lifecycle hook.</p>
+
+  <div class="appspec-vis">
+    <div class="av-header">🧬 appspec.yml Top-Level Sections</div>
+    <div class="av-body">
+      <div class="av-section" style="background:var(--cd-l);border:1px solid rgba(14,116,144,.2);">
+        <div class="av-key" style="color:var(--cd-d);">version</div>
+        <div class="av-desc">Always <code>0.0</code> — the only valid value.</div>
+        <span class="av-req" style="background:var(--cd-l);color:var(--cd-d);">Required</span>
+      </div>
+      <div class="av-section" style="background:var(--blue-l);border:1px solid rgba(29,78,216,.15);">
+        <div class="av-key" style="color:var(--blue-d);">os</div>
+        <div class="av-desc">Target OS — <code>linux</code> or <code>windows</code>. EC2/on-prem only.</div>
+        <span class="av-req" style="background:var(--blue-l);color:var(--blue-d);">EC2 only</span>
+      </div>
+      <div class="av-section" style="background:var(--amber-l);border:1px solid rgba(217,119,6,.15);">
+        <div class="av-key" style="color:var(--amber-d);">files</div>
+        <div class="av-desc">Source → destination file mappings. Copy your compiled .NET app to /opt/watson/.</div>
+        <span class="av-req" style="background:var(--amber-l);color:var(--amber-d);">EC2 only</span>
+      </div>
+      <div class="av-section" style="background:var(--green-l);border:1px solid rgba(21,128,61,.15);">
+        <div class="av-key" style="color:var(--green-d);">permissions</div>
+        <div class="av-desc">Set file ownership and permissions on deployed files.</div>
+        <span class="av-req" style="background:var(--green-l);color:var(--green-d);">Optional</span>
+      </div>
+      <div class="av-section" style="background:var(--purple-l);border:1px solid rgba(124,58,237,.15);">
+        <div class="av-key" style="color:var(--purple-d);">hooks</div>
+        <div class="av-desc">Scripts to run at lifecycle events (BeforeInstall, AfterInstall, ValidateService, etc.).</div>
+        <span class="av-req" style="background:var(--purple-l);color:var(--purple-d);">Optional</span>
+      </div>
+      <div class="av-section" style="background:var(--rose-l);border:1px solid var(--rose-b);">
+        <div class="av-key" style="color:var(--rose);">resources</div>
+        <div class="av-desc">Lambda: specify function name + aliases. ECS: task definition + container + port.</div>
+        <span class="av-req" style="background:var(--rose-l);color:var(--rose);">Lambda/ECS</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>appspec.yml — EC2 .NET Application</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · appspec.yml — EC2 .NET Web App</span>
+    <pre><span class="yaml-key">version</span><span class="yaml-cm">:</span> <span class="yaml-ex">0.0</span>
+<span class="yaml-key">os</span><span class="yaml-cm">:</span> <span class="yaml-val">linux</span>
+
+<span class="yaml-key">files</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm"># Copy compiled .NET app to target directory</span>
+  <span class="yaml-cm">- source: /publish</span>
+    <span class="yaml-cm">  destination: /opt/watson/app</span>
+  <span class="yaml-cm"># Copy systemd service file</span>
+  <span class="yaml-cm">- source: /scripts/watson-api.service</span>
+    <span class="yaml-cm">  destination: /etc/systemd/system</span>
+  <span class="yaml-cm"># Copy nginx config</span>
+  <span class="yaml-cm">- source: /config/nginx.conf</span>
+    <span class="yaml-cm">  destination: /etc/nginx/conf.d</span>
+
+<span class="yaml-key">permissions</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- object: /opt/watson/app</span>
+    <span class="yaml-cm">  owner: watson</span>
+    <span class="yaml-cm">  group: watson</span>
+    <span class="yaml-cm">  mode: "755"</span>
+    <span class="yaml-cm">  type: [file, directory]</span>
+
+<span class="yaml-key">hooks</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">ApplicationStop</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- location: scripts/stop_application.sh</span>
+      <span class="yaml-cm">  timeout: 60</span>
+      <span class="yaml-cm">  runas: root</span>
+
+  <span class="yaml-key">BeforeInstall</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- location: scripts/before_install.sh</span>
+      <span class="yaml-cm">  timeout: 120</span>
+      <span class="yaml-cm">  runas: root</span>
+
+  <span class="yaml-key">AfterInstall</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- location: scripts/configure_server.sh</span>
+      <span class="yaml-cm">  timeout: 120</span>
+      <span class="yaml-cm">  runas: root</span>
+
+  <span class="yaml-key">ApplicationStart</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- location: scripts/start_application.sh</span>
+      <span class="yaml-cm">  timeout: 60</span>
+      <span class="yaml-cm">  runas: root</span>
+
+  <span class="yaml-key">ValidateService</span><span class="yaml-cm">:</span>
+    <span class="yaml-cm">- location: scripts/validate_service.sh</span>
+      <span class="yaml-cm">  timeout: 120</span>
+      <span class="yaml-cm">  runas: watson</span></pre>
+  </div>
+
+  <h3>appspec.yml — Lambda Function</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · appspec.yml — Lambda Traffic Shift</span>
+    <pre><span class="yaml-key">version</span><span class="yaml-cm">:</span> <span class="yaml-ex">0.0</span>
+
+<span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- WatsonGetOrders:</span>
+      <span class="yaml-cm">    Type: AWS::Lambda::Function</span>
+      <span class="yaml-cm">    Properties:</span>
+      <span class="yaml-cm">      Name: watson-get-orders</span>
+      <span class="yaml-cm">      Alias: live           # Alias pointing to current version</span>
+      <span class="yaml-cm">      CurrentVersion: !Sub "${LambdaVersion.Version}"</span>
+      <span class="yaml-cm">      TargetVersion: !Sub "${NewLambdaVersion.Version}"</span>
+
+<span class="yaml-key">Hooks</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm"># Lambda hook: invokes a Lambda function before traffic shift</span>
+  <span class="yaml-cm">- BeforeAllowTraffic: watson-pre-traffic-check</span>
+  <span class="yaml-cm"># Lambda hook: invokes a Lambda function after traffic shift</span>
+  <span class="yaml-cm">- AfterAllowTraffic:  watson-post-traffic-check</span></pre>
+  </div>
+
+  <h3>appspec.yml — ECS Blue/Green</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · appspec.yml — ECS Blue/Green Deploy</span>
+    <pre><span class="yaml-key">version</span><span class="yaml-cm">:</span> <span class="yaml-ex">0.0</span>
+
+<span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- TargetService:</span>
+      <span class="yaml-cm">    Type: AWS::ECS::Service</span>
+      <span class="yaml-cm">    Properties:</span>
+      <span class="yaml-cm">      TaskDefinition: "arn:aws:ecs:eu-west-1:123:task-definition/watson-api:42"</span>
+      <span class="yaml-cm">      LoadBalancerInfo:</span>
+      <span class="yaml-cm">        ContainerName: watson-api</span>
+      <span class="yaml-cm">        ContainerPort: 8080</span>
+      <span class="yaml-cm">      PlatformVersion: LATEST</span>
+      <span class="yaml-cm">      NetworkConfiguration:</span>
+      <span class="yaml-cm">        AwsvpcConfiguration:</span>
+      <span class="yaml-cm">          Subnets: [subnet-aaa, subnet-bbb]</span>
+      <span class="yaml-cm">          SecurityGroups: [sg-xyz]</span>
+      <span class="yaml-cm">          AssignPublicIp: DISABLED</span>
+
+<span class="yaml-key">Hooks</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- BeforeInstall:          watson-ecs-before-hook</span>
+  <span class="yaml-cm">- AfterInstall:           watson-ecs-after-hook</span>
+  <span class="yaml-cm">- AfterAllowTestTraffic:  watson-ecs-test-hook</span>
+  <span class="yaml-cm">- BeforeAllowTraffic:     watson-ecs-pre-traffic</span>
+  <span class="yaml-cm">- AfterAllowTraffic:      watson-ecs-post-traffic</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — LIFECYCLE HOOKS
+══════════════════════════════════ -->
+<div id="tab-hooks" class="tab-panel"><div class="section">
+  <h2>🔗 Lifecycle Hooks — Full Reference</h2>
+
+  <div class="hook-lifecycle">
+    <div class="hl-header">📋 All Lifecycle Hooks — EC2 / On-Premises</div>
+    <div class="hl-body">
+      <div class="hl-row"><div class="hl-hook">ApplicationStop</div><div class="hl-desc">Gracefully stop the currently running application. Run before downloading the new revision. Skipped on first deployment.</div><div class="hl-platform">EC2</div></div>
+      <div class="hl-row"><div class="hl-hook">DownloadBundle</div><div class="hl-desc">Agent downloads the revision from S3/GitHub. Not scriptable — agent handles this automatically.</div><div class="hl-platform">Agent only</div></div>
+      <div class="hl-row"><div class="hl-hook">BeforeInstall</div><div class="hl-desc">Run before files are copied. Ideal for: create backup of config files, set up directories, decrypt files.</div><div class="hl-platform">EC2</div></div>
+      <div class="hl-row"><div class="hl-hook">Install</div><div class="hl-desc">Agent copies files per the <code>files</code> section in appspec.yml. Not scriptable.</div><div class="hl-platform">Agent only</div></div>
+      <div class="hl-row"><div class="hl-hook">AfterInstall</div><div class="hl-desc">Runs after files are copied. Ideal for: change file permissions, configure the application, run database migrations.</div><div class="hl-platform">EC2</div></div>
+      <div class="hl-row"><div class="hl-hook">ApplicationStart</div><div class="hl-desc">Start the application services. Run your systemctl start or service start commands here.</div><div class="hl-platform">EC2</div></div>
+      <div class="hl-row"><div class="hl-hook">ValidateService</div><div class="hl-desc">Health check the new deployment. HTTP probe, smoke test, or any validation. Failure causes rollback.</div><div class="hl-platform">EC2</div></div>
+      <div class="hl-row"><div class="hl-hook">BeforeBlockTraffic</div><div class="hl-desc">Runs before instance is removed from LB. Allows graceful request draining.</div><div class="hl-platform">EC2 + LB</div></div>
+      <div class="hl-row"><div class="hl-hook">BlockTraffic</div><div class="hl-desc">Agent removes instance from load balancer. Not scriptable.</div><div class="hl-platform">Agent only</div></div>
+      <div class="hl-row"><div class="hl-hook">AfterBlockTraffic</div><div class="hl-desc">Runs after instance removed from LB. Good for flushing caches or draining queues.</div><div class="hl-platform">EC2 + LB</div></div>
+      <div class="hl-row"><div class="hl-hook">AllowTraffic</div><div class="hl-desc">Agent re-registers instance with load balancer. Not scriptable.</div><div class="hl-platform">Agent only</div></div>
+      <div class="hl-row"><div class="hl-hook">BeforeAllowTraffic</div><div class="hl-desc">Lambda/ECS: run a Lambda function to validate new version before traffic is shifted.</div><div class="hl-platform">Lambda · ECS</div></div>
+      <div class="hl-row"><div class="hl-hook">AfterAllowTraffic</div><div class="hl-desc">Lambda/ECS: run validation after traffic fully shifted to new version.</div><div class="hl-platform">Lambda · ECS</div></div>
+    </div>
+  </div>
+
+  <h3>Hook Scripts — Bash Examples for .NET</h3>
+  <div class="code-block">
+    <span class="code-label">bash · scripts/stop_application.sh</span>
+    <pre><span class="bash-comment">#!/bin/bash</span>
+<span class="bash-comment"># Stop the .NET application gracefully</span>
+
+<span class="bash-comment"># Check if service exists before stopping</span>
+<span class="kw">if</span> systemctl is-active --quiet watson-api; <span class="kw">then</span>
+    echo <span class="str">"Stopping watson-api service..."</span>
+    systemctl stop watson-api
+    
+    <span class="bash-comment"># Wait up to 30s for graceful shutdown</span>
+    <span class="kw">for</span> i <span class="kw">in</span> {1..30}; <span class="kw">do</span>
+        <span class="kw">if</span> ! systemctl is-active --quiet watson-api; <span class="kw">then</span>
+            echo <span class="str">"Service stopped successfully"</span>
+            exit 0
+        <span class="kw">fi</span>
+        sleep 1
+    <span class="kw">done</span>
+    echo <span class="str">"Service did not stop cleanly, forcing..."</span>
+    systemctl kill watson-api
+<span class="kw">else</span>
+    echo <span class="str">"Service not running — skipping stop"</span>
+<span class="kw">fi</span>
+exit 0</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · scripts/validate_service.sh</span>
+    <pre><span class="bash-comment">#!/bin/bash</span>
+<span class="bash-comment"># Validate .NET API is healthy after deployment</span>
+
+APP_URL=<span class="str">"http://localhost:8080"</span>
+MAX_RETRIES=<span class="num">12</span>
+SLEEP_INTERVAL=<span class="num">5</span>
+
+echo <span class="str">"Waiting for watson-api to become healthy..."</span>
+
+<span class="kw">for</span> i <span class="kw">in</span> $(seq 1 $MAX_RETRIES); <span class="kw">do</span>
+    HTTP_STATUS=$(curl -s -o /dev/null -w <span class="str">"%{http_code}"</span> \
+        --max-time 5 \
+        <span class="str">"${APP_URL}/health"</span>)
+
+    <span class="kw">if</span> [ <span class="str">"$HTTP_STATUS"</span> = <span class="str">"200"</span> ]; <span class="kw">then</span>
+        echo <span class="str">"✅ Health check passed (HTTP 200) on attempt $i"</span>
+        exit 0
+    <span class="kw">fi</span>
+
+    echo <span class="str">"Attempt $i/$MAX_RETRIES: got $HTTP_STATUS — retrying in ${SLEEP_INTERVAL}s"</span>
+    sleep $SLEEP_INTERVAL
+<span class="kw">done</span>
+
+echo <span class="str">"❌ Health check FAILED after $MAX_RETRIES attempts — triggering rollback"</span>
+exit 1</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash · scripts/configure_server.sh</span>
+    <pre"><span class="bash-comment">#!/bin/bash</span>
+<span class="bash-comment"># AfterInstall: configure app, set permissions, write env file</span>
+
+APP_DIR=<span class="str">"/opt/watson/app"</span>
+ENV_FILE=<span class="str">"/opt/watson/app/.env"</span>
+
+<span class="bash-comment"># Set correct permissions on the .NET binary</span>
+chmod +x <span class="str">"${APP_DIR}/bootstrap"</span>
+chown -R watson:watson <span class="str">"${APP_DIR}"</span>
+
+<span class="bash-comment"># Pull secrets from SSM Parameter Store into env file</span>
+aws ssm get-parameter \
+    --name <span class="str">"/watson/prod/connection-string"</span> \
+    --with-decryption \
+    --query <span class="str">"Parameter.Value"</span> \
+    --output text > <span class="str">"${ENV_FILE}"</span>
+
+<span class="bash-comment"># Reload systemd so it picks up the new service file</span>
+systemctl daemon-reload
+systemctl enable watson-api
+
+echo <span class="str">"Server configuration complete"</span>
+exit 0</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — LAMBDA DEPLOYMENTS
+══════════════════════════════════ -->
+<div id="tab-lambda" class="tab-panel"><div class="section">
+  <h2>⚡ Lambda Deployments — Traffic Shifting</h2>
+
+  <h3>Lambda Alias Traffic Shifting — How It Works</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📌 The Alias Pattern</h4>
+      <ul>
+        <li>Lambda functions publish numbered versions (v1, v2, v3...)</li>
+        <li>An <strong>alias</strong> (e.g., <code>live</code>) points to a version</li>
+        <li>CodeDeploy shifts traffic between two versions via alias weights</li>
+        <li>Your application always calls the alias — never a version ARN directly</li>
+        <li>SAM's <code>AutoPublishAlias</code> handles version publishing automatically</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 Traffic Shift Flow</h4>
+      <ul>
+        <li>Before deploy: alias <code>live</code> → 100% v5</li>
+        <li>Deploy starts: alias <code>live</code> → 90% v5 + 10% v6</li>
+        <li>If canary OK: alias <code>live</code> → 100% v6</li>
+        <li>If alarm fires: alias <code>live</code> → 100% v5 (rollback)</li>
+        <li>Hook Lambdas validate before &amp; after the shift</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>SAM + CodeDeploy — Full Lambda Deploy Config</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · template.yaml — SAM with CodeDeploy Traffic Shifting</span>
+    <pre><span class="yaml-key">AWSTemplateFormatVersion</span><span class="yaml-cm">:</span> <span class="yaml-str">"2010-09-09"</span>
+<span class="yaml-key">Transform</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless-2016-10-31</span>
+
+<span class="yaml-key">Globals</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Function</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Runtime</span><span class="yaml-cm">:</span>      <span class="yaml-str">provided.al2023</span>
+    <span class="yaml-key">Architectures</span><span class="yaml-cm">:</span> <span class="yaml-cm">[arm64]</span>
+    <span class="yaml-key">Timeout</span><span class="yaml-cm">:</span>      <span class="yaml-ex">30</span>
+
+<span class="yaml-key">Resources</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">GetOrdersFunction</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Handler</span><span class="yaml-cm">:</span>          <span class="yaml-str">bootstrap</span>
+      <span class="yaml-key">CodeUri</span><span class="yaml-cm">:</span>          <span class="yaml-str">./src/WatsonOrders/</span>
+
+      <span class="yaml-cm"># AutoPublishAlias creates a new version on every deploy</span>
+      <span class="yaml-cm"># and attaches CodeDeploy traffic shifting automatically</span>
+      <span class="yaml-key">AutoPublishAlias</span><span class="yaml-cm">:</span> <span class="yaml-str">live</span>
+
+      <span class="yaml-key">DeploymentPreference</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Type</span><span class="yaml-cm">:</span>  <span class="yaml-str">Canary10Percent5Minutes</span>
+        <span class="yaml-key">Alarms</span><span class="yaml-cm">:</span>
+          <span class="yaml-cm">- !Ref GetOrdersErrorAlarm   # Auto-rollback if this fires</span>
+          <span class="yaml-cm">- !Ref GetOrdersP99Alarm</span>
+        <span class="yaml-key">Hooks</span><span class="yaml-cm">:</span>
+          <span class="yaml-key">PreTraffic</span><span class="yaml-cm">:</span>  <span class="yaml-cm">!Ref PreTrafficHook   # Run before shift</span>
+          <span class="yaml-key">PostTraffic</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref PostTrafficHook  # Run after shift</span>
+
+  <span class="yaml-cm"># Pre-traffic hook Lambda</span>
+  <span class="yaml-key">PreTrafficHook</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::Serverless::Function</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Handler</span><span class="yaml-cm">:</span>  <span class="yaml-str">bootstrap</span>
+      <span class="yaml-key">CodeUri</span><span class="yaml-cm">:</span>  <span class="yaml-str">./src/WatsonHooks/</span>
+      <span class="yaml-key">DeploymentPreference</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">Enabled</span><span class="yaml-cm">:</span> <span class="yaml-ex">false</span>   <span class="yaml-cm"># Do NOT canary the hook itself</span>
+      <span class="yaml-key">Policies</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- Version: "2012-10-17"</span>
+          <span class="yaml-cm">  Statement:</span>
+          <span class="yaml-cm">  - Effect: Allow</span>
+          <span class="yaml-cm">    Action: codedeploy:PutLifecycleEventHookExecutionStatus</span>
+          <span class="yaml-cm">    Resource: "*"</span>
+
+  <span class="yaml-key">GetOrdersErrorAlarm</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CloudWatch::Alarm</span>
+    <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">AlarmName</span><span class="yaml-cm">:</span>          <span class="yaml-str">watson-get-orders-errors</span>
+      <span class="yaml-key">MetricName</span><span class="yaml-cm">:</span>         <span class="yaml-str">Errors</span>
+      <span class="yaml-key">Namespace</span><span class="yaml-cm">:</span>          <span class="yaml-str">AWS/Lambda</span>
+      <span class="yaml-key">Statistic</span><span class="yaml-cm">:</span>          <span class="yaml-str">Sum</span>
+      <span class="yaml-key">Period</span><span class="yaml-cm">:</span>             <span class="yaml-ex">60</span>
+      <span class="yaml-key">EvaluationPeriods</span><span class="yaml-cm">:</span>  <span class="yaml-ex">1</span>
+      <span class="yaml-key">Threshold</span><span class="yaml-cm">:</span>          <span class="yaml-ex">5</span>
+      <span class="yaml-key">ComparisonOperator</span><span class="yaml-cm">:</span> <span class="yaml-str">GreaterThanOrEqualToThreshold</span></pre>
+  </div>
+
+  <h3>Pre/Post Traffic Hook Lambda — C#</h3>
+  <div class="code-block">
+    <span class="code-label">C# · PreTrafficHook Lambda Function</span>
+    <pre"><span class="kw">using</span> Amazon.CodeDeploy;
+<span class="kw">using</span> Amazon.CodeDeploy.Model;
+<span class="kw">using</span> Amazon.Lambda.Core;
+
+<span class="kw">public class</span> <span class="tp">PreTrafficHookFunction</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodeDeploy</span> _codeDeploy;
+    <span class="kw">private readonly</span> <span class="tp">HttpClient</span>       _http;
+
+    <span class="kw">public</span> <span class="tp">PreTrafficHookFunction</span>()
+    {
+        _codeDeploy = <span class="kw">new</span> <span class="tp">AmazonCodeDeployClient</span>();
+        _http       = <span class="kw">new</span> <span class="tp">HttpClient</span>();
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">IDictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt; input,
+        <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="kw">var</span> hookStatus = <span class="str">"Succeeded"</span>;
+        <span class="kw">var</span> deploymentId = input[<span class="str">"DeploymentId"</span>];
+        <span class="kw">var</span> hookId       = input[<span class="str">"LifecycleEventHookExecutionId"</span>];
+
+        <span class="kw">try</span>
+        {
+            context.Logger.<span class="fn">LogLine</span>(<span class="str">$"Running pre-traffic validation for {deploymentId}"</span>);
+
+            <span class="cm">// Test the NEW version of the Lambda directly</span>
+            <span class="kw">var</span> newVersionArn = System.Environment.<span class="fn">GetEnvironmentVariable</span>(
+                <span class="str">"NEW_VERSION_ARN"</span>)!;
+
+            <span class="kw">var</span> response = <span class="kw">await</span> _http.<span class="fn">GetAsync</span>(
+                <span class="str">$"https://api.watson.internal/health?target={newVersionArn}"</span>);
+
+            <span class="kw">if</span> (!response.IsSuccessStatusCode)
+            {
+                context.Logger.<span class="fn">LogLine</span>(<span class="str">$"❌ Pre-traffic check FAILED: {response.StatusCode}"</span>);
+                hookStatus = <span class="str">"Failed"</span>;
+            }
+            <span class="kw">else</span>
+            {
+                context.Logger.<span class="fn">LogLine</span>(<span class="str">"✅ Pre-traffic validation passed"</span>);
+            }
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            context.Logger.<span class="fn">LogLine</span>(<span class="str">$"❌ Exception in pre-traffic hook: {ex.Message}"</span>);
+            hookStatus = <span class="str">"Failed"</span>;
+        }
+        <span class="kw">finally</span>
+        {
+            <span class="cm">// MUST call this — otherwise deployment hangs until timeout</span>
+            <span class="kw">await</span> _codeDeploy.<span class="fn">PutLifecycleEventHookExecutionStatusAsync</span>(
+                <span class="kw">new</span> <span class="tp">PutLifecycleEventHookExecutionStatusRequest</span>
+                {
+                    DeploymentId                    = deploymentId,
+                    LifecycleEventHookExecutionId   = hookId,
+                    Status = hookStatus == <span class="str">"Succeeded"</span>
+                        ? <span class="tp">LifecycleEventStatus</span>.Succeeded
+                        : <span class="tp">LifecycleEventStatus</span>.Failed
+                });
+        }
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ECS BLUE/GREEN
+══════════════════════════════════ -->
+<div id="tab-ecs" class="tab-panel"><div class="section">
+  <h2>🐳 ECS Blue/Green Deployments</h2>
+  <p>ECS Blue/Green with CodeDeploy creates a second set of tasks (the "green" environment), validates them, then shifts ALB/NLB traffic. The blue environment is kept for a configurable period before being terminated.</p>
+
+  <h3>ECS Blue/Green Architecture</h3>
+  <div class="grid-2">
+    <div class="card" style="border-left:4px solid var(--blue-d);">
+      <h4 style="color:var(--blue-d);">🔵 Blue Environment (Current)</h4>
+      <ul>
+        <li>Old task definition (revision 41)</li>
+        <li>Currently receiving 100% of production traffic</li>
+        <li>Still running during green deployment</li>
+        <li>Kept alive for rollback window (default 1 hour)</li>
+        <li>Terminated after termination wait time</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:4px solid var(--green-d);">
+      <h4 style="color:var(--green-d);">🟢 Green Environment (New)</h4>
+      <ul>
+        <li>New task definition (revision 42)</li>
+        <li>Spun up in parallel, zero initial traffic</li>
+        <li>Gets test listener traffic for validation</li>
+        <li>Traffic shifted via ALB weighted target groups</li>
+        <li>Becomes "blue" after successful full shift</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>ECS Blue/Green — CloudFormation Setup</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · ECS Service with CodeDeploy Blue/Green</span>
+    <pre"><span class="yaml-key">WatsonECSService</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::ECS::Service</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">ServiceName</span><span class="yaml-cm">:</span>        <span class="yaml-str">watson-api</span>
+    <span class="yaml-key">Cluster</span><span class="yaml-cm">:</span>            <span class="yaml-cm">!Ref WatsonCluster</span>
+    <span class="yaml-key">TaskDefinition</span><span class="yaml-cm">:</span>    <span class="yaml-cm">!Ref WatsonTaskDefinition</span>
+    <span class="yaml-key">DesiredCount</span><span class="yaml-cm">:</span>       <span class="yaml-ex">2</span>
+    <span class="yaml-key">LaunchType</span><span class="yaml-cm">:</span>         <span class="yaml-str">FARGATE</span>
+
+    <span class="yaml-cm"># REQUIRED for CodeDeploy Blue/Green</span>
+    <span class="yaml-key">DeploymentController</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">CODE_DEPLOY</span>
+
+    <span class="yaml-key">LoadBalancers</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- ContainerName: watson-api</span>
+        <span class="yaml-cm">  ContainerPort: 8080</span>
+        <span class="yaml-cm">  TargetGroupArn: !Ref BlueTargetGroup</span>
+
+    <span class="yaml-key">NetworkConfiguration</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">AwsvpcConfiguration</span><span class="yaml-cm">:</span>
+        <span class="yaml-key">SecurityGroups</span><span class="yaml-cm">:</span> <span class="yaml-cm">[!Ref ECSSecurityGroup]</span>
+        <span class="yaml-key">Subnets</span><span class="yaml-cm">:</span>        <span class="yaml-cm">[!Ref PrivateSubnetA, !Ref PrivateSubnetB]</span>
+
+<span class="yaml-cm"># Two target groups for blue/green</span>
+<span class="yaml-key">BlueTargetGroup</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::ElasticLoadBalancingV2::TargetGroup</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Name</span><span class="yaml-cm">:</span>           <span class="yaml-str">watson-blue</span>
+    <span class="yaml-key">Protocol</span><span class="yaml-cm">:</span>       <span class="yaml-str">HTTP</span>
+    <span class="yaml-key">Port</span><span class="yaml-cm">:</span>           <span class="yaml-ex">8080</span>
+    <span class="yaml-key">TargetType</span><span class="yaml-cm">:</span>     <span class="yaml-str">ip</span>
+    <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>          <span class="yaml-cm">!Ref WatsonVpc</span>
+    <span class="yaml-key">HealthCheckPath</span><span class="yaml-cm">:</span> <span class="yaml-str">/health</span>
+
+<span class="yaml-key">GreenTargetGroup</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::ElasticLoadBalancingV2::TargetGroup</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Name</span><span class="yaml-cm">:</span>           <span class="yaml-str">watson-green</span>
+    <span class="yaml-key">Protocol</span><span class="yaml-cm">:</span>       <span class="yaml-str">HTTP</span>
+    <span class="yaml-key">Port</span><span class="yaml-cm">:</span>           <span class="yaml-ex">8080</span>
+    <span class="yaml-key">TargetType</span><span class="yaml-cm">:</span>     <span class="yaml-str">ip</span>
+    <span class="yaml-key">VpcId</span><span class="yaml-cm">:</span>          <span class="yaml-cm">!Ref WatsonVpc</span>
+    <span class="yaml-key">HealthCheckPath</span><span class="yaml-cm">:</span> <span class="yaml-str">/health</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — ROLLBACK & ALARMS
+══════════════════════════════════ -->
+<div id="tab-rollback" class="tab-panel"><div class="section">
+  <h2>⏪ Rollback &amp; CloudWatch Alarms</h2>
+
+  <h3>Automatic Rollback Timeline</h3>
+  <div class="rollback-vis">
+    <div class="rv-header">⏪ Auto-Rollback Triggered by CloudWatch Alarm</div>
+    <div class="rv-body">
+      <div class="rv-event">
+        <div class="rv-dot rd-ok">✓</div>
+        <div class="rv-info"><h6>Deploy Starts — v5 → v6</h6><p>Canary10Percent5Minutes: 10% traffic shifted to new Lambda v6</p></div>
+        <div class="rv-time">t=0:00</div>
+      </div>
+      <div class="rv-event">
+        <div class="rv-dot rd-fail">!</div>
+        <div class="rv-info"><h6>Error Rate Spikes on v6</h6><p>watson-get-orders-errors alarm: 12 errors in 60s — threshold is 5</p></div>
+        <div class="rv-time">t=0:02</div>
+      </div>
+      <div class="rv-event">
+        <div class="rv-dot rd-fail">⚠</div>
+        <div class="rv-info"><h6>CloudWatch Alarm Fires → ALARM state</h6><p>CodeDeploy detects monitored alarm entered ALARM state</p></div>
+        <div class="rv-time">t=0:03</div>
+      </div>
+      <div class="rv-event">
+        <div class="rv-dot rd-roll">⏪</div>
+        <div class="rv-info"><h6>Auto-Rollback Initiated</h6><p>CodeDeploy creates a new deployment using the last successful revision (v5)</p></div>
+        <div class="rv-time">t=0:03</div>
+      </div>
+      <div class="rv-event">
+        <div class="rv-dot rd-stable">✓</div>
+        <div class="rv-info"><h6>Rollback Complete — 100% traffic back to v5</h6><p>Alias <code>live</code> → 100% v5. Deployment status: STOPPED (rollback). Engineers notified via SNS.</p></div>
+        <div class="rv-time">t=0:05</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Rollback Configuration — CloudFormation</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · CodeDeploy Deployment Group with Auto-Rollback</span>
+    <pre"><span class="yaml-key">WatsonDeploymentGroup</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CodeDeploy::DeploymentGroup</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">ApplicationName</span><span class="yaml-cm">:</span>    <span class="yaml-cm">!Ref WatsonApp</span>
+    <span class="yaml-key">ServiceRoleArn</span><span class="yaml-cm">:</span>     <span class="yaml-cm">!GetAtt CodeDeployRole.Arn</span>
+    <span class="yaml-key">DeploymentConfigName</span><span class="yaml-cm">:</span>
+      <span class="yaml-str">CodeDeployDefault.LambdaCanary10Percent5Minutes</span>
+
+    <span class="yaml-cm"># Auto-rollback settings</span>
+    <span class="yaml-key">AutoRollbackConfiguration</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Enabled</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+      <span class="yaml-key">Events</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- DEPLOYMENT_FAILURE        # Rollback on any deployment failure</span>
+        <span class="yaml-cm">- DEPLOYMENT_STOP_ON_ALARM  # Rollback when alarm fires</span>
+
+    <span class="yaml-cm"># CloudWatch alarms that trigger rollback</span>
+    <span class="yaml-key">AlarmConfiguration</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Enabled</span><span class="yaml-cm">:</span> <span class="yaml-ex">true</span>
+      <span class="yaml-key">Alarms</span><span class="yaml-cm">:</span>
+        <span class="yaml-cm">- Name: !Ref GetOrdersErrorAlarm</span>
+        <span class="yaml-cm">- Name: !Ref GetOrdersLatencyAlarm</span>
+        <span class="yaml-cm">- Name: !Ref GetOrdersThrottleAlarm</span>
+      <span class="yaml-key">IgnorePollAlarmFailure</span><span class="yaml-cm">:</span> <span class="yaml-ex">false</span>
+
+    <span class="yaml-cm"># SNS notification on deployment events</span>
+    <span class="yaml-key">TriggerConfigurations</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- TriggerEvents:</span>
+          <span class="yaml-cm">  - DeploymentSuccess</span>
+          <span class="yaml-cm">  - DeploymentFailure</span>
+          <span class="yaml-cm">  - DeploymentRollback</span>
+        <span class="yaml-cm">  TriggerName: watson-deploy-events</span>
+        <span class="yaml-cm">  TriggerTargetArn: !Ref DeployAlertsTopic</span></pre>
+  </div>
+
+  <h3>Rollback Trigger Options</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Trigger</th><th>Description</th><th>When to Use</th></tr>
+    <tr><td>DEPLOYMENT_FAILURE</td><td>Rolls back automatically if any deployment phase fails or hook returns non-zero exit</td><td>Always enable</td></tr>
+    <tr><td>DEPLOYMENT_STOP_ON_ALARM</td><td>Rolls back when a monitored CloudWatch alarm enters ALARM state during deployment</td><td>Always enable in prod</td></tr>
+    <tr><td>DEPLOYMENT_STOP_ON_REQUEST</td><td>Rolls back when a stop-deployment API call is made manually</td><td>Optional manual safety</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — First Deployment</h2>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">1</div>
+      <div class="cs-title">Create a CodeDeploy Application</div>
+      <div class="cs-path">CodeDeploy → Applications → Create</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Application name</div><div class="cs-field-value">watson-api</div></div>
+      <div class="cs-field"><div class="cs-field-label">Compute platform</div><div class="cs-field-value">EC2/On-premises · Lambda · Amazon ECS</div><div class="cs-field-hint">Choose based on your target. Lambda for serverless, ECS for containers, EC2 for traditional servers.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">2</div>
+      <div class="cs-title">Create a Deployment Group</div>
+      <div class="cs-path">Application → Deployment groups → Create</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Deployment group name</div><div class="cs-field-value">watson-api-prod</div></div>
+      <div class="cs-field"><div class="cs-field-label">Service role</div><div class="cs-field-value">arn:aws:iam::123456789012:role/CodeDeployServiceRole</div><div class="cs-field-hint">Role must have AWSCodeDeployRole policy + trust policy for codedeploy.amazonaws.com</div></div>
+      <div class="cs-field"><div class="cs-field-label">Deployment type</div><div class="cs-field-value">In-place (EC2) · Blue/green (EC2/ECS)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Environment (EC2)</div><div class="cs-field-value">Tag: Name = watson-api-server  (targets EC2 instances with this tag)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Deployment config</div><div class="cs-field-value">CodeDeployDefault.OneAtATime (prod) · AllAtOnce (dev)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Load balancer</div><div class="cs-field-value">Enable — select your ALB target group (enables graceful instance rotation)</div></div>
+      <div class="cs-note">Enable Auto rollback on deployment failure and on alarm so failures are automatically recovered.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">3</div>
+      <div class="cs-title">Install CodeDeploy Agent on EC2</div>
+      <div class="cs-path">EC2 → User Data or SSM Run Command</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Amazon Linux 2023</div><div class="cs-field-value">dnf install ruby wget && wget https://aws-codedeploy-eu-west-1.s3.amazonaws.com/latest/install && chmod +x ./install && ./install auto</div></div>
+      <div class="cs-field"><div class="cs-field-label">Verify agent running</div><div class="cs-field-value">systemctl status codedeploy-agent</div></div>
+      <div class="cs-field"><div class="cs-field-label">EC2 IAM role required</div><div class="cs-field-value">AmazonEC2RoleforAWSCodeDeploy (managed policy) on the instance role</div></div>
+      <div class="cs-note">Use SSM State Manager or EC2 Launch Template User Data to auto-install the agent on new instances.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">4</div>
+      <div class="cs-title">Prepare Your Revision Bundle</div>
+      <div class="cs-path">Local → S3</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Bundle structure</div><div class="cs-field-value">appspec.yml · publish/ (compiled .NET) · scripts/ (hook scripts)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Create zip + upload</div><div class="cs-field-value">aws deploy push --application-name watson-api --s3-location s3://watson-artifacts/watson-api.zip --source .</div></div>
+      <div class="cs-field"><div class="cs-field-label">Or via CodeBuild</div><div class="cs-field-value">CodeBuild artifacts section outputs bundle to S3 automatically</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">5</div>
+      <div class="cs-title">Create a Deployment</div>
+      <div class="cs-path">Deployment group → Create deployment</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Revision type</div><div class="cs-field-value">My application is stored in Amazon S3</div></div>
+      <div class="cs-field"><div class="cs-field-label">Revision location</div><div class="cs-field-value">s3://watson-artifacts/watson-api.zip</div></div>
+      <div class="cs-field"><div class="cs-field-label">Revision file type</div><div class="cs-field-value">.zip</div></div>
+      <div class="cs-field"><div class="cs-field-label">Deployment description</div><div class="cs-field-value">v1.2.3 — Add Stripe payment integration (WAT-123)</div></div>
+      <div class="cs-note">Monitor Events tab in real-time. Click on each instance to see per-lifecycle-hook status and output logs.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header">
+      <div class="cs-num">6</div>
+      <div class="cs-title">Monitor &amp; Troubleshoot</div>
+      <div class="cs-path">Deployment → Events tab</div>
+    </div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Green = succeeded</div><div class="cs-field-value">Each lifecycle event shows ✓ with duration</div></div>
+      <div class="cs-field"><div class="cs-field-label">Red = failed</div><div class="cs-field-value">Click the failed event → View events → see script stderr output</div></div>
+      <div class="cs-field"><div class="cs-field-label">Agent logs (EC2)</div><div class="cs-field-value">/var/log/aws/codedeploy-agent/codedeploy-agent.log</div></div>
+      <div class="cs-field"><div class="cs-field-label">Deployment logs (EC2)</div><div class="cs-field-value">/opt/codedeploy-agent/deployment-root/{deployment-id}/</div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Automate Deployments</h2>
+
+  <h3>NuGet Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Install NuGet Package</span>
+    <pre">dotnet add package AWSSDK.CodeDeploy
+dotnet add package AWSSDK.Extensions.NETCore.Setup</pre>
+  </div>
+
+  <h3>CodeDeploy Service — Full Automation</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CodeDeployService.cs</span>
+    <pre"><span class="kw">using</span> Amazon.CodeDeploy;
+<span class="kw">using</span> Amazon.CodeDeploy.Model;
+
+<span class="kw">public class</span> <span class="tp">CodeDeployService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodeDeploy</span> _cd;
+
+    <span class="kw">public</span> <span class="tp">CodeDeployService</span>(<span class="tp">IAmazonCodeDeploy</span> cd) => _cd = cd;
+
+    <span class="cm">// ── CREATE DEPLOYMENT ─────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">DeployAsync</span>(
+        <span class="tp">string</span> applicationName,
+        <span class="tp">string</span> deploymentGroupName,
+        <span class="tp">string</span> s3Bucket,
+        <span class="tp">string</span> s3Key,
+        <span class="tp">string</span> description = <span class="str">""</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cd.<span class="fn">CreateDeploymentAsync</span>(
+            <span class="kw">new</span> <span class="tp">CreateDeploymentRequest</span>
+            {
+                ApplicationName     = applicationName,
+                DeploymentGroupName = deploymentGroupName,
+                Description         = description,
+                Revision = <span class="kw">new</span> <span class="tp">RevisionLocation</span>
+                {
+                    RevisionType = <span class="tp">RevisionLocationType</span>.S3,
+                    S3Location   = <span class="kw">new</span> <span class="tp">S3Location</span>
+                    {
+                        Bucket     = s3Bucket,
+                        Key        = s3Key,
+                        BundleType = <span class="tp">BundleType</span>.Zip
+                    }
+                },
+                AutoRollbackConfiguration = <span class="kw">new</span> <span class="tp">AutoRollbackConfiguration</span>
+                {
+                    Enabled = <span class="bool">true</span>,
+                    Events  = [
+                        <span class="tp">AutoRollbackEvent</span>.DEPLOYMENT_FAILURE,
+                        <span class="tp">AutoRollbackEvent</span>.DEPLOYMENT_STOP_ON_ALARM
+                    ]
+                }
+            }, ct);
+
+        <span class="kw">return</span> resp.DeploymentId;
+    }
+
+    <span class="cm">// ── WAIT FOR DEPLOYMENT ────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">DeploymentInfo</span>&gt; <span class="fn">WaitForDeploymentAsync</span>(
+        <span class="tp">string</span> deploymentId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">while</span> (!ct.IsCancellationRequested)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _cd.<span class="fn">GetDeploymentAsync</span>(
+                <span class="kw">new</span> <span class="tp">GetDeploymentRequest</span>
+                    { DeploymentId = deploymentId }, ct);
+
+            <span class="kw">var</span> info   = resp.DeploymentInfo;
+            <span class="kw">var</span> status = info.Status.Value;
+
+            Console.<span class="fn">WriteLine</span>(
+                <span class="str">$"[{DateTime.UtcNow:T}] Deployment {deploymentId}: {status}"</span>);
+
+            <span class="kw">if</span> (status <span class="kw">is</span> <span class="str">"Succeeded"</span> <span class="kw">or</span> <span class="str">"Failed"</span> <span class="kw">or</span> <span class="str">"Stopped"</span>)
+                <span class="kw">return</span> info;
+
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(
+                <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">15</span>), ct);
+        }
+
+        <span class="kw">throw new</span> <span class="tp">OperationCanceledException</span>(
+            <span class="str">"Timed out waiting for deployment."</span>);
+    }
+
+    <span class="cm">// ── GET DEPLOYMENT INSTANCES ──────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">InstanceSummary</span>&gt;&gt; <span class="fn">GetInstanceSummariesAsync</span>(
+        <span class="tp">string</span> deploymentId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> ids = <span class="kw">await</span> _cd.<span class="fn">ListDeploymentInstancesAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListDeploymentInstancesRequest</span>
+                { DeploymentId = deploymentId }, ct);
+
+        <span class="kw">if</span> (!ids.InstancesList.Any())
+            <span class="kw">return</span> [];
+
+        <span class="kw">var</span> details = <span class="kw">await</span> _cd.<span class="fn">BatchGetDeploymentInstancesAsync</span>(
+            <span class="kw">new</span> <span class="tp">BatchGetDeploymentInstancesRequest</span>
+            {
+                DeploymentId = deploymentId,
+                InstanceIds  = ids.InstancesList
+            }, ct);
+
+        <span class="kw">return</span> details.InstancesSummary;
+    }
+
+    <span class="cm">// ── STOP A DEPLOYMENT ─────────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">StopDeploymentAsync</span>(
+        <span class="tp">string</span> deploymentId,
+        <span class="bool">bool</span>   autoRollback = <span class="bool">true</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _cd.<span class="fn">StopDeploymentAsync</span>(
+            <span class="kw">new</span> <span class="tp">StopDeploymentRequest</span>
+            {
+                DeploymentId     = deploymentId,
+                AutoRollbackEnabled = autoRollback
+            }, ct);
+
+    <span class="cm">// ── FULL DEPLOY + WAIT CONVENIENCE ────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">DeploymentInfo</span>&gt; <span class="fn">DeployAndWaitAsync</span>(
+        <span class="tp">string</span> app,
+        <span class="tp">string</span> group,
+        <span class="tp">string</span> bucket,
+        <span class="tp">string</span> key,
+        <span class="tp">string</span> description = <span class="str">""</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> deployId = <span class="kw">await</span> <span class="fn">DeployAsync</span>(
+            app, group, bucket, key, description, ct);
+
+        Console.<span class="fn">WriteLine</span>(<span class="str">$"Started deployment: {deployId}"</span>);
+
+        <span class="kw">var</span> result = <span class="kw">await</span> <span class="fn">WaitForDeploymentAsync</span>(deployId, ct);
+
+        <span class="kw">if</span> (result.Status != <span class="str">"Succeeded"</span>)
+        {
+            <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                <span class="str">$"Deployment {deployId} ended with status: {result.Status}\n"</span> +
+                <span class="str">$"Error: {result.ErrorInformation?.Message}"</span>);
+        }
+
+        Console.<span class="fn">WriteLine</span>(<span class="str">$"✅ Deployment succeeded: {deployId}"</span>);
+        <span class="kw">return</span> result;
+    }
+}</pre>
+  </div>
+
+  <h3>Usage + DI Registration</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs + Usage</span>
+    <pre"><span class="cm">// DI registration</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCodeDeploy</span>&gt;()
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">CodeDeployService</span>&gt;();
+
+<span class="cm">// Trigger deployment from a release pipeline</span>
+<span class="kw">var</span> deploy = provider.<span class="fn">GetRequiredService</span>&lt;<span class="tp">CodeDeployService</span>&gt;();
+
+<span class="kw">var</span> cts    = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>(
+    <span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">30</span>));
+
+<span class="kw">var</span> result = <span class="kw">await</span> deploy.<span class="fn">DeployAndWaitAsync</span>(
+    app:         <span class="str">"watson-api"</span>,
+    group:       <span class="str">"watson-api-prod"</span>,
+    bucket:      <span class="str">"watson-artifacts-eu-west-1"</span>,
+    key:         <span class="str">"watson-api/v1.2.3.zip"</span>,
+    description: <span class="str">"Release 1.2.3 — Stripe integration (WAT-123)"</span>,
+    ct:          cts.Token);
+
+Console.<span class="fn">WriteLine</span>(
+    <span class="str">$"Deployed at: {result.CompleteTime:u}"</span>);</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Always add at least one CloudWatch alarm to <code>AlarmConfiguration</code> — error rate, latency p99, and throttle count are the essentials</li>
+    <li>Set <code>ValidateService</code> hook with a real HTTP health check — this is your last line of defence before the deployment is marked successful</li>
+    <li>Use <code>OneAtATime</code> for production EC2 in-place deploys — slower but zero-downtime with an ALB in front</li>
+    <li>Tag EC2 instances with <code>Environment: prod</code> and use that tag in the deployment group — avoids targeting wrong instances</li>
+    <li>Use <code>Canary10Percent5Minutes</code> for Lambda prod deploys — catches regressions in under 5 minutes with minimal blast radius</li>
+    <li>Never use <code>AllAtOnce</code> on production EC2 — the entire fleet is taken offline simultaneously if deployment fails</li>
+    <li>Keep hook scripts idempotent — they may be re-run if a deployment is retried after a partial failure</li>
+    <li>Set reasonable timeouts on hooks — the default is 3600s (1 hour); a hung script costs a full hour before rollback triggers</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CodeDeploy Mistakes</h4>
+    <p>
+    ❌ <strong>No ValidateService hook</strong> — CodeDeploy declares success even if the app is broken, since it only checks script exit codes<br>
+    ❌ <strong>AllAtOnce in production</strong> — if deploy fails, 100% of instances are down simultaneously<br>
+    ❌ <strong>Hook scripts not idempotent</strong> — failing midway and retrying may cause double-stop, double-start side effects<br>
+    ❌ <strong>No CloudWatch alarms</strong> — deployment succeeds even when error rate spikes; auto-rollback never triggers<br>
+    ❌ <strong>Forgetting PutLifecycleEventHookExecutionStatus in Lambda hooks</strong> — deployment hangs for the full timeout (1 hour default)<br>
+    ❌ <strong>Agent not installed on new EC2 instances</strong> — new Auto Scaling instances must have the agent pre-installed via Launch Template User Data<br>
+    ❌ <strong>EC2 instance role missing CodeDeploy policy</strong> — agent can't download revision from S3, deployment fails immediately
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CodeDeploy Mastery!</h3>
+    <p>What is CodeDeploy · Lifecycle visual (7 phases) · CodeDeploy vs Manual vs Beanstalk · All 6 deployment types (In-Place, Blue/Green EC2, Lambda Canary, Lambda Linear, ECS Blue/Green, AllAtOnce) · All built-in configs · Traffic shift visual (canary with rollback) · appspec.yml full anatomy · EC2 appspec (files, permissions, hooks) · Lambda appspec (resources + hooks) · ECS appspec · All 13 lifecycle hooks with descriptions · Hook bash scripts (stop, configure, validate) · Pre/Post traffic hook Lambda in C# (PutLifecycleEventHookExecutionStatus) · SAM + DeploymentPreference config · ECS Blue/Green CloudFormation (two target groups) · Auto-rollback timeline · Alarm configuration YAML · Console setup (6 steps, agent install) · Full C# SDK service (deploy/wait/instances/stop/deployAndWait) · Best practices checklist · Top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#67e8f9;">Deploy safely, roll back automatically, ship with confidence. 🚢🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

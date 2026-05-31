@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CodePipeline — Complete Guide · Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fdf4ff;--surface:#f3e8ff;--card:#ffffff;--border:#d8b4fe;--border2:#a855f7;
+  --cp:#7e22ce;--cp-l:#faf5ff;--cp-d:#581c87;--cp-dk:#2e1065;
+  --violet:#6d28d9;--violet-l:#ede9fe;--violet-d:#4c1d95;
+  --blue:#1d4ed8;--blue-l:#dbeafe;--blue-d:#1e3a8a;
+  --green:#15803d;--green-l:#dcfce7;--green-d:#166534;
+  --amber:#d97706;--amber-l:#fef3c7;--amber-d:#92400e;
+  --red:#dc2626;--red-l:rgba(220,38,38,.09);--red-b:rgba(220,38,38,.22);
+  --teal:#0891b2;--teal-l:#ecfeff;--teal-d:#155e75;
+  --rose:#e11d48;--rose-l:#fff1f2;--rose-b:rgba(225,29,72,.2);
+  --pink:#db2777;--pink-l:#fdf2f8;--pink-d:#831843;
+  --text:#1a0030;--text2:#2d0052;--muted:#6b21a8;
+  --code-bg:#0f0520;--r:10px;
+  --sh:0 1px 3px rgba(126,34,206,.07),0 4px 12px rgba(126,34,206,.08);
+  --sh-lg:0 2px 8px rgba(126,34,206,.09),0 8px 28px rgba(126,34,206,.11);
+  --sh-xl:0 4px 16px rgba(126,34,206,.1),0 16px 48px rgba(126,34,206,.13);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:900px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#2e1065 0%,#4c1d95 35%,#6d28d9 65%,#7e22ce 100%);
+  padding:clamp(2.5rem,7vw,4.5rem) clamp(1rem,5vw,3rem) clamp(2rem,5vw,3.5rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.hdr-bg{position:absolute;inset:0;
+  background-image:radial-gradient(ellipse at 70% 10%,rgba(192,132,252,.18) 0%,transparent 50%),
+  radial-gradient(ellipse at 20% 90%,rgba(139,92,246,.12) 0%,transparent 50%);
+  pointer-events:none;}
+.hdr-lines{position:absolute;inset:0;
+  background-image:repeating-linear-gradient(90deg,transparent,transparent 38px,rgba(255,255,255,.025) 38px,rgba(255,255,255,.025) 40px);
+  pointer-events:none;}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(192,132,252,.18);border:1px solid rgba(192,132,252,.35);color:#e9d5ff;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:4px 14px;border-radius:100px;margin-bottom:16px;}
+.header h1{color:#fff;font-size:clamp(1.5rem,5.5vw,2.8rem);font-weight:900;margin-bottom:10px;letter-spacing:-.04em;line-height:1.1;}
+.header h1 span{background:linear-gradient(90deg,#e9d5ff,#c084fc,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.5);font-size:.85rem;}
+.header-stack{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:16px;}
+.header-tag{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.65);font-size:.67rem;font-weight:500;padding:3px 10px;border-radius:100px;}
+
+/* ── TABS ── */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(253,244,255,.97);backdrop-filter:blur(14px);border-bottom:2px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:7px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Nunito',sans-serif;font-size:12.5px;font-weight:600;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cp-l);color:var(--cp-d);font-weight:800;box-shadow:0 0 0 1.5px rgba(126,34,206,.25);}
+.tab-panel{display:none;animation:fadeUp .22s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SECTION ── */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:800;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--surface);letter-spacing:-.02em;}
+.section h3{color:var(--cp-d);font-size:.95rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* ══════════════════════════════════════
+   IMPROVED CODE BLOCKS
+══════════════════════════════════════ */
+.code-block{
+  background:#0f0520;
+  border:1px solid #2a1050;
+  border-left:4px solid var(--cp);
+  border-radius:var(--r);
+  padding:clamp(1rem,2.5vw,1.4rem);
+  margin:14px 0;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  box-shadow:0 4px 20px rgba(0,0,0,.35);
+}
+.code-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:.65rem;color:#e9d5ff;
+  text-transform:uppercase;letter-spacing:.1em;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px;font-weight:600;
+}
+.code-label::after{content:'';flex:1;height:1px;background:rgba(233,213,255,.18);}
+.code-block pre{
+  margin:0;
+  font-family:'JetBrains Mono',monospace;
+  font-size:clamp(.73rem,1.8vw,.83rem);
+  line-height:1.9;
+  color:#f0e6ff;
+  white-space:pre;
+  letter-spacing:.01em;
+}
+/* Syntax — high contrast purple-theme dark bg */
+.kw   {color:#c084fc;font-weight:700;}
+.tp   {color:#67e8f9;}
+.fn   {color:#93c5fd;}
+.str  {color:#86efac;}
+.num  {color:#fdba74;}
+.cm   {color:#5b3a7a;font-style:italic;}
+.prop {color:#fde68a;}
+.bool {color:#c084fc;font-weight:700;}
+.attr {color:#f9a8d4;}
+.yaml-key{color:#67e8f9;font-weight:600;}
+.yaml-val{color:#86efac;}
+.yaml-str{color:#86efac;}
+.yaml-cm {color:#5b3a7a;font-style:italic;}
+.yaml-ex {color:#fdba74;}
+.bash-comment{color:#5b3a7a;font-style:italic;}
+.bash-flag   {color:#67e8f9;}
+.bash-str    {color:#86efac;}
+.json-key{color:#67e8f9;font-weight:600;}
+.json-str{color:#86efac;}
+.json-num{color:#fdba74;}
+.json-bool{color:#c084fc;font-weight:700;}
+code{background:rgba(126,34,206,.13);padding:2px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--cp-d);font-weight:700;}
+
+/* ── PIPELINE VISUAL ── */
+.pipeline-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-xl);}
+.pv-header{background:linear-gradient(90deg,#2e1065,#6d28d9);padding:12px 18px;font-weight:700;font-size:.82rem;color:#fff;border-bottom:1px solid #4c1d95;display:flex;align-items:center;gap:8px;}
+.pv-header span{background:rgba(192,132,252,.2);border:1px solid rgba(192,132,252,.3);color:#e9d5ff;font-size:.63rem;padding:2px 8px;border-radius:4px;margin-left:auto;}
+.pv-body{padding:16px;overflow-x:auto;}
+.pv-flow{display:flex;align-items:center;gap:0;min-width:560px;}
+.pv-stage{flex:1;text-align:center;padding:12px 6px;position:relative;}
+.pv-stage-box{border-radius:8px;padding:10px 8px;border:1.5px solid;}
+.pv-stage-icon{font-size:1.4rem;display:block;margin-bottom:5px;}
+.pv-stage-name{font-size:.7rem;font-weight:800;margin-bottom:2px;}
+.pv-stage-provider{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--muted);}
+.pv-arrow{font-size:1.3rem;color:var(--border);padding:0 4px;flex-shrink:0;}
+.ps-source{background:var(--blue-l);border-color:rgba(29,78,216,.3);}
+.ps-source .pv-stage-name{color:var(--blue-d);}
+.ps-build{background:var(--amber-l);border-color:rgba(217,119,6,.3);}
+.ps-build .pv-stage-name{color:var(--amber-d);}
+.ps-test{background:var(--teal-l);border-color:rgba(8,145,178,.3);}
+.ps-test .pv-stage-name{color:var(--teal-d);}
+.ps-approve{background:var(--rose-l);border-color:var(--rose-b);}
+.ps-approve .pv-stage-name{color:var(--rose);}
+.ps-staging{background:var(--violet-l);border-color:rgba(109,40,217,.3);}
+.ps-staging .pv-stage-name{color:var(--violet-d);}
+.ps-deploy{background:var(--green-l);border-color:rgba(21,128,61,.3);}
+.ps-deploy .pv-stage-name{color:var(--green-d);}
+
+/* ── ACTION TYPES GRID ── */
+.action-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(185px,100%),1fr));gap:10px;margin:14px 0;}
+.action-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;box-shadow:var(--sh);position:relative;overflow:hidden;transition:transform .15s;}
+.action-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.action-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.ac-source::before{background:var(--blue);}
+.ac-build::before{background:var(--amber-d);}
+.ac-test::before{background:var(--teal);}
+.ac-deploy::before{background:var(--green-d);}
+.ac-approve::before{background:var(--rose);}
+.ac-invoke::before{background:var(--violet);}
+.ac-name{font-weight:800;font-size:.8rem;margin-bottom:3px;}
+.ac-cat{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:5px;font-weight:600;}
+.ac-desc{font-size:.7rem;color:var(--muted);}
+
+/* ── EXECUTION TIMELINE ── */
+.exec-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.et-header{background:linear-gradient(90deg,#2e1065,#4c1d95);padding:10px 16px;font-weight:700;font-size:.8rem;color:#fff;border-bottom:1px solid #2e1065;}
+.et-body{padding:14px;}
+.et-event{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;position:relative;}
+.et-event:not(:last-child)::after{content:'';position:absolute;left:12px;top:26px;bottom:-12px;width:2px;background:var(--border);}
+.et-dot{width:24px;height:24px;min-width:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.62rem;font-weight:700;flex-shrink:0;z-index:1;}
+.ed-ok{background:var(--green-l);border:2px solid var(--green-d);color:var(--green-d);}
+.ed-run{background:var(--blue-l);border:2px solid var(--blue-d);color:var(--blue-d);}
+.ed-wait{background:var(--amber-l);border:2px solid var(--amber-d);color:var(--amber-d);}
+.ed-fail{background:var(--red-l);border:2px solid var(--red);color:var(--red);}
+.ed-approve{background:var(--rose-l);border:2px solid var(--rose);color:var(--rose);}
+.et-info{flex:1;}
+.et-info h6{font-weight:700;font-size:.78rem;color:var(--text);margin-bottom:2px;}
+.et-info p{font-size:.7rem;color:var(--muted);}
+.et-time{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);flex-shrink:0;}
+
+/* ── TRIGGER VISUAL ── */
+.trigger-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.trv-header{background:linear-gradient(90deg,var(--cp-l),var(--violet-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.trv-body{padding:14px;}
+.trv-row{display:flex;align-items:stretch;gap:8px;margin-bottom:8px;}
+.trv-row:last-child{margin-bottom:0;}
+.trv-source{background:var(--cp-l);border:1.5px solid rgba(126,34,206,.25);border-radius:7px;padding:8px 12px;flex-shrink:0;width:160px;display:flex;align-items:center;}
+.trv-source p{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--cp-d);font-weight:700;}
+.trv-arrow{display:flex;align-items:center;color:var(--border);font-size:1.2rem;flex-shrink:0;}
+.trv-targets{display:flex;flex-wrap:wrap;gap:6px;flex:1;align-items:center;}
+.trv-target{font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:5px;border:1px solid;}
+.tt-pipe{background:var(--cp-l);border-color:rgba(126,34,206,.3);color:var(--cp-d);}
+.tt-eb{background:var(--teal-l);border-color:rgba(8,145,178,.25);color:var(--teal-d);}
+.tt-cw{background:var(--amber-l);border-color:rgba(217,119,6,.25);color:var(--amber-d);}
+.tt-api{background:var(--blue-l);border-color:rgba(29,78,216,.25);color:var(--blue-d);}
+
+/* ── VARIABLE VISUAL ── */
+.var-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.vv-header{background:linear-gradient(90deg,var(--amber-l),var(--cp-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.vv-body{padding:0;}
+.vv-row{display:flex;border-bottom:1px solid var(--border);}
+.vv-row:last-child{border-bottom:none;}
+.vv-scope{background:var(--surface);padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--cp-d);font-weight:700;width:170px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.vv-var{padding:8px 12px;font-size:.73rem;color:var(--muted);flex:1;}
+.vv-ex{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--blue-d);display:block;margin-top:2px;}
+
+/* ── MULTI-REGION VISUAL ── */
+.multiregion{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.mr-header{background:linear-gradient(90deg,var(--green-l),var(--cp-l));padding:10px 16px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.mr-body{padding:14px;}
+.mr-pipeline{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:8px;}
+.mr-pipeline h6{font-weight:800;font-size:.76rem;color:var(--cp-d);margin-bottom:6px;}
+.mr-stages{display:flex;flex-wrap:wrap;gap:6px;}
+.mr-stage{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:3px 9px;border-radius:5px;border:1px solid;}
+.mst-source{background:var(--blue-l);border-color:rgba(29,78,216,.25);color:var(--blue-d);}
+.mst-build{background:var(--amber-l);border-color:rgba(217,119,6,.25);color:var(--amber-d);}
+.mst-eu{background:var(--green-l);border-color:rgba(21,128,61,.25);color:var(--green-d);}
+.mst-us{background:var(--violet-l);border-color:rgba(109,40,217,.2);color:var(--violet-d);}
+.mst-ap{background:var(--teal-l);border-color:rgba(8,145,178,.25);color:var(--teal-d);}
+
+/* ── FEATURE COMPARE ── */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.fc-head{display:flex;border-bottom:1px solid var(--border);}
+.fc-col{flex:1;padding:11px 13px;text-align:center;font-weight:700;font-size:.74rem;}
+.fc-cp{background:var(--cp-l);color:var(--cp-d);border-right:1px solid var(--border);}
+.fc-other{background:var(--surface);color:var(--muted);}
+.fc-row{display:flex;border-bottom:1px solid var(--border);}
+.fc-row:last-child{border-bottom:none;}
+.fc-lbl{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:600;color:var(--muted);width:145px;flex-shrink:0;border-right:1px solid var(--border);display:flex;align-items:center;}
+.fc-val{flex:1;padding:7px 12px;font-size:.74rem;color:var(--text2);display:flex;align-items:center;border-right:1px solid var(--border);}
+.fc-val:last-child{border-right:none;}
+.fc-val.good{color:var(--green-d);font-weight:600;}
+.fc-val.warn{color:var(--amber-d);font-weight:600;}
+.fc-val.bad{color:var(--red);font-weight:600;}
+
+/* ── CONSOLE STEPS ── */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.cs-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.cs-num{background:linear-gradient(135deg,var(--cp-d),var(--cp));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.cs-title{font-weight:700;font-size:.86rem;color:var(--text);}
+.cs-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.cs-body{padding:13px 15px;}
+.cs-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.cs-field:last-child{margin-bottom:0;}
+.cs-field-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.cs-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:5px;padding:6px 11px;}
+.cs-field-hint{font-size:.72rem;color:var(--muted);}
+.cs-note{font-size:.76rem;color:var(--cp-d);padding:9px 12px;background:var(--cp-l);border-radius:6px;margin-top:8px;}
+
+/* ── CARDS / GRIDS ── */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cp-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:16px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(155px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cp);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.55rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.76rem;font-weight:700;}
+.icon-item p{font-size:.67rem;color:var(--muted);}
+
+/* ── CALLOUTS ── */
+.tip{background:var(--cp-l);border:1px solid rgba(126,34,206,.15);border-left:4px solid var(--cp);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--cp-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(217,119,6,.2);border-left:4px solid var(--amber-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--amber-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(21,128,61,.2);border-left:4px solid var(--green-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(29,78,216,.18);border-left:4px solid var(--blue-d);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.info h4{color:var(--blue-d);margin-bottom:5px;font-size:.86rem;font-weight:700;}
+.info p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:700;}
+td{padding:8px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* ── CHECKLIST ── */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--cp);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--cp-d);font-weight:800;}
+
+/* ── COMPLETION ── */
+.completion{background:linear-gradient(135deg,#2e1065 0%,#4c1d95 60%,#6d28d9 100%);border-radius:var(--r);padding:clamp(1.75rem,5vw,3rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'⚡';position:absolute;right:-20px;top:-20px;font-size:8rem;opacity:.06;pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:700;color:#fff;margin-bottom:10px;}
+.completion p{color:rgba(255,255,255,.5);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── PRICING ── */
+.pricing-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.pricing-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.pricing-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.pc-v1::before{background:var(--cp);}
+.pc-v2::before{background:var(--blue-d);}
+.pc-free::before{background:var(--green-d);}
+.pc-h5{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:8px;}
+.p-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.p-label{font-size:.68rem;color:var(--muted);}
+.p-val{font-family:'JetBrains Mono',monospace;font-size:.72rem;font-weight:700;color:var(--text);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.action-grid,.pricing-row{grid-template-columns:1fr;}
+  .fc-row,.pv-flow,.trv-row,.vv-row{flex-direction:column;}
+  .fc-lbl,.vv-scope{width:100%;border-right:none;border-bottom:1px solid var(--border);}
+  .pv-flow{min-width:520px;}
+  .cs-path{display:none;}
+  .et-event::after{display:none;}
+  .trv-source{width:auto;}
+  .mr-stages{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hdr-bg"></div>
+  <div class="hdr-lines"></div>
+  <div class="container">
+    <div class="hdr-badge">⚡ AWS · Continuous Delivery</div>
+    <h1>AWS <span>CodePipeline</span><br>Complete Guide</h1>
+    <p>Indhu's Coding Corner · Beginner → Expert · C# .NET Examples</p>
+    <div class="header-stack">
+      <span class="header-tag">Stages &amp; Actions</span>
+      <span class="header-tag">Source · Build · Deploy</span>
+      <span class="header-tag">Manual Approvals</span>
+      <span class="header-tag">Pipeline Variables</span>
+      <span class="header-tag">Multi-Region</span>
+      <span class="header-tag">C# .NET SDK</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-nav">
+  <div class="tab-nav-inner">
+    <button class="tab-btn active" onclick="T('intro',this)">1 · What is CodePipeline</button>
+    <button class="tab-btn" onclick="T('stages',this)">2 · Stages &amp; Actions</button>
+    <button class="tab-btn" onclick="T('sources',this)">3 · Source Providers</button>
+    <button class="tab-btn" onclick="T('triggers',this)">4 · Triggers &amp; Variables</button>
+    <button class="tab-btn" onclick="T('advanced',this)">5 · Advanced Features</button>
+    <button class="tab-btn" onclick="T('cicd',this)">6 · Full CI/CD Pipeline</button>
+    <button class="tab-btn" onclick="T('v2',this)">7 · V1 vs V2 &amp; Pricing</button>
+    <button class="tab-btn" onclick="T('console',this)">8 · Console Setup</button>
+    <button class="tab-btn" onclick="T('dotnet',this)">9 · C# SDK</button>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS CODEPIPELINE
+══════════════════════════════════ -->
+<div id="tab-intro" class="tab-panel active"><div class="section">
+  <h2>⚡ What is AWS CodePipeline?</h2>
+  <p>AWS CodePipeline is a fully managed <strong>continuous delivery (CD) service</strong> that automates your release process. Every time you push code, CodePipeline automatically runs your build, tests, approval gates, and deployments in sequence. It orchestrates the entire flow — connecting CodeCommit, CodeBuild, CodeDeploy, CloudFormation, Lambda, ECS, and third-party tools into a single automated pipeline.</p>
+
+  <div class="tip">
+    <h4>💡 The Core Mental Model</h4>
+    <p>CodePipeline is the <em>conductor</em>. CodeCommit provides the source, CodeBuild compiles and tests, CodeDeploy delivers to servers, CloudFormation updates infrastructure. CodePipeline sequences and coordinates all of them — you define the flow once and it runs automatically on every push.</p>
+  </div>
+
+  <h3>Full Pipeline — Visual Flow</h3>
+  <div class="pipeline-vis">
+    <div class="pv-header">⚡ Watson API Pipeline — Complete Flow <span>Triggered on every push to main</span></div>
+    <div class="pv-body">
+      <div class="pv-flow">
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-source">
+            <span class="pv-stage-icon">📦</span>
+            <div class="pv-stage-name">Source</div>
+            <div class="pv-stage-provider">CodeCommit · main</div>
+          </div>
+        </div>
+        <div class="pv-arrow">→</div>
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-build">
+            <span class="pv-stage-icon">🔨</span>
+            <div class="pv-stage-name">Build</div>
+            <div class="pv-stage-provider">CodeBuild · .NET 8</div>
+          </div>
+        </div>
+        <div class="pv-arrow">→</div>
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-test">
+            <span class="pv-stage-icon">🧪</span>
+            <div class="pv-stage-name">Test</div>
+            <div class="pv-stage-provider">CodeBuild · integ</div>
+          </div>
+        </div>
+        <div class="pv-arrow">→</div>
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-staging">
+            <span class="pv-stage-icon">🚀</span>
+            <div class="pv-stage-name">Deploy Dev</div>
+            <div class="pv-stage-provider">CloudFormation</div>
+          </div>
+        </div>
+        <div class="pv-arrow">→</div>
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-approve">
+            <span class="pv-stage-icon">✅</span>
+            <div class="pv-stage-name">Approve</div>
+            <div class="pv-stage-provider">Manual · SNS</div>
+          </div>
+        </div>
+        <div class="pv-arrow">→</div>
+        <div class="pv-stage">
+          <div class="pv-stage-box ps-deploy">
+            <span class="pv-stage-icon">🏭</span>
+            <div class="pv-stage-name">Deploy Prod</div>
+            <div class="pv-stage-provider">CodeDeploy</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Pipeline</h4><p>The top-level entity. A series of stages that run in sequence automatically.</p></div>
+    <div class="icon-item"><span class="emoji">📌</span><h4>Stage</h4><p>A logical phase (Source, Build, Test, Deploy). Each stage has one or more actions.</p></div>
+    <div class="icon-item"><span class="emoji">▶️</span><h4>Action</h4><p>The actual work — invoke CodeBuild, deploy with CloudFormation, approve manually, etc.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Artifact</h4><p>Files passed between stages via S3. Each action can have input and output artifacts.</p></div>
+    <div class="icon-item"><span class="emoji">🔀</span><h4>Parallel Actions</h4><p>Multiple actions in a stage run in parallel — e.g., unit tests + linting simultaneously.</p></div>
+    <div class="icon-item"><span class="emoji">🛑</span><h4>Manual Approval</h4><p>Pause the pipeline and wait for a human to approve before proceeding to production.</p></div>
+    <div class="icon-item"><span class="emoji">🔔</span><h4>Notification</h4><p>EventBridge events on pipeline state changes — notify Slack, email, or trigger Lambda.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Execution</h4><p>One run of the pipeline. Has its own status, artifacts, and execution ID.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Multi-Region</h4><p>Deploy the same artifact to multiple AWS regions in one pipeline execution.</p></div>
+  </div>
+
+  <h3>CodePipeline vs GitHub Actions vs Jenkins</h3>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-col fc-cp">⚡ CodePipeline</div>
+      <div class="fc-col fc-other" style="flex:2;display:flex;padding:0;">
+        <div style="flex:1;padding:11px 10px;text-align:center;border-right:1px solid var(--border);font-weight:700;font-size:.72rem;color:var(--muted);">🐙 GitHub Actions</div>
+        <div style="flex:1;padding:11px 10px;text-align:center;font-weight:700;font-size:.72rem;color:var(--muted);">🔧 Jenkins</div>
+      </div>
+    </div>
+    <div class="fc-row"><div class="fc-lbl">Servers to manage</div><div class="fc-val good">✅ None — fully managed</div><div class="fc-val good">✅ None (hosted)</div><div class="fc-val bad">❌ Master + agents</div></div>
+    <div class="fc-row"><div class="fc-lbl">AWS integration</div><div class="fc-val good">✅ Native IAM roles</div><div class="fc-val warn">⚠️ OIDC needed</div><div class="fc-val warn">⚠️ Plugin + creds</div></div>
+    <div class="fc-row"><div class="fc-lbl">Visual UI</div><div class="fc-val good">✅ Stage-by-stage graph</div><div class="fc-val warn">⚠️ Basic logs only</div><div class="fc-val warn">⚠️ Blue Ocean plugin</div></div>
+    <div class="fc-row"><div class="fc-lbl">Multi-region deploy</div><div class="fc-val good">✅ Native support</div><div class="fc-val warn">⚠️ Script it manually</div><div class="fc-val warn">⚠️ Script it manually</div></div>
+    <div class="fc-row"><div class="fc-lbl">Manual approvals</div><div class="fc-val good">✅ Built-in + SNS</div><div class="fc-val warn">⚠️ Environments feature</div><div class="fc-val warn">⚠️ Input step plugin</div></div>
+    <div class="fc-row"><div class="fc-lbl">Source support</div><div class="fc-val warn">CodeCommit, GitHub, S3, ECR</div><div class="fc-val warn">GitHub only (native)</div><div class="fc-val good">Any via plugins</div></div>
+    <div class="fc-row"><div class="fc-lbl">Ecosystem</div><div class="fc-val warn">AWS services only</div><div class="fc-val good">50,000+ Actions</div><div class="fc-val good">1,800+ plugins</div></div>
+    <div class="fc-row"><div class="fc-lbl">Pricing</div><div class="fc-val warn">Per pipeline per month</div><div class="fc-val good">Free tier + per minute</div><div class="fc-val good">Free (infra cost)</div></div>
+  </div>
+
+  <h3>Pipeline Execution — Real-Time Timeline</h3>
+  <div class="exec-timeline">
+    <div class="et-header">📊 Execution #47 — watson-api-pipeline — Triggered by push to main</div>
+    <div class="et-body">
+      <div class="et-event">
+        <div class="et-dot ed-run">▶</div>
+        <div class="et-info"><h6>Source — CodeCommit checkout</h6><p>Commit abc1234 on main — "feat: add payment retry logic (WAT-456)"</p></div>
+        <div class="et-time">09:00:01</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-ok">✓</div>
+        <div class="et-info"><h6>Source Succeeded</h6><p>SourceOutput artifact uploaded to S3. Duration: 3s</p></div>
+        <div class="et-time">09:00:04</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-run">🔨</div>
+        <div class="et-info"><h6>Build — CodeBuild started</h6><p>dotnet restore → dotnet test → sam build → sam package</p></div>
+        <div class="et-time">09:00:05</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-ok">✓</div>
+        <div class="et-info"><h6>Build Succeeded — 47 tests passed</h6><p>BuildOutput artifact (packaged.yaml) uploaded. Duration: 2m 08s</p></div>
+        <div class="et-time">09:02:13</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-ok">✓</div>
+        <div class="et-info"><h6>Deploy Dev — CloudFormation UPDATE_COMPLETE</h6><p>watson-api-dev stack updated. API URL: https://dev.watson.io</p></div>
+        <div class="et-time">09:04:52</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-approve">⏸</div>
+        <div class="et-info"><h6>Manual Approval — Waiting</h6><p>SNS notification sent to team-watson@company.com. Pending approval from Indhu.</p></div>
+        <div class="et-time">09:04:53</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-ok">✓</div>
+        <div class="et-info"><h6>Approved by indhu@watson.io</h6><p>Comment: "Dev smoke tests passed ✅ — shipping to prod"</p></div>
+        <div class="et-time">09:18:30</div>
+      </div>
+      <div class="et-event">
+        <div class="et-dot ed-ok">✓</div>
+        <div class="et-info"><h6>Deploy Prod — SUCCEEDED</h6><p>CodeDeploy Canary10Percent5Minutes — all alarms green. Duration: 6m 12s</p></div>
+        <div class="et-time">09:24:42</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — STAGES & ACTIONS
+══════════════════════════════════ -->
+<div id="tab-stages" class="tab-panel"><div class="section">
+  <h2>📌 Stages &amp; Actions — Building Blocks</h2>
+  <p>Every pipeline is composed of <strong>Stages</strong>. Every stage contains one or more <strong>Actions</strong>. Actions in the same stage run in parallel by default; stages run sequentially.</p>
+
+  <h3>Action Categories</h3>
+  <div class="action-grid">
+    <div class="action-card ac-source">
+      <div class="ac-name">📦 Source</div>
+      <span class="ac-cat" style="background:var(--blue-l);color:var(--blue-d);">Category: Source</span>
+      <div class="ac-desc">Watches for changes and pulls the revision. Triggers the pipeline. Providers: CodeCommit, GitHub, S3, ECR.</div>
+    </div>
+    <div class="action-card ac-build">
+      <div class="ac-name">🔨 Build</div>
+      <span class="ac-cat" style="background:var(--amber-l);color:var(--amber-d);">Category: Build</span>
+      <div class="ac-desc">Compiles, packages, and runs unit tests. Providers: CodeBuild, Jenkins.</div>
+    </div>
+    <div class="action-card ac-test">
+      <div class="ac-name">🧪 Test</div>
+      <span class="ac-cat" style="background:var(--teal-l);color:var(--teal-d);">Category: Test</span>
+      <div class="ac-desc">Run integration or end-to-end tests. Providers: CodeBuild, Device Farm, BlazeMeter.</div>
+    </div>
+    <div class="action-card ac-deploy">
+      <div class="ac-name">🚀 Deploy</div>
+      <span class="ac-cat" style="background:var(--green-l);color:var(--green-d);">Category: Deploy</span>
+      <div class="ac-desc">Deploy artifacts. Providers: CodeDeploy, CloudFormation, ECS, S3, Elastic Beanstalk, AppConfig.</div>
+    </div>
+    <div class="action-card ac-approve">
+      <div class="ac-name">✅ Approval</div>
+      <span class="ac-cat" style="background:var(--rose-l);color:var(--rose);">Category: Approval</span>
+      <div class="ac-desc">Pause pipeline and wait for human approval. Sends SNS notification with review URL and custom message.</div>
+    </div>
+    <div class="action-card ac-invoke">
+      <div class="ac-name">⚡ Invoke</div>
+      <span class="ac-cat" style="background:var(--violet-l);color:var(--violet-d);">Category: Invoke</span>
+      <div class="ac-desc">Call a Lambda function or Step Functions state machine as a pipeline action. Useful for custom logic.</div>
+    </div>
+  </div>
+
+  <h3>Parallel Actions in a Stage</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · CloudFormation — Stage with Parallel Actions</span>
+    <pre><span class="yaml-cm"># Test stage — unit tests + security scan run simultaneously</span>
+<span class="yaml-cm">- Name: Test</span>
+  <span class="yaml-cm">  Actions:</span>
+
+    <span class="yaml-cm">  # Action 1 — unit tests (RunOrder: 1 = runs first/parallel)</span>
+    <span class="yaml-cm">  - Name: UnitTests</span>
+      <span class="yaml-cm">    RunOrder: 1</span>
+      <span class="yaml-cm">    ActionTypeId:</span>
+      <span class="yaml-cm">      Category: Build</span>
+      <span class="yaml-cm">      Owner:    AWS</span>
+      <span class="yaml-cm">      Provider: CodeBuild</span>
+      <span class="yaml-cm">      Version:  "1"</span>
+      <span class="yaml-cm">    Configuration:</span>
+      <span class="yaml-cm">      ProjectName: watson-unit-tests</span>
+      <span class="yaml-cm">    InputArtifacts:  [{Name: BuildOutput}]</span>
+
+    <span class="yaml-cm">  # Action 2 — security scan (also RunOrder: 1 = runs in parallel with UnitTests)</span>
+    <span class="yaml-cm">  - Name: SecurityScan</span>
+      <span class="yaml-cm">    RunOrder: 1</span>
+      <span class="yaml-cm">    ActionTypeId:</span>
+      <span class="yaml-cm">      Category: Build</span>
+      <span class="yaml-cm">      Owner:    AWS</span>
+      <span class="yaml-cm">      Provider: CodeBuild</span>
+      <span class="yaml-cm">      Version:  "1"</span>
+      <span class="yaml-cm">    Configuration:</span>
+      <span class="yaml-cm">      ProjectName: watson-security-scan</span>
+      <span class="yaml-cm">    InputArtifacts: [{Name: SourceOutput}]</span>
+
+    <span class="yaml-cm">  # Action 3 — integration test (RunOrder: 2 = runs AFTER RunOrder 1 both complete)</span>
+    <span class="yaml-cm">  - Name: IntegrationTest</span>
+      <span class="yaml-cm">    RunOrder: 2</span>
+      <span class="yaml-cm">    ActionTypeId:</span>
+      <span class="yaml-cm">      Category: Test</span>
+      <span class="yaml-cm">      Owner:    AWS</span>
+      <span class="yaml-cm">      Provider: CodeBuild</span>
+      <span class="yaml-cm">      Version:  "1"</span>
+      <span class="yaml-cm">    Configuration:</span>
+      <span class="yaml-cm">      ProjectName: watson-integration-tests</span>
+      <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]</span></pre>
+  </div>
+
+  <h3>Manual Approval Action — Full Config</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Manual Approval with SNS Notification</span>
+    <pre><span class="yaml-cm">- Name: ApproveForProduction</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: ManualApproval</span>
+    <span class="yaml-cm">    RunOrder: 1</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Approval</span>
+    <span class="yaml-cm">      Owner:    AWS</span>
+    <span class="yaml-cm">      Provider: Manual</span>
+    <span class="yaml-cm">      Version:  "1"</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      # SNS topic — sends email/Slack to reviewers</span>
+    <span class="yaml-cm">      NotificationArn: !Ref ProdApprovalTopic</span>
+
+    <span class="yaml-cm">      # Custom message shown in the approval notification</span>
+    <span class="yaml-cm">      CustomData: !Sub |</span>
+    <span class="yaml-cm">        Watson API — Ready for Production</span>
+    <span class="yaml-cm">        Build:  #{SourceVariables.CommitId}</span>
+    <span class="yaml-cm">        Commit: #{SourceVariables.CommitMessage}</span>
+    <span class="yaml-cm">        Dev URL: https://dev.watson.internal/orders</span>
+    <span class="yaml-cm">        Approve or Reject in the console:</span>
+
+    <span class="yaml-cm">      # Link shown in the approval notification</span>
+    <span class="yaml-cm">      ExternalEntityLink: https://dev.watson.internal/orders/health</span>
+
+    <span class="yaml-cm">    # Timeout — auto-reject after 7 days if no response</span>
+    <span class="yaml-cm">    TimeoutInMinutes: 10080</span></pre>
+  </div>
+
+  <h3>Action Providers — Full Reference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Category</th><th>Owner</th><th>Provider</th><th>Use Case</th></tr>
+    <tr><td>Source</td><td>AWS</td><td>CodeCommit</td><td>AWS-hosted Git repositories</td></tr>
+    <tr><td>Source</td><td>ThirdParty</td><td>GitHub / GitHubEnterpriseServer</td><td>GitHub repos via CodeStar Connection</td></tr>
+    <tr><td>Source</td><td>AWS</td><td>S3</td><td>Zip in S3 bucket as source</td></tr>
+    <tr><td>Source</td><td>AWS</td><td>ECR</td><td>Trigger on new Docker image push</td></tr>
+    <tr><td>Build</td><td>AWS</td><td>CodeBuild</td><td>Compile, test, package</td></tr>
+    <tr><td>Build</td><td>Custom</td><td>Jenkins</td><td>Existing Jenkins CI server</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>CodeDeploy</td><td>EC2, Lambda, ECS deployments</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>CloudFormation</td><td>Infrastructure stack updates</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>ECS</td><td>Update ECS service task definition</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>S3</td><td>Deploy static website to S3</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>ElasticBeanstalk</td><td>Beanstalk app version deploy</td></tr>
+    <tr><td>Deploy</td><td>AWS</td><td>AppConfig</td><td>Deploy feature flags / config</td></tr>
+    <tr><td>Approval</td><td>AWS</td><td>Manual</td><td>Human gate with SNS notification</td></tr>
+    <tr><td>Invoke</td><td>AWS</td><td>Lambda</td><td>Custom logic as a pipeline step</td></tr>
+    <tr><td>Invoke</td><td>AWS</td><td>StepFunctions</td><td>Run a state machine as a step</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — SOURCE PROVIDERS
+══════════════════════════════════ -->
+<div id="tab-sources" class="tab-panel"><div class="section">
+  <h2>📦 Source Providers — Where Code Comes From</h2>
+
+  <h3>CodeCommit Source (Native)</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · CodeCommit Source Action</span>
+    <pre><span class="yaml-cm">- Name: Source</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: CodeCommitSource</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Source</span>
+    <span class="yaml-cm">      Owner:    AWS</span>
+    <span class="yaml-cm">      Provider: CodeCommit</span>
+    <span class="yaml-cm">      Version:  "1"</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      RepositoryName: watson-api</span>
+    <span class="yaml-cm">      BranchName:     main</span>
+    <span class="yaml-cm">      # EVENTS = fast EventBridge detection (recommended)</span>
+    <span class="yaml-cm">      # POLLING = check every minute (legacy, avoid)</span>
+    <span class="yaml-cm">      DetectionMode:  EVENTS</span>
+    <span class="yaml-cm">      # ZIP = standard · FULL_CLONE = includes .git folder</span>
+    <span class="yaml-cm">      OutputArtifactFormat: CODE_ZIP</span>
+    <span class="yaml-cm">    OutputArtifacts:</span>
+    <span class="yaml-cm">      - Name: SourceOutput</span>
+    <span class="yaml-cm">    Namespace: SourceVariables  # Exposes commit ID, message, author</span></pre>
+  </div>
+
+  <h3>GitHub Source (via CodeStar Connection)</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · GitHub Source via CodeStar Connection</span>
+    <pre"><span class="yaml-cm"># Step 1: Create a CodeStar Connection in console</span>
+<span class="yaml-cm"># Settings → Connections → Create connection → GitHub</span>
+<span class="yaml-cm"># Authorize the GitHub App — copies the Connection ARN</span>
+
+<span class="yaml-cm">- Name: Source</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: GitHubSource</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Source</span>
+    <span class="yaml-cm">      Owner:    AWS</span>
+    <span class="yaml-cm">      Provider: CodeStarSourceConnection</span>
+    <span class="yaml-cm">      Version:  "1"</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      ConnectionArn:        !Ref GitHubConnection</span>
+    <span class="yaml-cm">      FullRepositoryId:     watson-team/watson-api</span>
+    <span class="yaml-cm">      BranchName:           main</span>
+    <span class="yaml-cm">      OutputArtifactFormat: CODE_ZIP</span>
+    <span class="yaml-cm">      DetectChanges:        true   # Auto-trigger on push</span>
+    <span class="yaml-cm">    OutputArtifacts:</span>
+    <span class="yaml-cm">      - Name: SourceOutput</span>
+    <span class="yaml-cm">    Namespace: SourceVariables</span></pre>
+  </div>
+
+  <h3>ECR Source — Trigger on New Docker Image</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · ECR Source — Trigger Pipeline on Image Push</span>
+    <pre"><span class="yaml-cm">- Name: Source</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: ECRSource</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Source</span>
+    <span class="yaml-cm">      Owner:    AWS</span>
+    <span class="yaml-cm">      Provider: ECR</span>
+    <span class="yaml-cm">      Version:  "1"</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      RepositoryName: watson-api</span>
+    <span class="yaml-cm">      ImageTag:       latest</span>
+    <span class="yaml-cm">      # Pipeline triggers whenever a new image is pushed</span>
+    <span class="yaml-cm">    OutputArtifacts:</span>
+    <span class="yaml-cm">      - Name: ECROutput</span>
+    <span class="yaml-cm">    Namespace: SourceVariables</span>
+
+<span class="yaml-cm"># SourceVariables available in later stages:</span>
+<span class="yaml-cm"># #{SourceVariables.ImageDigest}  — sha256 of the image</span>
+<span class="yaml-cm"># #{SourceVariables.ImageURI}     — full ECR image URI</span>
+<span class="yaml-cm"># #{SourceVariables.ImageTag}     — the pushed tag</span></pre>
+  </div>
+
+  <h3>Source Variable Namespace</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Source Provider</th><th>Variable</th><th>Example Value</th></tr>
+    <tr><td rowspan="4">CodeCommit</td><td><code>SourceVariables.CommitId</code></td><td>abc1234def5678</td></tr>
+    <tr><td><code>SourceVariables.CommitMessage</code></td><td>feat: add payment retry</td></tr>
+    <tr><td><code>SourceVariables.AuthorDate</code></td><td>2024-01-15T09:00:00Z</td></tr>
+    <tr><td><code>SourceVariables.BranchName</code></td><td>main</td></tr>
+    <tr><td rowspan="3">GitHub</td><td><code>SourceVariables.CommitId</code></td><td>abc1234def5678</td></tr>
+    <tr><td><code>SourceVariables.CommitMessage</code></td><td>feat: add payment retry</td></tr>
+    <tr><td><code>SourceVariables.FullRepositoryName</code></td><td>watson-team/watson-api</td></tr>
+    <tr><td rowspan="3">ECR</td><td><code>SourceVariables.ImageDigest</code></td><td>sha256:abc123...</td></tr>
+    <tr><td><code>SourceVariables.ImageURI</code></td><td>123.dkr.ecr.eu-west-1.amazonaws.com/watson-api:latest</td></tr>
+    <tr><td><code>SourceVariables.ImageTag</code></td><td>latest</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — TRIGGERS & VARIABLES
+══════════════════════════════════ -->
+<div id="tab-triggers" class="tab-panel"><div class="section">
+  <h2>🔔 Triggers &amp; Pipeline Variables</h2>
+
+  <h3>Trigger Types</h3>
+  <div class="trigger-vis">
+    <div class="trv-header">⚡ What Can Trigger a CodePipeline Execution</div>
+    <div class="trv-body">
+      <div class="trv-row">
+        <div class="trv-source"><p>Code push (CodeCommit)</p></div>
+        <div class="trv-arrow">→</div>
+        <div class="trv-targets">
+          <span class="trv-target tt-eb">EventBridge rule → auto-triggered</span>
+          <span class="trv-target tt-pipe">Pipeline starts immediately</span>
+        </div>
+      </div>
+      <div class="trv-row">
+        <div class="trv-source"><p>GitHub / GitLab push</p></div>
+        <div class="trv-arrow">→</div>
+        <div class="trv-targets">
+          <span class="trv-target tt-eb">CodeStar webhook → EventBridge</span>
+          <span class="trv-target tt-pipe">Pipeline starts immediately</span>
+        </div>
+      </div>
+      <div class="trv-row">
+        <div class="trv-source"><p>New ECR image push</p></div>
+        <div class="trv-arrow">→</div>
+        <div class="trv-targets">
+          <span class="trv-target tt-eb">ECR event → EventBridge</span>
+          <span class="trv-target tt-pipe">Pipeline deploys new image</span>
+        </div>
+      </div>
+      <div class="trv-row">
+        <div class="trv-source"><p>EventBridge schedule</p></div>
+        <div class="trv-arrow">→</div>
+        <div class="trv-targets">
+          <span class="trv-target tt-eb">cron(0 6 * * ? *)</span>
+          <span class="trv-target tt-pipe">Nightly deploy pipeline</span>
+        </div>
+      </div>
+      <div class="trv-row">
+        <div class="trv-source"><p>Manual / API</p></div>
+        <div class="trv-arrow">→</div>
+        <div class="trv-targets">
+          <span class="trv-target tt-api">StartPipelineExecution API</span>
+          <span class="trv-target tt-api">Console "Release change"</span>
+          <span class="trv-target tt-api">CLI / SDK call</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Pipeline Variables (V2 only)</h3>
+  <div class="var-vis">
+    <div class="vv-header">📊 Variable Scopes — Where Variables Come From</div>
+    <div class="vv-body">
+      <div class="vv-row">
+        <div class="vv-scope">Pipeline Variables</div>
+        <div class="vv-var">Defined at pipeline level, set at start of execution. Passed to any stage.<span class="vv-ex">#{variables.ENVIRONMENT}  →  prod</span></div>
+      </div>
+      <div class="vv-row">
+        <div class="vv-scope">Source Namespace</div>
+        <div class="vv-var">Automatically populated by the Source action with commit metadata.<span class="vv-ex">#{SourceVariables.CommitId}  →  abc1234</span></div>
+      </div>
+      <div class="vv-row">
+        <div class="vv-scope">Action Namespace</div>
+        <div class="vv-var">Output variables exported by an action (CodeBuild, Lambda, etc.) for downstream use.<span class="vv-ex">#{BuildVariables.IMAGE_TAG}  →  1.2.3-abc1234</span></div>
+      </div>
+      <div class="vv-row">
+        <div class="vv-scope">Execution ID</div>
+        <div class="vv-var">Built-in — the current pipeline execution ID. Always available.<span class="vv-ex">#{codepipeline.PipelineExecutionId}  →  exec-abc123</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">YAML · V2 Pipeline Variables — Declaration + Usage</span>
+    <pre"><span class="yaml-cm"># Declare pipeline-level variables (V2 pipelines only)</span>
+<span class="yaml-key">Variables</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- Name:         ENVIRONMENT</span>
+    <span class="yaml-cm">  DefaultValue: dev</span>
+    <span class="yaml-cm">  Description:  Target deployment environment</span>
+  <span class="yaml-cm">- Name:         DEPLOY_FLAG</span>
+    <span class="yaml-cm">  DefaultValue: "true"</span>
+
+<span class="yaml-cm"># Usage in a Build action</span>
+<span class="yaml-cm">- Name: Build</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: CodeBuildAction</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      ProjectName: watson-build</span>
+    <span class="yaml-cm">      # Pass variable to CodeBuild environment</span>
+    <span class="yaml-cm">      EnvironmentVariables: |</span>
+    <span class="yaml-cm">        [</span>
+    <span class="yaml-cm">          {"name":"ENVIRONMENT", "value":"#{variables.ENVIRONMENT}"},</span>
+    <span class="yaml-cm">          {"name":"COMMIT_ID",   "value":"#{SourceVariables.CommitId}"}</span>
+    <span class="yaml-cm">        ]</span>
+
+<span class="yaml-cm"># Usage in approval message</span>
+<span class="yaml-cm">- Name: Approve</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: ManualApproval</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      CustomData: !Sub |</span>
+    <span class="yaml-cm">        Deploy to #{variables.ENVIRONMENT}</span>
+    <span class="yaml-cm">        Commit: #{SourceVariables.CommitId}</span>
+    <span class="yaml-cm">        Message: #{SourceVariables.CommitMessage}</span>
+
+<span class="yaml-cm"># Override at execution time via API:</span>
+<span class="yaml-cm"># aws codepipeline start-pipeline-execution \</span>
+<span class="yaml-cm">#   --name watson-pipeline \</span>
+<span class="yaml-cm">#   --variables name=ENVIRONMENT,value=prod</span></pre>
+  </div>
+
+  <h3>Trigger Filters (V2) — Branch &amp; Tag Patterns</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · V2 Trigger Filters — Only trigger on specific branches</span>
+    <pre"><span class="yaml-cm"># V2 pipelines support granular trigger filters</span>
+<span class="yaml-key">Triggers</span><span class="yaml-cm">:</span>
+  <span class="yaml-cm">- ProviderType: CodeStarSourceConnection</span>
+    <span class="yaml-cm">  GitConfiguration:</span>
+    <span class="yaml-cm">    SourceActionName: GitHubSource</span>
+
+    <span class="yaml-cm">    # Only trigger on push to main or release/* branches</span>
+    <span class="yaml-cm">    Push:</span>
+    <span class="yaml-cm">      - Branches:</span>
+        <span class="yaml-cm">          Includes: [main, release/*]</span>
+        <span class="yaml-cm">          Excludes: [feature/*, chore/*]</span>
+
+    <span class="yaml-cm">    # Also trigger on new version tags</span>
+    <span class="yaml-cm">    Tags:</span>
+    <span class="yaml-cm">      - Includes: [v*.*.*]</span>
+
+    <span class="yaml-cm">    # Trigger on PR to main (for PR checks)</span>
+    <span class="yaml-cm">    PullRequest:</span>
+    <span class="yaml-cm">      - Events: [OPEN, UPDATED, CLOSED]</span>
+        <span class="yaml-cm">  TargetBranches:</span>
+        <span class="yaml-cm">    Includes: [main]</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — ADVANCED FEATURES
+══════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🚀 Advanced Features</h2>
+
+  <h3>Multi-Region Deployments</h3>
+  <div class="multiregion">
+    <div class="mr-header">🌍 Multi-Region Pipeline — watson-api Global Deploy</div>
+    <div class="mr-body">
+      <div class="mr-pipeline">
+        <h6>🏗️ Pipeline (eu-west-1 — primary region)</h6>
+        <div class="mr-stages">
+          <span class="mr-stage mst-source">📦 Source · CodeCommit</span>
+          <span class="mr-stage mst-build">🔨 Build · CodeBuild</span>
+          <span class="mr-stage mst-eu">🚀 Deploy EU · CloudFormation (eu-west-1)</span>
+          <span class="mr-stage mst-us">🚀 Deploy US · CloudFormation (us-east-1)</span>
+          <span class="mr-stage mst-ap">🚀 Deploy AP · CloudFormation (ap-southeast-1)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">YAML · Multi-Region Deploy Stage</span>
+    <pre"><span class="yaml-cm"># Deploy to EU (pipeline's home region)</span>
+<span class="yaml-cm">- Name: DeployEU</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: CloudFormationEU</span>
+    <span class="yaml-cm">    Region: eu-west-1     # Explicit region</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Deploy</span>
+    <span class="yaml-cm">      Provider: CloudFormation</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      ActionMode:   CREATE_UPDATE</span>
+    <span class="yaml-cm">      StackName:    watson-api-eu</span>
+    <span class="yaml-cm">      TemplatePath: BuildOutput::packaged.yaml</span>
+    <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]</span>
+
+<span class="yaml-cm"># Deploy to US (cross-region — CodePipeline replicates artifact to us-east-1)</span>
+<span class="yaml-cm">- Name: DeployUS</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: CloudFormationUS</span>
+    <span class="yaml-cm">    Region: us-east-1     # Cross-region action</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Deploy</span>
+    <span class="yaml-cm">      Provider: CloudFormation</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      ActionMode:   CREATE_UPDATE</span>
+    <span class="yaml-cm">      StackName:    watson-api-us</span>
+    <span class="yaml-cm">      TemplatePath: BuildOutput::packaged.yaml</span>
+    <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]
+
+<span class="yaml-cm"># IMPORTANT: cross-region requires an artifact bucket in every target region</span>
+<span class="yaml-cm"># Set via ArtifactStores (plural) instead of ArtifactStore in the pipeline config</span></pre>
+  </div>
+
+  <h3>Lambda Invoke Action — Custom Logic</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Lambda Invoke Action in Pipeline</span>
+    <pre"><span class="yaml-cm">- Name: CustomValidation</span>
+  <span class="yaml-cm">  Actions:</span>
+  <span class="yaml-cm">  - Name: RunSmokeTests</span>
+    <span class="yaml-cm">    ActionTypeId:</span>
+    <span class="yaml-cm">      Category: Invoke</span>
+    <span class="yaml-cm">      Owner:    AWS</span>
+    <span class="yaml-cm">      Provider: Lambda</span>
+    <span class="yaml-cm">      Version:  "1"</span>
+    <span class="yaml-cm">    Configuration:</span>
+    <span class="yaml-cm">      FunctionName: watson-smoke-test</span>
+    <span class="yaml-cm">      # JSON input passed to the Lambda</span>
+    <span class="yaml-cm">      UserParameters: !Sub |</span>
+    <span class="yaml-cm">        {"env": "#{variables.ENVIRONMENT}", "apiUrl": "https://dev.watson.io"}</span>
+    <span class="yaml-cm">    InputArtifacts:  [{Name: BuildOutput}]</span>
+    <span class="yaml-cm">    OutputArtifacts: [{Name: ValidationOutput}]</span>
+    <span class="yaml-cm">    Namespace: ValidationVariables</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# · Lambda Function as a CodePipeline Action</span>
+    <pre"><span class="kw">using</span> Amazon.CodePipeline;
+<span class="kw">using</span> Amazon.CodePipeline.Model;
+<span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">SmokeTestFunction</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodePipeline</span> _cp;
+    <span class="kw">private readonly</span> <span class="tp">HttpClient</span>          _http;
+
+    <span class="kw">public</span> <span class="tp">SmokeTestFunction</span>()
+    {
+        _cp   = <span class="kw">new</span> <span class="tp">AmazonCodePipelineClient</span>();
+        _http = <span class="kw">new</span> <span class="tp">HttpClient</span>();
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(
+        <span class="tp">IDictionary</span>&lt;<span class="tp">string</span>, <span class="tp">JsonElement</span>&gt; input,
+        <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="cm">// CodePipeline passes job details to the Lambda</span>
+        <span class="kw">var</span> jobId  = input[<span class="str">"CodePipeline.job"</span>]
+            .GetProperty(<span class="str">"id"</span>).GetString()!;
+
+        <span class="kw">var</span> jobData = input[<span class="str">"CodePipeline.job"</span>]
+            .GetProperty(<span class="str">"data"</span>);
+
+        <span class="kw">var</span> userParams = jobData
+            .GetProperty(<span class="str">"actionConfiguration"</span>)
+            .GetProperty(<span class="str">"configuration"</span>)
+            .GetProperty(<span class="str">"UserParameters"</span>)
+            .GetString()!;
+
+        <span class="kw">var</span> config = JsonSerializer
+            .Deserialize&lt;SmokeTestConfig&gt;(userParams)!;
+
+        <span class="kw">try</span>
+        {
+            context.Logger.LogLine(
+                <span class="str">$"Running smoke tests on {config.ApiUrl}"</span>);
+
+            <span class="cm">// Run your validation</span>
+            <span class="kw">var</span> resp = <span class="kw">await</span> _http.GetAsync(
+                <span class="str">$"{config.ApiUrl}/health"</span>);
+
+            resp.EnsureSuccessStatusCode();
+
+            context.Logger.LogLine(<span class="str">"✅ Smoke tests PASSED"</span>);
+
+            <span class="cm">// MUST call PutJobSuccessResult or PutJobFailureResult</span>
+            <span class="kw">await</span> _cp.PutJobSuccessResultAsync(<span class="kw">new</span> <span class="tp">PutJobSuccessResultRequest</span>
+            {
+                JobId            = jobId,
+                OutputVariables  = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+                {
+                    [<span class="str">"HEALTH_CHECK_STATUS"</span>] = <span class="str">"PASSED"</span>
+                }
+            });
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            context.Logger.LogLine(
+                <span class="str">$"❌ Smoke tests FAILED: {ex.Message}"</span>);
+
+            <span class="kw">await</span> _cp.PutJobFailureResultAsync(<span class="kw">new</span> <span class="tp">PutJobFailureResultRequest</span>
+            {
+                JobId                  = jobId,
+                FailureDetails = <span class="kw">new</span> <span class="tp">FailureDetails</span>
+                {
+                    Type    = <span class="tp">FailureType</span>.JobFailed,
+                    Message = ex.Message
+                }
+            });
+        }
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">SmokeTestConfig</span>(<span class="tp">string</span> Env, <span class="tp">string</span> ApiUrl);</pre>
+  </div>
+
+  <h3>Notifications — EventBridge + Chatbot</h3>
+  <div class="code-block">
+    <span class="code-label">YAML · Notification Rule for Pipeline Events → Slack</span>
+    <pre"><span class="yaml-key">WatsonPipelineNotification</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CodeStarNotifications::NotificationRule</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Name</span><span class="yaml-cm">:</span>     <span class="yaml-str">watson-pipeline-alerts</span>
+    <span class="yaml-key">Resource</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Sub "arn:aws:codepipeline:${AWS::Region}:${AWS::AccountId}:watson-pipeline"</span>
+    <span class="yaml-key">DetailType</span><span class="yaml-cm">:</span> <span class="yaml-str">FULL</span>
+    <span class="yaml-key">EventTypeIds</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- codepipeline-pipeline-pipeline-execution-succeeded</span>
+      <span class="yaml-cm">- codepipeline-pipeline-pipeline-execution-failed</span>
+      <span class="yaml-cm">- codepipeline-pipeline-manual-approval-needed</span>
+      <span class="yaml-cm">- codepipeline-pipeline-manual-approval-succeeded</span>
+    <span class="yaml-key">Targets</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- TargetType:    SNS</span>
+        <span class="yaml-cm">  TargetAddress: !Ref WatsonAlertsTopic</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — FULL CI/CD PIPELINE
+══════════════════════════════════ -->
+<div id="tab-cicd" class="tab-panel"><div class="section">
+  <h2>🔗 Full CI/CD Pipeline — CloudFormation</h2>
+  <p>A complete production-ready pipeline definition for a .NET 8 serverless API — Source → Build → Dev Deploy → Approve → Prod Deploy.</p>
+
+  <div class="code-block">
+    <span class="code-label">YAML · pipeline.yaml — Complete Watson API Pipeline</span>
+    <pre"><span class="yaml-key">WatsonPipeline</span><span class="yaml-cm">:</span>
+  <span class="yaml-key">Type</span><span class="yaml-cm">:</span> <span class="yaml-str">AWS::CodePipeline::Pipeline</span>
+  <span class="yaml-key">Properties</span><span class="yaml-cm">:</span>
+    <span class="yaml-key">Name</span><span class="yaml-cm">:</span>        <span class="yaml-str">watson-api-pipeline</span>
+    <span class="yaml-key">RoleArn</span><span class="yaml-cm">:</span>     <span class="yaml-cm">!GetAtt PipelineRole.Arn</span>
+    <span class="yaml-key">PipelineType</span><span class="yaml-cm">:</span> <span class="yaml-str">V2</span>     <span class="yaml-cm"># Use V2 for variables + trigger filters</span>
+
+    <span class="yaml-key">ArtifactStore</span><span class="yaml-cm">:</span>
+      <span class="yaml-key">Type</span><span class="yaml-cm">:</span>     <span class="yaml-str">S3</span>
+      <span class="yaml-key">Location</span><span class="yaml-cm">:</span> <span class="yaml-cm">!Ref ArtifactBucket</span>
+
+    <span class="yaml-key">Variables</span><span class="yaml-cm">:</span>
+      <span class="yaml-cm">- Name: ENVIRONMENT  DefaultValue: dev</span>
+
+    <span class="yaml-key">Stages</span><span class="yaml-cm">:</span>
+
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm"># STAGE 1 — Source</span>
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm">- Name: Source</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">  - Name: CodeCommit</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Source, Owner: AWS, Provider: CodeCommit, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      RepositoryName: watson-api</span>
+          <span class="yaml-cm">      BranchName:     main</span>
+          <span class="yaml-cm">      DetectionMode:  EVENTS</span>
+          <span class="yaml-cm">    OutputArtifacts: [{Name: SourceOutput}]</span>
+          <span class="yaml-cm">    Namespace: SourceVariables</span>
+
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm"># STAGE 2 — Build + Unit Test (parallel)</span>
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm">- Name: BuildAndTest</span>
+        <span class="yaml-cm">  Actions:</span>
+
+        <span class="yaml-cm">  - Name: BuildDotNet</span>
+          <span class="yaml-cm">    RunOrder: 1</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Build, Owner: AWS, Provider: CodeBuild, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      ProjectName: watson-api-build</span>
+          <span class="yaml-cm">      EnvironmentVariables: |</span>
+          <span class="yaml-cm">        [{"name":"ENVIRONMENT","value":"#{variables.ENVIRONMENT}"},</span>
+          <span class="yaml-cm">         {"name":"COMMIT_ID","value":"#{SourceVariables.CommitId}"}]</span>
+          <span class="yaml-cm">    InputArtifacts:  [{Name: SourceOutput}]</span>
+          <span class="yaml-cm">    OutputArtifacts: [{Name: BuildOutput}]</span>
+          <span class="yaml-cm">    Namespace: BuildVariables</span>
+
+        <span class="yaml-cm">  - Name: SecurityScan</span>
+          <span class="yaml-cm">    RunOrder: 1     # Parallel with BuildDotNet</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Build, Owner: AWS, Provider: CodeBuild, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      ProjectName: watson-security-scan</span>
+          <span class="yaml-cm">    InputArtifacts: [{Name: SourceOutput}]</span>
+
+        <span class="yaml-cm">  - Name: IntegrationTests</span>
+          <span class="yaml-cm">    RunOrder: 2     # After both RunOrder 1 complete</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Test, Owner: AWS, Provider: CodeBuild, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      ProjectName: watson-integ-tests</span>
+          <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]</span>
+
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm"># STAGE 3 — Deploy to Dev</span>
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm">- Name: DeployDev</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">  - Name: CloudFormationDev</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      ActionMode:       CREATE_UPDATE</span>
+          <span class="yaml-cm">      StackName:        watson-api-dev</span>
+          <span class="yaml-cm">      TemplatePath:     BuildOutput::packaged.yaml</span>
+          <span class="yaml-cm">      Capabilities:     CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND</span>
+          <span class="yaml-cm">      RoleArn:          !GetAtt CFNRole.Arn</span>
+          <span class="yaml-cm">      ParameterOverrides: |</span>
+          <span class="yaml-cm">        {"Environment": "dev", "CommitId": "#{SourceVariables.CommitId}"}</span>
+          <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]</span>
+          <span class="yaml-cm">    Namespace: DevDeployVariables</span>
+
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm"># STAGE 4 — Manual Approval Gate</span>
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm">- Name: ApproveForProduction</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">  - Name: ManualApproval</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Approval, Owner: AWS, Provider: Manual, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      NotificationArn: !Ref ApprovalTopic</span>
+          <span class="yaml-cm">      CustomData: "Commit: #{SourceVariables.CommitId} — #{SourceVariables.CommitMessage}"</span>
+          <span class="yaml-cm">      ExternalEntityLink: https://dev.watson.internal/health</span>
+
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm"># STAGE 5 — Deploy to Production</span>
+      <span class="yaml-cm"># ════════════════════════════════════</span>
+      <span class="yaml-cm">- Name: DeployProduction</span>
+        <span class="yaml-cm">  Actions:</span>
+        <span class="yaml-cm">  - Name: CloudFormationProd</span>
+          <span class="yaml-cm">    ActionTypeId: {Category: Deploy, Owner: AWS, Provider: CloudFormation, Version: "1"}</span>
+          <span class="yaml-cm">    Configuration:</span>
+          <span class="yaml-cm">      ActionMode:       CREATE_UPDATE</span>
+          <span class="yaml-cm">      StackName:        watson-api-prod</span>
+          <span class="yaml-cm">      TemplatePath:     BuildOutput::packaged.yaml</span>
+          <span class="yaml-cm">      Capabilities:     CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND</span>
+          <span class="yaml-cm">      ParameterOverrides: '{"Environment": "prod"}'</span>
+          <span class="yaml-cm">    InputArtifacts: [{Name: BuildOutput}]</span></pre>
+  </div>
+
+  <h3>IAM Roles Required</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Role</th><th>Used By</th><th>Key Permissions</th></tr>
+    <tr><td>PipelineRole</td><td>CodePipeline service</td><td>s3:*, codebuild:StartBuild, codecommit:GetBranch, codedeploy:CreateDeployment, cloudformation:*, iam:PassRole</td></tr>
+    <tr><td>CodeBuildRole</td><td>CodeBuild project</td><td>s3:GetObject/PutObject, ecr:*, ssm:GetParameter, logs:CreateLogGroup</td></tr>
+    <tr><td>CFNDeployRole</td><td>CloudFormation deploy</td><td>lambda:*, iam:*, apigateway:*, dynamodb:*, s3:* — scoped to your app resources</td></tr>
+    <tr><td>CodeDeployRole</td><td>CodeDeploy service</td><td>AWSCodeDeployRole managed policy + EC2/Lambda/ECS permissions</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — V1 vs V2 & PRICING
+══════════════════════════════════ -->
+<div id="tab-v2" class="tab-panel"><div class="section">
+  <h2>📊 V1 vs V2 Pipelines &amp; Pricing</h2>
+
+  <h3>V1 vs V2 — Feature Comparison</h3>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-col fc-cp">⚡ V2 Pipeline</div>
+      <div class="fc-col fc-other">📦 V1 Pipeline</div>
+    </div>
+    <div class="fc-row"><div class="fc-lbl">Pipeline Variables</div><div class="fc-val good">✅ Supported</div><div class="fc-val bad">❌ Not supported</div></div>
+    <div class="fc-row"><div class="fc-lbl">Trigger Filters</div><div class="fc-val good">✅ Branch / tag / PR filters</div><div class="fc-val bad">❌ Not supported</div></div>
+    <div class="fc-row"><div class="fc-lbl">Execution Mode</div><div class="fc-val good">QUEUED, PARALLEL, SUPERSEDED</div><div class="fc-val warn">STOPPED only</div></div>
+    <div class="fc-row"><div class="fc-lbl">Git tags as source</div><div class="fc-val good">✅ Supported</div><div class="fc-val bad">❌ Not supported</div></div>
+    <div class="fc-row"><div class="fc-lbl">Pricing model</div><div class="fc-val good">Per execution minute</div><div class="fc-val warn">Per active pipeline/month</div></div>
+    <div class="fc-row"><div class="fc-lbl">Free tier</div><div class="fc-val good">None (pay per use)</div><div class="fc-val warn">1 free pipeline/month</div></div>
+    <div class="fc-row"><div class="fc-lbl">Recommendation</div><div class="fc-val good">✅ Use V2 for all new pipelines</div><div class="fc-val warn">Legacy — migrate to V2</div></div>
+  </div>
+
+  <h3>Execution Modes (V2 Only)</h3>
+  <div class="grid-3">
+    <div class="card" style="border-top:3px solid var(--cp);">
+      <h4>🔁 QUEUED</h4>
+      <p>New executions wait in a queue if the pipeline is already running. Each execution runs in order. Safe for sequential deploys — no commits skipped.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--blue-d);">
+      <h4>⚡ PARALLEL</h4>
+      <p>Multiple executions can run simultaneously. Good for feature branch pipelines where each branch runs independently.</p>
+    </div>
+    <div class="card" style="border-top:3px solid var(--amber-d);">
+      <h4>🔄 SUPERSEDED</h4>
+      <p>If a newer execution starts, the older one is abandoned. Fastest — always deploys the latest commit. Good for rapid iteration pipelines.</p>
+    </div>
+  </div>
+
+  <h3>Pricing Comparison</h3>
+  <div class="pricing-row">
+    <div class="pricing-card pc-v1">
+      <div class="pc-h5">📦 V1 Pricing</div>
+      <div class="p-row"><div class="p-label">Per active pipeline</div><div class="p-val">$1.00 / month</div></div>
+      <div class="p-row"><div class="p-label">Free tier</div><div class="p-val">1 pipeline free</div></div>
+      <div class="p-row"><div class="p-label">10 pipelines</div><div class="p-val">~$9/month</div></div>
+      <div class="p-row"><div class="p-label">50 pipelines</div><div class="p-val">~$49/month</div></div>
+    </div>
+    <div class="pricing-card pc-v2">
+      <div class="pc-h5">⚡ V2 Pricing</div>
+      <div class="p-row"><div class="p-label">Per action execution min</div><div class="p-val">$0.002</div></div>
+      <div class="p-row"><div class="p-label">Free tier</div><div class="p-val">None</div></div>
+      <div class="p-row"><div class="p-label">5 min pipeline, 10 runs/day</div><div class="p-val">~$3/month</div></div>
+      <div class="p-row"><div class="p-label">Best for</div><div class="p-val">Low-frequency pipelines</div></div>
+    </div>
+    <div class="pricing-card pc-free">
+      <div class="pc-h5">🎁 Tips</div>
+      <div class="p-row"><div class="p-label">V2 cheaper when</div><div class="p-val">&lt; 500 min/month</div></div>
+      <div class="p-row"><div class="p-label">V1 cheaper when</div><div class="p-val">High-frequency pipelines</div></div>
+      <div class="p-row"><div class="p-label">Free tier (V1)</div><div class="p-val">1 pipeline free/month</div></div>
+      <div class="p-row"><div class="p-label">Recommendation</div><div class="p-val">New projects → V2</div></div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 V2 Migration for Existing Pipelines</h4>
+    <p>You can migrate an existing V1 pipeline to V2 in-place from the console — Edit pipeline → General → Pipeline type → V2 → Save. No downtime, no recreation needed. Pricing changes immediately to per-execution-minute billing.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First Pipeline</h2>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">1</div><div class="cs-title">Navigate to CodePipeline</div><div class="cs-path">AWS Console → Developer Tools → CodePipeline</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">URL</div><div class="cs-field-value">https://console.aws.amazon.com/codesuite/codepipeline/pipelines</div></div>
+      <div class="cs-note">Pipelines are regional. Create your pipeline in the same region as your CodeCommit repo and CodeBuild project.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">2</div><div class="cs-title">Pipeline Settings</div><div class="cs-path">Create pipeline → Pipeline settings</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Pipeline name</div><div class="cs-field-value">watson-api-pipeline</div></div>
+      <div class="cs-field"><div class="cs-field-label">Pipeline type</div><div class="cs-field-value">V2  ← Always choose V2 for new pipelines</div><div class="cs-field-hint">V2 supports variables, trigger filters, and parallel execution modes.</div></div>
+      <div class="cs-field"><div class="cs-field-label">Execution mode</div><div class="cs-field-value">QUEUED (prod) · SUPERSEDED (dev/feature branches)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Service role</div><div class="cs-field-value">New service role → watson-pipeline-role (auto-creates)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Artifact store</div><div class="cs-field-value">Default location (CodePipeline creates S3 bucket) · or Custom S3 bucket</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">3</div><div class="cs-title">Add Source Stage</div><div class="cs-path">Add source stage</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Source provider</div><div class="cs-field-value">AWS CodeCommit</div></div>
+      <div class="cs-field"><div class="cs-field-label">Repository name</div><div class="cs-field-value">watson-api</div></div>
+      <div class="cs-field"><div class="cs-field-label">Branch name</div><div class="cs-field-value">main</div></div>
+      <div class="cs-field"><div class="cs-field-label">Change detection</div><div class="cs-field-value">Amazon EventBridge (recommended)  ← NOT polling</div><div class="cs-field-hint">EventBridge triggers in seconds. Polling checks every minute and costs extra API calls.</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">4</div><div class="cs-title">Add Build Stage</div><div class="cs-path">Add build stage</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Build provider</div><div class="cs-field-value">AWS CodeBuild</div></div>
+      <div class="cs-field"><div class="cs-field-label">Project name</div><div class="cs-field-value">watson-api-build  (must exist before creating pipeline)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Environment variables</div><div class="cs-field-value">Name: ENVIRONMENT · Value: #{variables.ENVIRONMENT} · Type: PLAINTEXT</div></div>
+      <div class="cs-note">The CodeBuild project must already exist. Create it first in the CodeBuild console with your buildspec.yml.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">5</div><div class="cs-title">Add Deploy Stage</div><div class="cs-path">Add deploy stage</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Deploy provider</div><div class="cs-field-value">AWS CloudFormation</div></div>
+      <div class="cs-field"><div class="cs-field-label">Action mode</div><div class="cs-field-value">Create or update a stack</div></div>
+      <div class="cs-field"><div class="cs-field-label">Stack name</div><div class="cs-field-value">watson-api-prod</div></div>
+      <div class="cs-field"><div class="cs-field-label">Template</div><div class="cs-field-value">BuildArtifact · packaged.yaml  (output from CodeBuild)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Capabilities</div><div class="cs-field-value">CAPABILITY_IAM · CAPABILITY_AUTO_EXPAND</div></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="cs-header"><div class="cs-num">6</div><div class="cs-title">Add Manual Approval (Optional)</div><div class="cs-path">Edit pipeline → Add stage between Deploy Dev and Deploy Prod</div></div>
+    <div class="cs-body">
+      <div class="cs-field"><div class="cs-field-label">Stage name</div><div class="cs-field-value">ApproveForProduction</div></div>
+      <div class="cs-field"><div class="cs-field-label">Action provider</div><div class="cs-field-value">Manual approval</div></div>
+      <div class="cs-field"><div class="cs-field-label">SNS topic ARN</div><div class="cs-field-value">arn:aws:sns:eu-west-1:123:watson-approvals  (sends email to reviewers)</div></div>
+      <div class="cs-field"><div class="cs-field-label">Comments</div><div class="cs-field-value">Commit: #{SourceVariables.CommitId} — #{SourceVariables.CommitMessage}</div></div>
+      <div class="cs-note">Approvers receive an email with an Approve/Reject link that opens in the AWS Console. No AWS account needed if you use the direct link.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-dotnet" class="tab-panel"><div class="section">
+  <h2>⚙️ C# .NET SDK — Automate CodePipeline</h2>
+
+  <h3>NuGet Setup</h3>
+  <div class="code-block">
+    <span class="code-label">bash · Install Packages</span>
+    <pre">dotnet add package AWSSDK.CodePipeline
+dotnet add package AWSSDK.Extensions.NETCore.Setup</pre>
+  </div>
+
+  <h3>Full CodePipeline Service</h3>
+  <div class="code-block">
+    <span class="code-label">C# · CodePipelineService.cs</span>
+    <pre"><span class="kw">using</span> Amazon.CodePipeline;
+<span class="kw">using</span> Amazon.CodePipeline.Model;
+
+<span class="kw">public class</span> <span class="tp">CodePipelineService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCodePipeline</span> _cp;
+
+    <span class="kw">public</span> <span class="tp">CodePipelineService</span>(<span class="tp">IAmazonCodePipeline</span> cp) => _cp = cp;
+
+    <span class="cm">// ── START A PIPELINE EXECUTION ────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">string</span>&gt; <span class="fn">StartExecutionAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? variables = <span class="kw">null</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">StartPipelineExecutionRequest</span>
+        {
+            Name = pipelineName
+        };
+
+        <span class="kw">if</span> (variables?.Count > <span class="num">0</span>)
+        {
+            <span class="cm">// V2 pipelines support execution-level variables</span>
+            request.Variables = variables
+                .<span class="fn">Select</span>(kv => <span class="kw">new</span> <span class="tp">Variable</span>
+                {
+                    Name  = kv.Key,
+                    Value = kv.Value
+                }).<span class="fn">ToList</span>();
+        }
+
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cp.<span class="fn">StartPipelineExecutionAsync</span>(request, ct);
+        <span class="kw">return</span> resp.PipelineExecutionId;
+    }
+
+    <span class="cm">// ── GET PIPELINE EXECUTION STATUS ─────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PipelineExecution</span>&gt; <span class="fn">GetExecutionAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">string</span> executionId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cp.<span class="fn">GetPipelineExecutionAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetPipelineExecutionRequest</span>
+            {
+                PipelineName        = pipelineName,
+                PipelineExecutionId = executionId
+            }, ct);
+
+        <span class="kw">return</span> resp.PipelineExecution;
+    }
+
+    <span class="cm">// ── WAIT FOR EXECUTION TO COMPLETE ────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PipelineExecution</span>&gt; <span class="fn">WaitForExecutionAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">string</span> executionId,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">while</span> (!ct.IsCancellationRequested)
+        {
+            <span class="kw">var</span> exec   = <span class="kw">await</span> <span class="fn">GetExecutionAsync</span>(
+                pipelineName, executionId, ct);
+            <span class="kw">var</span> status = exec.Status.Value;
+
+            Console.<span class="fn">WriteLine</span>(
+                <span class="str">$"[{DateTime.UtcNow:T}] Pipeline: {status}"</span>);
+
+            <span class="kw">if</span> (status <span class="kw">is</span> <span class="str">"Succeeded"</span> <span class="kw">or</span> <span class="str">"Failed"</span>
+                              <span class="kw">or</span> <span class="str">"Stopped"</span> <span class="kw">or</span> <span class="str">"Cancelled"</span>)
+                <span class="kw">return</span> exec;
+
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(
+                <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">20</span>), ct);
+        }
+        <span class="kw">throw new</span> <span class="tp">OperationCanceledException</span>(<span class="str">"Timed out."</span>);
+    }
+
+    <span class="cm">// ── APPROVE / REJECT MANUAL APPROVAL ──────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ApproveAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">string</span> stageName,
+        <span class="tp">string</span> actionName,
+        <span class="tp">string</span> token,
+        <span class="tp">string</span> summary,
+        <span class="bool">bool</span>   approve = <span class="bool">true</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _cp.<span class="fn">PutApprovalResultAsync</span>(
+            <span class="kw">new</span> <span class="tp">PutApprovalResultRequest</span>
+            {
+                PipelineName = pipelineName,
+                StageName    = stageName,
+                ActionName   = actionName,
+                Token        = token,
+                Result = <span class="kw">new</span> <span class="tp">ApprovalResult</span>
+                {
+                    Status  = approve
+                        ? <span class="tp">ApprovalStatus</span>.Approved
+                        : <span class="tp">ApprovalStatus</span>.Rejected,
+                    Summary = summary
+                }
+            }, ct);
+
+    <span class="cm">// ── STOP A PIPELINE EXECUTION ─────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">StopExecutionAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">string</span> executionId,
+        <span class="tp">string</span> reason,
+        <span class="bool">bool</span>   abandon = <span class="bool">false</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _cp.<span class="fn">StopPipelineExecutionAsync</span>(
+            <span class="kw">new</span> <span class="tp">StopPipelineExecutionRequest</span>
+            {
+                PipelineName        = pipelineName,
+                PipelineExecutionId = executionId,
+                Reason              = reason,
+                Abandon             = abandon
+            }, ct);
+
+    <span class="cm">// ── LIST RECENT EXECUTIONS ────────────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">PipelineExecutionSummary</span>&gt;&gt; <span class="fn">ListRecentAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="num">int</span>    maxResults = <span class="num">10</span>,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cp.<span class="fn">ListPipelineExecutionsAsync</span>(
+            <span class="kw">new</span> <span class="tp">ListPipelineExecutionsRequest</span>
+            {
+                PipelineName = pipelineName,
+                MaxResults   = maxResults
+            }, ct);
+
+        <span class="kw">return</span> resp.PipelineExecutionSummaries;
+    }
+
+    <span class="cm">// ── FULL START + WAIT CONVENIENCE ─────────────────────</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PipelineExecution</span>&gt; <span class="fn">RunAndWaitAsync</span>(
+        <span class="tp">string</span> pipelineName,
+        <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;? vars = <span class="kw">null</span>,
+        <span class="tp">TimeSpan</span>? timeout = <span class="kw">null</span>)
+    {
+        <span class="kw">using var</span> cts = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>(
+            timeout ?? <span class="tp">TimeSpan</span>.<span class="fn">FromHours</span>(<span class="num">1</span>));
+
+        <span class="kw">var</span> execId = <span class="kw">await</span> <span class="fn">StartExecutionAsync</span>(
+            pipelineName, vars, cts.Token);
+
+        Console.<span class="fn">WriteLine</span>(<span class="str">$"Started: {execId}"</span>);
+
+        <span class="kw">var</span> result = <span class="kw">await</span> <span class="fn">WaitForExecutionAsync</span>(
+            pipelineName, execId, cts.Token);
+
+        <span class="kw">if</span> (result.Status != <span class="str">"Succeeded"</span>)
+            <span class="kw">throw new</span> <span class="tp">Exception</span>(
+                <span class="str">$"Pipeline {pipelineName} ended: {result.Status}"</span>);
+
+        <span class="kw">return</span> result;
+    }
+}</pre>
+  </div>
+
+  <h3>DI Registration + Usage</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs + Usage</span>
+    <pre"><span class="cm">// DI registration</span>
+builder.Services
+    .<span class="fn">AddAWSService</span>&lt;<span class="tp">IAmazonCodePipeline</span>&gt;()
+    .<span class="fn">AddScoped</span>&lt;<span class="tp">CodePipelineService</span>&gt;();
+
+<span class="cm">// Trigger pipeline from a release script or API endpoint</span>
+<span class="kw">var</span> pipelineService = provider
+    .<span class="fn">GetRequiredService</span>&lt;<span class="tp">CodePipelineService</span>&gt;();
+
+<span class="kw">var</span> result = <span class="kw">await</span> pipelineService.<span class="fn">RunAndWaitAsync</span>(
+    pipelineName: <span class="str">"watson-api-pipeline"</span>,
+    vars: <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="tp">string</span>, <span class="tp">string</span>&gt;
+    {
+        [<span class="str">"ENVIRONMENT"</span>] = <span class="str">"prod"</span>
+    },
+    timeout: <span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">45</span>));
+
+Console.<span class="fn">WriteLine</span>(<span class="str">$"✅ Pipeline completed: {result.Status}"</span>);</pre>
+  </div>
+
+  <h3>Best Practices &amp; Common Mistakes</h3>
+  <ul class="checklist">
+    <li>Always use <strong>V2 pipelines</strong> for all new projects — variables, trigger filters, and execution modes are essential features</li>
+    <li>Use <strong>EventBridge detection</strong> (not polling) for CodeCommit sources — triggers in seconds, not minutes, and is cheaper</li>
+    <li>Use <strong>QUEUED execution mode</strong> for production pipelines — prevents concurrent deploys that can cause race conditions</li>
+    <li>Store all pipeline definitions in <strong>CloudFormation / SAM templates</strong> in Git — version-controlled infrastructure</li>
+    <li>Add a <strong>Manual Approval stage</strong> before any production deploy — even a 2-minute window to review reduces incidents dramatically</li>
+    <li>Use <strong>source namespaces</strong> (e.g., <code>#{SourceVariables.CommitId}</code>) in approval messages — reviewers see exactly what they're approving</li>
+    <li>Set up <strong>notification rules</strong> on pipeline failure and approval required — team should never have to poll the console</li>
+    <li>Scope the <strong>pipeline IAM role</strong> to minimum permissions — separate roles for CodeBuild, CloudFormation deploy, and CodeDeploy</li>
+  </ul>
+
+  <div class="danger">
+    <h4>⚠️ Top CodePipeline Mistakes</h4>
+    <p>
+    ❌ <strong>Using polling instead of EventBridge for CodeCommit</strong> — 1 min delay + extra API call costs every minute<br>
+    ❌ <strong>No manual approval before prod</strong> — every commit auto-deploys; one bad push takes down production<br>
+    ❌ <strong>Overly permissive pipeline IAM role</strong> — pipeline role with Admin access can deploy anything, creating a privilege escalation risk<br>
+    ❌ <strong>Not storing pipeline in CloudFormation</strong> — manually created pipelines are hard to review, audit, and recreate after incidents<br>
+    ❌ <strong>Forgetting PutJobSuccessResult/PutJobFailureResult in Lambda invoke actions</strong> — pipeline hangs for the full timeout then fails<br>
+    ❌ <strong>Using V1 pipelines for new projects</strong> — missing variables, trigger filters, and parallel execution modes<br>
+    ❌ <strong>Single artifact bucket for multi-region pipeline</strong> — cross-region actions require artifact buckets in each target region
+    </p>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:10px;">🎉</div>
+    <h3>You Now Have COMPLETE CodePipeline Mastery!</h3>
+    <p>What is CodePipeline · Full pipeline visual flow · Pipeline execution timeline · CodePipeline vs GitHub Actions vs Jenkins · Stages, actions, parallel RunOrder · All action categories (Source/Build/Test/Deploy/Approval/Invoke) · All action providers table · Manual approval with SNS + custom message · CodeCommit, GitHub (CodeStar), ECR source actions · Source variable namespaces · Trigger types (push, schedule, manual, API) · V2 pipeline variables (pipeline/source/action/execution scopes) · Trigger filters (branch, tag, PR) · Multi-region deployments · Lambda Invoke action + C# Lambda implementation (PutJobSuccessResult) · EventBridge notification rules · Complete production pipeline YAML (Source→Build+Test parallel→Dev→Approve→Prod) · IAM roles required · V1 vs V2 comparison · Execution modes (QUEUED/PARALLEL/SUPERSEDED) · Pricing for V1 vs V2 · Console setup (6 steps) · Full C# SDK (start/get/wait/approve/stop/list/runAndWait) · Best practices · Top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:#e9d5ff;">Every commit, automatically delivered. Ship safely, every time. ⚡🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
