@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS X-Ray — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --xr:#6b35c9;--xr-l:#ede6fb;--xr-d:#420f8e;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --pink:#b02880;--pink-l:#f5d6ec;
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0810;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#ede6fb 0%,#ddd0f8 45%,#cab8f2 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'🔭';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.06;pointer-events:none;}
+.header::after{content:'🕸️';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.05;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--xr-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--xr-l);color:var(--xr-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--xr-l);letter-spacing:-.01em;}
+.section h3{color:var(--xr-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* SVG FLOW */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--xr-l),var(--pink-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.flow-diagram-body{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:760px;display:block;margin:0 auto;}
+
+/* TRACE TIMELINE visual */
+.trace-timeline{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.tt-header{background:linear-gradient(90deg,var(--xr-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.tt-body{padding:16px;}
+.tt-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.tt-label{font-size:.72rem;font-weight:700;color:var(--text2);width:130px;flex-shrink:0;font-family:'DM Sans',sans-serif;}
+.tt-track{flex:1;background:var(--surface);border-radius:4px;height:22px;position:relative;border:1px solid var(--border);overflow:hidden;}
+.tt-seg{position:absolute;top:2px;height:18px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:.58rem;font-weight:700;white-space:nowrap;overflow:hidden;}
+.tt-time{font-size:.65rem;color:var(--muted);width:48px;text-align:right;flex-shrink:0;font-family:'JetBrains Mono',monospace;}
+.seg-ok{background:var(--xr-l);border:1px solid rgba(107,53,201,.3);color:var(--xr-d);}
+.seg-slow{background:var(--aws-l);border:1px solid rgba(212,135,42,.3);color:var(--aws);}
+.seg-err{background:var(--red-l);border:1px solid var(--red-b);color:var(--red);}
+.seg-ext{background:var(--green-l);border:1px solid rgba(31,122,82,.25);color:var(--green);}
+.tt-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;}
+.tt-legend-item{display:flex;align-items:center;gap:4px;font-size:.68rem;color:var(--muted);}
+.tt-legend-dot{width:10px;height:10px;border-radius:2px;}
+
+/* ANNOTATION CARD */
+.anno-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin:10px 0;box-shadow:var(--sh);display:flex;gap:12px;align-items:flex-start;}
+.anno-icon{font-size:1.4rem;flex-shrink:0;margin-top:2px;}
+.anno-body h4{color:var(--xr-d);font-size:.86rem;font-weight:700;margin-bottom:3px;}
+.anno-body p{color:var(--muted);font-size:.8rem;margin:0;}
+.anno-body code{font-family:'JetBrains Mono',monospace;font-size:.72rem;background:var(--xr-l);color:var(--xr-d);padding:1px 5px;border-radius:3px;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:560px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--xr-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:560px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-xr{background:var(--xr-l);border:1.5px solid rgba(107,53,201,.3);}
+.n-xr .flow-node-title{color:var(--xr-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-pink{background:var(--pink-l);border:1.5px solid rgba(176,40,128,.25);}
+.n-pink .flow-node-title{color:var(--pink);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--xr-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--xr);}
+.step-body h4{color:var(--xr-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--xr-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--xr-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--xr-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--xr);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--xr-l);border:1px solid rgba(107,53,201,.2);border-left:4px solid var(--xr);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--xr-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #16101e;border-left:3px solid var(--xr);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#b4a0e8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(107,53,201,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--xr-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--xr-l),var(--green-l));border:1px solid rgba(107,53,201,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* SAMPLING VISUAL */
+.sampling-bar{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin:12px 0;box-shadow:var(--sh);}
+.sb-label{font-size:.72rem;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+.sb-track{display:flex;gap:2px;flex-wrap:wrap;margin-bottom:6px;}
+.sb-req{width:14px;height:14px;border-radius:2px;display:inline-block;}
+.req-traced{background:var(--xr);opacity:.9;}
+.req-drop{background:var(--surface);border:1px solid var(--border);}
+.req-fixed{background:var(--green);opacity:.8;}
+.sb-caption{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .tt-label{width:90px;font-size:.65rem;}
+  .tt-time{width:36px;font-size:.6rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>AWS <span>X-Ray</span> — Complete Guide</h1>
+    <p>Distributed tracing · service maps · segments &amp; subsegments · sampling · annotations · C# SDK · beginner to expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('architecture',this)">② Architecture</button>
+      <button class="tab-btn" onclick="T('segments',this)">③ Segments</button>
+      <button class="tab-btn" onclick="T('sampling',this)">④ Sampling</button>
+      <button class="tab-btn" onclick="T('servicemap',this)">⑤ Service Map</button>
+      <button class="tab-btn" onclick="T('security',this)">⑥ Security</button>
+      <button class="tab-btn" onclick="T('console',this)">⑦ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# SDK</button>
+      <button class="tab-btn" onclick="T('best',this)">⑨ Best Practices</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🔭 What is AWS X-Ray?</h2>
+  <p>AWS X-Ray is a <strong>distributed tracing service</strong> that lets you understand how your application and its underlying services are performing. Instead of guessing where a slow request spent its time, X-Ray gives you a visual, end-to-end trace showing every service hop, its latency, and any errors — from the first API call to the final database query.</p>
+
+  <div class="tip">
+    <h4>💡 X-Ray in One Sentence</h4>
+    <p>X-Ray = a tracing system that stitches together every service a request touches into a single visual timeline, so you can find the slow or broken piece in seconds instead of hours.</p>
+  </div>
+
+  <h3>The Problem X-Ray Solves</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😰 Without X-Ray</h4>
+      <ul>
+        <li>A request takes 4 seconds — which service caused it?</li>
+        <li>You grep through 6 different CloudWatch log groups</li>
+        <li>Correlating logs across services requires matching timestamps manually</li>
+        <li>You don't know if the bottleneck is your Lambda, DynamoDB, or a downstream API</li>
+        <li>5xx errors from API Gateway — which backend service threw them?</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>😌 With X-Ray</h4>
+      <ul>
+        <li>Open the trace — one timeline shows all 6 services</li>
+        <li>The DynamoDB subsegment is highlighted in orange: 3.8s</li>
+        <li>Click it — see the exact table, operation, and response code</li>
+        <li>Trace ID propagated automatically across Lambda, ECS, API Gateway</li>
+        <li>Service Map shows which node is red (errors) and which is orange (slow)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key X-Ray Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Trace</h4><p>End-to-end record of a single request as it travels through all services.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Segment</h4><p>One service's contribution to a trace — has start time, end time, and metadata.</p></div>
+    <div class="icon-item"><span class="emoji">🔹</span><h4>Subsegment</h4><p>Work within a segment: a DB call, HTTP request, or custom code block.</p></div>
+    <div class="icon-item"><span class="emoji">🆔</span><h4>Trace ID</h4><p>Unique identifier passed in headers across services to stitch segments together.</p></div>
+    <div class="icon-item"><span class="emoji">🏷️</span><h4>Annotation</h4><p>Indexed key-value pairs — searchable in the X-Ray console. Use for filtering.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Metadata</h4><p>Non-indexed key-value pairs — richer detail stored in trace but not searchable.</p></div>
+    <div class="icon-item"><span class="emoji">🕸️</span><h4>Service Map</h4><p>Visual graph of all services, showing connections, latency, and error rates.</p></div>
+    <div class="icon-item"><span class="emoji">🎚️</span><h4>Sampling Rule</h4><p>Controls what % of requests are traced — balances cost vs visibility.</p></div>
+    <div class="icon-item"><span class="emoji">🤖</span><h4>X-Ray Daemon</h4><p>Local UDP listener (port 2000) that buffers and forwards segments to AWS.</p></div>
+  </div>
+
+  <h3>Where X-Ray Integrates Natively</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Lambda</h4><p>Enable Active Tracing in function config — zero code change required.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>API Gateway</h4><p>Enable tracing on stage — propagates Trace ID to backend Lambda/ECS.</p></div>
+    <div class="icon-item"><span class="emoji">🐳</span><h4>ECS / Fargate</h4><p>Run daemon as sidecar container. SDK auto-instruments HTTP clients.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>EC2 / Elastic Beanstalk</h4><p>Install daemon, add SDK — manual but fully supported.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>DynamoDB</h4><p>Automatically traced as subsegment when SDK used with X-Ray instrumentation.</p></div>
+    <div class="icon-item"><span class="emoji">🔴</span><h4>RDS / Aurora</h4><p>DB calls traced as subsegments via SDK instrumentation of ADO.NET / EF Core.</p></div>
+    <div class="icon-item"><span class="emoji">📬</span><h4>SQS / SNS</h4><p>Trace context propagated in message attributes automatically.</p></div>
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>Elastic Load Balancer</h4><p>ALB injects Trace ID header; downstream services continue the trace.</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>OpenSearch</h4><p>HTTP client subsegments captured via SDK instrumented HttpClient.</p></div>
+  </div>
+
+  <h3>X-Ray Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💰</span><h4>Pricing</h4><p>First 100K traces/month free. Then $5 per million traces recorded, $0.50 per million scanned.</p></div>
+    <div class="icon-item"><span class="emoji">⏳</span><h4>Retention</h4><p>Traces retained 30 days. Summary data retained for up to 90 days for analytics.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Default sampling</h4><p>1 req/s + 5% of additional requests per service — configurable via sampling rules.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Cross-account</h4><p>Supported via cross-account resource policies on X-Ray groups.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Daemon UDP port</h4><p>Port 2000 — SDK sends segment data locally; daemon batches to X-Ray API.</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Max trace size</h4><p>500 KB per trace. Segments truncated if exceeded.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — ARCHITECTURE
+══════════════════════════════════ -->
+<div id="tab-architecture" class="tab-panel"><div class="section">
+  <h2>🏗️ X-Ray Architecture — How a Trace is Built</h2>
+  <p>X-Ray works by having each service instrument its code with the X-Ray SDK. The SDK sends segment data to a local <strong>X-Ray Daemon</strong> (over UDP), which buffers and forwards it to the X-Ray API. AWS stitches segments from all services into a single <strong>trace</strong> using the Trace ID header.</p>
+
+  <!-- FULL ARCHITECTURE SVG -->
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔭 X-Ray — End-to-End Tracing Architecture</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="xr-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#9a80d0"/>
+          </marker>
+          <marker id="xr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+          <marker id="xr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d4872a"/>
+          </marker>
+        </defs>
+
+        <!-- CLIENT -->
+        <rect x="10" y="60" width="110" height="44" rx="7" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="65" y="79" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#2a4db0" text-anchor="middle">👤 Client</text>
+        <text x="65" y="95" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Browser / Mobile / API</text>
+
+        <!-- Arrow → API GW -->
+        <line x1="120" y1="82" x2="175" y2="82" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+        <text x="147" y="76" font-family="JetBrains Mono,monospace" font-size="8" fill="#9a80d0" text-anchor="middle">HTTPS</text>
+
+        <!-- API GATEWAY -->
+        <rect x="175" y="60" width="120" height="44" rx="7" fill="#ede6fb" stroke="rgba(107,53,201,.3)" stroke-width="1.5"/>
+        <text x="235" y="79" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#420f8e" text-anchor="middle">🌐 API Gateway</text>
+        <text x="235" y="95" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">injects X-Amzn-Trace-Id</text>
+
+        <!-- Arrow → Lambda -->
+        <line x1="295" y1="82" x2="355" y2="82" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+        <text x="325" y="76" font-family="JetBrains Mono,monospace" font-size="8" fill="#9a80d0" text-anchor="middle">+TraceID</text>
+
+        <!-- LAMBDA -->
+        <rect x="355" y="60" width="120" height="44" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="415" y="79" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">⚡ Lambda</text>
+        <text x="415" y="95" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">SDK creates Segment</text>
+
+        <!-- Lambda → DynamoDB -->
+        <line x1="415" y1="104" x2="415" y2="150" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+
+        <!-- Lambda → SQS -->
+        <line x1="475" y1="82" x2="545" y2="82" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+
+        <!-- DYNAMODB -->
+        <rect x="340" y="150" width="150" height="44" rx="7" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="415" y="169" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🗄️ DynamoDB</text>
+        <text x="415" y="185" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">auto-traced subsegment</text>
+
+        <!-- SQS -->
+        <rect x="545" y="60" width="120" height="44" rx="7" fill="#ede6fb" stroke="rgba(107,53,201,.25)" stroke-width="1.5"/>
+        <text x="605" y="79" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#420f8e" text-anchor="middle">📬 SQS</text>
+        <text x="605" y="95" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">TraceID in msg attrs</text>
+
+        <!-- SQS → Worker Lambda -->
+        <line x1="605" y1="104" x2="605" y2="150" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+
+        <!-- WORKER LAMBDA -->
+        <rect x="540" y="150" width="130" height="44" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="605" y="169" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">⚡ Worker Lambda</text>
+        <text x="605" y="185" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">continues trace</text>
+
+        <!-- Worker → RDS -->
+        <line x1="605" y1="194" x2="605" y2="238" stroke="#9a80d0" stroke-width="1.5" marker-end="url(#xr-arrow)"/>
+
+        <!-- RDS -->
+        <rect x="540" y="238" width="130" height="44" rx="7" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.5"/>
+        <text x="605" y="257" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1a6a7a" text-anchor="middle">🔴 RDS / Aurora</text>
+        <text x="605" y="273" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">ADO.NET subsegment</text>
+
+        <!-- DAEMON boxes -->
+        <!-- API GW daemon arrow -->
+        <line x1="235" y1="104" x2="235" y2="290" stroke="#6b35c9" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#xr-arrow)"/>
+        <!-- Lambda daemon arrow -->
+        <line x1="380" y1="104" x2="320" y2="290" stroke="#6b35c9" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#xr-arrow)"/>
+        <!-- Worker daemon arrow -->
+        <line x1="565" y1="282" x2="470" y2="316" stroke="#6b35c9" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#xr-arrow)"/>
+
+        <!-- X-RAY DAEMON zone -->
+        <rect x="200" y="290" width="260" height="52" rx="8" fill="rgba(107,53,201,.06)" stroke="rgba(107,53,201,.25)" stroke-width="1.5" stroke-dasharray="5,3"/>
+        <text x="330" y="311" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#420f8e" text-anchor="middle">🤖 X-Ray Daemon (UDP :2000)</text>
+        <text x="330" y="327" font-family="JetBrains Mono,monospace" font-size="9" fill="#7a7a6a" text-anchor="middle">buffers segments · batches to X-Ray API · auto in Lambda</text>
+
+        <!-- Daemon → X-Ray API -->
+        <line x1="330" y1="342" x2="330" y2="388" stroke="#1f7a52" stroke-width="2" marker-end="url(#xr-green)"/>
+        <text x="370" y="370" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52">HTTPS batch</text>
+
+        <!-- X-RAY SERVICE -->
+        <rect x="200" y="388" width="260" height="52" rx="8" fill="var(--xr-l)" stroke="rgba(107,53,201,.35)" stroke-width="2"/>
+        <text x="330" y="409" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#420f8e" text-anchor="middle">🔭 AWS X-Ray Service</text>
+        <text x="330" y="427" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">stitches segments → Traces · Service Map · Analytics</text>
+
+        <!-- Trace ID label -->
+        <rect x="10" y="370" width="160" height="64" rx="7" fill="rgba(107,53,201,.05)" stroke="rgba(107,53,201,.2)" stroke-width="1"/>
+        <text x="90" y="392" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#420f8e" text-anchor="middle">🆔 Trace ID Flow</text>
+        <text x="90" y="408" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">X-Amzn-Trace-Id header</text>
+        <text x="90" y="420" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">propagated across ALL</text>
+        <text x="90" y="432" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">services automatically</text>
+
+        <!-- Console access label -->
+        <rect x="490" y="388" width="220" height="64" rx="7" fill="rgba(31,122,82,.05)" stroke="rgba(31,122,82,.2)" stroke-width="1"/>
+        <text x="600" y="406" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">📊 Console / API</text>
+        <text x="600" y="420" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">Trace search · Timeline</text>
+        <text x="600" y="432" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">Service Map · Analytics</text>
+        <text x="600" y="444" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">Groups · Insights</text>
+        <line x1="460" y1="414" x2="490" y2="414" stroke="#1f7a52" stroke-width="1" marker-end="url(#xr-green)"/>
+      </svg>
+    </div>
+  </div>
+
+  <h3>How a Trace ID Propagates</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">👤 Client sends HTTP request</div>
+      <ul class="flow-items">
+        <li>No Trace ID yet — first entry point generates one</li>
+        <li>Format: <code>Root=1-{timestamp}-{96bit_hex};Parent={64bit_hex};Sampled=1</code></li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">API Gateway injects X-Amzn-Trace-Id header</div>
+    <div class="flow-node n-xr">
+      <div class="flow-node-title">🌐 API Gateway — Root Segment</div>
+      <ul class="flow-items">
+        <li>Creates root trace segment with Trace ID</li>
+        <li>Passes <code>X-Amzn-Trace-Id</code> header to backend Lambda</li>
+        <li>Records latency, status code, method, resource path</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Lambda SDK reads Trace ID from context — creates child segment</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">⚡ Lambda — Child Segment + Subsegments</div>
+      <ul class="flow-items">
+        <li>X-Ray SDK auto-wraps DynamoDB / HTTP calls as subsegments</li>
+        <li>Your code adds custom subsegments for business logic</li>
+        <li>Segment sent to local daemon; daemon forwards to X-Ray API</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">X-Ray API stitches all segments by Trace ID</div>
+    <div class="flow-node n-pink">
+      <div class="flow-node-title">📊 X-Ray Console — Full Trace Timeline</div>
+      <ul class="flow-items">
+        <li>Waterfall view: all segments on a single time axis</li>
+        <li>Click any segment to see annotations, metadata, errors</li>
+        <li>Total duration = time from first to last segment</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — SEGMENTS
+══════════════════════════════════ -->
+<div id="tab-segments" class="tab-panel"><div class="section">
+  <h2>📦 Segments, Subsegments &amp; Annotations</h2>
+  <p>The fundamental building block of X-Ray is the <strong>segment</strong>. Every service in a trace contributes one segment. Within a segment, individual operations (DB calls, HTTP requests, custom code) are <strong>subsegments</strong>. You enrich them with <strong>annotations</strong> (indexed, searchable) and <strong>metadata</strong> (rich data, not searchable).</p>
+
+  <!-- TRACE TIMELINE VISUAL -->
+  <div class="trace-timeline">
+    <div class="tt-header">🔗 Sample Trace Timeline — POST /orders (total: 420ms)</div>
+    <div class="tt-body">
+
+      <div class="tt-row">
+        <div class="tt-label">API Gateway</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-ok" style="left:0%;width:100%;">API Gateway · 420ms</div>
+        </div>
+        <div class="tt-time">420ms</div>
+      </div>
+
+      <div class="tt-row">
+        <div class="tt-label">Lambda (handler)</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-ok" style="left:2%;width:96%;">Lambda initialization + handler</div>
+        </div>
+        <div class="tt-time">410ms</div>
+      </div>
+
+      <div class="tt-row">
+        <div class="tt-label">DynamoDB PutItem</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-slow" style="left:5%;width:72%;">DynamoDB · PutItem · 300ms ⚠️</div>
+        </div>
+        <div class="tt-time">300ms</div>
+      </div>
+
+      <div class="tt-row">
+        <div class="tt-label">SQS SendMessage</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-ok" style="left:80%;width:16%;">SQS · 68ms</div>
+        </div>
+        <div class="tt-time">68ms</div>
+      </div>
+
+      <div class="tt-row">
+        <div class="tt-label">Custom: validateOrder</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-ext" style="left:3%;width:8%;">validate · 32ms</div>
+        </div>
+        <div class="tt-time">32ms</div>
+      </div>
+
+      <div class="tt-row">
+        <div class="tt-label">External API call</div>
+        <div class="tt-track">
+          <div class="tt-seg seg-err" style="left:12%;width:14%;">payment-svc · 503 ❌</div>
+        </div>
+        <div class="tt-time">ERROR</div>
+      </div>
+
+      <div class="tt-legend">
+        <div class="tt-legend-item"><div class="tt-legend-dot" style="background:var(--xr-l);border:1px solid rgba(107,53,201,.3);"></div> Normal</div>
+        <div class="tt-legend-item"><div class="tt-legend-dot" style="background:var(--aws-l);border:1px solid rgba(212,135,42,.3);"></div> Slow</div>
+        <div class="tt-legend-item"><div class="tt-legend-dot" style="background:var(--red-l);border:1px solid var(--red-b);"></div> Error / Fault</div>
+        <div class="tt-legend-item"><div class="tt-legend-dot" style="background:var(--green-l);border:1px solid rgba(31,122,82,.25);"></div> Custom subsegment</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Segment vs Subsegment vs Annotation vs Metadata</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Concept</th><th>Created By</th><th>Searchable?</th><th>Use Case</th></tr>
+    <tr><td><strong>Segment</strong></td><td>SDK automatically per service</td><td>—</td><td>Top-level unit for one service in the trace</td></tr>
+    <tr><td><strong>Subsegment</strong></td><td>SDK auto (AWS calls) + manual</td><td>—</td><td>Individual operations within a service (DB, HTTP, code blocks)</td></tr>
+    <tr><td><strong>Annotation</strong></td><td>Your code: <code>AddAnnotation()</code></td><td>✅ Yes — indexed</td><td>Filtering traces in console: <code>userId = "u123"</code></td></tr>
+    <tr><td><strong>Metadata</strong></td><td>Your code: <code>AddMetadata()</code></td><td>❌ Not indexed</td><td>Rich debugging data: request payload, config values</td></tr>
+    <tr><td><strong>Error</strong></td><td>SDK captures exceptions</td><td>✅ Yes</td><td>4xx client errors — your code returned a client error</td></tr>
+    <tr><td><strong>Fault</strong></td><td>SDK captures 5xx</td><td>✅ Yes</td><td>5xx server errors — your service threw an unhandled exception</td></tr>
+    <tr><td><strong>Throttle</strong></td><td>SDK captures 429</td><td>✅ Yes</td><td>Downstream service returned throttling response</td></tr>
+  </table></div>
+
+  <h3>Annotations — Searchable Key-Value Pairs</h3>
+  <div class="anno-card">
+    <div class="anno-icon">🏷️</div>
+    <div class="anno-body">
+      <h4>What annotations are for</h4>
+      <p>Annotations let you filter traces in the console using expressions like <code>annotation.userId = "u_9abc"</code> or <code>annotation.orderStatus = "failed"</code>. You add up to <strong>50 annotations per trace</strong>. Values must be strings, numbers, or booleans.</p>
+    </div>
+  </div>
+  <div class="anno-card">
+    <div class="anno-icon">📋</div>
+    <div class="anno-body">
+      <h4>What metadata is for</h4>
+      <p>Metadata is for richer, non-searchable data — e.g. the full request body, an object graph, or debug context. There's no size limit on metadata values. Use metadata for things you'd want to inspect in a trace but don't need to filter by.</p>
+    </div>
+  </div>
+
+  <h3>Segment Document Structure</h3>
+  <div class="code-block">
+    <span class="code-label">JSON · Segment Document Schema (simplified)</span>
+    <pre>{
+  <span class="str">"name"</span>: <span class="str">"my-lambda-function"</span>,
+  <span class="str">"id"</span>: <span class="str">"70de5b6f19ff9a0a"</span>,          <span class="cm">// 64-bit hex — unique segment ID</span>
+  <span class="str">"trace_id"</span>: <span class="str">"1-58406520-a006649127e371903a2de979"</span>, <span class="cm">// ties all segments together</span>
+  <span class="str">"parent_id"</span>: <span class="str">"53995c3f42cd8ad8"</span>,      <span class="cm">// parent segment (API Gateway)</span>
+  <span class="str">"start_time"</span>: <span class="num">1478293361.271</span>,
+  <span class="str">"end_time"</span>: <span class="num">1478293361.449</span>,
+  <span class="str">"http"</span>: {
+    <span class="str">"request"</span>: { <span class="str">"method"</span>: <span class="str">"POST"</span>, <span class="str">"url"</span>: <span class="str">"https://api.example.com/orders"</span> },
+    <span class="str">"response"</span>: { <span class="str">"status"</span>: <span class="num">201</span> }
+  },
+  <span class="str">"annotations"</span>: {             <span class="cm">// ← INDEXED — filterable in console</span>
+    <span class="str">"userId"</span>: <span class="str">"u_9abc"</span>,
+    <span class="str">"orderId"</span>: <span class="str">"ord_456"</span>,
+    <span class="str">"orderStatus"</span>: <span class="str">"created"</span>
+  },
+  <span class="str">"metadata"</span>: {               <span class="cm">// ← NOT indexed — rich debug data</span>
+    <span class="str">"requestPayload"</span>: { <span class="str">"items"</span>: [<span class="str">"SKU-001"</span>, <span class="str">"SKU-002"</span>], <span class="str">"total"</span>: <span class="num">49.99</span> }
+  },
+  <span class="str">"subsegments"</span>: [
+    {
+      <span class="str">"name"</span>: <span class="str">"DynamoDB"</span>,
+      <span class="str">"namespace"</span>: <span class="str">"aws"</span>,
+      <span class="str">"start_time"</span>: <span class="num">1478293361.282</span>,
+      <span class="str">"end_time"</span>: <span class="num">1478293361.400</span>,
+      <span class="str">"aws"</span>: { <span class="str">"operation"</span>: <span class="str">"PutItem"</span>, <span class="str">"table_name"</span>: <span class="str">"Orders"</span> }
+    }
+  ]
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — SAMPLING
+══════════════════════════════════ -->
+<div id="tab-sampling" class="tab-panel"><div class="section">
+  <h2>🎚️ Sampling Rules — Controlling Trace Volume</h2>
+  <p>Tracing every single request would be expensive and unnecessary. <strong>Sampling rules</strong> let you control what percentage of requests get traced. X-Ray evaluates rules in priority order — the first match wins.</p>
+
+  <div class="tip">
+    <h4>💡 Default Sampling Rule</h4>
+    <p>AWS default: trace <strong>1 request per second</strong> per service + <strong>5% of additional requests</strong>. This gives you a baseline signal without high cost. You can create custom rules with higher rates for critical paths.</p>
+  </div>
+
+  <h3>Sampling Rule Structure</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Field</th><th>What It Filters On</th><th>Example</th></tr>
+    <tr><td><strong>Service name</strong></td><td>The name of the service sending the trace</td><td><code>order-service</code></td></tr>
+    <tr><td><strong>Service type</strong></td><td>AWS::Lambda::Function, AWS::ECS::Container…</td><td><code>AWS::Lambda::*</code></td></tr>
+    <tr><td><strong>HTTP method</strong></td><td>GET, POST, PUT, DELETE, * (wildcard)</td><td><code>POST</code></td></tr>
+    <tr><td><strong>URL path</strong></td><td>Glob matching on the request path</td><td><code>/orders/*</code></td></tr>
+    <tr><td><strong>Host</strong></td><td>The hostname of the incoming request</td><td><code>api.example.com</code></td></tr>
+    <tr><td><strong>Resource ARN</strong></td><td>AWS resource ARN (for AWS integrations)</td><td><code>arn:aws:lambda:*</code></td></tr>
+    <tr><td><strong>Fixed rate</strong></td><td>% of requests to trace after reservoir is exhausted</td><td><code>10%</code></td></tr>
+    <tr><td><strong>Reservoir</strong></td><td>Fixed number of requests/second always traced</td><td><code>5 req/s</code></td></tr>
+    <tr><td><strong>Priority</strong></td><td>Lower number = evaluated first (1 = highest)</td><td><code>100</code></td></tr>
+  </table></div>
+
+  <h3>Sampling Visualised</h3>
+
+  <div class="sampling-bar">
+    <div class="sb-label">Default Rule — 1 req/s reservoir + 5% of rest (20 requests in 1s)</div>
+    <div class="sb-track">
+      <div class="sb-req req-fixed" title="reservoir"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-traced" title="5% sampled"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div>
+    </div>
+    <div class="sb-caption">■ Always traced (reservoir)  ■ Randomly sampled (5%)  □ Not traced</div>
+  </div>
+
+  <div class="sampling-bar">
+    <div class="sb-label">Custom Rule — /checkout POST — 100% sampling (critical path)</div>
+    <div class="sb-track">
+      <div class="sb-req req-traced"></div><div class="sb-req req-traced"></div><div class="sb-req req-traced"></div>
+      <div class="sb-req req-traced"></div><div class="sb-req req-traced"></div><div class="sb-req req-traced"></div>
+      <div class="sb-req req-traced"></div><div class="sb-req req-traced"></div><div class="sb-req req-traced"></div>
+      <div class="sb-req req-traced"></div><div class="sb-req req-traced"></div><div class="sb-req req-traced"></div>
+    </div>
+    <div class="sb-caption">All requests on critical checkout path traced for full visibility</div>
+  </div>
+
+  <div class="sampling-bar">
+    <div class="sb-label">Health check rule — /health GET — 0% (exclude noise)</div>
+    <div class="sb-track">
+      <div class="sb-req req-drop"></div><div class="sb-req req-drop"></div><div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div><div class="sb-req req-drop"></div><div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div><div class="sb-req req-drop"></div><div class="sb-req req-drop"></div>
+      <div class="sb-req req-drop"></div><div class="sb-req req-drop"></div><div class="sb-req req-drop"></div>
+    </div>
+    <div class="sb-caption">Health checks excluded — they'd dominate trace counts and add cost with no value</div>
+  </div>
+
+  <h3>Sampling Rule Priority Order</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Critical Path Rule (Priority 50)</h4>
+      <p>Match: POST /checkout · Rate: 100% · Reservoir: 50/s — all checkout requests traced regardless of volume.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Exclude Health Checks (Priority 80)</h4>
+      <p>Match: GET /health, GET /ping · Rate: 0% · Reservoir: 0 — health check noise eliminated from traces.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Error Monitoring Rule (Priority 90)</h4>
+      <p>Match: * (all paths) · Rate: 100% for error responses — every error always traced regardless of default rate.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Default Rule (Priority 10000 — always last)</h4>
+      <p>Match: * · Rate: 5% · Reservoir: 1/s — catch-all for everything not matched by higher-priority rules.</p>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Sampling is Per-Service</h4>
+    <p>Each service in a trace makes its own sampling decision based on the incoming <code>Sampled</code> flag. If API Gateway samples a request (Sampled=1), it passes this flag downstream — Lambda will also trace it. If Sampled=0, the downstream service skips tracing too. You can override with <code>Sampled=?</code> to let the downstream decide independently.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SERVICE MAP
+══════════════════════════════════ -->
+<div id="tab-servicemap" class="tab-panel"><div class="section">
+  <h2>🕸️ Service Map &amp; X-Ray Analytics</h2>
+  <p>The <strong>Service Map</strong> is the most powerful view in X-Ray — a live graph of every service your application uses, with colour-coded health, average latency, request rate, and error/fault percentages on every edge and node.</p>
+
+  <!-- SERVICE MAP SVG -->
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🕸️ Service Map — Example Microservices Application</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="sm-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+          <marker id="sm-warn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#d4872a"/>
+          </marker>
+          <marker id="sm-err" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#b02a37"/>
+          </marker>
+        </defs>
+
+        <!-- CLIENT node -->
+        <circle cx="65" cy="200" r="38" fill="#dce4f8" stroke="rgba(42,77,176,.4)" stroke-width="2"/>
+        <text x="65" y="196" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">👤</text>
+        <text x="65" y="210" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#2a4db0" text-anchor="middle">Client</text>
+        <text x="65" y="222" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">1200 req/m</text>
+
+        <!-- API GW node -->
+        <circle cx="200" cy="200" r="42" fill="#ede6fb" stroke="rgba(107,53,201,.5)" stroke-width="2.5"/>
+        <text x="200" y="193" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#420f8e" text-anchor="middle">🌐</text>
+        <text x="200" y="206" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#420f8e" text-anchor="middle">API Gateway</text>
+        <text x="200" y="218" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">avg 420ms</text>
+        <text x="200" y="230" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">ok: 98.2%</text>
+
+        <!-- Order Lambda node — HEALTHY -->
+        <circle cx="370" cy="110" r="42" fill="#d4f0e4" stroke="rgba(31,122,82,.5)" stroke-width="2.5"/>
+        <text x="370" y="103" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">⚡</text>
+        <text x="370" y="116" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">order-service</text>
+        <text x="370" y="128" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">avg 380ms</text>
+        <text x="370" y="140" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">ok: 99.1%</text>
+
+        <!-- Payment Lambda — ERRORS -->
+        <circle cx="370" cy="290" r="42" fill="#fef3e2" stroke="rgba(212,135,42,.6)" stroke-width="2.5"/>
+        <text x="370" y="283" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#d4872a" text-anchor="middle">⚡</text>
+        <text x="370" y="296" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#d4872a" text-anchor="middle">payment-svc</text>
+        <text x="370" y="308" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">avg 1.2s ⚠️</text>
+        <text x="370" y="320" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">fault: 3.4%</text>
+
+        <!-- DynamoDB node -->
+        <circle cx="540" cy="110" r="38" fill="#fef3e2" stroke="rgba(212,135,42,.4)" stroke-width="2"/>
+        <text x="540" y="103" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#d4872a" text-anchor="middle">🗄️</text>
+        <text x="540" y="116" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#d4872a" text-anchor="middle">DynamoDB</text>
+        <text x="540" y="128" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">avg 320ms</text>
+        <text x="540" y="140" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">ok: 100%</text>
+
+        <!-- External Payment API — FAULTS -->
+        <circle cx="540" cy="290" r="38" fill="#fde8e8" stroke="rgba(176,42,55,.5)" stroke-width="2.5"/>
+        <text x="540" y="283" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#b02a37" text-anchor="middle">🌍</text>
+        <text x="540" y="296" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#b02a37" text-anchor="middle">payment-api</text>
+        <text x="540" y="308" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">avg 2.8s ❌</text>
+        <text x="540" y="320" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">5xx: 8.1%</text>
+
+        <!-- Edges -->
+        <line x1="103" y1="200" x2="158" y2="200" stroke="#1f7a52" stroke-width="2" marker-end="url(#sm-ok)"/>
+        <line x1="238" y1="176" x2="328" y2="130" stroke="#1f7a52" stroke-width="2" marker-end="url(#sm-ok)"/>
+        <line x1="238" y1="224" x2="328" y2="270" stroke="#d4872a" stroke-width="2.5" marker-end="url(#sm-warn)"/>
+        <line x1="412" y1="110" x2="502" y2="110" stroke="#1f7a52" stroke-width="2" marker-end="url(#sm-ok)"/>
+        <line x1="412" y1="290" x2="502" y2="290" stroke="#b02a37" stroke-width="2.5" marker-end="url(#sm-err)"/>
+
+        <!-- Edge labels -->
+        <text x="268" y="148" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">ok</text>
+        <text x="275" y="262" font-family="JetBrains Mono,monospace" font-size="8" fill="#d4872a" text-anchor="middle">slow/fault</text>
+        <text x="457" y="103" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">ok</text>
+        <text x="457" y="282" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">faults</text>
+
+        <!-- Legend -->
+        <rect x="10" y="340" width="680" height="48" rx="7" fill="rgba(107,53,201,.04)" stroke="rgba(107,53,201,.15)" stroke-width="1"/>
+        <text x="30" y="357" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#420f8e">Node colours:</text>
+        <circle cx="110" cy="354" r="7" fill="#d4f0e4" stroke="rgba(31,122,82,.5)" stroke-width="1.5"/><text x="122" y="358" font-family="DM Sans,sans-serif" font-size="9" fill="#1f7a52">Healthy</text>
+        <circle cx="185" cy="354" r="7" fill="#fef3e2" stroke="rgba(212,135,42,.6)" stroke-width="1.5"/><text x="197" y="358" font-family="DM Sans,sans-serif" font-size="9" fill="#d4872a">Slow / Warning</text>
+        <circle cx="295" cy="354" r="7" fill="#fde8e8" stroke="rgba(176,42,55,.5)" stroke-width="1.5"/><text x="307" y="358" font-family="DM Sans,sans-serif" font-size="9" fill="#b02a37">Faults / Errors</text>
+        <text x="30" y="377" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a">Each node shows: average response time · request rate · ok/error/fault percentages. Click node to filter traces to that service.</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>X-Ray Analytics — Beyond the Service Map</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔍 Trace Search &amp; Filter</h4>
+      <ul>
+        <li>Filter by duration: <code>responsetime &gt; 2</code></li>
+        <li>Filter by annotation: <code>annotation.userId = "u123"</code></li>
+        <li>Filter by status: <code>fault = true</code> or <code>error = true</code></li>
+        <li>Combine: <code>service("order-svc") AND responsetime &gt; 1</code></li>
+        <li>URL filter: <code>http.url CONTAINS "/orders"</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 X-Ray Groups</h4>
+      <ul>
+        <li>Save a filter expression as a named <strong>Group</strong></li>
+        <li>Groups have their own sampling rules and Service Map</li>
+        <li>Example: Group <code>checkout-errors</code> = <code>fault = true AND http.url CONTAINS "/checkout"</code></li>
+        <li>Set CloudWatch alarms on group metrics</li>
+        <li>Enable Insights on a group for auto-anomaly detection</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>X-Ray Insights</h3>
+  <div class="tip">
+    <h4>💡 What are Insights?</h4>
+    <p>X-Ray Insights automatically detects anomalies in your traced services — e.g. "error rate on <em>payment-svc</em> increased from 0.5% to 8% at 14:32". It creates an <strong>Insight event</strong>, notifies you via SNS, and shows the root-cause service in the Service Map. Enable Insights per X-Ray Group.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — SECURITY
+══════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Security &amp; Access Control</h2>
+
+  <h3>IAM Permissions — SDK, Console, and Admin</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📤 Application (SDK) — Send Traces</h4>
+      <ul>
+        <li><code>xray:PutTraceSegments</code> — send segment data</li>
+        <li><code>xray:PutTelemetryRecords</code> — daemon telemetry</li>
+        <li><code>xray:GetSamplingRules</code> — fetch sampling config</li>
+        <li><code>xray:GetSamplingTargets</code> — update sampling decisions</li>
+        <li><code>xray:GetSamplingStatisticSummaries</code> — sampling stats</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📥 Developer — Read &amp; Analyse Traces</h4>
+      <ul>
+        <li><code>xray:GetTraceSummaries</code> — list traces with filters</li>
+        <li><code>xray:BatchGetTraces</code> — fetch full trace detail</li>
+        <li><code>xray:GetServiceGraph</code> — service map data</li>
+        <li><code>xray:GetInsightSummaries</code> — anomaly insights</li>
+        <li><code>xray:GetGroups</code> — list configured groups</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Managed IAM Policies</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Policy</th><th>Use For</th><th>Includes</th></tr>
+    <tr><td><code>AWSXRayDaemonWriteAccess</code></td><td>EC2 / ECS daemon IAM role</td><td>PutTraceSegments, PutTelemetryRecords, GetSamplingRules</td></tr>
+    <tr><td><code>AWSXRayReadOnlyAccess</code></td><td>Developer read-only access</td><td>GetTraceSummaries, BatchGetTraces, GetServiceGraph</td></tr>
+    <tr><td><code>AWSXRayFullAccess</code></td><td>Admin — full control</td><td>All X-Ray actions including CreateGroup, CreateSamplingRule</td></tr>
+  </table></div>
+
+  <h3>Encryption</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔒 Trace Data Encryption</h4>
+      <ul>
+        <li>All trace data encrypted at rest by default (AWS-managed key)</li>
+        <li>Customer-managed KMS CMK supported for compliance</li>
+        <li>Configurable per region in X-Ray Console → Encryption config</li>
+        <li>Changing key is applied to new traces; existing traces remain with old key</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔗 In-Transit Encryption</h4>
+      <ul>
+        <li>SDK → Daemon: UDP (local loopback only — no network exposure)</li>
+        <li>Daemon → X-Ray API: HTTPS/TLS — always encrypted</li>
+        <li>Console → X-Ray API: HTTPS via AWS console — always encrypted</li>
+        <li>VPC endpoint available for private subnet daemons</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Sensitive Data in Traces</h4>
+    <p>Never put PII (passwords, SSNs, payment data) in annotations or metadata — traces are stored for 30 days and accessible to anyone with <code>xray:BatchGetTraces</code>. Use opaque IDs (e.g. <code>userId = "u_abc123"</code>) rather than email addresses or names. If you accidentally trace sensitive data, you cannot delete individual traces — the entire retention window applies.</p>
+  </div>
+
+  <h3>Cross-Account Tracing</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Account A — Application Account</h4>
+      <p>Application sends segments to X-Ray in Account A. Trace ID propagates normally across services in the same account.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Account B — Central Observability Account</h4>
+      <p>Create a cross-account resource policy on the X-Ray Group in Account B, allowing Account A's role to <code>PutTraceSegments</code> into Account B's X-Ray.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>Unified Service Map</h4>
+      <p>Account B's X-Ray console shows a combined Service Map across all accounts — single pane of glass for the entire organisation.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ AWS Console Setup — Enable X-Ray Step by Step</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Enable X-Ray on Lambda Function</div>
+      <div class="console-step-path">Lambda → Function → Configuration → Monitoring</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Active tracing</div>
+        <div class="console-field-value">Enabled</div>
+        <div class="console-field-hint">Toggle ON. Lambda automatically creates a segment for each invocation. X-Ray Daemon runs as a managed sidecar — no installation needed.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">IAM execution role</div>
+        <div class="console-field-value">Add: AWSXRayDaemonWriteAccess</div>
+        <div class="console-field-hint">Lambda's execution role needs this managed policy to send segments to X-Ray. Check IAM → Roles → your function role.</div>
+      </div>
+      <div class="console-note">💡 Enabling Active Tracing on Lambda also enables tracing for downstream AWS calls (DynamoDB, SQS, SNS) automatically via the SDK instrumentation.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Enable X-Ray on API Gateway Stage</div>
+      <div class="console-step-path">API Gateway → API → Stage → Logs/Tracing</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">X-Ray tracing</div>
+        <div class="console-field-value">Enable X-Ray Tracing ✅</div>
+        <div class="console-field-hint">Enables tracing for all requests to this stage. API Gateway creates a segment and injects the Trace ID header into backend calls.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Sampling rate</div>
+        <div class="console-field-value">Use default (5%) or custom sampling rules</div>
+        <div class="console-field-hint">API Gateway honours the X-Ray sampling rules you configure. Set per-resource rules in the X-Ray console for fine-grained control.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Create a Custom Sampling Rule</div>
+      <div class="console-step-path">X-Ray → Sampling rules → Create sampling rule</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Rule name</div>
+        <div class="console-field-value">checkout-critical</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Priority</div>
+        <div class="console-field-value">50</div>
+        <div class="console-field-hint">Lower number = evaluated first. Default rule is priority 10000. Your custom rules should be 1–9999.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Reservoir size</div>
+        <div class="console-field-value">10</div>
+        <div class="console-field-hint">Always trace up to 10 requests per second, regardless of fixed rate below.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Fixed rate (%)</div>
+        <div class="console-field-value">100</div>
+        <div class="console-field-hint">After reservoir is exhausted, trace 100% of remaining requests. Set to 5 for the default experience.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">HTTP method</div>
+        <div class="console-field-value">POST</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">URL path</div>
+        <div class="console-field-value">/checkout*</div>
+        <div class="console-field-hint">Glob wildcard supported. Matches /checkout and /checkout/confirm etc.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create an X-Ray Group</div>
+      <div class="console-step-path">X-Ray → Groups → Create group</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Group name</div>
+        <div class="console-field-value">payment-errors</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Filter expression</div>
+        <div class="console-field-value">fault = true AND service("payment-svc")</div>
+        <div class="console-field-hint">Any valid X-Ray filter expression. This group will have its own Service Map showing only traces matching this filter.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Insights</div>
+        <div class="console-field-value">Enable Insights ✅ · Enable Insights notifications ✅</div>
+        <div class="console-field-hint">Insights auto-detects error rate anomalies in this group and sends SNS notifications. Connect to an SNS topic for alerting.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">View Traces &amp; Service Map</div>
+      <div class="console-step-path">X-Ray → Traces / Service map</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Service map view</div>
+        <div class="console-field-value">X-Ray → Service map</div>
+        <div class="console-field-hint">Select a time range (last 5m, 1h, custom). Each node shows avg latency + error rate. Click a node to filter traces to that service.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Filter traces</div>
+        <div class="console-field-value">responsetime > 2 AND fault = true</div>
+        <div class="console-field-hint">Use the filter bar. Click any trace in the list to open the waterfall timeline view showing all segments.</div>
+      </div>
+      <div class="console-note">💡 In the trace waterfall, click any subsegment to see its annotations, metadata, HTTP request/response details, and any exception stack trace.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK Examples</h2>
+  <p>Install: <code>dotnet add package AWSXRayRecorder.Core</code> and <code>dotnet add package AWSXRayRecorder.Handlers.AwsSdk</code></p>
+
+  <h3>Pattern 1 — Auto-Instrument AWS SDK Calls</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Startup / Program.cs · Global AWS SDK instrumentation</span>
+    <pre><span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Core</span>;
+<span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Handlers.AwsSdk</span>;
+
+<span class="cm">// ── Call once at startup (Program.cs / Lambda bootstrap) ──</span>
+<span class="cm">// This patches ALL AmazonServiceClient calls globally — every</span>
+<span class="cm">// DynamoDB, SQS, S3, SNS call automatically becomes an X-Ray subsegment</span>
+<span class="tp">AWSSDKHandler</span>.<span class="fn">RegisterXRayForAllServices</span>();
+
+<span class="cm">// Optional: register only specific services</span>
+<span class="cm">// AWSSDKHandler.RegisterXRay&lt;AmazonDynamoDBClient&gt;();</span>
+<span class="cm">// AWSSDKHandler.RegisterXRay&lt;AmazonSQSClient&gt;();</span>
+
+<span class="cm">// For ASP.NET Core — add middleware to trace incoming HTTP requests</span>
+<span class="cm">// app.UseXRay("my-service-name");</span></pre>
+  </div>
+
+  <h3>Pattern 2 — Custom Subsegments + Annotations + Metadata</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Lambda handler · Custom tracing</span>
+    <pre><span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Core</span>;
+<span class="kw">using</span> <span class="tp">Amazon.Lambda.Core</span>;
+
+<span class="kw">public class</span> <span class="tp">OrderHandler</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonDynamoDB</span> _dynamo;
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSQS</span> _sqs;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">APIGatewayProxyResponse</span>&gt; <span class="fn">HandleAsync</span>(
+        <span class="tp">APIGatewayProxyRequest</span> request, <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="kw">var</span> order = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">Order</span>&gt;(request.Body)!;
+
+        <span class="cm">// ── Add annotations (INDEXED — searchable in console) ──</span>
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"userId"</span>, order.UserId);
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"orderId"</span>, order.OrderId);
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"orderTotal"</span>, order.Total);
+
+        <span class="cm">// ── Add metadata (NOT indexed — rich debug data) ──</span>
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddMetadata</span>(<span class="str">"requestPayload"</span>, request.Body);
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddMetadata</span>(<span class="str">"lambdaRequestId"</span>, context.AwsRequestId);
+
+        <span class="cm">// ── Custom subsegment around validation logic ──</span>
+        <span class="tp">Order</span>? validated = <span class="kw">null</span>;
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">BeginSubsegment</span>(<span class="str">"ValidateOrder"</span>);
+        <span class="kw">try</span>
+        {
+            validated = <span class="fn">ValidateOrder</span>(order);
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"validationPassed"</span>, <span class="kw">true</span>);
+        }
+        <span class="kw">catch</span> (<span class="tp">ValidationException</span> ex)
+        {
+            <span class="cm">// Mark subsegment as error (4xx — client caused it)</span>
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddException</span>(ex);
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">MarkError</span>();
+            <span class="kw">throw</span>;
+        }
+        <span class="kw">finally</span>
+        {
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">EndSubsegment</span>();
+        }
+
+        <span class="cm">// ── DynamoDB call — auto-traced because of RegisterXRayForAllServices ──</span>
+        <span class="kw">await</span> _dynamo.<span class="fn">PutItemAsync</span>(<span class="kw">new</span> <span class="tp">PutItemRequest</span>
+        {
+            TableName = <span class="str">"Orders"</span>,
+            Item      = <span class="fn">ToDynamoItem</span>(validated!)
+        });
+
+        <span class="cm">// ── Custom async subsegment using lambda helper ──</span>
+        <span class="kw">await</span> <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">BeginSubsegmentAsync</span>(
+            <span class="str">"PublishOrderEvent"</span>,
+            <span class="kw">async</span> () =&gt;
+            {
+                <span class="kw">await</span> _sqs.<span class="fn">SendMessageAsync</span>(<span class="kw">new</span> <span class="tp">SendMessageRequest</span>
+                {
+                    QueueUrl    = <span class="tp">Environment</span>.<span class="fn">GetEnvironmentVariable</span>(<span class="str">"ORDER_QUEUE_URL"</span>),
+                    MessageBody = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(validated)
+                });
+            });
+
+        <span class="kw">return new</span> <span class="tp">APIGatewayProxyResponse</span> { StatusCode = <span class="num">201</span> };
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 3 — ASP.NET Core Middleware + HttpClient Instrumentation</h3>
+  <div class="code-block">
+    <span class="code-label">C# · Program.cs · ASP.NET Core + instrumented HttpClient</span>
+    <pre><span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Core</span>;
+<span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Handlers.AspNetCore</span>;
+<span class="kw">using</span> <span class="tp">Amazon.XRay.Recorder.Handlers.Http</span>;
+
+<span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+<span class="cm">// Register X-Ray services</span>
+builder.Services.<span class="fn">AddDefaultAWSOptions</span>(builder.Configuration.<span class="fn">GetAWSOptions</span>());
+<span class="tp">AWSSDKHandler</span>.<span class="fn">RegisterXRayForAllServices</span>();   <span class="cm">// patch all AWS SDK clients</span>
+
+<span class="cm">// Register an HttpClient instrumented for X-Ray outgoing calls</span>
+builder.Services.<span class="fn">AddHttpClient</span>(<span class="str">"payment-api"</span>, client =&gt;
+{
+    client.BaseAddress = <span class="kw">new</span> <span class="tp">Uri</span>(<span class="str">"https://payment.internal.svc"</span>);
+})
+.<span class="fn">AddHttpMessageHandler</span>(() =&gt; <span class="kw">new</span> <span class="tp">TracingMessageHandler</span>());
+<span class="cm">// TracingMessageHandler adds X-Amzn-Trace-Id to outgoing HTTP requests</span>
+<span class="cm">// so the downstream service can continue the trace</span>
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+
+<span class="cm">// ── X-Ray middleware: MUST be first in pipeline ──</span>
+<span class="cm">// Creates a segment per HTTP request, reads X-Amzn-Trace-Id header</span>
+app.<span class="fn">UseXRay</span>(<span class="str">"order-service"</span>);
+
+app.<span class="fn">UseRouting</span>();
+app.<span class="fn">MapControllers</span>();
+app.<span class="fn">Run</span>();
+
+
+<span class="cm">// ── In your controller — annotations available via current segment ──</span>
+[<span class="tp">ApiController</span>]
+[<span class="tp">Route</span>(<span class="str">"[controller]"</span>)]
+<span class="kw">public class</span> <span class="tp">OrdersController</span> : <span class="tp">ControllerBase</span>
+{
+    [<span class="tp">HttpPost</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">CreateOrder</span>([<span class="tp">FromBody</span>] <span class="tp">OrderRequest</span> req)
+    {
+        <span class="cm">// Segment already created by UseXRay middleware</span>
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"userId"</span>, req.UserId);
+        <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"sku"</span>, req.Sku);
+
+        <span class="kw">try</span>
+        {
+            <span class="cm">// ... process order ...</span>
+            <span class="kw">return</span> <span class="fn">Created</span>(<span class="str">$"/orders/{req.OrderId}"</span>, req);
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">AddException</span>(ex);
+            <span class="tp">AWSXRayRecorder</span>.Instance.<span class="fn">MarkFault</span>();  <span class="cm">// 5xx — server fault</span>
+            <span class="kw">throw</span>;
+        }
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Instrumentation Best Practices</h3>
+  <ul class="checklist">
+    <li>Call <code>AWSSDKHandler.RegisterXRayForAllServices()</code> at startup — auto-instruments all DynamoDB, SQS, S3, SNS calls with zero per-call code</li>
+    <li>Use <code>UseXRay("service-name")</code> middleware as the FIRST middleware in ASP.NET Core pipelines — ensures trace context is set before any handler runs</li>
+    <li>Always use <code>TracingMessageHandler</code> on HttpClients calling other services — propagates Trace ID so downstream services join the same trace</li>
+    <li>Wrap custom subsegments in try/finally — <code>EndSubsegment()</code> must always be called even on exception, or the trace will be incomplete</li>
+    <li>Prefer the async <code>BeginSubsegmentAsync</code> helper for async code blocks — avoids accidentally ending the wrong subsegment in concurrent execution</li>
+    <li>Keep annotation keys consistent and lowercase across services — enables reliable cross-service filtering in the console</li>
+  </ul>
+
+  <h3>Annotations &amp; Metadata</h3>
+  <ul class="checklist">
+    <li>Add 3–5 key annotations per trace: userId, orderId, region, tenantId, featureFlag — enough to filter without bloating every trace</li>
+    <li>Never put PII in annotations or metadata — traces are retained 30 days and searchable by anyone with read access</li>
+    <li>Use metadata for full payloads, exception context, and config state — it's for debugging, not filtering</li>
+    <li>Annotation values must be string, number, or boolean — serialize complex objects to JSON string if needed</li>
+    <li>Max 50 annotations per trace — prioritise identifiers and outcome flags</li>
+  </ul>
+
+  <h3>Sampling Strategy</h3>
+  <ul class="checklist">
+    <li>Create a rule to trace 100% of error responses — you always want full traces for every failure</li>
+    <li>Exclude health check endpoints (GET /health, GET /ping) — they dominate counts and add zero diagnostic value</li>
+    <li>Trace 100% of critical paths (checkout, payment, auth) — the cost is low and the insight is high</li>
+    <li>Use reservoir + fixed rate together — reservoir guarantees some coverage at low traffic; fixed rate scales proportionally at high traffic</li>
+    <li>Review sampling statistics monthly — adjust rules if you're tracing too many health checks or missing spikes on critical paths</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top X-Ray Mistakes</h4>
+    <p>
+    ❌ <strong>Not calling EndSubsegment() in a finally block</strong> — if an exception escapes, the subsegment is never closed, orphaned segments clog the trace and missing timings make it unreadable<br>
+    ❌ <strong>Forgetting TracingMessageHandler on HttpClient</strong> — outbound HTTP calls to other services won't carry the Trace ID; downstream segments appear as a disconnected new trace, breaking the service map<br>
+    ❌ <strong>Storing PII in annotations/metadata</strong> — userId = "alice@example.com" is a GDPR/compliance issue; use opaque internal IDs instead<br>
+    ❌ <strong>Not enabling X-Ray on API Gateway</strong> — Lambda Active Tracing alone doesn't show the API Gateway latency; the trace starts mid-chain and you miss total request time<br>
+    ❌ <strong>Using default sampling for everything</strong> — 5% means you miss 95% of errors at low traffic (e.g. 5 req/min → only 1 request traced every 4 minutes); always add a 100% fault sampling rule<br>
+    ❌ <strong>Not using X-Ray Groups</strong> — without groups, your service map shows everything; a noisy service drowns out signals from the service that's actually failing<br>
+    ❌ <strong>Ignoring IteratorAge equivalent for X-Ray — segment send failures</strong> — check CloudWatch for <code>xray:PutTraceSegments</code> throttling if traces disappear; the daemon silently drops segments when the API is throttled
+    </p>
+  </div>
+
+  <h3>X-Ray vs CloudWatch vs CloudTrail — When to Use Each</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>X-Ray</th><th>CloudWatch Logs</th><th>CloudTrail</th></tr>
+    <tr><td>Trace a slow request end-to-end</td><td>✅ Best fit</td><td>⚠️ Manual correlation</td><td>❌</td></tr>
+    <tr><td>See which service caused latency</td><td>✅ Service Map</td><td>❌</td><td>❌</td></tr>
+    <tr><td>Debug exception stack traces</td><td>✅ Shown in segment</td><td>✅ Full logs</td><td>❌</td></tr>
+    <tr><td>Alert on error rate spike</td><td>✅ Groups + Insights</td><td>✅ Metric filters</td><td>❌</td></tr>
+    <tr><td>Audit who called which API</td><td>❌</td><td>❌</td><td>✅ Best fit</td></tr>
+    <tr><td>Application logs (console.log)</td><td>❌</td><td>✅ Best fit</td><td>❌</td></tr>
+    <tr><td>Infrastructure change history</td><td>❌</td><td>❌</td><td>✅ Best fit</td></tr>
+    <tr><td>Cross-service request flow</td><td>✅ Trace waterfall</td><td>⚠️ Needs Insights</td><td>❌</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of AWS X-Ray!</h3>
+    <p>What X-Ray solves · Traces / Segments / Subsegments · Trace ID propagation · X-Ray Daemon (UDP :2000) · Annotations (indexed) vs Metadata · Fault vs Error vs Throttle · Sampling rules (reservoir + fixed rate + priority) · Service Map health colours · X-Ray Groups + Insights auto-anomaly detection · IAM permissions (write vs read) · KMS encryption · VPC endpoints · Cross-account tracing · Full Console setup (Lambda, API Gateway, sampling rules, groups) · 3 C# patterns (global SDK instrumentation · custom subsegments + annotations · ASP.NET Core middleware + HttpClient) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--xr-d);">Your distributed system is now fully observable — every request traced, every bottleneck visible, every error caught! 🔭🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
