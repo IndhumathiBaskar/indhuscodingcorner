@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon Aurora — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --aur:#6a2fa0;--aur-l:#ede0f8;--aur-d:#4a1a75;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --mysql:#e67e22;--mysql-l:#fdebd0;
+  --pg:#336791;--pg-l:#d6e8f5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0f14;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#f0e0fc 0%,#ddb8f5 45%,#c990ee 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'🔮';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.07;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--aur-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--aur-l);color:var(--aur-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--aur-l);letter-spacing:-.01em;}
+.section h3{color:var(--aur-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ SVG FLOW DIAGRAM ══ */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--aur-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.flow-diagram-body{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:760px;display:block;margin:0 auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:560px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--aur-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:560px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-aur{background:var(--aur-l);border:1.5px solid rgba(106,47,160,.3);}
+.n-aur .flow-node-title{color:var(--aur-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-mysql{background:var(--mysql-l);border:1.5px solid rgba(230,126,34,.3);}
+.n-mysql .flow-node-title{color:var(--mysql);}
+.n-pg{background:var(--pg-l);border:1.5px solid rgba(51,103,145,.3);}
+.n-pg .flow-node-title{color:var(--pg);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--aur-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--aur);}
+.step-body h4{color:var(--aur-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--aur-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--aur-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--aur-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--aur);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--aur-l);border:1px solid rgba(106,47,160,.2);border-left:4px solid var(--aur);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--aur-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #101820;border-left:3px solid var(--aur);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#c9a6f7;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(106,47,160,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--aur-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--aur-l),var(--green-l));border:1px solid rgba(106,47,160,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── AURORA EDITIONS ── */
+.editions{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;margin:14px 0;}
+.ed-card{border-radius:var(--r);padding:14px;border:1.5px solid;position:relative;overflow:hidden;}
+.ed-card::after{content:'';position:absolute;bottom:0;right:0;width:40px;height:40px;border-radius:50%;opacity:.12;}
+.ed-mysql{background:var(--mysql-l);border-color:rgba(230,126,34,.35);}
+.ed-mysql::after{background:var(--mysql);}
+.ed-pg{background:var(--pg-l);border-color:rgba(51,103,145,.3);}
+.ed-pg::after{background:var(--pg);}
+.ed-serverless{background:var(--aur-l);border-color:rgba(106,47,160,.3);}
+.ed-serverless::after{background:var(--aur);}
+.ed-global{background:var(--green-l);border-color:rgba(31,122,82,.3);}
+.ed-global::after{background:var(--green);}
+.ed-name{font-weight:700;font-size:.85rem;margin-bottom:3px;}
+.ed-mysql .ed-name{color:var(--mysql);}
+.ed-pg .ed-name{color:var(--pg);}
+.ed-serverless .ed-name{color:var(--aur-d);}
+.ed-global .ed-name{color:var(--green);}
+.ed-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.ed-mysql .ed-tag{background:rgba(230,126,34,.15);color:var(--mysql);}
+.ed-pg .ed-tag{background:rgba(51,103,145,.15);color:var(--pg);}
+.ed-serverless .ed-tag{background:rgba(106,47,160,.12);color:var(--aur-d);}
+.ed-global .ed-tag{background:rgba(31,122,82,.15);color:var(--green);}
+.ed-desc{font-size:.72rem;color:var(--muted);}
+
+/* ══ STORAGE VISUAL ══ */
+.storage-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.sv-header{background:linear-gradient(90deg,var(--aur-l),var(--teal-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sv-body{padding:16px;}
+
+/* ══ METRIC CARDS ══ */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mc-write::before{background:var(--aur);}
+.mc-read::before{background:var(--green);}
+.mc-ha::before{background:var(--blue);}
+.mc-scale::before{background:var(--aws);}
+.mc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.mc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.mc-write .mc-type{background:var(--aur-l);color:var(--aur-d);}
+.mc-read .mc-type{background:var(--green-l);color:var(--green);}
+.mc-ha .mc-type{background:var(--blue-l);color:var(--blue);}
+.mc-scale .mc-type{background:var(--aws-l);color:var(--aws);}
+.mc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.mc-metric-label{font-size:.68rem;color:var(--muted);}
+.mc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.metric-grid,.editions{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>Amazon <span>Aurora</span> — Deep Dive</h1>
+    <p>Cloud-native relational DB · MySQL &amp; PostgreSQL compatible · Serverless v2 · Global Database · HA architecture · C# SDK examples · beginner to expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('architecture',this)">② Architecture</button>
+      <button class="tab-btn" onclick="T('storage',this)">③ Storage Engine</button>
+      <button class="tab-btn" onclick="T('ha',this)">④ HA &amp; Failover</button>
+      <button class="tab-btn" onclick="T('serverless',this)">⑤ Serverless v2</button>
+      <button class="tab-btn" onclick="T('global',this)">⑥ Global Database</button>
+      <button class="tab-btn" onclick="T('security',this)">⑦ Security</button>
+      <button class="tab-btn" onclick="T('console',this)">⑧ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑨ C# SDK</button>
+      <button class="tab-btn" onclick="T('best',this)">⑩ Best Practices</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🔮 What is Amazon Aurora?</h2>
+  <p>Amazon Aurora is a <strong>cloud-native relational database</strong> built by AWS from the ground up. It is fully compatible with MySQL and PostgreSQL, so existing applications work without code changes — but Aurora's internal architecture is completely re-engineered to deliver up to <strong>5× the throughput of MySQL</strong> and <strong>3× the throughput of PostgreSQL</strong> at a fraction of the operational cost.</p>
+
+  <div class="tip">
+    <h4>💡 Aurora in One Sentence</h4>
+    <p>Aurora = a distributed, fault-tolerant, self-healing storage engine wrapped in MySQL/PostgreSQL compatibility — giving you the ease of a managed relational DB with the durability and scale of a purpose-built cloud database.</p>
+  </div>
+
+  <h3>Aurora Editions &amp; Variants</h3>
+  <div class="editions">
+    <div class="ed-card ed-mysql">
+      <div class="ed-name">Aurora MySQL</div>
+      <div class="ed-tag">MySQL 5.7 / 8.0 compat</div>
+      <div class="ed-desc">Drop-in replacement for MySQL. Up to 5× faster. Supports binary log replication, stored procedures, triggers.</div>
+    </div>
+    <div class="ed-card ed-pg">
+      <div class="ed-name">Aurora PostgreSQL</div>
+      <div class="ed-tag">PG 13 / 14 / 15 / 16 compat</div>
+      <div class="ed-desc">Drop-in replacement for PostgreSQL. Supports extensions (pg_vector, PostGIS, etc.). JSONB, full-text search.</div>
+    </div>
+    <div class="ed-card ed-serverless">
+      <div class="ed-name">Aurora Serverless v2</div>
+      <div class="ed-tag">Auto-scaling compute</div>
+      <div class="ed-desc">Compute scales in fine-grained increments (0.5 ACU steps) in milliseconds. Pay only for ACUs consumed.</div>
+    </div>
+    <div class="ed-card ed-global">
+      <div class="ed-name">Aurora Global Database</div>
+      <div class="ed-tag">Multi-region active-passive</div>
+      <div class="ed-desc">1 primary + up to 5 secondary regions. &lt;1s replication lag. Promote secondary in &lt;1 min for DR.</div>
+    </div>
+  </div>
+
+  <h3>Aurora vs RDS MySQL/PostgreSQL</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Aurora</th><th>RDS MySQL/PG</th></tr>
+    <tr><td>Storage architecture</td><td>Distributed, shared across replicas</td><td>Local EBS per instance</td></tr>
+    <tr><td>Read replicas</td><td>Up to 15 (shared storage, instant)</td><td>Up to 5 (replicated separately)</td></tr>
+    <tr><td>Failover time</td><td>~30 seconds (typically)</td><td>60–120 seconds</td></tr>
+    <tr><td>Storage scaling</td><td>Automatic, up to 128 TB</td><td>Manual EBS resize (some auto-scaling)</td></tr>
+    <tr><td>Replication lag (replicas)</td><td>Milliseconds (shared storage)</td><td>Seconds (async log replication)</td></tr>
+    <tr><td>Backtrack</td><td>✅ MySQL: rewind DB without restore</td><td>❌ Point-in-time restore only</td></tr>
+    <tr><td>Cost vs RDS</td><td>~20% higher instance cost</td><td>Baseline</td></tr>
+    <tr><td>Serverless option</td><td>✅ Serverless v2</td><td>❌ Not available</td></tr>
+    <tr><td>Global DB</td><td>✅ Sub-second cross-region</td><td>❌ Not available</td></tr>
+    <tr><td>Best for</td><td>High traffic, HA, global apps</td><td>Simple apps, dev/test, cost-sensitive</td></tr>
+  </table></div>
+
+  <h3>Key Aurora Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>Cluster</h4><p>A DB cluster = one writer + optional readers, all sharing a single distributed storage layer.</p></div>
+    <div class="icon-item"><span class="emoji">✍️</span><h4>Writer Instance</h4><p>The primary instance that handles all writes and DDL. One writer per cluster (standard mode).</p></div>
+    <div class="icon-item"><span class="emoji">📖</span><h4>Reader Instances</h4><p>Up to 15 read replicas sharing the same storage. Millisecond replication lag. Used for read scaling.</p></div>
+    <div class="icon-item"><span class="emoji">🔌</span><h4>Cluster Endpoint</h4><p>DNS endpoint that always points to the current writer. Auto-redirects after failover.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>Reader Endpoint</h4><p>Load-balances connections across all reader instances. Use for read-heavy queries.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>ACU</h4><p>Aurora Capacity Unit — 2 GB RAM + proportional CPU + networking. Unit of Serverless v2 billing.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Backtrack</h4><p>Aurora MySQL only: rewind the DB to any second in the past (within window) without restoring a snapshot.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Global Database</h4><p>Single Aurora cluster spans multiple AWS Regions with &lt;1s replication lag using dedicated infrastructure.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Performance Insights</h4><p>Visual DB load analysis tool. See top SQL, wait events, and resource bottlenecks in real time.</p></div>
+  </div>
+
+  <h3>Aurora Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💾</span><h4>Storage</h4><p>Starts at 10 GB, auto-grows in 10 GB increments up to 128 TB. No pre-provisioning.</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Durability</h4><p>6 copies of data across 3 AZs. Can survive loss of 2 copies for writes, 3 copies for reads.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Failover</h4><p>Automatic failover to a reader in ~30 seconds. No data loss — shared storage means no replication gap.</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Storage cost</h4><p>$0.10/GB-month + $0.20 per million I/O requests (standard). I/O-optimized: $0.225/GB-month, no I/O charge.</p></div>
+    <div class="icon-item"><span class="emoji">📸</span><h4>Backups</h4><p>Continuous automatic backups to S3. Point-in-time restore to any second within retention window (1–35 days).</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Connections</h4><p>RDS Proxy recommended for Lambda/serverless — pools connections and avoids "too many connections" errors.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — ARCHITECTURE
+══════════════════════════════════ -->
+<div id="tab-architecture" class="tab-panel"><div class="section">
+  <h2>🏗️ Aurora Architecture — How It Works</h2>
+  <p>Aurora's most important innovation is the <strong>separation of compute from storage</strong>. Unlike traditional databases where each instance has its own storage, Aurora uses a shared distributed storage layer that all instances in the cluster access simultaneously.</p>
+
+  <!-- SVG Architecture Diagram -->
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔮 Aurora Cluster Architecture — Compute + Shared Storage</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 480" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ab4c4"/>
+          </marker>
+          <marker id="arr-aur" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6a2fa0"/>
+          </marker>
+          <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+
+        <!-- App layer -->
+        <text x="360" y="22" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#7a7a6a" text-anchor="middle" letter-spacing="1">APPLICATION LAYER</text>
+        <rect x="60" y="30" width="130" height="40" rx="7" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="125" y="46" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#2a4db0" text-anchor="middle">✍️ Write Traffic</text>
+        <text x="125" y="61" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Cluster endpoint</text>
+
+        <rect x="530" y="30" width="130" height="40" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="595" y="46" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">📖 Read Traffic</text>
+        <text x="595" y="61" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Reader endpoint (LB)</text>
+
+        <!-- Arrows down to instances -->
+        <line x1="125" y1="70" x2="125" y2="108" stroke="#6a2fa0" stroke-width="1.5" marker-end="url(#arr-aur)"/>
+        <line x1="595" y1="70" x2="595" y2="108" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#arr-green)"/>
+
+        <!-- COMPUTE LAYER -->
+        <text x="360" y="100" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#7a7a6a" text-anchor="middle" letter-spacing="1">COMPUTE LAYER (DB INSTANCES)</text>
+
+        <!-- Writer -->
+        <rect x="30" y="110" width="190" height="70" rx="8" fill="#ede0f8" stroke="rgba(106,47,160,.4)" stroke-width="2"/>
+        <text x="125" y="132" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#4a1a75" text-anchor="middle">🖥️ Writer Instance</text>
+        <text x="125" y="149" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Primary (r7g.xlarge etc)</text>
+        <text x="125" y="165" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Reads + Writes · AZ-1</text>
+
+        <!-- Reader 1 -->
+        <rect x="265" y="110" width="170" height="70" rx="8" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="350" y="132" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#1f7a52" text-anchor="middle">📖 Reader 1</text>
+        <text x="350" y="149" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Read replica · AZ-2</text>
+        <text x="350" y="165" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Failover target #1</text>
+
+        <!-- Reader 2 -->
+        <rect x="480" y="110" width="170" height="70" rx="8" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="565" y="132" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#1f7a52" text-anchor="middle">📖 Reader 2</text>
+        <text x="565" y="149" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Read replica · AZ-3</text>
+        <text x="565" y="165" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Failover target #2</text>
+
+        <!-- Arrows: instances → shared storage -->
+        <line x1="125" y1="180" x2="125" y2="228" stroke="#6a2fa0" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr-aur)"/>
+        <line x1="350" y1="180" x2="350" y2="228" stroke="#9ab4c4" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+        <line x1="565" y1="180" x2="565" y2="228" stroke="#9ab4c4" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr)"/>
+
+        <!-- Shared Storage Layer -->
+        <rect x="20" y="230" width="680" height="110" rx="10" fill="#ede0f8" stroke="rgba(106,47,160,.3)" stroke-width="2"/>
+        <text x="360" y="252" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#4a1a75" text-anchor="middle">🗄️ Shared Distributed Storage Layer (up to 128 TB)</text>
+        <text x="360" y="268" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">6 copies across 3 AZs — auto-healing — all instances read from the same data</text>
+
+        <!-- 6 storage nodes -->
+        <rect x="38" y="280" width="90" height="46" rx="6" fill="#fff" stroke="rgba(106,47,160,.25)" stroke-width="1.5"/>
+        <text x="83" y="299" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#4a1a75" text-anchor="middle">AZ-1</text>
+        <text x="83" y="314" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Copy 1 &amp; 2</text>
+
+        <rect x="148" y="280" width="90" height="46" rx="6" fill="#fff" stroke="rgba(106,47,160,.25)" stroke-width="1.5"/>
+        <text x="193" y="299" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#4a1a75" text-anchor="middle">AZ-2</text>
+        <text x="193" y="314" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Copy 3 &amp; 4</text>
+
+        <rect x="258" y="280" width="90" height="46" rx="6" fill="#fff" stroke="rgba(106,47,160,.25)" stroke-width="1.5"/>
+        <text x="303" y="299" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#4a1a75" text-anchor="middle">AZ-3</text>
+        <text x="303" y="314" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Copy 5 &amp; 6</text>
+
+        <!-- Redo log annotation -->
+        <rect x="390" y="275" width="295" height="56" rx="6" fill="rgba(106,47,160,.06)" stroke="rgba(106,47,160,.15)" stroke-width="1"/>
+        <text x="537" y="295" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#4a1a75" text-anchor="middle">Writer only sends redo logs</text>
+        <text x="537" y="311" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Storage nodes apply log pages locally</text>
+        <text x="537" y="325" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Writes ack after 4 of 6 copies confirm</text>
+
+        <!-- Quorum label -->
+        <text x="360" y="370" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle">Write quorum: 4/6 · Read quorum: 3/6 · Tolerates: 2 copy loss (writes), 3 copy loss (reads)</text>
+        <text x="360" y="388" font-family="DM Sans,sans-serif" font-size="9" fill="#9a9a8a" text-anchor="middle">No replication between instances — readers see same storage pages as writer immediately</text>
+
+        <!-- S3 backup arrow -->
+        <rect x="280" y="410" width="160" height="38" rx="7" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="360" y="426" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#d4872a" text-anchor="middle">☁️ Amazon S3</text>
+        <text x="360" y="441" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Continuous backup stream</text>
+        <line x1="360" y1="340" x2="360" y2="408" stroke="#d4872a" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arr)"/>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Why Aurora's Architecture is Different</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 Traditional RDS Architecture</h4>
+      <ul>
+        <li>Writer replicates full data pages or binlog to each replica</li>
+        <li>Each replica has its own EBS volume — replication takes time</li>
+        <li>Read replicas can lag seconds behind writer</li>
+        <li>Failover requires replica to catch up before promotion (60–120s)</li>
+        <li>Storage tied to a single instance — resize requires downtime or migration</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚀 Aurora Architecture Advantage</h4>
+      <ul>
+        <li>Writer only sends <strong>redo log records</strong> (4× less network traffic)</li>
+        <li>All readers share the same storage — zero replication lag</li>
+        <li>Failover is instant — replica already has the latest data</li>
+        <li>Storage grows automatically — no pre-provisioning, no downtime</li>
+        <li>Page cache on each instance stays hot after failover (no cold start)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Cluster Endpoints — Which to Use When</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Endpoint Type</th><th>Points To</th><th>Use For</th></tr>
+    <tr><td>Cluster endpoint</td><td>Current writer instance</td><td>All writes, DDL, admin queries</td></tr>
+    <tr><td>Reader endpoint</td><td>Load-balanced across all readers</td><td>Read-heavy queries (reports, analytics)</td></tr>
+    <tr><td>Instance endpoint</td><td>Specific instance by ID</td><td>Diagnostics, direct instance access</td></tr>
+    <tr><td>Custom endpoint</td><td>Subset of instances you define</td><td>Route specific workloads (e.g., analytics to larger replicas)</td></tr>
+    <tr><td>RDS Proxy endpoint</td><td>Proxy pool (fronting cluster)</td><td>Lambda, serverless, high connection churn</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — STORAGE ENGINE
+══════════════════════════════════ -->
+<div id="tab-storage" class="tab-panel"><div class="section">
+  <h2>💾 Aurora Storage Engine — Deep Dive</h2>
+  <p>Aurora's storage is not EBS. It is a custom distributed storage service built by AWS, spanning 3 AZs with 6 copies of every piece of data. Understanding it is key to understanding Aurora's performance and durability guarantees.</p>
+
+  <h3>How Writes Work (Redo Log Protocol)</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Application sends a write to the Writer instance</h4><p>The Aurora writer processes the SQL statement and generates redo log records (not full data pages — just the changes).</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Redo logs sent to all 6 storage nodes in parallel</h4><p>The writer sends redo log records to all 6 storage nodes across 3 AZs simultaneously. This is ~4× less data than traditional MySQL replication (pages vs logs).</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Write acknowledged after 4 of 6 nodes confirm (quorum)</h4><p>Aurora uses a write quorum of 4/6. The write is confirmed to the application as soon as 4 nodes acknowledge receipt — even if 2 nodes are down. This is why Aurora can tolerate AZ failures without impacting write availability.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Storage nodes apply log records independently</h4><p>Each storage node materializes the log records into data pages locally, asynchronously. The writer never waits for this — it has already acknowledged the write to the application.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body"><h4>Storage continuously backed up to S3</h4><p>Aurora streams redo logs continuously to S3. This enables point-in-time recovery to any second within the backup retention window without scheduled snapshots.</p></div>
+  </div>
+
+  <h3>Quorum Model — Fault Tolerance</h3>
+  <div class="metric-grid">
+    <div class="metric-card mc-write">
+      <div class="mc-name">Write Quorum</div>
+      <div class="mc-type">4 of 6 nodes</div>
+      <div class="mc-metric"><span class="mc-metric-label">Nodes needed</span><span class="mc-metric-val">4 / 6</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Can lose</span><span class="mc-metric-val">2 nodes</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">AZ loss tolerance</span><span class="mc-metric-val">1 full AZ</span></div>
+    </div>
+    <div class="metric-card mc-read">
+      <div class="mc-name">Read Quorum</div>
+      <div class="mc-type">3 of 6 nodes</div>
+      <div class="mc-metric"><span class="mc-metric-label">Nodes needed</span><span class="mc-metric-val">3 / 6</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Can lose</span><span class="mc-metric-val">3 nodes</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">AZ loss tolerance</span><span class="mc-metric-val">1 full AZ + 1</span></div>
+    </div>
+    <div class="metric-card mc-ha">
+      <div class="mc-name">Self-Healing</div>
+      <div class="mc-type">Automatic repair</div>
+      <div class="mc-metric"><span class="mc-metric-label">Lost node</span><span class="mc-metric-val">Auto-repaired</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">From</span><span class="mc-metric-val">Peer nodes</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">No action needed</span><span class="mc-metric-val">✅ Transparent</span></div>
+    </div>
+    <div class="metric-card mc-scale">
+      <div class="mc-name">Storage Growth</div>
+      <div class="mc-type">Auto-expand</div>
+      <div class="mc-metric"><span class="mc-metric-label">Start</span><span class="mc-metric-val">10 GB</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Max</span><span class="mc-metric-val">128 TB</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Increments</span><span class="mc-metric-val">10 GB chunks</span></div>
+    </div>
+  </div>
+
+  <h3>Aurora I/O-Optimized vs Standard Storage</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Factor</th><th>Aurora Standard</th><th>Aurora I/O-Optimized</th></tr>
+    <tr><td>Storage cost</td><td>$0.10/GB-month</td><td>$0.225/GB-month</td></tr>
+    <tr><td>I/O cost</td><td>$0.20 per million requests</td><td>$0 (included)</td></tr>
+    <tr><td>Best for</td><td>Low/medium I/O workloads</td><td>High I/O workloads (&gt;25% I/O cost)</td></tr>
+    <tr><td>Switch</td><td colspan="2">Can switch anytime with &lt;1 minute of elevated latency</td></tr>
+    <tr><td>Rule of thumb</td><td colspan="2">If I/O cost &gt; 25% of total Aurora bill → switch to I/O-Optimized</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Aurora Backtrack (MySQL only)</h4>
+    <p>Backtrack lets you <strong>rewind the entire database</strong> to a point in the past (within your configured backtrack window, up to 72 hours) in seconds — without restoring a snapshot. This is invaluable for recovering from accidental <code>DELETE</code> or <code>DROP TABLE</code> without the minutes-to-hours of a full restore. Enable at cluster creation; costs ~$0.012/GB-hour of backtrack window.</p>
+  </div>
+
+  <h3>Backup &amp; Restore</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔄 Continuous Automated Backup</h4>
+      <ul>
+        <li>Always enabled — cannot be disabled on Aurora</li>
+        <li>Streams to S3 continuously (no scheduled backup windows)</li>
+        <li>Retention: 1–35 days (default 1 day — increase for production)</li>
+        <li>Point-in-time restore to any second within retention period</li>
+        <li>Restores create a new cluster (does not overwrite existing)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📸 Manual Snapshots</h4>
+      <ul>
+        <li>User-initiated, stored in S3 indefinitely until deleted</li>
+        <li>No performance impact during snapshot (no I/O suspension)</li>
+        <li>Can share across AWS accounts or make public</li>
+        <li>Can copy cross-region for DR or data migration</li>
+        <li>Cost: $0.021/GB-month (only stores incremental changes)</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — HA & FAILOVER
+══════════════════════════════════ -->
+<div id="tab-ha" class="tab-panel"><div class="section">
+  <h2>⚖️ High Availability &amp; Failover</h2>
+  <p>Aurora is designed for <strong>continuous availability</strong>. Its shared storage architecture means read replicas are always caught up with the writer — making failover dramatically faster than traditional replication-based systems.</p>
+
+  <h3>Failover Tiers — Controlling Promotion Priority</h3>
+  <p>Each Aurora replica has a <strong>failover priority tier</strong> (0–15). In a failover event, Aurora promotes the replica in the lowest tier number. Within the same tier, the largest replica (by instance class) is preferred.</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>Tier</th><th>Priority</th><th>Recommended Use</th></tr>
+    <tr><td>0</td><td>Highest (promoted first)</td><td>Your designated hot standby — same instance class as writer</td></tr>
+    <tr><td>1</td><td>Second</td><td>Warm standby — slightly smaller class</td></tr>
+    <tr><td>2–14</td><td>Decreasing</td><td>Read-only replicas not intended as failover targets</td></tr>
+    <tr><td>15</td><td>Lowest</td><td>Analytics replicas — last resort for failover</td></tr>
+  </table></div>
+
+  <h3>Failover Process — Step by Step</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Writer instance failure detected</h4><p>Aurora's health monitoring detects the writer is unhealthy (typically within 10–30 seconds). DNS TTL for the cluster endpoint is set to 5 seconds to enable fast cutover.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Replica promoted to writer (30s typical)</h4><p>Aurora selects the highest-priority (lowest tier) replica. Because it shares storage with the old writer, there is <strong>zero data loss</strong> — no replication catch-up needed. The replica simply takes write access.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Cluster endpoint DNS updated</h4><p>The cluster endpoint DNS record is updated to point to the new writer. Clients with a 5-second DNS TTL will reconnect within seconds. Applications must handle connection retries.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Old writer replaced</h4><p>AWS automatically provisions a new instance to replace the failed one, restoring the cluster to full health. The new instance joins as a reader at the same tier as the old writer.</p></div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Minimize Failover Impact in Your App</h4>
+    <p>Aurora failover averages ~30 seconds. To minimize impact: (1) use <strong>RDS Proxy</strong> — it maintains connection pools and absorbs failover transparently; (2) implement retry logic with exponential backoff in your application; (3) set DNS TTL awareness in your JDBC/ADO.NET connection string.</p>
+  </div>
+
+  <h3>Aurora Multi-AZ vs Single-AZ</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Multi-AZ (Recommended for Production)</h4>
+      <ul>
+        <li>At least 1 reader in a different AZ from the writer</li>
+        <li>Automatic failover if writer's AZ fails</li>
+        <li>Reader doubles as read scale-out and standby</li>
+        <li>No additional storage cost (shared storage is always multi-AZ)</li>
+        <li>~30 second failover with zero data loss</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Single-AZ (Dev/Test Only)</h4>
+      <ul>
+        <li>Writer only — no read replicas</li>
+        <li>AZ failure = cluster unavailable until AWS recovers</li>
+        <li>Recovery can take 15–20 minutes (not ~30 seconds)</li>
+        <li>Not recommended for production workloads</li>
+        <li>Lower cost, acceptable for dev/test environments</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>RDS Proxy — Connection Pooling for Aurora</h3>
+  <div class="flow">
+    <div class="flow-node n-app">
+      <div class="flow-node-title">📱 App / Lambda (thousands of connections)</div>
+      <ul class="flow-items">
+        <li>Each Lambda invocation opens a new DB connection</li>
+        <li>Aurora has a max connection limit (~1000 for r6g.large)</li>
+        <li>Without proxy: "too many connections" errors under load</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-aur">
+      <div class="flow-node-title">🔀 RDS Proxy (connection pool)</div>
+      <ul class="flow-items">
+        <li>Maintains a warm pool of DB connections (e.g., 50 connections to Aurora)</li>
+        <li>Thousands of app connections multiplex over this small pool</li>
+        <li>During failover: proxy absorbs reconnection, app sees no interruption</li>
+        <li>IAM authentication support — no DB passwords in app code</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🗄️ Aurora Cluster (small # real connections)</div>
+      <ul class="flow-items">
+        <li>Receives only the pooled connections from the proxy</li>
+        <li>No connection storms on Lambda scale-out events</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SERVERLESS v2
+══════════════════════════════════ -->
+<div id="tab-serverless" class="tab-panel"><div class="section">
+  <h2>⚡ Aurora Serverless v2</h2>
+  <p>Aurora Serverless v2 automatically scales database compute capacity up and down based on application demand — in increments as small as <strong>0.5 ACU</strong> (Aurora Capacity Unit), in <strong>under a second</strong>. You pay only for the ACUs used per second.</p>
+
+  <div class="tip">
+    <h4>💡 Serverless v2 vs v1</h4>
+    <p>Serverless <strong>v1</strong> was the old version: it scaled in large jumps, had a "warm-up" delay from zero, and didn't support Multi-AZ or Global Database. <strong>v2</strong> is the current version — it scales instantly, supports all Aurora features, and can be mixed with provisioned instances in the same cluster. Always use v2.</p>
+  </div>
+
+  <h3>How Serverless v2 Scaling Works</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Set min/max ACU range</h4><p>You configure a minimum (e.g., 0.5 ACU) and maximum (e.g., 128 ACU). Aurora never scales outside these bounds. 1 ACU ≈ 2 GB RAM + proportional CPU.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Aurora monitors load metrics continuously</h4><p>Aurora tracks CPU utilization, memory, connections, and I/O. It pre-emptively scales up before resources are exhausted, not after a threshold is breached.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Scale-up: sub-second, no disruption</h4><p>Adding ACUs is transparent — no connection drops, no query interruption. Aurora adds compute capacity to the existing instance memory space.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Scale-down: gradual, after idle period</h4><p>Scale-down is more conservative. Aurora waits for connections to drain and activity to settle before reducing ACUs. Minimum scale-down is to your configured min ACU.</p></div>
+  </div>
+
+  <h3>ACU Sizing Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Min ACU</th><th>Max ACU</th><th>Use Case</th><th>Monthly Cost (idle)</th></tr>
+    <tr><td>0.5</td><td>4</td><td>Dev/test, small apps, staging</td><td>~$7/month (0.5 ACU idle)</td></div></tr>
+    <tr><td>2</td><td>16</td><td>Small production, variable traffic</td><td>~$29/month (2 ACU idle)</td></tr>
+    <tr><td>4</td><td>64</td><td>Medium production, spiky workloads</td><td>~$58/month (4 ACU idle)</td></tr>
+    <tr><td>8</td><td>128</td><td>High traffic, consistent + bursty</td><td>~$116/month (8 ACU idle)</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Minimum ACU = Cold Cost</h4>
+    <p>Unlike Lambda, Serverless v2 does <strong>not scale to zero</strong> — it stays at the minimum ACU, so you always pay at least the min ACU rate (~$0.12/ACU-hour). For true zero-cost idle: use <strong>RDS Serverless v1</strong> (legacy, limited features) or stop the cluster manually in dev/test. For production, min ACU ≥ 2 is recommended for consistent response time.</p>
+  </div>
+
+  <h3>Serverless v2 in a Mixed Cluster</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📐 Common Pattern: Serverless Writer</h4>
+      <ul>
+        <li>Writer = Serverless v2 (e.g., 2–64 ACU)</li>
+        <li>Readers = Serverless v2 (e.g., 1–32 ACU)</li>
+        <li>Scales entire cluster automatically</li>
+        <li>Best for: unpredictable or variable workloads</li>
+        <li>Cost: pay for actual ACU-seconds used</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📐 Pattern: Provisioned Writer + Serverless Readers</h4>
+      <ul>
+        <li>Writer = provisioned (e.g., r7g.xlarge) for stable write throughput</li>
+        <li>Readers = Serverless v2 to handle read spikes</li>
+        <li>Best for: predictable writes, unpredictable read bursts</li>
+        <li>Provisioned instances have no scaling delay for writer</li>
+        <li>Common for analytics dashboards with variable query load</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Serverless v2 vs Provisioned — When to Choose</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Situation</th><th>Serverless v2</th><th>Provisioned</th></tr>
+    <tr><td>Traffic is unpredictable / spiky</td><td>✅ Ideal</td><td>⚠️ Over-provision or risk throttling</td></tr>
+    <tr><td>Dev/test environments</td><td>✅ Scale to min when idle</td><td>⚠️ Paying for idle capacity</td></tr>
+    <tr><td>Consistent, predictable load</td><td>⚠️ Slightly more expensive</td><td>✅ Cheaper at steady state</td></tr>
+    <tr><td>Maximum performance guarantee</td><td>⚠️ Scaling has slight lag</td><td>✅ Known fixed capacity</td></tr>
+    <tr><td>Multi-region global database</td><td>✅ Supported in v2</td><td>✅ Supported</td></tr>
+    <tr><td>Backtrack (MySQL)</td><td>✅ Supported</td><td>✅ Supported</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — GLOBAL DATABASE
+══════════════════════════════════ -->
+<div id="tab-global" class="tab-panel"><div class="section">
+  <h2>🌍 Aurora Global Database</h2>
+  <p>Aurora Global Database spans <strong>multiple AWS Regions</strong>. It uses dedicated replication infrastructure (not the internet) to replicate data from a primary region to up to 5 secondary regions with typical replication lag of <strong>under 1 second</strong>.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🌍 Aurora Global Database — Multi-Region Architecture</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ga" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+          <marker id="gf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#b02a37"/>
+          </marker>
+        </defs>
+
+        <!-- Primary Region -->
+        <rect x="20" y="30" width="300" height="230" rx="10" fill="#ede0f8" stroke="rgba(106,47,160,.3)" stroke-width="2"/>
+        <text x="170" y="52" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#4a1a75" text-anchor="middle">PRIMARY REGION (us-east-1)</text>
+
+        <rect x="40" y="62" width="260" height="70" rx="7" fill="#fff" stroke="rgba(106,47,160,.25)" stroke-width="1.5"/>
+        <text x="170" y="84" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#4a1a75" text-anchor="middle">✍️ Primary Cluster</text>
+        <text x="170" y="100" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Writer + up to 15 Readers</text>
+        <text x="170" y="116" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Handles all writes globally</text>
+
+        <rect x="40" y="145" width="120" height="50" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.25)" stroke-width="1.5"/>
+        <text x="100" y="166" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">🖥️ App Tier</text>
+        <text x="100" y="182" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Low-latency reads &amp; writes</text>
+
+        <rect x="180" y="145" width="120" height="50" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1.5"/>
+        <text x="240" y="166" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">📡 CloudWatch</text>
+        <text x="240" y="182" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">ReplicationLag metric</text>
+
+        <text x="170" y="240" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">6 storage copies · 3 AZs · 128 TB max</text>
+
+        <!-- Replication arrows -->
+        <line x1="320" y1="145" x2="388" y2="120" stroke="#1f7a52" stroke-width="2" marker-end="url(#ga)"/>
+        <text x="353" y="122" font-family="DM Sans,sans-serif" font-size="8" fill="#1f7a52">&lt; 1s lag</text>
+
+        <line x1="320" y1="195" x2="388" y2="240" stroke="#1f7a52" stroke-width="2" marker-end="url(#ga)"/>
+        <text x="328" y="228" font-family="DM Sans,sans-serif" font-size="8" fill="#1f7a52">&lt; 1s lag</text>
+
+        <!-- Secondary Region 1 -->
+        <rect x="390" y="60" width="310" height="120" rx="10" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="2"/>
+        <text x="545" y="80" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#1f7a52" text-anchor="middle">SECONDARY (eu-west-1)</text>
+        <rect x="410" y="90" width="270" height="75" rx="7" fill="#fff" stroke="rgba(31,122,82,.2)" stroke-width="1.5"/>
+        <text x="545" y="112" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">📖 Secondary Cluster</text>
+        <text x="545" y="128" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Read-only · Up to 15 local readers</text>
+        <text x="545" y="144" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Can be promoted to writer in &lt; 1 min</text>
+
+        <!-- Secondary Region 2 -->
+        <rect x="390" y="200" width="310" height="120" rx="10" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="2"/>
+        <text x="545" y="220" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#1f7a52" text-anchor="middle">SECONDARY (ap-southeast-1)</text>
+        <rect x="410" y="230" width="270" height="75" rx="7" fill="#fff" stroke="rgba(31,122,82,.2)" stroke-width="1.5"/>
+        <text x="545" y="252" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">📖 Secondary Cluster</text>
+        <text x="545" y="268" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Read-only · Local low-latency reads</text>
+        <text x="545" y="284" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">DR failover target</text>
+
+        <!-- Note -->
+        <text x="360" y="338" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle">Replication uses dedicated AWS network infrastructure — NOT public internet</text>
+        <text x="360" y="354" font-family="DM Sans,sans-serif" font-size="9" fill="#9a9a8a" text-anchor="middle">Up to 5 secondary regions · Each secondary can have up to 15 read replicas</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Global Database Use Cases</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌏 Low-Latency Global Reads</h4>
+      <ul>
+        <li>Users in Europe and Asia read from their nearest secondary region</li>
+        <li>Instead of 150ms cross-Atlantic query, they get 10ms local read</li>
+        <li>Secondary clusters serve read traffic independently</li>
+        <li>Write-heavy apps still go to primary; reads are distributed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🆘 Disaster Recovery</h4>
+      <ul>
+        <li>If primary region fails, promote a secondary in &lt; 1 minute</li>
+        <li>RPO (Recovery Point Objective) ≈ 1 second (replication lag)</li>
+        <li>RTO (Recovery Time Objective) &lt; 1 minute (promotion time)</li>
+        <li>Much better than cross-region snapshot restore (RPO hours, RTO 30+ min)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Managed Planned Failover vs Unplanned</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>Trigger</th><th>RPO</th><th>RTO</th><th>Notes</th></tr>
+    <tr><td>Managed planned failover</td><td>Manual (scheduled)</td><td>~0 (synchronized first)</td><td>&lt; 1 min</td><td>Drains primary writes, promotes secondary — used for region migration</td></tr>
+    <tr><td>Unplanned (region failure)</td><td>Automatic / manual trigger</td><td>≤ 1 second</td><td>&lt; 1 min</td><td>Detach secondary, promote to standalone writer cluster</td></tr>
+    <tr><td>Backtrack (MySQL, single-region)</td><td>Manual</td><td>~0 (rewind)</td><td>Seconds</td><td>Not for region failure — for data accidents</td></tr>
+  </table></div>
+
+  <h3>Global Database Pricing</h3>
+  <div class="card">
+    <h4>💰 Global Database Cost Components</h4>
+    <ul>
+      <li>Primary cluster: standard Aurora instance + storage pricing</li>
+      <li>Secondary clusters: same instance + storage pricing in each region</li>
+      <li>Replication I/O: $0.20 per million replicated I/O requests</li>
+      <li>Data transfer: cross-region replication uses standard data transfer rates (~$0.02–0.09/GB depending on regions)</li>
+      <li>No additional charge for the Global Database feature itself — you pay for the resources</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — SECURITY
+══════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Aurora Security</h2>
+  <p>Aurora security covers four layers: <strong>network</strong> (VPC, security groups), <strong>access control</strong> (IAM, DB users), <strong>encryption</strong> (at rest and in transit), and <strong>auditing</strong> (CloudTrail, Database Activity Streams).</p>
+
+  <h3>Network Security — VPC Isolation</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Always place Aurora in private subnets</h4><p>Aurora instances should never be in public subnets. Use a DB subnet group covering private subnets across 3 AZs. Apps in public subnets connect via security group rules, not public IP.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Security Group rules — principle of least privilege</h4><p>Create a dedicated Security Group for Aurora. Allow inbound on port 3306 (MySQL) or 5432 (PostgreSQL) only from the Security Group of your application layer — not from IP ranges. This follows the Security Group chain pattern.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>DB subnet group — multi-AZ coverage</h4><p>A DB subnet group must include subnets in at least 2 AZs. For Aurora to place instances in 3 AZs (for storage), provide subnets in 3 AZs in your subnet group.</p></div>
+  </div>
+
+  <h3>Encryption</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 Encryption at Rest</h4>
+      <ul>
+        <li>Enable at cluster creation — cannot enable/disable on existing cluster</li>
+        <li>Uses AWS KMS (AES-256). AWS-managed key (free) or Customer Managed Key (CMK)</li>
+        <li>Encrypts: storage, automated backups, snapshots, read replicas</li>
+        <li>No performance impact — hardware-accelerated encryption</li>
+        <li>CMK rotation: Aurora re-encrypts automatically when key is rotated</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔒 Encryption in Transit (TLS)</h4>
+      <ul>
+        <li>TLS supported on all Aurora engines (MySQL: <code>--ssl-mode</code>, PG: <code>sslmode=require</code>)</li>
+        <li>Force TLS via DB cluster parameter: <code>require_secure_transport=ON</code> (MySQL)</li>
+        <li>Download RDS CA certificate bundle for server certificate validation</li>
+        <li>In ADO.NET: add <code>SslMode=Required</code> to connection string</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>IAM Database Authentication</h3>
+  <div class="card">
+    <h4>🛡️ IAM Auth — No Database Passwords</h4>
+    <p>Instead of storing a DB username/password in your app, IAM Auth generates a short-lived token (15-minute lifetime) using your IAM role credentials.</p>
+    <ul style="margin-top:8px;">
+      <li>Enable: <code>EnableIAMDatabaseAuthentication=true</code> on the cluster</li>
+      <li>Create DB user: <code>CREATE USER 'myapp' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS';</code></li>
+      <li>Grant IAM policy: <code>rds-db:connect</code> on the specific cluster resource ARN</li>
+      <li>Generate token: <code>AmazonRDSClient.GenerateAuthToken()</code> — valid 15 minutes</li>
+      <li>Works with: EC2 Instance Profiles, Lambda execution roles, ECS task roles</li>
+    </ul>
+  </div>
+
+  <h3>Database Activity Streams</h3>
+  <div class="card">
+    <h4>📊 Real-Time Audit Logging</h4>
+    <p>Database Activity Streams (DAS) captures all database activity (queries, DDL, connections) and streams it to a Kinesis Data Stream in near real-time — enabling SIEM integration and compliance auditing.</p>
+    <ul style="margin-top:8px;">
+      <li><strong>Synchronous mode</strong>: DB waits for Kinesis acknowledgment before confirming queries — guaranteed no activity loss, slight latency impact</li>
+      <li><strong>Asynchronous mode</strong>: DB doesn't wait — higher performance, tiny window of potential log loss</li>
+      <li>Activity is encrypted with a KMS Customer Managed Key</li>
+      <li>Works with: Aurora MySQL 8.0, Aurora PostgreSQL 13+</li>
+      <li>Cost: $0.30 per million events captured</li>
+    </ul>
+  </div>
+
+  <h3>Secrets Manager Integration</h3>
+  <ul class="checklist">
+    <li>Enable Secrets Manager rotation at cluster creation — Aurora rotates the master password automatically every 30 days (configurable)</li>
+    <li>Application reads secret via Secrets Manager SDK — never hardcodes credentials</li>
+    <li>Rotation is zero-downtime: Aurora keeps old and new password valid during transition window</li>
+    <li>Cost: $0.40/secret/month + $0.05 per 10,000 API calls (minimal)</li>
+  </ul>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖱️ Creating an Aurora Cluster — Step-by-Step Console</h2>
+  <p>Full walkthrough of every field when creating a production Aurora MySQL or PostgreSQL cluster via the AWS Console.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to RDS → Create Database</div>
+      <div class="console-step-path">RDS → Databases → Create database</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Creation method</span>
+        <span class="console-field-value">Standard create</span>
+        <span class="console-field-hint">Use Standard create — Easy create hides important settings. Always use Standard for production.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Engine type</span>
+        <span class="console-field-value">Amazon Aurora</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Edition</span>
+        <span class="console-field-value">Aurora (MySQL Compatible) or Aurora (PostgreSQL Compatible)</span>
+        <span class="console-field-hint">Choose based on your application. MySQL: Aurora MySQL 8.0. PostgreSQL: Aurora PostgreSQL 16.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Templates &amp; Availability</div>
+      <div class="console-step-path">Templates section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Template</span>
+        <span class="console-field-value">Production (for prod) or Dev/Test (lower cost defaults)</span>
+        <span class="console-field-hint">Production template enables Multi-AZ, deletion protection, and enhanced monitoring by default.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Settings — Cluster Identifier &amp; Credentials</div>
+      <div class="console-step-path">Settings section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">DB cluster identifier</span>
+        <span class="console-field-value">myapp-aurora-prod</span>
+        <span class="console-field-hint">Used in DNS endpoint names. Choose a meaningful, environment-tagged name.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Master username</span>
+        <span class="console-field-value">admin (or your preferred admin username)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Credentials management</span>
+        <span class="console-field-value">Managed in AWS Secrets Manager ✅</span>
+        <span class="console-field-hint">Recommended. Aurora auto-rotates the password. App reads from Secrets Manager — no hardcoded credentials.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Instance Configuration</div>
+      <div class="console-step-path">Instance configuration section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">DB instance class</span>
+        <span class="console-field-value">Serverless v2 (recommended) or db.r7g.large (provisioned)</span>
+        <span class="console-field-hint">For Serverless v2: set min 2 ACU, max 64 ACU for production. For provisioned: r7g family is cost-effective (Graviton3).</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Multi-AZ deployment</span>
+        <span class="console-field-value">Create an Aurora Replica or Reader node in a different AZ ✅</span>
+        <span class="console-field-hint">Required for production. This creates 1 reader in a different AZ for automatic failover.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Connectivity</div>
+      <div class="console-step-path">Connectivity section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">VPC</span>
+        <span class="console-field-value">my-production-vpc</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">DB subnet group</span>
+        <span class="console-field-value">aurora-private-subnet-group (private subnets in 3 AZs)</span>
+        <span class="console-field-hint">Create a DB subnet group with private subnets in 3 AZs before creating the cluster.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Public access</span>
+        <span class="console-field-value">No ✅</span>
+        <span class="console-field-hint">Always No for production. Aurora should only be reachable from within your VPC.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">VPC security group</span>
+        <span class="console-field-value">aurora-sg (allows inbound 3306/5432 from app-tier-sg only)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">RDS Proxy</span>
+        <span class="console-field-value">Create RDS Proxy ✅ (if using Lambda or high connection churn)</span>
+        <span class="console-field-hint">Strongly recommended for Lambda workloads. Prevents connection storms and absorbs failovers transparently.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Monitoring &amp; Additional Configuration</div>
+      <div class="console-step-path">Monitoring + Additional configuration sections</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Enhanced Monitoring</span>
+        <span class="console-field-value">Enable — Granularity: 60 seconds</span>
+        <span class="console-field-hint">Provides OS-level metrics (CPU steal, memory, disk I/O) — more detailed than basic CloudWatch.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Performance Insights</span>
+        <span class="console-field-value">Enable — Retention: 7 days (free) or 2 years (paid)</span>
+        <span class="console-field-hint">Essential for query performance analysis. Shows DB load by wait event, SQL, host, user.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Backup retention</span>
+        <span class="console-field-value">7 days (minimum for production; max 35)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Encryption</span>
+        <span class="console-field-value">Enable encryption ✅ — KMS key: aws/rds or your CMK</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Deletion protection</span>
+        <span class="console-field-value">Enable ✅</span>
+        <span class="console-field-hint">Prevents accidental cluster deletion via console or API. Must be disabled before you can delete.</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — Aurora Code Examples</h2>
+  <p>Examples cover: connecting to Aurora, using IAM Auth token generation, Secrets Manager credential retrieval, and RDS management operations via <code>AWSSDK.RDS</code> and <code>AWSSDK.SecretsManager</code> NuGet packages.</p>
+
+  <h3>1. Connect Using Secrets Manager (Recommended Pattern)</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Aurora Connection via Secrets Manager</span>
+    <pre><span class="kw">using</span> Amazon.SecretsManager;
+<span class="kw">using</span> Amazon.SecretsManager.Model;
+<span class="kw">using</span> MySqlConnector;  <span class="cm">// or Npgsql for PostgreSQL</span>
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="tp">AuroraConnectionFactory</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonSecretsManager</span> _sm;
+    <span class="kw">private readonly string</span> _secretId;
+    <span class="kw">private readonly string</span> _clusterEndpoint;
+
+    <span class="kw">public</span> <span class="fn">AuroraConnectionFactory</span>(<span class="tp">IAmazonSecretsManager</span> sm, <span class="kw">string</span> secretId, <span class="kw">string</span> clusterEndpoint)
+    {
+        _sm = sm;
+        _secretId = secretId;
+        _clusterEndpoint = clusterEndpoint;
+    }
+
+    <span class="cm">// Retrieve credentials from Secrets Manager and open a connection</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">MySqlConnection</span>&gt; <span class="fn">OpenAsync</span>(<span class="kw">string</span> dbName = <span class="str">"mydb"</span>)
+    {
+        <span class="kw">var</span> secret = <span class="kw">await</span> _sm.<span class="fn">GetSecretValueAsync</span>(<span class="kw">new</span> <span class="tp">GetSecretValueRequest</span>
+        {
+            SecretId = _secretId
+        });
+
+        <span class="kw">var</span> creds = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">DbCredentials</span>&gt;(secret.SecretString)!;
+
+        <span class="kw">var</span> conn = <span class="kw">new</span> <span class="tp">MySqlConnection</span>(<span class="kw">new</span> <span class="tp">MySqlConnectionStringBuilder</span>
+        {
+            Server         = _clusterEndpoint,
+            Port           = <span class="num">3306</span>,
+            Database       = dbName,
+            UserID         = creds.Username,
+            Password       = creds.Password,
+            SslMode        = <span class="tp">MySqlSslMode</span>.Required,       <span class="cm">// Always enforce TLS</span>
+            ConnectionTimeout = <span class="num">10</span>,
+            DefaultCommandTimeout = <span class="num">30</span>
+        }.<span class="fn">ToString</span>());
+
+        <span class="kw">await</span> conn.<span class="fn">OpenAsync</span>();
+        <span class="kw">return</span> conn;
+    }
+
+    <span class="kw">private record</span> <span class="tp">DbCredentials</span>(<span class="kw">string</span> Username, <span class="kw">string</span> Password);
+}</pre>
+  </div>
+
+  <h3>2. IAM Database Authentication Token</h3>
+  <div class="code-block">
+    <span class="code-label">C# — IAM Auth Token Generation</span>
+    <pre><span class="kw">using</span> Amazon.RDS.Util;
+<span class="kw">using</span> Amazon.Runtime;
+
+<span class="cm">// Generate a short-lived IAM auth token (valid 15 minutes)</span>
+<span class="kw">public static string</span> <span class="fn">GenerateIamAuthToken</span>(
+    <span class="kw">string</span> hostname,
+    <span class="kw">string</span> dbUser,
+    <span class="kw">string</span> region = <span class="str">"us-east-1"</span>)
+{
+    <span class="kw">var</span> token = <span class="tp">RDSAuthTokenGenerator</span>.<span class="fn">GenerateAuthToken</span>(
+        credentials: <span class="kw">new</span> <span class="tp">InstanceProfileAWSCredentials</span>(),  <span class="cm">// from EC2/Lambda role</span>
+        region:      <span class="tp">Amazon.RegionEndpoint</span>.<span class="fn">GetBySystemName</span>(region),
+        hostname:    hostname,
+        port:        <span class="num">3306</span>,
+        dbUser:      dbUser
+    );
+    <span class="kw">return</span> token;
+}
+
+<span class="cm">// Connect using IAM token as the password</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">MySqlConnection</span>&gt; <span class="fn">OpenWithIamAsync</span>(<span class="kw">string</span> endpoint, <span class="kw">string</span> dbUser)
+{
+    <span class="kw">var</span> token = <span class="fn">GenerateIamAuthToken</span>(endpoint, dbUser);
+
+    <span class="kw">var</span> conn = <span class="kw">new</span> <span class="tp">MySqlConnection</span>(<span class="kw">new</span> <span class="tp">MySqlConnectionStringBuilder</span>
+    {
+        Server   = endpoint,
+        Port     = <span class="num">3306</span>,
+        Database = <span class="str">"mydb"</span>,
+        UserID   = dbUser,
+        Password = token,          <span class="cm">// IAM token is the password</span>
+        SslMode  = <span class="tp">MySqlSslMode</span>.Required  <span class="cm">// Required for IAM auth</span>
+    }.<span class="fn">ToString</span>());
+
+    <span class="kw">await</span> conn.<span class="fn">OpenAsync</span>();
+    <span class="kw">return</span> conn;
+}
+
+<span class="cm">// Note: token expires in 15 min — regenerate before each connection
+// or cache with a 14-minute TTL</span></pre>
+  </div>
+
+  <h3>3. Manage Aurora Cluster via RDS SDK</h3>
+  <div class="code-block">
+    <span class="code-label">C# — RDS Cluster Management</span>
+    <pre><span class="kw">using</span> Amazon.RDS;
+<span class="kw">using</span> Amazon.RDS.Model;
+
+<span class="kw">public class</span> <span class="tp">AuroraAdminService</span>(<span class="tp">IAmazonRDS</span> rds)
+{
+    <span class="cm">// Describe all clusters in the account/region</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">DBCluster</span>&gt;&gt; <span class="fn">ListClustersAsync</span>()
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> rds.<span class="fn">DescribeDBClustersAsync</span>(<span class="kw">new</span> <span class="tp">DescribeDBClustersRequest</span>
+        {
+            Filters = [<span class="kw">new</span> <span class="tp">Filter</span> { Name = <span class="str">"engine"</span>, Values = [<span class="str">"aurora-mysql"</span>, <span class="str">"aurora-postgresql"</span>] }]
+        });
+        <span class="kw">return</span> resp.DBClusters;
+    }
+
+    <span class="cm">// Get cluster status — monitor replication lag for global DB</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PrintClusterStatusAsync</span>(<span class="kw">string</span> clusterId)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> rds.<span class="fn">DescribeDBClustersAsync</span>(<span class="kw">new</span>()
+        {
+            DBClusterIdentifier = clusterId
+        });
+        <span class="kw">var</span> c = resp.DBClusters[<span class="num">0</span>];
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Cluster:  {c.DBClusterIdentifier}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Status:   {c.Status}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Engine:   {c.Engine} {c.EngineVersion}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Endpoint: {c.Endpoint}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Reader:   {c.ReaderEndpoint}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Members:  {string.Join(", ", c.DBClusterMembers.Select(m => $"{m.DBInstanceIdentifier}({(m.IsClusterWriter ? "writer" : "reader")})")}"</span>);
+    }
+
+    <span class="cm">// Create a manual snapshot before major changes</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateSnapshotAsync</span>(<span class="kw">string</span> clusterId, <span class="kw">string</span> snapshotId)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> rds.<span class="fn">CreateDBClusterSnapshotAsync</span>(<span class="kw">new</span>()
+        {
+            DBClusterIdentifier         = clusterId,
+            DBClusterSnapshotIdentifier = snapshotId,
+            Tags = [<span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"CreatedBy"</span>, Value = <span class="str">"admin-sdk"</span> }]
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Snapshot {resp.DBClusterSnapshot.DBClusterSnapshotIdentifier}: {resp.DBClusterSnapshot.Status}"</span>);
+        <span class="kw">return</span> resp.DBClusterSnapshot.DBClusterSnapshotIdentifier;
+    }
+
+    <span class="cm">// Trigger manual failover (promote a reader to writer — for DR testing)</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">FailoverAsync</span>(<span class="kw">string</span> clusterId, <span class="kw">string</span>? targetInstance = <span class="kw">null</span>)
+    {
+        <span class="kw">await</span> rds.<span class="fn">FailoverDBClusterAsync</span>(<span class="kw">new</span>()
+        {
+            DBClusterIdentifier        = clusterId,
+            TargetDBInstanceIdentifier = targetInstance  <span class="cm">// null = AWS chooses highest priority</span>
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Failover initiated for {clusterId}"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>4. Query with Retry Logic (Handle Failover)</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Resilient Query with Retry</span>
+    <pre><span class="cm">// Polly retry policy for transient Aurora errors (failover, connection drops)</span>
+<span class="kw">using</span> Polly;
+<span class="kw">using</span> Polly.Retry;
+
+<span class="kw">public class</span> <span class="tp">ResilientAuroraService</span>(Func&lt;<span class="tp">Task</span>&lt;<span class="tp">MySqlConnection</span>&gt;&gt; connectionFactory)
+{
+    <span class="kw">private readonly</span> <span class="tp">AsyncRetryPolicy</span> _retryPolicy = <span class="tp">Policy</span>
+        .<span class="fn">Handle</span>&lt;<span class="tp">MySqlException</span>&gt;(ex =>
+            ex.Number == <span class="num">1040</span> || <span class="cm">// Too many connections</span>
+            ex.Number == <span class="num">2013</span> || <span class="cm">// Lost connection to MySQL server</span>
+            ex.Number == <span class="num">1205</span>    <span class="cm">// Lock wait timeout</span>
+        )
+        .<span class="fn">WaitAndRetryAsync</span>(
+            retryCount:       <span class="num">3</span>,
+            sleepDurationProvider: attempt => <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="tp">Math</span>.<span class="fn">Pow</span>(<span class="num">2</span>, attempt)), <span class="cm">// 2s, 4s, 8s</span>
+            onRetry: (ex, delay, attempt, _) =>
+                <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Retry {attempt} after {delay.TotalSeconds}s: {ex.Message}"</span>)
+        );
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">T</span>&gt;&gt; <span class="fn">QueryAsync</span>&lt;<span class="tp">T</span>&gt;(<span class="kw">string</span> sql, Func&lt;<span class="tp">MySqlDataReader</span>, <span class="tp">T</span>&gt; mapper)
+        => <span class="kw">await</span> _retryPolicy.<span class="fn">ExecuteAsync</span>(<span class="kw">async</span> () =>
+        {
+            <span class="kw">await using var</span> conn = <span class="kw">await</span> <span class="fn">connectionFactory</span>();
+            <span class="kw">await using var</span> cmd = conn.<span class="fn">CreateCommand</span>();
+            cmd.CommandText = sql;
+            <span class="kw">await using var</span> reader = <span class="kw">await</span> cmd.<span class="fn">ExecuteReaderAsync</span>();
+            <span class="kw">var</span> results = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">T</span>&gt;();
+            <span class="kw">while</span> (<span class="kw">await</span> reader.<span class="fn">ReadAsync</span>())
+                results.<span class="fn">Add</span>(<span class="fn">mapper</span>((<span class="tp">MySqlDataReader</span>)reader));
+            <span class="kw">return</span> results;
+        });
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 10 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Architecture Best Practices</h3>
+  <ul class="checklist">
+    <li>Use Aurora Serverless v2 for new workloads — eliminates over-provisioning and handles unexpected traffic spikes gracefully</li>
+    <li>Always deploy Multi-AZ (at least 1 reader in a different AZ) — ~30s automatic failover vs 15–20 min single-AZ recovery</li>
+    <li>Use RDS Proxy in front of Aurora for Lambda, ECS, and any connection-churning workload — prevents "too many connections" at scale</li>
+    <li>Use the Reader Endpoint for all read-only queries — distributes load across all replicas automatically</li>
+    <li>Set failover priority tiers on replicas — tier 0 for your designated hot standby (same instance class as writer)</li>
+    <li>Enable Aurora MySQL Backtrack on dev/staging — fast recovery from accidental DROPs without snapshot restore wait</li>
+  </ul>
+
+  <h3>Performance Best Practices</h3>
+  <ul class="checklist">
+    <li>Enable Performance Insights (7-day free tier) — identify slow queries and wait events before they become incidents</li>
+    <li>Use connection pooling (RDS Proxy or application-level pool like PgBouncer) — Aurora has per-instance connection limits</li>
+    <li>Choose I/O-Optimized storage if I/O cost exceeds 25% of your Aurora bill — breaks even and saves money above that threshold</li>
+    <li>Use Graviton-based instances (r7g, r8g) — ~15% better price-performance than equivalent x86 instances</li>
+    <li>Keep connections short-lived and return them to the pool — long idle connections waste Aurora memory and connection slots</li>
+    <li>For Aurora MySQL: use <code>aurora_replica_read_consistency=EVENTUAL</code> (default) or <code>SESSION</code> for read-your-writes on readers</li>
+  </ul>
+
+  <h3>Security Best Practices</h3>
+  <ul class="checklist">
+    <li>Enable encryption at rest (KMS) at cluster creation — cannot be enabled retroactively without snapshot/restore migration</li>
+    <li>Force TLS: set <code>require_secure_transport=ON</code> (MySQL) or <code>ssl=on</code> (PostgreSQL) in DB parameter group</li>
+    <li>Use Secrets Manager with auto-rotation — never hardcode DB credentials in app config or environment variables</li>
+    <li>Use IAM Database Authentication for EC2/Lambda — eliminates static passwords entirely for application connections</li>
+    <li>Enable deletion protection on all production clusters — one accidental API call cannot delete your database</li>
+    <li>Enable Database Activity Streams for PCI-DSS or HIPAA workloads — real-time audit log to Kinesis</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top Aurora Mistakes</h4>
+    <p>
+    ❌ <strong>Single-AZ cluster in production</strong> — an AZ failure takes your database down for 15–20 minutes. Always use Multi-AZ (writer + reader in different AZ) for production.<br>
+    ❌ <strong>Connecting Lambda directly to Aurora without RDS Proxy</strong> — each Lambda invocation opens a new connection. 1000 concurrent Lambdas = 1000 connections, easily exhausting Aurora's limit. Use RDS Proxy.<br>
+    ❌ <strong>Using the cluster endpoint for read queries</strong> — sends all traffic to the writer, wasting your read replicas. Use the reader endpoint for SELECT queries.<br>
+    ❌ <strong>Backup retention set to 1 day</strong> — the default 1-day retention gives you almost no recovery window. Set to 7+ days for production (35 days max).<br>
+    ❌ <strong>Not testing failover</strong> — run quarterly failover drills with <code>rds:failover-db-cluster</code>. Verify your app reconnects within your SLA. Most teams discover reconnection bugs during actual incidents, not before.<br>
+    ❌ <strong>Encryption not enabled at creation</strong> — you cannot enable encryption on an existing unencrypted cluster. You must snapshot it, restore into a new encrypted cluster, and migrate. Enable at creation, always.<br>
+    ❌ <strong>Skipping Performance Insights</strong> — without it, diagnosing query performance issues requires guesswork. It's free for 7 days and invaluable. Enable it at cluster creation.<br>
+    ❌ <strong>Using gp2-era mindset for Aurora storage</strong> — Aurora storage is not EBS. You don't provision IOPS. Aurora I/O is billed per million requests. For high I/O, switch to I/O-Optimized mode.
+    </p>
+  </div>
+
+  <h3>Aurora vs RDS vs DynamoDB — Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>Aurora</th><th>RDS</th><th>DynamoDB</th></tr>
+    <tr><td>MySQL/PostgreSQL compatibility</td><td>✅ Full compat</td><td>✅ Full compat</td><td>❌ NoSQL only</td></tr>
+    <tr><td>Complex SQL (JOINs, transactions)</td><td>✅ Full ACID</td><td>✅ Full ACID</td><td>❌ Limited</td></tr>
+    <tr><td>Read scale (&gt; 5 replicas)</td><td>✅ Up to 15</td><td>⚠️ Up to 5</td><td>✅ Unlimited</td></tr>
+    <tr><td>Sub-millisecond latency</td><td>⚠️ ~1ms typical</td><td>⚠️ ~1ms typical</td><td>✅ &lt;1ms guaranteed</td></tr>
+    <tr><td>Automatic storage scaling</td><td>✅ To 128 TB</td><td>⚠️ Manual or auto-scaling EBS</td><td>✅ Unlimited</td></tr>
+    <tr><td>Global multi-region writes</td><td>❌ Single-region writer</td><td>❌ Single-region writer</td><td>✅ Global Tables</td></tr>
+    <tr><td>Serverless / scale to near-zero</td><td>✅ Serverless v2 (min ACU)</td><td>❌ Not available</td><td>✅ On-demand pricing</td></tr>
+    <tr><td>Cost at low traffic</td><td>⚠️ Min ACU always running</td><td>⚠️ Instance always running</td><td>✅ Pay per request</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have a COMPLETE Deep Dive into Amazon Aurora!</h3>
+    <p>Aurora editions (MySQL · PostgreSQL · Serverless v2 · Global DB) · Shared distributed storage architecture · Redo log protocol · 6-copy quorum (4/6 write, 3/6 read) · Automatic self-healing storage · Cluster endpoints (writer · reader · custom · proxy) · High availability failover process · Failover tiers · RDS Proxy connection pooling · Serverless v2 ACU scaling · Global Database replication (&lt;1s lag) · Storage types (Standard vs I/O-Optimized) · Backtrack · Continuous backup to S3 · KMS encryption · IAM database authentication · Secrets Manager rotation · Database Activity Streams · AWS Console setup (every field) · 4 C# SDK patterns (Secrets Manager connection · IAM token · cluster management · Polly retry) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--aur-d);">Your Aurora cluster is now production-ready — highly available, globally scalable, and secure! 🔮🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

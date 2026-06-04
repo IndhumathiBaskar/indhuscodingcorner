@@ -32,8 +32,10 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;lin
 .header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
 .header h1 span{color:var(--cr-d);}
 .header p{color:var(--muted);font-size:.88rem;}
-.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
-.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 0 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(176,28,46,.3) transparent;}
+.tab-nav::-webkit-scrollbar{height:3px;}
+.tab-nav::-webkit-scrollbar-thumb{background:rgba(176,28,46,.3);border-radius:10px;}
+.scroll-hint{flex-shrink:0;padding:0 12px;display:flex;align-items:center;gap:3px;color:var(--cr-d);font-size:.7rem;font-weight:700;opacity:.6;white-space:nowrap;}
 .tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
 .tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
 .tab-btn:hover{background:var(--surface);color:var(--text);}
@@ -242,6 +244,9 @@ code{background:rgba(176,28,46,.09);padding:1px 5px;border-radius:3px;font-famil
       <button class="tab-btn" onclick="T('totp',this)">⑩ TOTP &amp; OTP</button>
       <button class="tab-btn" onclick="T('encoding',this)">⑪ Bytes &amp; Encoding</button>
       <button class="tab-btn" onclick="T('best',this)">⑫ Best Practices</button>
+      <button class="tab-btn" onclick="T('pgp',this)">⑬ PGP / OpenPGP</button>
+      <button class="tab-btn" onclick="T('dpapi',this)">⑭ Windows DPAPI</button>
+      <span class="scroll-hint">← scroll →</span>
     </div>
   </div>
 </div>
@@ -1454,7 +1459,573 @@ cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcN...</span>
     <div style="font-size:2rem;margin-bottom:8px;">🔐</div>
     <h3>You Now Have COMPLETE Cryptography Knowledge!</h3>
     <p>Symmetric (AES-256-GCM, modes, IV/Nonce, AAD) · Asymmetric (RSA-OAEP, ECDSA, hybrid) · SHA-2/SHA-3 hashing · Avalanche effect · MD5/SHA-1 broken · Password hashing (BCrypt, Argon2id, PBKDF2, salt byte layout) · HMAC-SHA256 (webhook verification) · Digital Signatures (RSA-PSS, ECDSA) · KDF (HKDF extract+expand, PBKDF2) · Key Wrapping &amp; Envelope Encryption (AWS KMS pattern) · <strong>X.509 certificate structure (all fields)</strong> · Certificate chain (Root→Intermediate→Leaf) · <strong>TLS 1.3 handshake full flow</strong> · PEM/DER/CSR formats · C# X509Certificate2 · <strong>ChaCha20-Poly1305</strong> · <strong>ECDH key exchange + forward secrecy</strong> · <strong>TOTP/HOTP from scratch</strong> (HMAC-SHA1 + dynamic truncation + Base32 + QR URI) · Byte size reference (all algorithms) · Base64/Base64Url/Hex/Base32 · Cryptographically secure random · Timing-safe comparison</p>
-    <p style="margin-top:10px;font-weight:600;color:var(--cr-d);">Every layer of cryptography — from raw bytes to TLS handshakes to 2FA codes — fully understood! 🛡️</p>
+    <p style="margin-top:8px;">· <strong>PGP/OpenPGP</strong> (hybrid flow, file structure, C# PgpCore — encrypt/sign/decrypt/verify) · <strong>Windows DPAPI</strong> (ProtectedData.Protect/Unprotect, CurrentUser vs LocalMachine scope, optional entropy, vs AES vs Key Vault)</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--cr-d);">Every layer of cryptography — from raw bytes to TLS handshakes to 2FA to platform secrets — fully understood! 🛡️</p>
+  </div>
+</div></div>
+
+
+<!-- ⑬ PGP / OpenPGP -->
+<div id="tab-pgp" class="tab-panel"><div class="section">
+  <h2>📁 PGP / OpenPGP — Hybrid File Encryption</h2>
+  <p>PGP (Pretty Good Privacy) is a <strong>hybrid encryption system</strong> that combines the best of symmetric and asymmetric cryptography — AES for fast bulk encryption and RSA/ECC for secure key exchange. It's the standard for secure file transfer, encrypted email, and cross-organisation data exchange.</p>
+
+  <div class="tip">
+    <h4>💡 Why Hybrid? Why Not Just RSA or Just AES?</h4>
+    <p><strong>AES only:</strong> Fast ✅ but how do you safely share the secret key? ❌<br>
+    <strong>RSA only:</strong> Safe key sharing ✅ but too slow for large files ❌<br>
+    <strong>PGP hybrid:</strong> AES encrypts the file (fast), RSA encrypts the AES key (safe) ✅ Best of both worlds.</p>
+  </div>
+
+  <h3>What a PGP File Actually Contains</h3>
+  <div class="card">
+    <h4>📦 PGP Encrypted File Structure</h4>
+    <div class="byte-row">
+      <div class="byte-box b-cert">META</div><div class="byte-box b-cert">VER</div><div class="byte-box b-cert">ALG</div>
+      <div class="byte-box b-key">ENC KEY[0]</div><div class="byte-box b-key">ENC KEY[1]</div><div class="byte-box b-key">ENC KEY[..]</div><div class="byte-box b-key">ENC KEY[n]</div>
+      <div class="byte-box b-cipher">DATA[0]</div><div class="byte-box b-cipher">DATA[1]</div><div class="byte-box b-cipher">DATA[2]</div><div class="byte-box b-cipher">DATA[..]</div><div class="byte-box b-cipher">DATA[n]</div>
+      <div class="byte-box b-hash">SIG[0]</div><div class="byte-box b-hash">SIG[..]</div><div class="byte-box b-hash">SIG[n]</div>
+    </div>
+    <div class="byte-label">← Metadata/Version → | ← RSA/ECC-encrypted AES key → | ← AES-encrypted file content → | ← Optional signature →</div>
+    <p style="font-size:.78rem;color:var(--muted);margin-top:6px;">Everything is packaged into one <code>.pgp</code> or <code>.gpg</code> file. The recipient only needs their private key to unlock everything.</p>
+  </div>
+
+  <h3>PGP Encryption Flow — Step by Step</h3>
+  <div class="flow">
+    <div class="flow-node n-plain">
+      <div class="flow-node-title">📄 Original File (any size — PDF, CSV, image, ZIP)</div>
+      <ul class="flow-items"><li>Alice wants to send this securely to Bob</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Step 1 — Generate one-time AES session key</div>
+    <div class="flow-node n-key">
+      <div class="flow-node-title">🎲 Random AES-256 Session Key (32 bytes)</div>
+      <ul class="flow-items">
+        <li>Generated fresh for this file only — never reused</li>
+        <li>Used for fast bulk encryption of the file content</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Step 2 — Encrypt file content with AES</div>
+    <div class="flow-node n-cr">
+      <div class="flow-node-title">🔒 AES-256 Encrypted File Content</div>
+      <ul class="flow-items">
+        <li>Fast — symmetric encryption handles any file size</li>
+        <li>Result: encrypted blob (same length as original)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Step 3 — Protect the AES key with Bob's public key</div>
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">🗝️ RSA/ECC Encrypts the AES Session Key</div>
+      <ul class="flow-items">
+        <li>Only Bob's private key can decrypt the AES key</li>
+        <li>Only 32 bytes — fits perfectly in RSA payload limit</li>
+        <li>For multiple recipients: encrypt the same AES key with each person's public key</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Step 4 — Optional: Alice signs with her private key</div>
+    <div class="flow-node n-hash">
+      <div class="flow-node-title">✍️ Digital Signature (optional but recommended)</div>
+      <ul class="flow-items">
+        <li>Proves the file came from Alice — not a fake sender</li>
+        <li>Bob verifies with Alice's public key</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">📦 Single .pgp File — Send to Bob</div>
+      <ul class="flow-items">
+        <li>Contains: metadata + encrypted AES key + encrypted content + signature</li>
+        <li>Safe to send over email, FTP, S3, any channel</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>PGP Decryption Flow</h3>
+  <div class="flow">
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">📬 Bob receives .pgp file</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-key">
+      <div class="flow-node-title">🔑 Bob uses his PGP private key to decrypt the AES session key</div>
+      <ul class="flow-items"><li>Private key never leaves Bob's machine — only the AES key is unwrapped</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-cr">
+      <div class="flow-node-title">🔓 AES session key decrypts the file content</div>
+      <ul class="flow-items"><li>Original file recovered exactly</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-hash">
+      <div class="flow-node-title">✅ Optional: Verify Alice's signature with her public key</div>
+      <ul class="flow-items"><li>Confirms authenticity — file really came from Alice, unchanged</li></ul>
+    </div>
+  </div>
+
+  <h3>Algorithms Used in Modern PGP</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Purpose</th><th>Algorithm</th><th>Status</th></tr>
+    <tr><td>File / data encryption</td><td>AES-256 (GCM or CFB)</td><td>✅ Recommended</td></tr>
+    <tr><td>Session key protection</td><td>RSA-2048+ or ECC P-256+</td><td>✅ Recommended</td></tr>
+    <tr><td>Integrity / signature hash</td><td>SHA-256 or SHA-512</td><td>✅ Recommended</td></tr>
+    <tr><td>Digital signature</td><td>RSA or ECDSA</td><td>✅ Recommended</td></tr>
+    <tr><td>Legacy file encryption</td><td>CAST5, IDEA, 3DES</td><td>❌ Avoid in new systems</td></tr>
+    <tr><td>Legacy hash</td><td>MD5, SHA-1</td><td>❌ Broken — avoid</td></tr>
+  </table></div>
+
+  <h3>PGP Key Pair — Public vs Private</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔓 PGP Public Key — Share Freely</h4>
+      <ul>
+        <li>Distributed to anyone who wants to send you encrypted files</li>
+        <li>Published on key servers (keys.openpgp.org)</li>
+        <li>Used by senders to encrypt the AES session key</li>
+        <li>Used by verifiers to check your signatures</li>
+        <li>Safe to email, post on website, share in API responses</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔐 PGP Private Key — Keep Secret</h4>
+      <ul>
+        <li>Never shared — stays on your machine only</li>
+        <li>Always protected with a strong passphrase</li>
+        <li>Used to decrypt received files (unwrap AES key)</li>
+        <li>Used to sign files you send</li>
+        <li>Loss = cannot decrypt old files. Compromise = all past files exposed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Why PGP Is Ideal for Enterprise File Exchange</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ PGP Strengths</h4>
+      <ul>
+        <li>No shared secrets — each party keeps their own private key</li>
+        <li>Works across organisations — just exchange public keys</li>
+        <li>Scales to multiple recipients — encrypt the same AES key for each</li>
+        <li>Optional signature proves sender identity</li>
+        <li>Long history (1991) — widely supported, battle-tested</li>
+        <li>Used in healthcare, banking, pharmacy, legal sectors</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ PGP Limitations</h4>
+      <ul>
+        <li>Key management can be complex at scale</li>
+        <li>No perfect forward secrecy (unlike TLS with ECDHE)</li>
+        <li>Web of Trust model is hard to manage in large orgs</li>
+        <li>Private key passphrase loss = permanent data loss</li>
+        <li>Not designed for real-time communication (use TLS for that)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>C# — PGP with BouncyCastle</h3>
+  <div class="info"><h4>ℹ️ Library Required</h4><p>PGP is too complex to implement from scratch. Use <strong>BouncyCastle</strong> (the standard .NET crypto library) or <strong>PgpCore</strong> (a cleaner wrapper). Install: <code>dotnet add package PgpCore</code></p></div>
+
+  <div class="code-block"><span class="code-label">C# · PgpCore · Generate Keys · Encrypt File · Decrypt File · Sign + Verify</span>
+<pre><span class="cm">// dotnet add package PgpCore</span>
+<span class="kw">using</span> <span class="tp">PgpCore</span>;
+<span class="kw">using</span> <span class="tp">System.IO</span>;
+
+<span class="kw">public static class</span> <span class="tp">PgpHelper</span>
+{
+    <span class="cm">// ── 1. Generate a PGP key pair ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span> <span class="fn">GenerateKeyPairAsync</span>(
+        <span class="kw">string</span> identity,         <span class="cm">// e.g. "Alice &lt;alice@example.com&gt;"</span>
+        <span class="kw">string</span> passphrase,       <span class="cm">// protects private key on disk</span>
+        <span class="kw">string</span> publicKeyPath,    <span class="cm">// where to save public key (.asc)</span>
+        <span class="kw">string</span> privateKeyPath)   <span class="cm">// where to save private key (.asc)</span>
+    {
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>();
+        <span class="kw">await</span> pgp.<span class="fn">GenerateKeyAsync</span>(publicKeyPath, privateKeyPath, identity, passphrase);
+        <span class="cm">// Internally: generates RSA-2048 or ECC key pair</span>
+        <span class="cm">// Private key encrypted with passphrase using AES + S2K (String-to-Key)</span>
+    }
+
+    <span class="cm">// ── 2. Encrypt a file with recipient's public key ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span> <span class="fn">EncryptFileAsync</span>(
+        <span class="kw">string</span> inputFilePath,
+        <span class="kw">string</span> outputPgpPath,
+        <span class="kw">string</span> recipientPublicKeyPath)
+    {
+        <span class="kw">var</span> encryptionKeys = <span class="kw">new</span> <span class="tp">EncryptionKeys</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(recipientPublicKeyPath));
+
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>(encryptionKeys);
+        <span class="kw">await</span> pgp.<span class="fn">EncryptFileAsync</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(inputFilePath),
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(outputPgpPath));
+        <span class="cm">// PGP internally: generates AES-256 session key → encrypts file →</span>
+        <span class="cm">// encrypts session key with recipient's RSA/ECC public key → packages as .pgp</span>
+    }
+
+    <span class="cm">// ── 3. Decrypt a PGP file with private key ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span> <span class="fn">DecryptFileAsync</span>(
+        <span class="kw">string</span> inputPgpPath,
+        <span class="kw">string</span> outputFilePath,
+        <span class="kw">string</span> privateKeyPath,
+        <span class="kw">string</span> passphrase)
+    {
+        <span class="kw">var</span> encryptionKeys = <span class="kw">new</span> <span class="tp">EncryptionKeys</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(privateKeyPath), passphrase);
+
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>(encryptionKeys);
+        <span class="kw">await</span> pgp.<span class="fn">DecryptFileAsync</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(inputPgpPath),
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(outputFilePath));
+    }
+
+    <span class="cm">// ── 4. Encrypt AND sign (proves sender identity) ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span> <span class="fn">EncryptAndSignAsync</span>(
+        <span class="kw">string</span> inputFilePath,
+        <span class="kw">string</span> outputPgpPath,
+        <span class="kw">string</span> recipientPublicKeyPath,
+        <span class="kw">string</span> senderPrivateKeyPath,
+        <span class="kw">string</span> senderPassphrase)
+    {
+        <span class="kw">var</span> encryptionKeys = <span class="kw">new</span> <span class="tp">EncryptionKeys</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(recipientPublicKeyPath),
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(senderPrivateKeyPath),
+            senderPassphrase);
+
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>(encryptionKeys);
+        <span class="kw">await</span> pgp.<span class="fn">EncryptFileAndSignAsync</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(inputFilePath),
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(outputPgpPath));
+    }
+
+    <span class="cm">// ── 5. Decrypt AND verify signature ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">DecryptAndVerifyAsync</span>(
+        <span class="kw">string</span> inputPgpPath,
+        <span class="kw">string</span> outputFilePath,
+        <span class="kw">string</span> recipientPrivateKeyPath,
+        <span class="kw">string</span> recipientPassphrase,
+        <span class="kw">string</span> senderPublicKeyPath)
+    {
+        <span class="kw">var</span> encryptionKeys = <span class="kw">new</span> <span class="tp">EncryptionKeys</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(senderPublicKeyPath),      <span class="cm">// to verify signature</span>
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(recipientPrivateKeyPath),  <span class="cm">// to decrypt</span>
+            recipientPassphrase);
+
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>(encryptionKeys);
+        <span class="kw">await</span> pgp.<span class="fn">DecryptFileAndVerifyAsync</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(inputPgpPath),
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(outputFilePath));
+        <span class="kw">return true</span>; <span class="cm">// throws if signature invalid</span>
+    }
+
+    <span class="cm">// ── 6. Encrypt in-memory stream (no files — useful in APIs) ──</span>
+    <span class="kw">public static async</span> <span class="tp">Task</span>&lt;<span class="tp">Stream</span>&gt; <span class="fn">EncryptStreamAsync</span>(
+        <span class="tp">Stream</span> inputStream, <span class="kw">string</span> recipientPublicKeyPath)
+    {
+        <span class="kw">var</span> outputStream = <span class="kw">new</span> <span class="tp">MemoryStream</span>();
+        <span class="kw">var</span> encryptionKeys = <span class="kw">new</span> <span class="tp">EncryptionKeys</span>(
+            <span class="kw">new</span> <span class="tp">FileInfo</span>(recipientPublicKeyPath));
+        <span class="kw">using var</span> pgp = <span class="kw">new</span> <span class="tp">PGP</span>(encryptionKeys);
+        <span class="kw">await</span> pgp.<span class="fn">EncryptStreamAsync</span>(inputStream, outputStream);
+        outputStream.Position = <span class="num">0</span>;
+        <span class="kw">return</span> outputStream;
+    }
+}
+
+<span class="cm">// ── Usage ──</span>
+<span class="cm">// 1. Generate once per user/organisation</span>
+<span class="kw">await</span> <span class="tp">PgpHelper</span>.<span class="fn">GenerateKeyPairAsync</span>(
+    <span class="str">"Bob &lt;bob@example.com&gt;"</span>, <span class="str">"str0ngPassphr@se"</span>,
+    <span class="str">"bob_public.asc"</span>, <span class="str">"bob_private.asc"</span>);
+
+<span class="cm">// 2. Alice encrypts + signs a file for Bob</span>
+<span class="kw">await</span> <span class="tp">PgpHelper</span>.<span class="fn">EncryptAndSignAsync</span>(
+    <span class="str">"report.csv"</span>, <span class="str">"report.csv.pgp"</span>,
+    <span class="str">"bob_public.asc"</span>, <span class="str">"alice_private.asc"</span>, <span class="str">"alicePassphrase"</span>);
+
+<span class="cm">// 3. Bob decrypts + verifies Alice's signature</span>
+<span class="kw">await</span> <span class="tp">PgpHelper</span>.<span class="fn">DecryptAndVerifyAsync</span>(
+    <span class="str">"report.csv.pgp"</span>, <span class="str">"report_decrypted.csv"</span>,
+    <span class="str">"bob_private.asc"</span>, <span class="str">"str0ngPassphr@se"</span>, <span class="str">"alice_public.asc"</span>);</pre></div>
+
+  <h3>PGP vs AES-Only vs TLS</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>AES Only</th><th>PGP</th><th>TLS/HTTPS</th></tr>
+    <tr><td>Encrypt large files</td><td>✅</td><td>✅</td><td>✅ (stream)</td></tr>
+    <tr><td>Secure key sharing</td><td>❌ Manual</td><td>✅ Public key</td><td>✅ Handshake</td></tr>
+    <tr><td>Multiple recipients</td><td>❌</td><td>✅</td><td>❌</td></tr>
+    <tr><td>Sender verification</td><td>❌</td><td>✅ Signatures</td><td>✅ Certs</td></tr>
+    <tr><td>Works cross-org</td><td>⚠️</td><td>✅</td><td>✅</td></tr>
+    <tr><td>At-rest encryption</td><td>✅</td><td>✅</td><td>❌ Transit only</td></tr>
+    <tr><td>Real-time streaming</td><td>⚠️</td><td>❌</td><td>✅</td></tr>
+    <tr><td>Forward secrecy</td><td>❌</td><td>❌</td><td>✅ (ECDHE)</td></tr>
+  </table></div>
+
+  <div class="danger">
+    <h4>❌ Common PGP Mistakes</h4>
+    <p>
+    ❌ Using legacy algorithms (CAST5, IDEA, 3DES) — always configure AES-256<br>
+    ❌ RSA-1024 keys — minimum RSA-2048, prefer ECC P-256<br>
+    ❌ No passphrase on private key — if stolen, attacker gets everything<br>
+    ❌ Encrypting data directly with RSA — PGP uses hybrid, never raw RSA on file content<br>
+    ❌ Implementing PGP from scratch — use PgpCore or BouncyCastle<br>
+    ❌ Never rotating keys — rotate annually and when a team member leaves
+    </p>
+  </div>
+
+  <ul class="checklist">
+    <li>Use AES-256 + RSA-2048+ or ECC P-256+ in your PGP configuration</li>
+    <li>Always protect private keys with a strong passphrase (20+ chars)</li>
+    <li>Use encrypt-and-sign together for full confidentiality + authenticity</li>
+    <li>Store private keys in secure locations — HSM, encrypted vault, or OS certificate store</li>
+    <li>Rotate PGP key pairs annually and immediately after any suspected compromise</li>
+    <li>Use a trusted library (PgpCore, BouncyCastle) — never hand-roll PGP</li>
+  </ul>
+</div></div>
+
+
+<!-- ⑭ WINDOWS DPAPI -->
+<div id="tab-dpapi" class="tab-panel"><div class="section">
+  <h2>🪟 Windows DPAPI — Platform Secret Protection</h2>
+  <p>DPAPI (Data Protection API) is a Windows built-in service that encrypts secrets <strong>without you managing encryption keys</strong>. Windows ties the encryption to the user account or machine identity — making it the safest way to store secrets in Windows-based applications.</p>
+
+  <div class="tip">
+    <h4>💡 The Problem DPAPI Solves</h4>
+    <p>You've learned AES encryption — but where do you store the AES key? If you hard-code it or put it in a config file, an attacker who gets the file gets the key too. DPAPI solves this by making <strong>Windows itself the key manager</strong> — the key is derived from your Windows credentials and never stored anywhere you can see it.</p>
+  </div>
+
+  <h3>DPAPI Internals — What Windows Does for You</h3>
+  <div class="flow">
+    <div class="flow-node n-plain">
+      <div class="flow-node-title">📝 Your Secret (connection string, API key, password)</div>
+      <ul class="flow-items"><li>Plain bytes that need protecting at rest</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-indigo">
+      <div class="flow-node-title">🏛️ Windows Derives a Master Key</div>
+      <ul class="flow-items">
+        <li>CurrentUser: derived from Windows user account credentials (NTLM hash)</li>
+        <li>LocalMachine: derived from machine-specific secrets stored in LSA</li>
+        <li>You never see or store this key — Windows manages it entirely</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-cr">
+      <div class="flow-node-title">🔒 AES-256 + SHA-512 HMAC Encryption</div>
+      <ul class="flow-items">
+        <li>Windows uses AES internally for encryption</li>
+        <li>HMAC protects integrity — detects tampering</li>
+        <li>Optional entropy adds an extra layer (like a second secret)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">📦 Encrypted BLOB — Safe to Store</div>
+      <ul class="flow-items">
+        <li>Store in config file, registry, database, or app settings</li>
+        <li>Meaningless without the same Windows user/machine context</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Two Protection Scopes — CurrentUser vs LocalMachine</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>👤 CurrentUser Scope</h4>
+      <ul>
+        <li>Encryption tied to the <strong>specific Windows user account</strong></li>
+        <li>Only that user — on any machine they log into — can decrypt</li>
+        <li>If you copy the encrypted blob to another machine under same user account with roaming profile, it still works</li>
+        <li>Best for: <strong>desktop apps</strong>, per-user secrets, developer tools</li>
+        <li>Example: VS Code stores Git credentials this way</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🖥️ LocalMachine Scope</h4>
+      <ul>
+        <li>Encryption tied to the <strong>specific machine</strong></li>
+        <li>Any process running on that machine can decrypt</li>
+        <li>Copy the blob to another machine → cannot decrypt</li>
+        <li>Best for: <strong>Windows services, IIS apps, on-premise servers</strong></li>
+        <li>⚠️ Lower isolation — any local admin can decrypt</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Optional Entropy — Extra Security Layer</h3>
+  <div class="card">
+    <h4>🧂 What is Optional Entropy?</h4>
+    <p style="font-size:.82rem;color:var(--muted);">Optional entropy is like a second secret password that DPAPI requires during both encrypt and decrypt. Without it, any process running as the same user can decrypt your data. With entropy, an attacker also needs to know the entropy value — adding a second layer of protection. Think of it as a salt that the caller must supply.</p>
+    <div style="background:var(--code-bg);border-radius:5px;padding:8px 12px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:#a6e3a1;">
+      ProtectedData.Protect(secret, <span style="color:#fab387;">optionalEntropy</span>, scope)<br>
+      <span style="color:#4a5070;">// optionalEntropy = extra bytes both sides must agree on</span><br>
+      <span style="color:#4a5070;">// Same entropy required on Unprotect — acts like a second factor</span>
+    </div>
+  </div>
+
+  <h3>C# — Full DPAPI Examples</h3>
+  <div class="code-block"><span class="code-label">C# · Windows DPAPI · Protect · Unprotect · Scope · Entropy · Connection String Pattern</span>
+<pre><span class="kw">using</span> <span class="tp">System.Security.Cryptography</span>;
+<span class="kw">using</span> <span class="tp">System.Text</span>;
+
+<span class="kw">public static class</span> <span class="tp">DpapiHelper</span>
+{
+    <span class="cm">// ── Encrypt a secret string with DPAPI ──</span>
+    <span class="kw">public static string</span> <span class="fn">Protect</span>(
+        <span class="kw">string</span> secret,
+        <span class="tp">DataProtectionScope</span> scope = <span class="tp">DataProtectionScope</span>.CurrentUser,
+        <span class="kw">string</span>? entropy = <span class="kw">null</span>)    <span class="cm">// optional extra secret</span>
+    {
+        <span class="kw">var</span> secretBytes  = <span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(secret);
+        <span class="kw">var</span> entropyBytes = entropy != <span class="kw">null</span>
+            ? <span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(entropy)
+            : <span class="kw">null</span>;
+
+        <span class="kw">var</span> encrypted = <span class="tp">ProtectedData</span>.<span class="fn">Protect</span>(
+            secretBytes,
+            entropyBytes,   <span class="cm">// null = no extra entropy</span>
+            scope);         <span class="cm">// CurrentUser or LocalMachine</span>
+
+        <span class="kw">return</span> <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(encrypted);
+        <span class="cm">// Store this Base64 string in config / registry / DB — it's safe</span>
+    }
+
+    <span class="cm">// ── Decrypt a DPAPI-protected secret ──</span>
+    <span class="kw">public static string</span> <span class="fn">Unprotect</span>(
+        <span class="kw">string</span> encryptedBase64,
+        <span class="tp">DataProtectionScope</span> scope = <span class="tp">DataProtectionScope</span>.CurrentUser,
+        <span class="kw">string</span>? entropy = <span class="kw">null</span>)    <span class="cm">// must match what was used in Protect</span>
+    {
+        <span class="kw">var</span> encryptedBytes = <span class="tp">Convert</span>.<span class="fn">FromBase64String</span>(encryptedBase64);
+        <span class="kw">var</span> entropyBytes   = entropy != <span class="kw">null</span>
+            ? <span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(entropy)
+            : <span class="kw">null</span>;
+
+        <span class="kw">var</span> decryptedBytes = <span class="tp">ProtectedData</span>.<span class="fn">Unprotect</span>(
+            encryptedBytes,
+            entropyBytes,
+            scope);
+
+        <span class="kw">return</span> <span class="tp">Encoding</span>.UTF8.<span class="fn">GetString</span>(decryptedBytes);
+        <span class="cm">// throws CryptographicException if wrong user/machine/entropy</span>
+    }
+
+    <span class="cm">// ── Protect raw bytes (for keys, tokens etc.) ──</span>
+    <span class="kw">public static byte</span>[] <span class="fn">ProtectBytes</span>(<span class="kw">byte</span>[] data, <span class="tp">DataProtectionScope</span> scope)
+        => <span class="tp">ProtectedData</span>.<span class="fn">Protect</span>(data, <span class="kw">null</span>, scope);
+
+    <span class="kw">public static byte</span>[] <span class="fn">UnprotectBytes</span>(<span class="kw">byte</span>[] encrypted, <span class="tp">DataProtectionScope</span> scope)
+        => <span class="tp">ProtectedData</span>.<span class="fn">Unprotect</span>(encrypted, <span class="kw">null</span>, scope);
+}
+
+<span class="cm">// ════════ Real-World Usage Patterns ════════</span>
+
+<span class="cm">// Pattern 1: Protect a DB connection string (run once at setup)</span>
+<span class="kw">var</span> connStr    = <span class="str">"Server=db01;User=admin;Password=Secret123;"</span>;
+<span class="kw">var</span> encrypted  = <span class="tp">DpapiHelper</span>.<span class="fn">Protect</span>(connStr, <span class="tp">DataProtectionScope</span>.LocalMachine);
+<span class="cm">// Store encrypted in appsettings.json → "ConnectionString": "AQAAANCMnd8..."</span>
+
+<span class="cm">// Pattern 2: Read it back at runtime</span>
+<span class="kw">var</span> encFromConfig = <span class="cm">/* read from appsettings */</span> encrypted;
+<span class="kw">var</span> plainConn      = <span class="tp">DpapiHelper</span>.<span class="fn">Unprotect</span>(encFromConfig, <span class="tp">DataProtectionScope</span>.LocalMachine);
+<span class="cm">// Only works on the same machine — other machines cannot decrypt</span>
+
+<span class="cm">// Pattern 3: Protect an API key with entropy (extra security)</span>
+<span class="kw">var</span> apiKey         = <span class="str">"sk-live-abc123def456..."</span>;
+<span class="kw">var</span> appEntropy     = <span class="str">"MyApp-v2-ApiKeyProtection"</span>; <span class="cm">// agreed by your app — not stored with data</span>
+<span class="kw">var</span> encApiKey      = <span class="tp">DpapiHelper</span>.<span class="fn">Protect</span>(apiKey, <span class="tp">DataProtectionScope</span>.CurrentUser, appEntropy);
+<span class="kw">var</span> decApiKey      = <span class="tp">DpapiHelper</span>.<span class="fn">Unprotect</span>(encApiKey, <span class="tp">DataProtectionScope</span>.CurrentUser, appEntropy);
+
+<span class="cm">// Pattern 4: Safe memory handling — zero out after use</span>
+<span class="kw">string</span>? secret = <span class="kw">null</span>;
+<span class="kw">try</span>
+{
+    secret = <span class="tp">DpapiHelper</span>.<span class="fn">Unprotect</span>(encFromConfig, <span class="tp">DataProtectionScope</span>.LocalMachine);
+    <span class="cm">// Use secret briefly here...</span>
+    <span class="fn">UseSecret</span>(secret);
+}
+<span class="kw">finally</span>
+{
+    <span class="cm">// Clear from memory when done</span>
+    secret = <span class="kw">null</span>;
+    <span class="tp">GC</span>.<span class="fn">Collect</span>();
+}</pre></div>
+
+  <h3>What DPAPI Protects Against vs Not</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ DPAPI Protects Against</h4>
+      <ul>
+        <li>Reading secrets from stolen config files or databases</li>
+        <li>Copying encrypted blob to another machine (LocalMachine)</li>
+        <li>Another user on the same machine (CurrentUser)</li>
+        <li>Basic malware scanning configuration files at rest</li>
+        <li>Programmatic extraction without Windows credentials</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ DPAPI Does NOT Protect Against</h4>
+      <ul>
+        <li>Admin-level or SYSTEM-level compromise</li>
+        <li>Malware running as the same Windows user</li>
+        <li>Memory dumps while secret is in use (in-memory)</li>
+        <li>Cross-platform attacks (Linux, Docker, cloud)</li>
+        <li>Decryption on the same machine by any local admin (LocalMachine scope)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>DPAPI vs AES vs Azure Key Vault</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>DPAPI</th><th>AES (Manual)</th><th>Azure Key Vault / AWS Secrets</th></tr>
+    <tr><td>Key managed by</td><td>✅ Windows</td><td>❌ Developer</td><td>✅ Cloud service</td></tr>
+    <tr><td>Key stored anywhere?</td><td>✅ No (invisible)</td><td>❌ Yes (risky)</td><td>✅ No (HSM)</td></tr>
+    <tr><td>Cross-platform</td><td>❌ Windows only</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+    <tr><td>Cross-machine</td><td>❌ No</td><td>✅ Yes</td><td>✅ Yes</td></tr>
+    <tr><td>Cloud/Docker friendly</td><td>❌ No</td><td>⚠️ Risky</td><td>✅ Yes</td></tr>
+    <tr><td>Best for</td><td>Windows apps, on-prem</td><td>Cross-platform</td><td>Cloud, enterprise</td></tr>
+    <tr><td>Beginner safe?</td><td>✅ Very</td><td>⚠️ Risky if done wrong</td><td>✅ Yes</td></tr>
+  </table></div>
+
+  <h3>When to Use DPAPI</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Use DPAPI When</h4>
+      <ul>
+        <li>Windows-only application (desktop, WinForms, WPF, console)</li>
+        <li>On-premise Windows server (IIS, Windows Service)</li>
+        <li>Protecting secrets on a developer machine</li>
+        <li>Avoiding key management complexity</li>
+        <li>ASP.NET Core Data Protection (uses DPAPI internally on Windows)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Do NOT Use DPAPI When</h4>
+      <ul>
+        <li>Running in Docker containers (no Windows user context)</li>
+        <li>Deploying to Linux (DPAPI is Windows-only)</li>
+        <li>Need to share encrypted data across multiple machines</li>
+        <li>Cloud-native apps (use AWS Secrets Manager or Azure Key Vault)</li>
+        <li>Need audit logs of secret access (DPAPI has no audit trail)</li>
+      </ul>
+    </div>
+  </div>
+
+  <ul class="checklist">
+    <li>Use <code>DataProtectionScope.CurrentUser</code> for desktop apps — better isolation than LocalMachine</li>
+    <li>Use <code>DataProtectionScope.LocalMachine</code> for Windows Services and IIS apps</li>
+    <li>Add optional entropy to bind secrets to your specific application — prevents other apps on same machine decrypting</li>
+    <li>Encrypt once at setup/deployment — decrypt only at runtime when needed</li>
+    <li>Zero out the decrypted string from memory as soon as you're done with it</li>
+    <li>Combine with TLS (for transit) and file-system ACLs (restrict who can read the encrypted file)</li>
+    <li>For cloud/cross-platform — migrate to Azure Key Vault or AWS Secrets Manager instead</li>
+  </ul>
+
+  <div class="warn">
+    <h4>⚠️ ASP.NET Core Data Protection</h4>
+    <p>ASP.NET Core has a built-in Data Protection API (<code>IDataProtector</code>) that uses DPAPI internally on Windows. It handles key rotation, purpose isolation, and time-limited tokens. For ASP.NET Core apps, prefer <code>services.AddDataProtection()</code> over calling DPAPI directly — it's higher-level and handles key management automatically.</p>
   </div>
 </div></div>
 

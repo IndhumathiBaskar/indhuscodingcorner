@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon EC2 — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --ec2:#e65c00;--ec2-l:#fde8d8;--ec2-d:#a34200;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0f14;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#fde8d8 0%,#f9cba8 45%,#f2ad7a 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'🖥️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.06;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.05;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--ec2-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--ec2-l);color:var(--ec2-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--ec2-l);letter-spacing:-.01em;}
+.section h3{color:var(--ec2-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* ══ SVG FLOW DIAGRAM ══ */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--ec2-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.flow-diagram-body{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:760px;display:block;margin:0 auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:560px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--ec2-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:560px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-app{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-app .flow-node-title{color:var(--blue);}
+.n-ec2{background:var(--ec2-l);border:1.5px solid rgba(230,92,0,.3);}
+.n-ec2 .flow-node-title{color:var(--ec2-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--ec2-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--ec2);}
+.step-body h4{color:var(--ec2-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--ec2-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--ec2-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--ec2-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--ec2);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+.tip{background:var(--ec2-l);border:1px solid rgba(230,92,0,.2);border-left:4px solid var(--ec2);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--ec2-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #101820;border-left:3px solid var(--ec2);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#f09a5c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(230,92,0,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ec2-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.completion{background:linear-gradient(135deg,var(--ec2-l),var(--green-l));border:1px solid rgba(230,92,0,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+/* ── EC2 SERVICE FAMILY ── */
+.service-family{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;margin:14px 0;}
+.svc-card{border-radius:var(--r);padding:14px;border:1.5px solid;position:relative;overflow:hidden;}
+.svc-card::after{content:'';position:absolute;bottom:0;right:0;width:40px;height:40px;border-radius:50%;opacity:.12;}
+.svc-on-demand{background:var(--ec2-l);border-color:rgba(230,92,0,.35);}
+.svc-on-demand::after{background:var(--ec2);}
+.svc-reserved{background:var(--green-l);border-color:rgba(31,122,82,.3);}
+.svc-reserved::after{background:var(--green);}
+.svc-spot{background:var(--purple-l);border-color:rgba(108,71,212,.25);}
+.svc-spot::after{background:var(--purple);}
+.svc-dedicated{background:var(--aws-l);border-color:rgba(212,135,42,.3);}
+.svc-dedicated::after{background:var(--aws);}
+.svc-name{font-weight:700;font-size:.85rem;margin-bottom:3px;}
+.svc-on-demand .svc-name{color:var(--ec2-d);}
+.svc-reserved .svc-name{color:var(--green);}
+.svc-spot .svc-name{color:var(--purple);}
+.svc-dedicated .svc-name{color:var(--aws);}
+.svc-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.svc-on-demand .svc-tag{background:rgba(230,92,0,.15);color:var(--ec2-d);}
+.svc-reserved .svc-tag{background:rgba(31,122,82,.15);color:var(--green);}
+.svc-spot .svc-tag{background:rgba(108,71,212,.12);color:var(--purple);}
+.svc-dedicated .svc-tag{background:rgba(212,135,42,.15);color:var(--aws);}
+.svc-desc{font-size:.72rem;color:var(--muted);}
+
+/* ══ INSTANCE TYPE CARDS ══ */
+.instance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.instance-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.instance-card-header{padding:10px 14px;font-weight:700;font-size:.78rem;border-bottom:1px solid var(--border);}
+.ic-compute{background:var(--blue-l);color:var(--blue);}
+.ic-memory{background:var(--purple-l);color:var(--purple);}
+.ic-storage{background:var(--green-l);color:var(--green);}
+.ic-network{background:var(--teal-l);color:var(--teal);}
+.ic-gpu{background:var(--ec2-l);color:var(--ec2-d);}
+.ic-general{background:var(--aws-l);color:var(--aws);}
+.instance-card-body{padding:12px 14px;}
+.instance-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:.75rem;}
+.instance-row:last-child{border-bottom:none;}
+.instance-label{color:var(--muted);font-weight:500;}
+.instance-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);}
+
+/* ══ STORAGE METER ══ */
+.storage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.storage-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.storage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sc-ebs::before{background:var(--ec2);}
+.sc-instance::before{background:var(--green);}
+.sc-efs::before{background:var(--purple);}
+.sc-s3::before{background:var(--aws);}
+.sc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.sc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.sc-ebs .sc-type{background:var(--ec2-l);color:var(--ec2-d);}
+.sc-instance .sc-type{background:var(--green-l);color:var(--green);}
+.sc-efs .sc-type{background:var(--purple-l);color:var(--purple);}
+.sc-s3 .sc-type{background:var(--aws-l);color:var(--aws);}
+.sc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.sc-metric-label{font-size:.68rem;color:var(--muted);}
+.sc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.grid-4,.storage-grid,.service-family,.instance-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>Amazon <span>EC2</span> — Complete Guide</h1>
+    <p>Virtual servers in the cloud · instance types · storage · networking · security · C# SDK examples · beginner to expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('instances',this)">② Instance Types</button>
+      <button class="tab-btn" onclick="T('storage',this)">③ Storage</button>
+      <button class="tab-btn" onclick="T('networking',this)">④ Networking</button>
+      <button class="tab-btn" onclick="T('pricing',this)">⑤ Pricing</button>
+      <button class="tab-btn" onclick="T('security',this)">⑥ Security</button>
+      <button class="tab-btn" onclick="T('console',this)">⑦ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# SDK</button>
+      <button class="tab-btn" onclick="T('best',this)">⑨ Best Practices</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🖥️ What is Amazon EC2?</h2>
+  <p>Amazon Elastic Compute Cloud (EC2) provides <strong>resizable virtual servers</strong> (called <em>instances</em>) in the cloud. You choose the OS, CPU, RAM, storage, and network capacity — and have root access to configure it exactly as you need. EC2 is the backbone of most AWS architectures.</p>
+
+  <div class="tip">
+    <h4>💡 EC2 in One Sentence</h4>
+    <p>EC2 = rent a virtual machine of any size on demand, pay by the second, and scale from 1 to thousands of instances in minutes — without owning any physical hardware.</p>
+  </div>
+
+  <h3>EC2 Purchase Options</h3>
+  <div class="service-family">
+    <div class="svc-card svc-on-demand">
+      <div class="svc-name">On-Demand</div>
+      <div class="svc-tag">Pay-as-you-go</div>
+      <div class="svc-desc">No commitment. Pay by the second. Best for unpredictable workloads and dev/test environments.</div>
+    </div>
+    <div class="svc-card svc-reserved">
+      <div class="svc-name">Reserved Instances</div>
+      <div class="svc-tag">1 or 3 yr</div>
+      <div class="svc-desc">Up to 72% discount vs On-Demand. Commit to a specific instance type. Best for steady-state production workloads.</div>
+    </div>
+    <div class="svc-card svc-spot">
+      <div class="svc-name">Spot Instances</div>
+      <div class="svc-tag">Up to 90% off</div>
+      <div class="svc-desc">Bid on unused EC2 capacity. Can be interrupted with 2-min notice. Best for fault-tolerant batch jobs.</div>
+    </div>
+    <div class="svc-card svc-dedicated">
+      <div class="svc-name">Dedicated Hosts</div>
+      <div class="svc-tag">Physical server</div>
+      <div class="svc-desc">Your own physical server. Required for BYOL software licenses and strict compliance requirements.</div>
+    </div>
+  </div>
+
+  <h3>When to Use EC2</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Use EC2 When You Need…</h4>
+      <ul>
+        <li>Full OS-level control (custom kernel, drivers, software)</li>
+        <li>Long-running processes (web servers, databases, APIs)</li>
+        <li>Custom networking and firewall rules</li>
+        <li>GPU compute for ML training or rendering</li>
+        <li>Lift-and-shift of existing on-premises applications</li>
+        <li>Stateful applications requiring persistent local disk</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Consider Alternatives When…</h4>
+      <ul>
+        <li>Short event-driven functions → use <strong>Lambda</strong></li>
+        <li>Containerized microservices → use <strong>ECS / EKS</strong></li>
+        <li>Simple static websites → use <strong>S3 + CloudFront</strong></li>
+        <li>Managed database → use <strong>RDS / Aurora</strong></li>
+        <li>No ops overhead desired → use <strong>App Runner / Fargate</strong></li>
+        <li>Fully managed ML inference → use <strong>SageMaker</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key EC2 Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>Instance</h4><p>A virtual server. Think of it as a rented computer with your chosen OS and specs.</p></div>
+    <div class="icon-item"><span class="emoji">📸</span><h4>AMI</h4><p>Amazon Machine Image — the template (OS + pre-installed software) used to launch an instance.</p></div>
+    <div class="icon-item"><span class="emoji">💽</span><h4>EBS Volume</h4><p>Persistent block storage attached to an instance. Survives instance stop/start.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Key Pair</h4><p>RSA or ED25519 keys for SSH (Linux) or RDP password decrypt (Windows) access.</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Security Group</h4><p>Stateful virtual firewall controlling inbound/outbound traffic at instance level.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Elastic IP</h4><p>Static public IPv4 address you can remap across instances. Free while attached.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>CloudWatch</h4><p>Monitors CPU, network, disk. Set alarms for auto-scaling or notification triggers.</p></div>
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>Auto Scaling</h4><p>Automatically add/remove instances based on demand. Works with Load Balancers.</p></div>
+    <div class="icon-item"><span class="emoji">🔀</span><h4>Load Balancer</h4><p>ALB (HTTP), NLB (TCP), CLB (legacy). Distributes traffic across healthy instances.</p></div>
+  </div>
+
+  <h3>EC2 Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Billing unit</h4><p>Per second (min 60s). Stop an instance = no compute charge. EBS billed separately.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Availability</h4><p>Available in all AWS Regions across multiple Availability Zones for high availability.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>Boot time</h4><p>Typically under 60 seconds from stopped to running. On-demand launch in ~1–2 min.</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Max vCPUs</h4><p>u-24tb1.112xlarge — 448 vCPUs, 24 TB RAM. Most workloads use much smaller sizes.</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Default limit</h4><p>32 vCPUs On-Demand per region by default. Request increases via Service Quotas.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>Network</h4><p>Up to 400 Gbps on high-end instances. Enhanced Networking via ENA or SR-IOV.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — INSTANCE TYPES
+══════════════════════════════════ -->
+<div id="tab-instances" class="tab-panel"><div class="section">
+  <h2>⚙️ EC2 Instance Types &amp; Families</h2>
+  <p>EC2 instances are grouped into <strong>families</strong> optimized for different workloads. The name format is <code>family + generation + size</code> — e.g. <code>m7g.xlarge</code> = general-purpose, 7th gen, Graviton3, xlarge (4 vCPU / 16 GB).</p>
+
+  <div class="tip">
+    <h4>💡 Reading Instance Names</h4>
+    <p><strong>m7g.2xlarge</strong> → <code>m</code> = general purpose family · <code>7</code> = 7th generation · <code>g</code> = Graviton (ARM) processor · <code>2xlarge</code> = 8 vCPU / 32 GB RAM. Suffixes: <code>n</code> = high network, <code>d</code> = local NVMe disk, <code>a</code> = AMD EPYC, <code>i</code> = Intel.</p>
+  </div>
+
+  <h3>Instance Family Overview</h3>
+  <div class="instance-grid">
+    <div class="instance-card">
+      <div class="instance-card-header ic-general">🟠 General Purpose (M, T)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">m7i, m7g, t4g, t3</span></div>
+        <div class="instance-row"><span class="instance-label">vCPU:RAM ratio</span><span class="instance-val">1:4</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">Web apps, APIs, DBs</span></div>
+        <div class="instance-row"><span class="instance-label">T = burstable</span><span class="instance-val">CPU credits model</span></div>
+      </div>
+    </div>
+    <div class="instance-card">
+      <div class="instance-card-header ic-compute">🔵 Compute Optimized (C)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">c7g, c7i, c6a</span></div>
+        <div class="instance-row"><span class="instance-label">vCPU:RAM ratio</span><span class="instance-val">1:2</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">Batch, gaming, HPC</span></div>
+        <div class="instance-row"><span class="instance-label">Differentiator</span><span class="instance-val">Highest CPU perf</span></div>
+      </div>
+    </div>
+    <div class="instance-card">
+      <div class="instance-card-header ic-memory">🟣 Memory Optimized (R, X)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">r7g, r7i, x2idn</span></div>
+        <div class="instance-row"><span class="instance-label">vCPU:RAM ratio</span><span class="instance-val">1:8 to 1:32</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">In-memory DBs, SAP</span></div>
+        <div class="instance-row"><span class="instance-label">X2 max RAM</span><span class="instance-val">24 TB</span></div>
+      </div>
+    </div>
+    <div class="instance-card">
+      <div class="instance-card-header ic-storage">🟢 Storage Optimized (I, D)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">i4i, im4gn, d3en</span></div>
+        <div class="instance-row"><span class="instance-label">Storage type</span><span class="instance-val">NVMe SSD / HDD</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">NoSQL, data warehousing</span></div>
+        <div class="instance-row"><span class="instance-label">IOPS</span><span class="instance-val">Up to 2.5M IOPS</span></div>
+      </div>
+    </div>
+    <div class="instance-card">
+      <div class="instance-card-header ic-gpu">🟤 GPU / Accelerated (P, G, Inf)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">p4de, g5, inf2</span></div>
+        <div class="instance-row"><span class="instance-label">GPU</span><span class="instance-val">NVIDIA A100/H100</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">ML training, rendering</span></div>
+        <div class="instance-row"><span class="instance-label">Inf2</span><span class="instance-val">AWS Inferentia chip</span></div>
+      </div>
+    </div>
+    <div class="instance-card">
+      <div class="instance-card-header ic-network">🔷 Network Optimized (Hpc)</div>
+      <div class="instance-card-body">
+        <div class="instance-row"><span class="instance-label">Families</span><span class="instance-val">hpc7g, hpc6id</span></div>
+        <div class="instance-row"><span class="instance-label">Network</span><span class="instance-val">EFA 200 Gbps</span></div>
+        <div class="instance-row"><span class="instance-label">Best for</span><span class="instance-val">MPI, CFD, molecular</span></div>
+        <div class="instance-row"><span class="instance-label">Placement</span><span class="instance-val">Cluster placement group</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Common Instance Sizes (m7i example)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Size</th><th>vCPUs</th><th>RAM (GB)</th><th>Network (Gbps)</th><th>Use Case</th></tr>
+    <tr><td><code>t3.micro</code></td><td>2</td><td>1</td><td>Up to 5</td><td>Free tier, tiny apps, dev</td></tr>
+    <tr><td><code>t3.medium</code></td><td>2</td><td>4</td><td>Up to 5</td><td>Small web servers</td></tr>
+    <tr><td><code>m7i.large</code></td><td>2</td><td>8</td><td>Up to 12.5</td><td>Standard web app</td></tr>
+    <tr><td><code>m7i.xlarge</code></td><td>4</td><td>16</td><td>Up to 12.5</td><td>APIs, small databases</td></tr>
+    <tr><td><code>m7i.2xlarge</code></td><td>8</td><td>32</td><td>Up to 12.5</td><td>App servers, mid DBs</td></tr>
+    <tr><td><code>m7i.4xlarge</code></td><td>16</td><td>64</td><td>Up to 12.5</td><td>Large app tier</td></tr>
+    <tr><td><code>m7i.8xlarge</code></td><td>32</td><td>128</td><td>12.5</td><td>Enterprise workloads</td></tr>
+    <tr><td><code>m7i.48xlarge</code></td><td>192</td><td>768</td><td>50</td><td>Largest general purpose</td></tr>
+  </table></div>
+
+  <h3>T-Series Burstable Instances — How CPU Credits Work</h3>
+  <div class="flow">
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🟢 Accruing Credits (CPU &lt; baseline)</div>
+      <ul class="flow-items">
+        <li>CPU usage below baseline → earn CPU credits over time</li>
+        <li>t3.micro baseline = 10% of 1 vCPU</li>
+        <li>Max credit balance: 24 hours worth of credits</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↕</div>
+    <div class="flow-node n-ec2">
+      <div class="flow-node-title">🟠 Spending Credits (CPU &gt; baseline)</div>
+      <ul class="flow-items">
+        <li>CPU spikes above baseline → spend accumulated credits</li>
+        <li>When credits exhausted → CPU throttled to baseline %</li>
+        <li><strong>T3 Unlimited mode</strong>: bursts without throttle, pay extra per vCPU-hour</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ T2/T3 Unlimited Billing Surprise</h4>
+    <p>T3 instances default to <strong>Unlimited mode</strong>. If your workload runs at high CPU continuously, you can receive unexpected charges for surplus CPU credits. Monitor <code>CPUSurplusCreditBalance</code> in CloudWatch. For consistently high CPU, use an <code>m</code>-series instead.</p>
+  </div>
+
+  <h3>Graviton (ARM) vs x86 — Quick Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Factor</th><th>Graviton3 (ARM)</th><th>Intel/AMD (x86)</th></tr>
+    <tr><td>Price</td><td>~20% cheaper vs equivalent x86</td><td>Baseline</td></tr>
+    <tr><td>Performance</td><td>Up to 25% better price-perf</td><td>Mature ecosystem</td></tr>
+    <tr><td>Compatibility</td><td>ARM64 binaries required</td><td>Universal x86_64 binaries</td></tr>
+    <tr><td>Docker images</td><td>Must be multi-arch or ARM64</td><td>Standard amd64 images work</td></tr>
+    <tr><td>Best for</td><td>.NET 6+, Java, Go, Node.js, Python</td><td>Legacy apps, Windows, .NET Framework</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — STORAGE
+══════════════════════════════════ -->
+<div id="tab-storage" class="tab-panel"><div class="section">
+  <h2>💽 EC2 Storage Options</h2>
+  <p>EC2 supports several storage types. Choosing the right one impacts cost, performance, and durability. The key question: do you need persistence after instance termination?</p>
+
+  <h3>Storage Types at a Glance</h3>
+  <div class="storage-grid">
+    <div class="storage-card sc-ebs">
+      <div class="sc-name">EBS — Elastic Block Store</div>
+      <div class="sc-type">Persistent · Network-attached</div>
+      <div class="sc-metric"><span class="sc-metric-label">Persists after stop?</span><span class="sc-metric-val">✅ Yes</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Max size</span><span class="sc-metric-val">64 TB / volume</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Max IOPS (io2)</span><span class="sc-metric-val">256,000</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Snapshots</span><span class="sc-metric-val">✅ To S3</span></div>
+    </div>
+    <div class="storage-card sc-instance">
+      <div class="sc-name">Instance Store</div>
+      <div class="sc-type">Ephemeral · Physically attached</div>
+      <div class="sc-metric"><span class="sc-metric-label">Persists after stop?</span><span class="sc-metric-val">❌ No — data lost</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Performance</span><span class="sc-metric-val">Millions IOPS (NVMe)</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Latency</span><span class="sc-metric-val">Microseconds</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Snapshots</span><span class="sc-metric-val">❌ Not supported</span></div>
+    </div>
+    <div class="storage-card sc-efs">
+      <div class="sc-name">EFS — Elastic File System</div>
+      <div class="sc-type">Shared NFS · Multi-instance</div>
+      <div class="sc-metric"><span class="sc-metric-label">Multi-instance?</span><span class="sc-metric-val">✅ Thousands at once</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Scale</span><span class="sc-metric-val">Petabytes auto</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Protocol</span><span class="sc-metric-val">NFSv4.1 / NFSv4.0</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Price vs EBS</span><span class="sc-metric-val">~3× more expensive</span></div>
+    </div>
+    <div class="storage-card sc-s3">
+      <div class="sc-name">S3 (Object Store)</div>
+      <div class="sc-type">Not a block device · API access</div>
+      <div class="sc-metric"><span class="sc-metric-label">Mount as filesystem?</span><span class="sc-metric-val">⚠️ Via s3fs / mountpoint</span></div>
+      <div class="sc-metric"><span class="sc-metric-label">Scale</span><span class="sc-metric-val">Unlimited</span></div>
+      <div class="sc-metric"><span class="sc-metric-val">Best for static assets, backups, data lake</span></div>
+    </div>
+  </div>
+
+  <h3>EBS Volume Types</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>IOPS</th><th>Throughput</th><th>Use Case</th><th>Cost</th></tr>
+    <tr><td><code>gp3</code> (default)</td><td>Up to 16,000</td><td>Up to 1,000 MB/s</td><td>Most workloads, boot volumes</td><td>$0.08/GB-mo</td></tr>
+    <tr><td><code>gp2</code> (legacy)</td><td>3 IOPS/GB, up to 16,000</td><td>250 MB/s</td><td>Replaced by gp3</td><td>$0.10/GB-mo</td></tr>
+    <tr><td><code>io2 Block Express</code></td><td>Up to 256,000</td><td>Up to 4,000 MB/s</td><td>Critical DBs (Oracle, SAP)</td><td>$0.125/GB-mo</td></tr>
+    <tr><td><code>st1</code> (HDD)</td><td>500 IOPS max</td><td>Up to 500 MB/s</td><td>Big data, log processing</td><td>$0.045/GB-mo</td></tr>
+    <tr><td><code>sc1</code> (cold HDD)</td><td>250 IOPS max</td><td>Up to 250 MB/s</td><td>Infrequent access archives</td><td>$0.015/GB-mo</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Always Use gp3 (Not gp2)</h4>
+    <p>gp3 is both cheaper (<code>$0.08</code> vs <code>$0.10/GB</code>) AND lets you independently configure IOPS and throughput at no extra cost. There is no reason to use gp2 for new volumes. Migrate existing gp2 volumes to gp3 via the console with zero downtime.</p>
+  </div>
+
+  <h3>EBS Snapshots — Key Facts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📸 How Snapshots Work</h4>
+      <ul>
+        <li>Incremental — only changed blocks stored after first snapshot</li>
+        <li>Stored in S3 (managed by AWS, not visible in your S3 console)</li>
+        <li>Can create new EBS volume from snapshot in any AZ or Region</li>
+        <li>Copy snapshots cross-region for DR or AMI sharing</li>
+        <li>Snapshots can be automated via AWS Data Lifecycle Manager</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💰 Snapshot Pricing</h4>
+      <ul>
+        <li>$0.05/GB-month (only changed data after first full)</li>
+        <li>Fast Snapshot Restore: $0.75/DSU-hour per AZ enabled</li>
+        <li>Recycle Bin: retain deleted snapshots from $0.0075/GB-month</li>
+        <li>Cross-region copy incurs destination storage + data transfer cost</li>
+        <li>Delete old snapshots — orphaned snapshots accumulate cost silently</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — NETWORKING
+══════════════════════════════════ -->
+<div id="tab-networking" class="tab-panel"><div class="section">
+  <h2>🌐 EC2 Networking</h2>
+  <p>Every EC2 instance lives inside a <strong>VPC (Virtual Private Cloud)</strong>. Networking controls how traffic reaches your instance from the internet, other AWS services, or your on-premises network.</p>
+
+  <!-- SVG Networking Architecture -->
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🌐 EC2 Network Architecture — Internet to Instance</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ab8c4"/>
+          </marker>
+          <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+          <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#e65c00"/>
+          </marker>
+        </defs>
+
+        <!-- Internet -->
+        <rect x="10" y="160" width="100" height="50" rx="7" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="60" y="182" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#2a4db0" text-anchor="middle">🌍 Internet</text>
+        <text x="60" y="198" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">User Request</text>
+
+        <!-- Arrow: Internet → IGW -->
+        <line x1="110" y1="185" x2="148" y2="185" stroke="#9ab8c4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Internet Gateway -->
+        <rect x="150" y="160" width="110" height="50" rx="7" fill="#fde8d8" stroke="rgba(230,92,0,.35)" stroke-width="1.5"/>
+        <text x="205" y="182" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#a34200" text-anchor="middle">🚪 IGW</text>
+        <text x="205" y="198" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Internet Gateway</text>
+
+        <!-- Arrow: IGW → Route Table -->
+        <line x1="260" y1="185" x2="298" y2="185" stroke="#9ab8c4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Route Table + NACL -->
+        <rect x="300" y="140" width="120" height="90" rx="7" fill="#f2f0ec" stroke="#dddbd6" stroke-width="1.5"/>
+        <text x="360" y="162" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#3a3a30" text-anchor="middle">🗺️ Route Table</text>
+        <text x="360" y="178" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">0.0.0.0/0 → IGW</text>
+        <line x1="310" y1="188" x2="410" y2="188" stroke="#dddbd6" stroke-width="1"/>
+        <text x="360" y="204" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#3a3a30" text-anchor="middle">🧱 NACL</text>
+        <text x="360" y="218" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Stateless subnet ACL</text>
+
+        <!-- Arrow: Route Table → Security Group -->
+        <line x1="420" y1="185" x2="458" y2="185" stroke="#9ab8c4" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Security Group -->
+        <rect x="460" y="160" width="110" height="50" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="515" y="182" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">🛡️ Sec Group</text>
+        <text x="515" y="198" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Stateful · Instance-level</text>
+
+        <!-- Arrow: SG → EC2 -->
+        <line x1="570" y1="185" x2="608" y2="185" stroke="#e65c00" stroke-width="1.5" marker-end="url(#arrow-orange)"/>
+
+        <!-- EC2 Instance -->
+        <rect x="610" y="150" width="100" height="70" rx="7" fill="#fde8d8" stroke="rgba(230,92,0,.4)" stroke-width="2"/>
+        <text x="660" y="178" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#a34200" text-anchor="middle">🖥️ EC2</text>
+        <text x="660" y="194" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Private IP</text>
+        <text x="660" y="208" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">ENI · EBS</text>
+
+        <!-- VPC boundary -->
+        <rect x="140" y="100" width="490" height="180" rx="10" fill="none" stroke="#dddbd6" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="385" y="118" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle" letter-spacing="1">VPC — 10.0.0.0/16</text>
+
+        <!-- Subnet boundary -->
+        <rect x="290" y="130" width="340" height="120" rx="7" fill="none" stroke="#c4c0b8" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="420" y="145" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Public Subnet — 10.0.1.0/24</text>
+
+        <!-- Labels -->
+        <text x="360" y="340" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle">Traffic flows: Internet → IGW → Route Table → NACL → Security Group → EC2</text>
+        <text x="360" y="358" font-family="DM Sans,sans-serif" font-size="9" fill="#9a9a8a" text-anchor="middle">NACL = stateless (rules applied both ways) · Security Group = stateful (return traffic auto-allowed)</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Security Groups vs NACLs</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>Security Group</th><th>Network ACL</th></tr>
+    <tr><td>Scope</td><td>Instance (ENI) level</td><td>Subnet level</td></tr>
+    <tr><td>Stateful?</td><td>✅ Yes — return traffic auto-allowed</td><td>❌ No — both directions need rules</td></tr>
+    <tr><td>Rule types</td><td>Allow only</td><td>Allow and Deny</td></tr>
+    <tr><td>Rule evaluation</td><td>All rules evaluated together</td><td>Rules evaluated in number order</td></tr>
+    <tr><td>Default</td><td>Deny all inbound, allow all outbound</td><td>Allow all traffic (default NACL)</td></tr>
+    <tr><td>Use for</td><td>Primary firewall for each instance</td><td>Subnet-wide IP block lists</td></tr>
+  </table></div>
+
+  <h3>Key Networking Concepts</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔌 Elastic Network Interface (ENI)</h4>
+      <ul>
+        <li>Virtual NIC attached to an instance</li>
+        <li>Has a private IP, optional public IP, MAC address</li>
+        <li>Can be detached and moved to another instance (failover pattern)</li>
+        <li>Multiple ENIs per instance → multi-homed networking</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌐 Elastic IP (EIP)</h4>
+      <ul>
+        <li>Static public IPv4 address allocated to your account</li>
+        <li>Free while associated with a running instance</li>
+        <li>$0.005/hr when not associated (idle EIP) — release unused ones</li>
+        <li>Can remap to another instance in seconds for failover</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔀 Enhanced Networking (ENA)</h4>
+      <ul>
+        <li>SR-IOV driver for higher PPS and lower jitter</li>
+        <li>Enabled by default on modern instances (C5, M5, R5+)</li>
+        <li>EFA (Elastic Fabric Adapter) for HPC MPI workloads — up to 400 Gbps</li>
+        <li>No extra cost — just requires the ENA driver in your AMI</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏠 VPC Placement Groups</h4>
+      <ul>
+        <li><strong>Cluster</strong>: same rack → lowest latency, highest throughput</li>
+        <li><strong>Spread</strong>: different racks → fault isolation, max 7/AZ</li>
+        <li><strong>Partition</strong>: groups on different hardware → HDFS, Cassandra</li>
+        <li>No additional charge for placement groups</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — PRICING
+══════════════════════════════════ -->
+<div id="tab-pricing" class="tab-panel"><div class="section">
+  <h2>💰 EC2 Pricing Models</h2>
+  <p>EC2 billing is per second (minimum 60s). The purchase model you choose dramatically affects cost — the same workload can cost 10× more or less depending on the model.</p>
+
+  <h3>Purchase Model Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Model</th><th>Discount vs On-Demand</th><th>Commitment</th><th>Interruption Risk</th><th>Best For</th></tr>
+    <tr><td>On-Demand</td><td>0%</td><td>None</td><td>None</td><td>Dev/test, unpredictable load</td></tr>
+    <tr><td>Reserved (1yr, no upfront)</td><td>~40%</td><td>1 year</td><td>None</td><td>Steady-state production</td></tr>
+    <tr><td>Reserved (3yr, all upfront)</td><td>~72%</td><td>3 years</td><td>None</td><td>Long-running stable workloads</td></tr>
+    <tr><td>Savings Plans (Compute)</td><td>~66%</td><td>1 or 3 years</td><td>None</td><td>Flexible across instance families</td></tr>
+    <tr><td>Spot Instances</td><td>Up to 90%</td><td>None</td><td>⚠️ 2-min warning</td><td>Batch, ML, fault-tolerant jobs</td></tr>
+    <tr><td>Dedicated Host</td><td>BYOL savings</td><td>On-demand or 1yr</td><td>None</td><td>License compliance, regulatory</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Savings Plans vs Reserved Instances</h4>
+    <p><strong>Savings Plans</strong> are generally preferred over Reserved Instances today. They give similar discounts but are more flexible — Compute Savings Plans apply across any instance family, region, OS, and even Lambda/Fargate. You commit to a $/hour spend, not a specific instance type.</p>
+  </div>
+
+  <h3>Spot Instance Best Practices</h3>
+  <div class="flow">
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Good Spot Workloads</div>
+      <ul class="flow-items">
+        <li>ML training jobs with checkpoint/resume logic</li>
+        <li>CI/CD build pipelines — job restarts are acceptable</li>
+        <li>Video transcoding, image processing (stateless)</li>
+        <li>Big data analytics (Spark/EMR with task node Spot)</li>
+        <li>Rendering farms — frames are independently restartable</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">vs</div>
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">❌ Bad Spot Workloads</div>
+      <ul class="flow-items">
+        <li>Production web servers (interruption = outage)</li>
+        <li>Stateful databases without multi-AZ failover</li>
+        <li>Long transactions that can't be checkpointed</li>
+        <li>Jobs with hard deadlines (Spot unavailability is unpredictable)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Hidden EC2 Costs</h3>
+  <div class="danger">
+    <h4>⚠️ Costs That Surprise People</h4>
+    <p>
+    💸 <strong>Data transfer OUT to internet</strong> — first 100 GB/month free, then $0.09/GB. High-traffic sites can accumulate significant transfer costs.<br>
+    💸 <strong>Idle Elastic IPs</strong> — $0.005/hr (~$3.60/month) per EIP not attached to a running instance. Delete unused EIPs.<br>
+    💸 <strong>EBS volumes for stopped instances</strong> — you still pay for EBS storage even when instance is stopped. Delete if not needed.<br>
+    💸 <strong>Snapshots</strong> — accumulate over time. Old snapshots of terminated instances are often forgotten and still billed.<br>
+    💸 <strong>NAT Gateway</strong> — $0.045/hr + $0.045/GB. Private subnets with high internet traffic pay heavily for NAT GW.<br>
+    💸 <strong>T3 Unlimited burst charges</strong> — CPU-intensive workloads on burstable instances can spike cost unexpectedly.
+    </p>
+  </div>
+
+  <h3>Cost Optimization Strategy</h3>
+  <ul class="checklist">
+    <li>Right-size first — CloudWatch CPU metrics often show instances 10–15% utilized. Downsize before applying discounts.</li>
+    <li>Use Graviton (ARM) instances — 20% cheaper and often faster than equivalent x86 for modern workloads</li>
+    <li>Commit with Compute Savings Plans — 1-year no-upfront gets ~40% off with full flexibility</li>
+    <li>Use Spot for batch and dev/test — combine with Auto Scaling groups using mixed instances policy</li>
+    <li>Enable AWS Cost Anomaly Detection — get alerted when spending deviates from expected patterns</li>
+    <li>Schedule dev/test environments to stop nights/weekends — saves ~65% on non-production instances</li>
+    <li>Use AWS Trusted Advisor — identifies idle instances, underutilized EBS, and unused Elastic IPs automatically</li>
+  </ul>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — SECURITY
+══════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 EC2 Security</h2>
+  <p>EC2 security is a shared responsibility: AWS secures the physical infrastructure; you secure the OS, applications, network rules, and access management.</p>
+
+  <h3>IAM Instance Profiles — Secure AWS API Access</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Create an IAM Role for EC2</h4><p>Go to IAM → Roles → Create Role → Select "EC2" as trusted entity. Attach only the policies your app needs (principle of least privilege).</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Attach the Role to Your Instance</h4><p>At launch (or modify existing instance → Actions → Security → Modify IAM Role). No access keys stored on disk — credentials are rotated automatically by the instance metadata service.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Access AWS Services from Code</h4><p>AWS SDKs automatically pick up credentials from the instance metadata endpoint <code>169.254.169.254/latest/meta-data/iam/security-credentials/</code>. No hardcoded keys needed.</p></div>
+  </div>
+
+  <div class="danger">
+    <h4>❌ Never Store AWS Access Keys on EC2</h4>
+    <p>Never run <code>aws configure</code> on an EC2 instance and store long-term IAM access keys. If the instance is compromised, those keys are stolen. Always use IAM Instance Profiles (roles) — they auto-rotate credentials every hour via IMDSv2.</p>
+  </div>
+
+  <h3>IMDSv2 — Instance Metadata Service v2</h3>
+  <div class="card">
+    <h4>🛡️ Why IMDSv2 Matters</h4>
+    <p>IMDSv1 allowed any process on the instance (including SSRF attacks) to query metadata and steal IAM credentials. IMDSv2 requires a session token (PUT request first), blocking SSRF attacks.</p>
+    <ul style="margin-top:8px;">
+      <li>Enforce IMDSv2 at launch: set <code>--metadata-options HttpTokens=required</code></li>
+      <li>Or enforce via AWS Config rule: <code>ec2-imdsv2-check</code></li>
+      <li>Modern SDKs use IMDSv2 automatically</li>
+    </ul>
+  </div>
+
+  <h3>Encryption</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 EBS Encryption</h4>
+      <ul>
+        <li>AES-256, keys managed by AWS KMS</li>
+        <li>Enable per volume, or set account-level default encryption</li>
+        <li>Encrypted snapshots and AMIs — copies remain encrypted</li>
+        <li>No performance impact on modern instances (hardware acceleration)</li>
+        <li>Existing unencrypted volumes: snapshot → copy (encrypt) → restore</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔒 In-Transit Encryption</h4>
+      <ul>
+        <li>Use TLS/HTTPS for all application traffic</li>
+        <li>Enable encryption in transit for EFS mounts</li>
+        <li>Use AWS Certificate Manager (ACM) with ALB — free TLS certs</li>
+        <li>Enable TLS termination at the load balancer, not the instance</li>
+        <li>Use VPC endpoints for AWS services — traffic stays on AWS backbone</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>SSH / Remote Access Best Practices</h3>
+  <ul class="checklist">
+    <li>Use EC2 Instance Connect or AWS Systems Manager Session Manager — no SSH port (22) needed on Security Group</li>
+    <li>If SSH must be open: restrict Security Group to your IP only, not <code>0.0.0.0/0</code></li>
+    <li>Use ED25519 key pairs (more secure than RSA-2048)</li>
+    <li>Store key pairs in AWS Secrets Manager, not in version control</li>
+    <li>Rotate key pairs periodically — remove old public keys from <code>~/.ssh/authorized_keys</code></li>
+    <li>For Windows RDP: never open port 3389 to the internet — use SSM Session Manager port forwarding instead</li>
+  </ul>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖱️ Launching an EC2 Instance — Step-by-Step Console</h2>
+  <p>This walks through every field in the AWS Console for launching a production-ready Linux instance.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Navigate to EC2 Launch Wizard</div>
+      <div class="console-step-path">EC2 → Instances → Launch instances</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Name and tags</span>
+        <span class="console-field-value">my-web-server-prod</span>
+        <span class="console-field-hint">Use descriptive names. Add tags: Environment=prod, Team=backend, Project=myapp</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Choose AMI (Amazon Machine Image)</div>
+      <div class="console-step-path">Application and OS Images</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">AMI</span>
+        <span class="console-field-value">Amazon Linux 2023 (al2023-ami-2023.*-x86_64)</span>
+        <span class="console-field-hint">AL2023 is the recommended Linux. For ARM/Graviton: choose the ARM64 variant. Ubuntu 22.04 LTS is also popular.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Architecture</span>
+        <span class="console-field-value">64-bit (x86) or 64-bit (Arm)</span>
+        <span class="console-field-hint">Choose Arm for Graviton instances (m7g, c7g, r7g). Must match your chosen instance type.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Choose Instance Type</div>
+      <div class="console-step-path">Instance type</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Instance Type</span>
+        <span class="console-field-value">t3.micro (Free Tier) or m7i.large (production)</span>
+        <span class="console-field-hint">For most web apps start with m7i.large (2 vCPU, 8 GB). Use Compare instance types to see specs side-by-side.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Key Pair (for SSH)</div>
+      <div class="console-step-path">Key pair (login)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Key pair name</span>
+        <span class="console-field-value">Create new key pair → my-prod-key</span>
+        <span class="console-field-hint">Choose ED25519 key type. Download the .pem file and store securely. If using SSM Session Manager, key pair is not required.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Network Settings</div>
+      <div class="console-step-path">Network settings</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">VPC</span>
+        <span class="console-field-value">my-production-vpc (or create new VPC)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Subnet</span>
+        <span class="console-field-value">public-subnet-1a (if internet-facing) or private-subnet-1a</span>
+        <span class="console-field-hint">Use private subnet for app servers behind a load balancer. Only put bastion hosts or load balancers in public subnets.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Auto-assign public IP</span>
+        <span class="console-field-value">Enable (for public subnet) or Disable (private)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Security Group</span>
+        <span class="console-field-value">Create: allow port 80 (HTTP), 443 (HTTPS) from 0.0.0.0/0. Port 22 from your IP only.</span>
+        <span class="console-field-hint">Never allow all traffic (0.0.0.0/0) on all ports. Principle of least privilege.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Configure Storage</div>
+      <div class="console-step-path">Configure storage</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Root volume</span>
+        <span class="console-field-value">20 GiB · gp3 · Encrypted ✅</span>
+        <span class="console-field-hint">Always choose gp3 over gp2. Enable encryption. For databases, add a separate data volume (don't store DB data on root).</span>
+      </div>
+      <div class="console-note">☑ Delete on termination: leave checked for root volume. For data volumes you want to keep, uncheck this.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <div class="console-step-title">Advanced Details — IAM &amp; User Data</div>
+      <div class="console-step-path">Advanced details (expand)</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">IAM instance profile</span>
+        <span class="console-field-value">my-ec2-app-role (attach role for S3, SSM, etc.)</span>
+        <span class="console-field-hint">Attach an IAM role here instead of storing access keys on the instance.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">User data</span>
+        <span class="console-field-value">#!/bin/bash script to install software on first boot</span>
+        <span class="console-field-hint">Runs once at first launch. Use for: yum install, service start, pulling configs from S3, etc.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Metadata accessible</span>
+        <span class="console-field-value">V2 only (token required) — IMDSv2</span>
+        <span class="console-field-hint">Always enforce IMDSv2. Protects against SSRF credential theft attacks.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">8</div>
+      <div class="console-step-title">Review and Launch</div>
+      <div class="console-step-path">Summary panel → Launch instance</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Number of instances</span>
+        <span class="console-field-value">1 (or more for initial testing)</span>
+      </div>
+      <div class="console-note">✅ Your instance will be in "pending" state for ~30 seconds, then "running". Connect via SSH: <code>ssh -i my-prod-key.pem ec2-user@&lt;public-ip&gt;</code></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — EC2 Code Examples</h2>
+  <p>All examples use the <strong>AWS SDK for .NET v3</strong> (<code>AWSSDK.EC2</code>). Install via NuGet: <code>dotnet add package AWSSDK.EC2</code></p>
+
+  <h3>1. List Running Instances</h3>
+  <div class="code-block">
+    <span class="code-label">C# — List EC2 Instances</span>
+    <pre><span class="kw">using</span> Amazon.EC2;
+<span class="kw">using</span> Amazon.EC2.Model;
+
+<span class="kw">var</span> ec2 = <span class="kw">new</span> <span class="tp">AmazonEC2Client</span>();  <span class="cm">// uses IAM role or env credentials</span>
+
+<span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">DescribeInstancesRequest</span>
+{
+    Filters =
+    [
+        <span class="kw">new</span> <span class="tp">Filter</span> { Name = <span class="str">"instance-state-name"</span>, Values = [<span class="str">"running"</span>] }
+    ]
+};
+
+<span class="tp">DescribeInstancesResponse</span> response;
+<span class="kw">do</span>
+{
+    response = <span class="kw">await</span> ec2.<span class="fn">DescribeInstancesAsync</span>(request);
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> reservation <span class="kw">in</span> response.Reservations)
+    <span class="kw">foreach</span> (<span class="kw">var</span> inst <span class="kw">in</span> reservation.Instances)
+    {
+        <span class="kw">var</span> name = inst.Tags.<span class="fn">FirstOrDefault</span>(t => t.Key == <span class="str">"Name"</span>)?.Value ?? <span class="str">"(no name)"</span>;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{inst.InstanceId}  {inst.InstanceType,-14} {inst.PrivateIpAddress,-16} {name}"</span>);
+    }
+
+    request.NextToken = response.NextToken;
+} <span class="kw">while</span> (!<span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(response.NextToken));  <span class="cm">// paginate</span></pre>
+  </div>
+
+  <h3>2. Start / Stop / Reboot Instances</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Lifecycle Management</span>
+    <pre><span class="kw">public class</span> <span class="tp">Ec2LifecycleService</span>(<span class="tp">IAmazonEC2</span> ec2)
+{
+    <span class="cm">// Stop instances (state → stopping → stopped). EBS data preserved.</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">StopAsync</span>(<span class="kw">params string</span>[] instanceIds)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">StopInstancesAsync</span>(<span class="kw">new</span>() { InstanceIds = [..instanceIds] });
+        <span class="kw">foreach</span> (<span class="kw">var</span> s <span class="kw">in</span> resp.StoppingInstances)
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Stopping {s.InstanceId}: {s.PreviousState.Name} → {s.CurrentState.Name}"</span>);
+    }
+
+    <span class="cm">// Start stopped instances</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">StartAsync</span>(<span class="kw">params string</span>[] instanceIds)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">StartInstancesAsync</span>(<span class="kw">new</span>() { InstanceIds = [..instanceIds] });
+        <span class="kw">foreach</span> (<span class="kw">var</span> s <span class="kw">in</span> resp.StartingInstances)
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Starting {s.InstanceId}: {s.PreviousState.Name} → {s.CurrentState.Name}"</span>);
+    }
+
+    <span class="cm">// Reboot — does NOT change the instance's public IP</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RebootAsync</span>(<span class="kw">params string</span>[] instanceIds)
+        => <span class="kw">await</span> ec2.<span class="fn">RebootInstancesAsync</span>(<span class="kw">new</span>() { InstanceIds = [..instanceIds] });
+
+    <span class="cm">// Wait until all instances reach target state</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">WaitUntilAsync</span>(<span class="kw">string</span>[] ids, <span class="kw">string</span> targetState, <span class="tp">TimeSpan</span>? timeout = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> deadline = <span class="tp">DateTime</span>.UtcNow + (timeout ?? <span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">5</span>));
+        <span class="kw">while</span> (<span class="tp">DateTime</span>.UtcNow &lt; deadline)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeInstanceStatusAsync</span>(<span class="kw">new</span>()
+            {
+                InstanceIds      = [..ids],
+                IncludeAllInstances = <span class="kw">true</span>
+            });
+            <span class="kw">var</span> states = resp.InstanceStatuses.<span class="fn">Select</span>(s => s.InstanceState.Name.<span class="fn">ToString</span>()).<span class="fn">ToHashSet</span>();
+            <span class="kw">if</span> (states.<span class="fn">All</span>(s => s == targetState)) <span class="kw">return</span>;
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">3_000</span>);
+        }
+        <span class="kw">throw new</span> <span class="tp">TimeoutException</span>(<span class="str">$"Instances did not reach '{targetState}' within timeout"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>3. Launch a New EC2 Instance Programmatically</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Launch Instance</span>
+    <pre><span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">LaunchInstanceAsync</span>()
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">RunInstancesAsync</span>(<span class="kw">new</span> <span class="tp">RunInstancesRequest</span>
+    {
+        ImageId             = <span class="str">"ami-0c55b159cbfafe1f0"</span>,  <span class="cm">// Amazon Linux 2023 (update per region)</span>
+        InstanceType        = <span class="tp">InstanceType</span>.M7iLarge,
+        MinCount            = <span class="num">1</span>,
+        MaxCount            = <span class="num">1</span>,
+        KeyName             = <span class="str">"my-prod-key"</span>,
+        SecurityGroupIds    = [<span class="str">"sg-0a1b2c3d4e5f"</span>],
+        SubnetId            = <span class="str">"subnet-0a1b2c3d4e5f"</span>,
+        IamInstanceProfile  = <span class="kw">new</span>() { Name = <span class="str">"my-ec2-app-role"</span> },
+        MetadataOptions     = <span class="kw">new</span>() { HttpTokens = <span class="tp">HttpTokensState</span>.Required }, <span class="cm">// IMDSv2</span>
+        BlockDeviceMappings =
+        [
+            <span class="kw">new</span> <span class="tp">BlockDeviceMapping</span>
+            {
+                DeviceName = <span class="str">"/dev/xvda"</span>,
+                Ebs = <span class="kw">new</span> <span class="tp">EbsBlockDevice</span>
+                {
+                    VolumeSize          = <span class="num">20</span>,
+                    VolumeType          = <span class="tp">VolumeType</span>.Gp3,
+                    Encrypted           = <span class="kw">true</span>,
+                    DeleteOnTermination = <span class="kw">true</span>
+                }
+            }
+        ],
+        TagSpecifications =
+        [
+            <span class="kw">new</span> <span class="tp">TagSpecification</span>
+            {
+                ResourceType = <span class="tp">ResourceType</span>.Instance,
+                Tags         = [
+                    <span class="kw">new</span> { Key = <span class="str">"Name"</span>,        Value = <span class="str">"web-server-prod"</span> },
+                    <span class="kw">new</span> { Key = <span class="str">"Environment"</span>, Value = <span class="str">"production"</span>     },
+                    <span class="kw">new</span> { Key = <span class="str">"ManagedBy"</span>,   Value = <span class="str">"dotnet-sdk"</span>     }
+                ]
+            }
+        ],
+        UserData = <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(<span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(<span class="str">"""
+            #!/bin/bash
+            yum update -y
+            yum install -y dotnet-sdk-8.0
+            systemctl enable --now amazon-ssm-agent
+            """</span>))
+    });
+
+    <span class="kw">var</span> instanceId = resp.Instances[<span class="num">0</span>].InstanceId;
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Launched: {instanceId}"</span>);
+    <span class="kw">return</span> instanceId;
+}</pre>
+  </div>
+
+  <h3>4. Create EBS Snapshot &amp; Manage Volumes</h3>
+  <div class="code-block">
+    <span class="code-label">C# — EBS Snapshots</span>
+    <pre><span class="cm">// Create a snapshot of an EBS volume</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateSnapshotAsync</span>(<span class="kw">string</span> volumeId, <span class="kw">string</span> description)
+{
+    <span class="kw">var</span> snap = <span class="kw">await</span> ec2.<span class="fn">CreateSnapshotAsync</span>(<span class="kw">new</span>()
+    {
+        VolumeId    = volumeId,
+        Description = description,
+        TagSpecifications =
+        [
+            <span class="kw">new</span> <span class="tp">TagSpecification</span>
+            {
+                ResourceType = <span class="tp">ResourceType</span>.Snapshot,
+                Tags = [<span class="kw">new</span> { Key = <span class="str">"CreatedBy"</span>, Value = <span class="str">"automated-backup"</span> }]
+            }
+        ]
+    });
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Snapshot {snap.SnapshotId} state: {snap.State}"</span>);
+    <span class="cm">// State will be "pending" — wait for "completed" before using</span>
+    <span class="kw">return</span> snap.SnapshotId;
+}
+
+<span class="cm">// List all snapshots owned by this account, sorted by start time</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Snapshot</span>&gt;&gt; <span class="fn">ListSnapshotsAsync</span>()
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeSnapshotsAsync</span>(<span class="kw">new</span>()
+    {
+        OwnerIds = [<span class="str">"self"</span>],
+        Filters  = [<span class="kw">new</span> <span class="tp">Filter</span> { Name = <span class="str">"status"</span>, Values = [<span class="str">"completed"</span>] }]
+    });
+    <span class="kw">return</span> [.. resp.Snapshots.<span class="fn">OrderByDescending</span>(s => s.StartTime)];
+}
+
+<span class="cm">// Describe volume status — check for degraded or impaired volumes</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CheckVolumeHealthAsync</span>(<span class="kw">string</span> volumeId)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeVolumeStatusAsync</span>(<span class="kw">new</span>()
+    {
+        VolumeIds = [volumeId]
+    });
+    <span class="kw">foreach</span> (<span class="kw">var</span> vs <span class="kw">in</span> resp.VolumeStatuses)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Volume {vs.VolumeId}: IO={vs.VolumeStatus.Status}"</span>);
+        <span class="kw">if</span> (vs.VolumeStatus.Status != <span class="str">"ok"</span>)
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"⚠️ Volume health issue: {vs.VolumeStatus.Details[0].Status}"</span>);
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Compute Best Practices</h3>
+  <ul class="checklist">
+    <li>Right-size instances using CloudWatch CPU and memory metrics — most instances run at &lt;20% average CPU</li>
+    <li>Prefer Graviton (ARM) instances (m7g, c7g, r7g) — ~20% cheaper, often faster for modern runtimes</li>
+    <li>Use gp3 EBS volumes by default — cheaper than gp2 and independently configurable IOPS/throughput</li>
+    <li>Enforce IMDSv2 (<code>HttpTokens=required</code>) on all instances — blocks SSRF credential theft attacks</li>
+    <li>Always attach an IAM Instance Profile — never store AWS access keys on the instance filesystem</li>
+    <li>Enable detailed CloudWatch monitoring ($0.01/instance/hr) for 1-minute granularity on production instances</li>
+  </ul>
+
+  <h3>Networking Best Practices</h3>
+  <ul class="checklist">
+    <li>Use private subnets for application and database instances — only load balancers and bastion hosts need public subnets</li>
+    <li>Scope Security Group rules to the minimum required IP range and port — avoid <code>0.0.0.0/0</code> on ports like 22 and 3389</li>
+    <li>Use VPC endpoints for AWS services (S3, DynamoDB, SSM) — traffic stays on the AWS backbone and avoids NAT Gateway costs</li>
+    <li>Use SSM Session Manager instead of SSH — eliminates need to manage SSH keys or open port 22</li>
+    <li>Set up a NAT Gateway per AZ for high-availability outbound internet access from private subnets</li>
+  </ul>
+
+  <h3>Scaling &amp; Availability</h3>
+  <ul class="checklist">
+    <li>Use Auto Scaling Groups (ASG) with Application Load Balancer for all stateless workloads — not a fixed fleet</li>
+    <li>Deploy across at least 2 Availability Zones — single-AZ deployments have no fault tolerance</li>
+    <li>Use Launch Templates (not Launch Configurations) — they support versioning and newer features</li>
+    <li>Set ASG scaling policies based on CPU and custom CloudWatch metrics — use Target Tracking for simplicity</li>
+    <li>Use EC2 Instance Health Checks on your ASG — replaces unhealthy instances automatically</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top EC2 Mistakes</h4>
+    <p>
+    ❌ <strong>Opening Security Group port 22 to 0.0.0.0/0</strong> — your instance will receive automated brute-force attacks within minutes. Use SSM Session Manager instead, or restrict SSH to your IP only.<br>
+    ❌ <strong>Storing AWS access keys on the instance</strong> — use IAM Instance Profiles (roles). Access keys on disk are a critical security risk if the instance is compromised.<br>
+    ❌ <strong>Using a single AZ</strong> — AZ outages happen. Deploy across 2+ AZs with an Auto Scaling Group and Load Balancer.<br>
+    ❌ <strong>Forgetting to snapshot before major changes</strong> — take an EBS snapshot before OS upgrades, software installs, or config changes. Snapshots are incremental and cheap.<br>
+    ❌ <strong>Not tagging resources</strong> — without tags, you can't identify what instances are for, who owns them, or filter billing reports. Tag everything at launch.<br>
+    ❌ <strong>Using gp2 instead of gp3</strong> — gp2 is more expensive and less flexible. All new volumes should be gp3. Migrate existing gp2 volumes in the console with zero downtime.<br>
+    ❌ <strong>Ignoring Trusted Advisor</strong> — AWS Trusted Advisor identifies idle instances, underutilized EBS, unused Elastic IPs, and security risks. Check it monthly.<br>
+    ❌ <strong>Not enabling termination protection on production instances</strong> — one accidental API call or console click can terminate a production instance. Enable termination protection.
+    </p>
+  </div>
+
+  <h3>EC2 vs ECS Fargate vs Lambda — Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>EC2</th><th>ECS Fargate</th><th>Lambda</th></tr>
+    <tr><td>Full OS control</td><td>✅ Root access</td><td>❌ Container only</td><td>❌ No OS access</td></tr>
+    <tr><td>Long-running process (&gt;15 min)</td><td>✅ Unlimited</td><td>✅ Unlimited</td><td>❌ 15 min max</td></tr>
+    <tr><td>Custom networking / VPN</td><td>✅ Full control</td><td>⚠️ Limited</td><td>⚠️ VPC supported</td></tr>
+    <tr><td>Zero ops overhead</td><td>❌ You manage patching</td><td>✅ No servers</td><td>✅ Fully managed</td></tr>
+    <tr><td>Event-driven (sporadic load)</td><td>❌ Always paying</td><td>⚠️ Scales to zero slowly</td><td>✅ Scales to zero</td></tr>
+    <tr><td>GPU / specialized hardware</td><td>✅ P4, G5, Inf2</td><td>❌ Not supported</td><td>❌ Not supported</td></tr>
+    <tr><td>Cost at high load</td><td>✅ Predictable</td><td>⚠️ Scales cost</td><td>⚠️ Per-invocation</td></tr>
+    <tr><td>Windows workloads</td><td>✅ Native</td><td>⚠️ Windows containers</td><td>❌ No Windows</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have COMPLETE Understanding of Amazon EC2!</h3>
+    <p>EC2 purchase models (On-Demand · Reserved · Spot · Dedicated) · Instance families (M, C, R, I, P, Graviton) · T-series CPU credits · EBS volume types (gp3, io2, st1) · Snapshots · Networking (VPC, Security Groups, NACLs, ENI, EIP, Placement Groups) · Pricing &amp; cost optimization · IAM Instance Profiles · IMDSv2 · Encryption · SSH alternatives via SSM · AWS Console launch (every field) · 4 C# SDK patterns (list instances · lifecycle start/stop/wait · RunInstances · EBS snapshots) · Best practices beginner to expert</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--ec2-d);">Your EC2 infrastructure is now production-ready — scalable, secure, and cost-optimized! 🖥️🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
