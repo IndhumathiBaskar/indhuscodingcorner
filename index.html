@@ -287,6 +287,202 @@ footer {
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .fade-in { animation: fadeIn 0.35s ease both; }
 
+/* ── TTS AUDIO PLAYER ── */
+#ttsPlayer {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 500;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  padding: 14px 16px;
+  width: 310px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.25s;
+}
+#ttsPlayer.visible { display: flex; }
+#ttsPlayer.minimized { width: auto; padding: 10px 14px; }
+#ttsPlayer.minimized .tts-body { display: none; }
+
+.tts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tts-title {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tts-title .tts-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: ttsPulse 1.4s ease-in-out infinite;
+  display: none;
+}
+.tts-title .tts-dot.active { display: block; }
+@keyframes ttsPulse {
+  0%,100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+.tts-header-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.tts-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  transition: all 0.15s;
+  line-height: 1;
+}
+.tts-icon-btn:hover { background: var(--bg2); color: var(--text); }
+
+.tts-body { display: flex; flex-direction: column; gap: 10px; }
+
+/* progress bar */
+.tts-progress-wrap {
+  background: var(--bg2);
+  border-radius: 100px;
+  height: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+}
+.tts-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* current sentence display */
+.tts-sentence {
+  font-size: 0.78rem;
+  color: var(--text2);
+  line-height: 1.5;
+  min-height: 36px;
+  background: var(--bg2);
+  border-radius: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* controls row */
+.tts-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+.tts-btn {
+  background: none; border: none; cursor: pointer;
+  border-radius: 8px; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text2);
+}
+.tts-btn:hover { background: var(--bg2); }
+.tts-btn.play-btn {
+  background: var(--accent);
+  color: white;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+.tts-btn.play-btn:hover { background: var(--accent2); }
+.tts-btn.nav-btn {
+  width: 30px; height: 30px;
+  font-size: 0.8rem;
+}
+
+/* speed control */
+.tts-speed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.tts-speed-label {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.tts-speed-btns {
+  display: flex;
+  gap: 3px;
+}
+.tts-speed-btn {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  padding: 3px 7px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tts-speed-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tts-speed-btn.active { background: var(--accent-l); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+
+/* counter */
+.tts-counter {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-align: right;
+  flex: 1;
+}
+
+/* floating trigger button (shown when no guide open) */
+#ttsTrigger {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 499;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 44px;
+  height: 44px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(201,106,42,0.35);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+#ttsTrigger:hover { transform: scale(1.08); background: var(--accent2); }
+#ttsTrigger.visible { display: flex; }
+
+@media (max-width: 480px) {
+  #ttsPlayer { width: calc(100vw - 32px); right: 16px; bottom: 16px; }
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
@@ -378,6 +574,47 @@ footer {
     </div>
 
   </main>
+</div>
+
+<!-- TTS FLOATING TRIGGER BUTTON -->
+<button id="ttsTrigger" title="Read this guide aloud">🔊</button>
+
+<!-- TTS AUDIO PLAYER PANEL -->
+<div id="ttsPlayer">
+  <div class="tts-header">
+    <div class="tts-title">
+      <span class="tts-dot" id="ttsDot"></span>
+      🔊 Read Aloud
+    </div>
+    <div class="tts-header-btns">
+      <button class="tts-icon-btn" id="ttsMinBtn" title="Minimise" onclick="ttsToggleMin()">—</button>
+      <button class="tts-icon-btn" title="Close" onclick="ttsClose()">✕</button>
+    </div>
+  </div>
+  <div class="tts-body">
+    <div class="tts-progress-wrap" id="ttsProgressWrap" onclick="ttsSeek(event)" title="Click to jump">
+      <div class="tts-progress-fill" id="ttsProgress"></div>
+    </div>
+    <div class="tts-sentence" id="ttsSentence">Press ▶ to start reading the current guide.</div>
+    <div class="tts-controls">
+      <button class="tts-btn nav-btn" onclick="ttsStep(-5)" title="Back 5 sentences">⏮</button>
+      <button class="tts-btn nav-btn" onclick="ttsStep(-1)" title="Previous sentence">◀</button>
+      <button class="tts-btn play-btn" id="ttsPlayBtn" onclick="ttsToggle()">▶</button>
+      <button class="tts-btn nav-btn" onclick="ttsStep(1)" title="Next sentence">▶</button>
+      <button class="tts-btn nav-btn" onclick="ttsStep(5)" title="Skip 5 sentences">⏭</button>
+      <span class="tts-counter" id="ttsCounter">0 / 0</span>
+    </div>
+    <div class="tts-speed-row">
+      <span class="tts-speed-label">Speed:</span>
+      <div class="tts-speed-btns" id="ttsSpeedBtns">
+        <button class="tts-speed-btn" onclick="ttsSetSpeed(0.75)">0.75×</button>
+        <button class="tts-speed-btn active" onclick="ttsSetSpeed(1)">1×</button>
+        <button class="tts-speed-btn" onclick="ttsSetSpeed(1.25)">1.25×</button>
+        <button class="tts-speed-btn" onclick="ttsSetSpeed(1.5)">1.5×</button>
+        <button class="tts-speed-btn" onclick="ttsSetSpeed(2)">2×</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- FOOTER -->
@@ -768,6 +1005,231 @@ window.toggleDrawerTopic = function(el) {
 
 // Fix homeView show after hide
 document.getElementById('guideView').style.display = '';
+
+// ═══════════════════════════════════════════════════════════════
+// 🔊 TEXT-TO-SPEECH ENGINE — centralised, works for every guide
+// ═══════════════════════════════════════════════════════════════
+const TTS = (() => {
+  let sentences    = [];
+  let cursor       = 0;
+  let playing      = false;
+  let speed        = 1;
+  let utterance    = null;
+  let minimised    = false;
+
+  const player    = () => document.getElementById('ttsPlayer');
+  const trigger   = () => document.getElementById('ttsTrigger');
+  const playBtn   = () => document.getElementById('ttsPlayBtn');
+  const sentEl    = () => document.getElementById('ttsSentence');
+  const counter   = () => document.getElementById('ttsCounter');
+  const progress  = () => document.getElementById('ttsProgress');
+  const dot       = () => document.getElementById('ttsDot');
+
+  // ── Extract readable text from the guide iframe ──────────────
+  function extractSentences() {
+    const frame = document.getElementById('guideFrame');
+    let text = '';
+    try {
+      const doc = frame.contentDocument || frame.contentWindow.document;
+      // Walk all visible text nodes — skip script/style/code
+      const walker = doc.createTreeWalker(
+        doc.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            const tag = node.parentElement?.tagName?.toUpperCase();
+            if (['SCRIPT','STYLE','CODE','PRE','NOSCRIPT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+            if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        }
+      );
+      while (walker.nextNode()) text += ' ' + walker.currentNode.textContent;
+    } catch(e) {
+      sentEl().textContent = '⚠️ Cannot read cross-origin guide.';
+      return [];
+    }
+
+    // Split into sentences on . ! ? — keep chunks reasonable
+    const raw = text.replace(/\s+/g, ' ').trim();
+    const parts = raw.match(/[^.!?]+[.!?]+/g) || [raw];
+    return parts.map(s => s.trim()).filter(s => s.length > 4);
+  }
+
+  // ── Load / reload sentences from current guide ───────────────
+  function load() {
+    stop();
+    sentences = extractSentences();
+    cursor    = 0;
+    updateUI();
+  }
+
+  // ── Speak one sentence then auto-advance ─────────────────────
+  function speak() {
+    if (!sentences.length || cursor >= sentences.length) { stop(); return; }
+    window.speechSynthesis.cancel();
+
+    utterance              = new SpeechSynthesisUtterance(sentences[cursor]);
+    utterance.rate         = speed;
+    utterance.lang         = 'en-US';
+
+    utterance.onstart = () => {
+      playing = true;
+      playBtn().textContent = '⏸';
+      dot().classList.add('active');
+      updateUI();
+    };
+    utterance.onend = () => {
+      if (playing) {
+        cursor++;
+        if (cursor < sentences.length) speak();
+        else stop();
+      }
+    };
+    utterance.onerror = () => { playing && stop(); };
+
+    window.speechSynthesis.speak(utterance);
+  }
+
+  // ── Controls ─────────────────────────────────────────────────
+  function toggle() {
+    if (!sentences.length) load();
+    if (playing) pause(); else resume();
+  }
+
+  function pause() {
+    playing = false;
+    window.speechSynthesis.cancel();
+    playBtn().textContent = '▶';
+    dot().classList.remove('active');
+  }
+
+  function resume() {
+    speak();
+  }
+
+  function stop() {
+    playing = false;
+    window.speechSynthesis.cancel();
+    if (playBtn()) { playBtn().textContent = '▶'; }
+    if (dot())     { dot().classList.remove('active'); }
+    updateUI();
+  }
+
+  function step(n) {
+    const wasPlaying = playing;
+    stop();
+    cursor = Math.max(0, Math.min(sentences.length - 1, cursor + n));
+    updateUI();
+    if (wasPlaying) speak();
+  }
+
+  function setSpeed(s) {
+    speed = s;
+    document.querySelectorAll('.tts-speed-btn').forEach(b => {
+      b.classList.toggle('active', parseFloat(b.textContent) === s);
+    });
+    // If currently playing, restart current sentence at new speed
+    if (playing) { stop(); speak(); }
+  }
+
+  function seek(e) {
+    if (!sentences.length) return;
+    const rect  = document.getElementById('ttsProgressWrap').getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    cursor      = Math.floor(ratio * sentences.length);
+    const wasPlaying = playing;
+    stop();
+    updateUI();
+    if (wasPlaying) speak();
+  }
+
+  // ── UI sync ──────────────────────────────────────────────────
+  function updateUI() {
+    const total = sentences.length;
+    counter().textContent = total ? `${cursor + 1} / ${total}` : '0 / 0';
+    progress().style.width = total ? `${((cursor) / total) * 100}%` : '0%';
+    if (sentences[cursor]) {
+      sentEl().textContent = sentences[cursor];
+    } else if (!total) {
+      sentEl().textContent = 'Press ▶ to start reading the current guide.';
+    }
+  }
+
+  // ── Show / hide player ───────────────────────────────────────
+  function show() {
+    load();
+    player().classList.add('visible');
+    trigger().classList.remove('visible');
+    minimised = false;
+    player().classList.remove('minimized');
+    document.getElementById('ttsMinBtn').textContent = '—';
+  }
+
+  function close() {
+    stop();
+    sentences = [];
+    player().classList.remove('visible');
+    trigger().classList.add('visible');
+    updateUI();
+  }
+
+  function toggleMin() {
+    minimised = !minimised;
+    player().classList.toggle('minimized', minimised);
+    document.getElementById('ttsMinBtn').textContent = minimised ? '□' : '—';
+  }
+
+  // ── Called by loadGuide when a guide finishes loading ────────
+  function onGuideLoaded() {
+    // Reset sentences so next play re-extracts fresh content
+    stop();
+    sentences = [];
+    cursor    = 0;
+    updateUI();
+    // Show the trigger button
+    trigger().classList.add('visible');
+    // If player is open, reload immediately
+    if (player().classList.contains('visible')) load();
+  }
+
+  // ── Called by showHome to hide audio controls ─────────────────
+  function onHome() {
+    stop();
+    player().classList.remove('visible');
+    trigger().classList.remove('visible');
+  }
+
+  return { toggle, step, setSpeed, seek, show, close, toggleMin, onGuideLoaded, onHome };
+})();
+
+// Expose to HTML onclick attributes
+window.ttsToggle    = () => TTS.toggle();
+window.ttsStep      = (n) => TTS.step(n);
+window.ttsSetSpeed  = (s) => TTS.setSpeed(s);
+window.ttsSeek      = (e) => TTS.seek(e);
+window.ttsClose     = () => TTS.close();
+window.ttsToggleMin = () => TTS.toggleMin();
+window.ttsOpen      = () => TTS.show();
+document.getElementById('ttsTrigger').onclick = () => TTS.show();
+
+// Hook into the existing loadGuide → frameLoaded pipeline
+const _origFrameLoaded = window.frameLoaded;
+window.frameLoaded = function() {
+  _origFrameLoaded && _origFrameLoaded();
+  // Small delay so iframe DOM is fully painted
+  setTimeout(() => TTS.onGuideLoaded(), 400);
+};
+
+// Hook into showHome so player hides when going back to home
+const _origShowHome = window.showHome;
+window.showHome = function() {
+  _origShowHome && _origShowHome();
+  TTS.onHome();
+};
+// ═══════════════════════════════════════════════════════════════
+// END TTS ENGINE
+// ═══════════════════════════════════════════════════════════════
 </script>
 
 <!-- Firebase Analytics -->
