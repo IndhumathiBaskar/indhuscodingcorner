@@ -1025,35 +1025,73 @@ const TTS = (() => {
   const progress  = () => document.getElementById('ttsProgress');
   const dot       = () => document.getElementById('ttsDot');
 
-  // ── Extract readable text from the guide iframe ──────────────
+  // ── Extract readable text — ACTIVE TAB ONLY ──────────────────
   function extractSentences() {
     const frame = document.getElementById('guideFrame');
-    let text = '';
+    let root = null;
     try {
       const doc = frame.contentDocument || frame.contentWindow.document;
-      // Walk all visible text nodes — skip script/style/code
-      const walker = doc.createTreeWalker(
-        doc.body,
+      // Only read the currently visible tab panel
+      root = doc.querySelector('.tab-panel.active .section') ||
+             doc.querySelector('.tab-panel.active') ||
+             doc.querySelector('.section') ||
+             doc.body;
+    } catch(e) {
+      sentEl().textContent = '⚠️ Cannot read this guide (cross-origin).';
+      return [];
+    }
+
+    // Walk text nodes inside active tab only — skip code/pre/script/style/svg
+    let text = '';
+    try {
+      const doc2   = document.getElementById('guideFrame').contentDocument
+                  || document.getElementById('guideFrame').contentWindow.document;
+      const walker = doc2.createTreeWalker(
+        root,
         NodeFilter.SHOW_TEXT,
         {
           acceptNode(node) {
             const tag = node.parentElement?.tagName?.toUpperCase();
-            if (['SCRIPT','STYLE','CODE','PRE','NOSCRIPT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+            if (['SCRIPT','STYLE','CODE','PRE','NOSCRIPT','SVG'].includes(tag)) return NodeFilter.FILTER_REJECT;
+            // Also skip if any ancestor is CODE or PRE
+            let el = node.parentElement;
+            while (el) {
+              const t = el.tagName?.toUpperCase();
+              if (t === 'CODE' || t === 'PRE') return NodeFilter.FILTER_REJECT;
+              el = el.parentElement;
+            }
             if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
             return NodeFilter.FILTER_ACCEPT;
           }
         }
       );
       while (walker.nextNode()) text += ' ' + walker.currentNode.textContent;
-    } catch(e) {
-      sentEl().textContent = '⚠️ Cannot read cross-origin guide.';
-      return [];
-    }
+    } catch(e) { return []; }
 
-    // Split into sentences on . ! ? — keep chunks reasonable
-    const raw = text.replace(/\s+/g, ' ').trim();
+    // Split into clean sentences
+    const raw   = text.replace(/\s+/g, ' ').trim();
     const parts = raw.match(/[^.!?]+[.!?]+/g) || [raw];
-    return parts.map(s => s.trim()).filter(s => s.length > 4);
+    return parts.map(s => s.trim()).filter(s => s.length > 6);
+  }
+
+  // ── Watch tab-btn clicks inside the iframe → reload sentences ─
+  function watchTabSwitches() {
+    try {
+      const doc = document.getElementById('guideFrame').contentDocument
+               || document.getElementById('guideFrame').contentWindow.document;
+      doc.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          setTimeout(() => {
+            const wasPlaying = playing;
+            stop();
+            sentences = extractSentences();
+            cursor    = 0;
+            updateUI();
+            if (wasPlaying) speak(); // auto-resume reading on new tab
+          }, 150);
+        });
+      });
+    } catch(e) { /* cross-origin — skip */ }
   }
 
   // ── Load / reload sentences from current guide ───────────────
@@ -1182,15 +1220,13 @@ const TTS = (() => {
 
   // ── Called by loadGuide when a guide finishes loading ────────
   function onGuideLoaded() {
-    // Reset sentences so next play re-extracts fresh content
     stop();
     sentences = [];
     cursor    = 0;
     updateUI();
-    // Show the trigger button
-    trigger().classList.add('visible');
-    // If player is open, reload immediately
-    if (player().classList.contains('visible')) load();
+    trigger().classList.add("visible");
+    watchTabSwitches();
+    if (player().classList.contains("visible")) load();
   }
 
   // ── Called by showHome to hide audio controls ─────────────────
