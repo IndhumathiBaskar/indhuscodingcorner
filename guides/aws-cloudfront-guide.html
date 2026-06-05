@@ -1,0 +1,1488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon CloudFront — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --cf:#e07b18;--cf-l:#fef3e2;--cf-d:#8a4400;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0d10;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#fef3e2 0%,#fde4b8 45%,#f8c87a 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'☁️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.07;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--cf-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 0 0 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:rgba(224,123,24,.3) transparent;}
+.tab-nav::-webkit-scrollbar{height:3px;}
+.tab-nav::-webkit-scrollbar-thumb{background:rgba(224,123,24,.3);border-radius:10px;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--cf-l);color:var(--cf-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--cf-l);letter-spacing:-.01em;}
+.section h3{color:var(--cf-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--cf-l),#fff8ee);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:820px;display:block;margin:0 auto;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--cf-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-cf{background:var(--cf-l);border:1.5px solid rgba(224,123,24,.3);}
+.n-cf .flow-node-title{color:var(--cf-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--cf-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--cf);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+.tip{background:var(--cf-l);border:1px solid rgba(224,123,24,.2);border-left:4px solid var(--cf);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--cf-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:#fff8ee;border:1px solid rgba(224,123,24,.25);border-left:4px solid var(--cf);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--cf-d);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #141c20;border-left:3px solid var(--cf);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#f0a050;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(224,123,24,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--cf-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--cf-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--cf);}
+.step-body h4{color:var(--cf-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:9px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--cf-d);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:11px 13px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:9px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 9px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--muted);padding:7px 9px;background:var(--cf-l);border-radius:5px;margin-top:7px;}
+.completion{background:linear-gradient(135deg,var(--cf-l),var(--green-l));border:1px solid rgba(224,123,24,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-cf{background:var(--cf-l);color:var(--cf-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-purple{background:var(--purple-l);color:var(--purple);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--cf);}
+.val-bad{color:var(--red);}
+.pop-visual{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:12px 0;box-shadow:var(--sh-lg);}
+.pop-header{background:linear-gradient(90deg,var(--cf-l),#fff8ee);padding:9px 14px;font-weight:700;font-size:.8rem;color:var(--text);border-bottom:1px solid var(--border);}
+.pop-body{padding:14px;}
+.pop-row{display:flex;align-items:center;gap:10px;margin:5px 0;}
+.pop-label{font-size:.7rem;font-weight:700;color:var(--text2);width:120px;flex-shrink:0;}
+.pop-bar-wrap{flex:1;background:var(--surface);border-radius:4px;height:20px;border:1px solid var(--border);overflow:hidden;position:relative;}
+.pop-bar{height:100%;display:flex;align-items:center;padding-left:8px;font-size:.6rem;font-weight:700;white-space:nowrap;border-radius:4px;}
+.pb-hit{background:var(--green-l);color:var(--green);border:1px solid rgba(31,122,82,.2);}
+.pb-miss{background:var(--red-l);color:var(--red);border:1px solid var(--red-b);}
+.pb-partial{background:var(--cf-l);color:var(--cf-d);border:1px solid rgba(224,123,24,.2);}
+.pop-note{font-size:.64rem;color:var(--muted);font-family:'JetBrains Mono',monospace;width:90px;text-align:right;flex-shrink:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .pop-label{width:80px;font-size:.64rem;}
+  .pop-note{width:60px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>Amazon <span>CloudFront</span> — Complete Guide</h1>
+    <p>CDN · Distributions · Origins · Caching · Behaviors · Lambda@Edge · CloudFront Functions · Signed URLs · OAC · WAF · Geo-restriction · Invalidations · C# SDK · beginner→expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('architecture',this)">② Architecture</button>
+      <button class="tab-nav-btn tab-btn" onclick="T('origins',this)">③ Origins</button>
+      <button class="tab-btn" onclick="T('cache',this)">④ Caching &amp; Behaviors</button>
+      <button class="tab-btn" onclick="T('edge',this)">⑤ Lambda@Edge &amp; Functions</button>
+      <button class="tab-btn" onclick="T('security',this)">⑥ Security &amp; OAC</button>
+      <button class="tab-btn" onclick="T('perf',this)">⑦ Performance</button>
+      <button class="tab-btn" onclick="T('console',this)">⑧ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑨ C# SDK</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① OVERVIEW -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>☁️ What is Amazon CloudFront?</h2>
+  <p>Amazon CloudFront is AWS's <strong>global Content Delivery Network (CDN)</strong>. It caches and delivers your content — static files, APIs, video, dynamic responses — from <strong>600+ Points of Presence (PoPs)</strong> in 100+ cities worldwide, putting data physically closer to users and reducing latency from seconds to milliseconds.</p>
+
+  <div class="tip">
+    <h4>💡 CloudFront in One Sentence</h4>
+    <p>CloudFront = a global cache layer that sits in front of your origin (S3, ALB, EC2, API Gateway) and serves requests from the nearest edge location — so a user in Mumbai doesn't have to wait for a response from us-east-1.</p>
+  </div>
+
+  <h3>The Problem CloudFront Solves</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😰 Without CloudFront</h4>
+      <ul>
+        <li>Every request hits your origin server in one AWS region</li>
+        <li>User in Tokyo → us-east-1 → 150ms+ latency every request</li>
+        <li>Origin handles all traffic — high load, high cost</li>
+        <li>DDoS attacks hit your origin directly</li>
+        <li>No built-in HTTPS for S3 static sites</li>
+        <li>No way to serve different content based on location</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>😌 With CloudFront</h4>
+      <ul>
+        <li>Cached content served from nearest edge — &lt;10ms typical</li>
+        <li>Origin only receives cache misses — 80-95% traffic reduction</li>
+        <li>Built-in DDoS protection + AWS Shield Standard free</li>
+        <li>Free HTTPS with ACM certificate — one click</li>
+        <li>Lambda@Edge / CloudFront Functions for edge logic</li>
+        <li>WAF integration for application-layer protection</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key CloudFront Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Distribution</h4><p>The top-level CloudFront resource. Has a domain like <code>d1a2b3.cloudfront.net</code>.</p></div>
+    <div class="icon-item"><span class="emoji">🏠</span><h4>Origin</h4><p>Where CloudFront fetches content when cache misses — S3, ALB, EC2, API Gateway, custom HTTP.</p></div>
+    <div class="icon-item"><span class="emoji">📍</span><h4>Edge Location</h4><p>A PoP where content is cached. 600+ worldwide. Request served from nearest one.</p></div>
+    <div class="icon-item"><span class="emoji">🔀</span><h4>Behavior</h4><p>Rules matching URL path patterns to an origin + cache policy. e.g. <code>/api/*</code> → ALB, <code>/static/*</code> → S3.</p></div>
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>TTL</h4><p>Time-to-Live — how long CloudFront keeps a cached object before re-fetching from origin.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Cache Key</h4><p>What makes a unique cache entry — URL path + selected headers/cookies/query strings.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>OAC</h4><p>Origin Access Control — lets CloudFront fetch from private S3 without making bucket public.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Lambda@Edge</h4><p>Run Node.js/Python functions at edge locations. Modify requests/responses. Full Lambda power.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>CF Functions</h4><p>Lightweight JS functions at edge. Sub-millisecond, cheaper than Lambda@Edge. URL rewrites, header manipulation.</p></div>
+    <div class="icon-item"><span class="emoji">🔏</span><h4>Signed URLs/Cookies</h4><p>Time-limited, access-controlled URLs for private content. Video streaming, paid content.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Geo-restriction</h4><p>Block or allow content by country using CloudFront's IP geolocation database.</p></div>
+    <div class="icon-item"><span class="emoji">🗑️</span><h4>Invalidation</h4><p>Force CloudFront to evict cached objects before TTL expires. Costs $0.005/path after first 1000/month.</p></div>
+  </div>
+
+  <h3>CloudFront Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Edge locations</h4><p>600+ PoPs in 100+ cities, 50+ countries</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Data transfer cost</h4><p>~$0.0085/GB from edge to internet (first 10TB/month)</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>HTTP/3 + QUIC</h4><p>Supported natively — faster on lossy networks</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>TLS</h4><p>TLS 1.3 supported. Free ACM cert. SNI only (no dedicated IP unless $600/month)</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Max object size</h4><p>No limit for streaming. 20 GB max for single cached object</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Shield Standard</h4><p>Free DDoS protection included with every distribution</p></div>
+  </div>
+
+  <h3>When to Use CloudFront</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Use Case</th><th>Why CloudFront</th><th>Origin</th></tr>
+    <tr><td>Static website (React/Vue/Angular)</td><td>Global delivery, free HTTPS, low latency</td><td>S3</td></tr>
+    <tr><td>REST / GraphQL API acceleration</td><td>Cache GET responses, reduce origin load</td><td>API Gateway / ALB</td></tr>
+    <tr><td>Video on demand (VOD)</td><td>Adaptive streaming, signed URLs, global scale</td><td>S3 / MediaStore</td></tr>
+    <tr><td>Live streaming</td><td>Low-latency streaming, massive fan-out</td><td>MediaLive / IVS</td></tr>
+    <tr><td>Software downloads / large files</td><td>Cache at edge, reduce S3 egress costs</td><td>S3</td></tr>
+    <tr><td>Dynamic web apps</td><td>TLS termination, WAF, header manipulation</td><td>ALB / EC2</td></tr>
+    <tr><td>Private content</td><td>Signed URLs/Cookies + OAC</td><td>S3</td></tr>
+    <tr><td>Global API with auth</td><td>Lambda@Edge for JWT validation at edge</td><td>API Gateway</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ② ARCHITECTURE -->
+<div id="tab-architecture" class="tab-panel"><div class="section">
+  <h2>🏗️ CloudFront Architecture — Full Request Flow</h2>
+  <p>Understanding exactly what happens when a user's browser requests <code>https://example.com/image.jpg</code> through CloudFront — from DNS resolution to cache hit/miss to origin fetch.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">☁️ CloudFront Complete Request Flow — Cache Hit vs Miss</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 740 520" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="cf-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#e07b18"/></marker>
+          <marker id="gr-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1f7a52"/></marker>
+          <marker id="re-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b02a37"/></marker>
+          <marker id="bl-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#2a4db0"/></marker>
+        </defs>
+
+        <!-- USER -->
+        <rect x="10" y="50" width="100" height="40" rx="7" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="60" y="67" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">👤 User</text>
+        <text x="60" y="82" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Tokyo / Mumbai</text>
+
+        <!-- DNS -->
+        <line x1="110" y1="70" x2="165" y2="70" stroke="#e07b18" stroke-width="1.5" marker-end="url(#cf-a)"/>
+        <text x="137" y="63" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#e07b18" text-anchor="middle">DNS</text>
+
+        <!-- CLOUDFRONT EDGE -->
+        <rect x="165" y="30" width="190" height="80" rx="9" fill="#fef3e2" stroke="rgba(224,123,24,.4)" stroke-width="2"/>
+        <text x="260" y="52" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#8a4400" text-anchor="middle">⚡ CloudFront Edge PoP</text>
+        <text x="260" y="67" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Nearest location (Tokyo PoP)</text>
+        <text x="260" y="82" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4400" text-anchor="middle">TLS terminate · WAF check · CF Functions</text>
+        <text x="260" y="100" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">check cache → HIT or MISS?</text>
+
+        <!-- CACHE HIT path -->
+        <line x1="165" y1="90" x2="84" y2="140" stroke="#1f7a52" stroke-width="2" marker-end="url(#gr-a)"/>
+        <text x="100" y="112" font-family="DM Sans,sans-serif" font-size="8.5" font-weight="700" fill="#1f7a52">✅ CACHE HIT</text>
+        <rect x="8" y="140" width="150" height="36" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="83" y="156" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">Response from cache</text>
+        <text x="83" y="168" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">&lt;5ms · no origin call</text>
+
+        <!-- CACHE MISS path -->
+        <line x1="355" y1="70" x2="415" y2="70" stroke="#b02a37" stroke-width="1.5" marker-end="url(#re-a)"/>
+        <text x="385" y="63" font-family="DM Sans,sans-serif" font-size="8.5" font-weight="700" fill="#b02a37">❌ CACHE MISS</text>
+
+        <!-- REGIONAL CACHE -->
+        <rect x="415" y="45" width="155" height="52" rx="8" fill="#fce8ea" stroke="rgba(176,42,55,.3)" stroke-width="1.5"/>
+        <text x="492" y="65" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a0e1c" text-anchor="middle">🔁 Regional Edge Cache</text>
+        <text x="492" y="80" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Larger mid-tier cache</text>
+        <text x="492" y="90" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">12 regional caches globally</text>
+
+        <!-- Regional → Origin -->
+        <line x1="570" y1="71" x2="620" y2="71" stroke="#b02a37" stroke-width="1.5" marker-end="url(#re-a)"/>
+        <text x="595" y="64" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b02a37" text-anchor="middle">miss</text>
+
+        <!-- ORIGIN group -->
+        <rect x="620" y="20" width="110" height="188" rx="9" fill="rgba(42,77,176,.04)" stroke="rgba(42,77,176,.2)" stroke-width="1" stroke-dasharray="5,3"/>
+        <text x="675" y="38" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#2a4db0" text-anchor="middle">🏠 Origins</text>
+        <rect x="630" y="44" width="90" height="28" rx="5" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="675" y="58" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">🗄️ S3 Bucket</text>
+        <text x="675" y="68" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">static files</text>
+        <rect x="630" y="80" width="90" height="28" rx="5" fill="#fef3e2" stroke="rgba(224,123,24,.25)" stroke-width="1"/>
+        <text x="675" y="94" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#8a4400" text-anchor="middle">⚖️ ALB / EC2</text>
+        <text x="675" y="104" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">dynamic app</text>
+        <rect x="630" y="116" width="90" height="28" rx="5" fill="#ede8fc" stroke="rgba(108,71,212,.2)" stroke-width="1"/>
+        <text x="675" y="130" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#6c47d4" text-anchor="middle">🌐 API Gateway</text>
+        <text x="675" y="140" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">REST / HTTP API</text>
+        <rect x="630" y="152" width="90" height="28" rx="5" fill="#dce4f8" stroke="rgba(42,77,176,.2)" stroke-width="1"/>
+        <text x="675" y="166" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#2a4db0" text-anchor="middle">🌍 Custom HTTP</text>
+        <text x="675" y="176" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">any origin server</text>
+
+        <!-- Origin response back -->
+        <line x1="620" y1="100" x2="572" y2="100" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#bl-a)"/>
+        <line x1="415" y1="100" x2="366" y2="100" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#bl-a)"/>
+        <text x="490" y="112" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#2a4db0" text-anchor="middle">cache + return</text>
+
+        <!-- Lambda@Edge -->
+        <rect x="165" y="160" width="190" height="56" rx="8" fill="#ede8fc" stroke="rgba(108,71,212,.25)" stroke-width="1.5"/>
+        <text x="260" y="178" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#6c47d4" text-anchor="middle">⚡ Lambda@Edge / CF Functions</text>
+        <text x="260" y="193" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Viewer Request · Origin Request</text>
+        <text x="260" y="206" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">Origin Response · Viewer Response</text>
+
+        <!-- Behaviors/WAF box -->
+        <rect x="165" y="240" width="190" height="52" rx="8" fill="#fce8ea" stroke="rgba(176,42,55,.2)" stroke-width="1.5"/>
+        <text x="260" y="258" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a0e1c" text-anchor="middle">🛡️ Security Layer</text>
+        <text x="260" y="273" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">WAF · Shield · Signed URLs</text>
+        <text x="260" y="285" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">OAC · Geo-restriction · HTTPS enforce</text>
+
+        <!-- Behaviors -->
+        <rect x="415" y="160" width="155" height="56" rx="8" fill="var(--cf-l)" stroke="rgba(224,123,24,.3)" stroke-width="1.5"/>
+        <text x="492" y="178" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#8a4400" text-anchor="middle">📋 Cache Behaviors</text>
+        <text x="492" y="193" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">/static/* → S3 · TTL 86400s</text>
+        <text x="492" y="206" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">/api/* → ALB · TTL 0s</text>
+
+        <!-- legends at bottom -->
+        <rect x="10" y="320" width="720" height="184" rx="8" fill="rgba(224,123,24,.03)" stroke="rgba(224,123,24,.12)" stroke-width="1"/>
+        <text x="360" y="340" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#8a4400" text-anchor="middle">📊 Cache Hit Ratio — Why It Matters</text>
+
+        <rect x="28" y="352" width="12" height="12" rx="2" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1"/>
+        <text x="44" y="362" font-family="DM Sans,sans-serif" font-size="9" fill="#1f7a52" font-weight="700">Cache HIT</text>
+        <text x="44" y="374" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a">Served from edge PoP — &lt;10ms · $0 origin cost · no origin load</text>
+
+        <rect x="28" y="384" width="12" height="12" rx="2" fill="#fce8ea" stroke="rgba(176,42,55,.2)" stroke-width="1"/>
+        <text x="44" y="394" font-family="DM Sans,sans-serif" font-size="9" fill="#b02a37" font-weight="700">Cache MISS</text>
+        <text x="44" y="406" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a">Forward to Regional Cache → Origin if still miss · origin egress cost applies</text>
+
+        <text x="28" y="428" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30" font-weight="700">Cache Terminology:</text>
+        <text x="28" y="442" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a">X-Cache: Hit from cloudfront  ← header in response tells you if it was a hit</text>
+        <text x="28" y="456" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a">X-Cache: Miss from cloudfront  ← origin was fetched this time</text>
+        <text x="28" y="470" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a">X-Cache: RefreshHit from cloudfront  ← served from regional edge cache (not PoP)</text>
+        <text x="28" y="492" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4400">Target cache hit ratio: &gt;80% for static · &gt;40% for dynamic with smart TTL · 0% for private/auth</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Cache Hit vs Miss — The Business Impact</h3>
+  <div class="pop-visual">
+    <div class="pop-header">📊 Cache Ratio Impact on Cost &amp; Latency</div>
+    <div class="pop-body">
+      <div class="pop-row">
+        <div class="pop-label">Static site (S3)</div>
+        <div class="pop-bar-wrap"><div class="pop-bar pb-hit" style="width:95%;">95% HIT — &lt;5ms</div></div>
+        <div class="pop-note">✅ Ideal</div>
+      </div>
+      <div class="pop-row">
+        <div class="pop-label">Image/media CDN</div>
+        <div class="pop-bar-wrap"><div class="pop-bar pb-hit" style="width:85%;">85% HIT — &lt;8ms</div></div>
+        <div class="pop-note">✅ Good</div>
+      </div>
+      <div class="pop-row">
+        <div class="pop-label">API (smart TTL)</div>
+        <div class="pop-bar-wrap"><div class="pop-bar pb-partial" style="width:50%;">50% HIT — mixed</div></div>
+        <div class="pop-note">⚠️ Tune TTL</div>
+      </div>
+      <div class="pop-row">
+        <div class="pop-label">Dynamic (no cache)</div>
+        <div class="pop-bar-wrap"><div class="pop-bar pb-miss" style="width:100%;">0% HIT — all to origin</div></div>
+        <div class="pop-note">❌ TLS only</div>
+      </div>
+      <div class="pop-row">
+        <div class="pop-label">Auth'd content</div>
+        <div class="pop-bar-wrap"><div class="pop-bar pb-miss" style="width:100%;">0% (by design) — signed URL</div></div>
+        <div class="pop-note">🔒 Signed</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>CloudFront vs Other CDNs</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-cf">☁️ CloudFront</div>
+      <div class="compare-row"><span class="compare-label">AWS integration</span><span class="compare-val val-good">✅ Native</span></div>
+      <div class="compare-row"><span class="compare-label">Lambda@Edge</span><span class="compare-val val-good">✅ Yes</span></div>
+      <div class="compare-row"><span class="compare-label">PoPs</span><span class="compare-val">600+</span></div>
+      <div class="compare-row"><span class="compare-label">Pricing</span><span class="compare-val">Pay per GB/request</span></div>
+      <div class="compare-row"><span class="compare-label">WAF</span><span class="compare-val val-good">✅ AWS WAF</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">🔵 Cloudflare</div>
+      <div class="compare-row"><span class="compare-label">AWS integration</span><span class="compare-val val-warn">⚠️ Manual</span></div>
+      <div class="compare-row"><span class="compare-label">Edge functions</span><span class="compare-val val-good">✅ Workers</span></div>
+      <div class="compare-row"><span class="compare-label">PoPs</span><span class="compare-val">300+</span></div>
+      <div class="compare-row"><span class="compare-label">Pricing</span><span class="compare-val">Free tier generous</span></div>
+      <div class="compare-row"><span class="compare-label">WAF</span><span class="compare-val val-good">✅ Built-in</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-green">🟢 Fastly</div>
+      <div class="compare-row"><span class="compare-label">AWS integration</span><span class="compare-val val-warn">⚠️ Manual</span></div>
+      <div class="compare-row"><span class="compare-label">Edge compute</span><span class="compare-val val-good">✅ Compute@Edge</span></div>
+      <div class="compare-row"><span class="compare-label">PoPs</span><span class="compare-val">70+</span></div>
+      <div class="compare-row"><span class="compare-label">Pricing</span><span class="compare-val">Usage-based</span></div>
+      <div class="compare-row"><span class="compare-label">Config</span><span class="compare-val val-good">✅ Instant purge</span></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ③ ORIGINS -->
+<div id="tab-origins" class="tab-panel"><div class="section">
+  <h2>🏠 Origins — Where CloudFront Fetches Content</h2>
+  <p>An <strong>origin</strong> is the authoritative source of your content. CloudFront forwards cache-miss requests to the origin, caches the response, and serves it to future users. You can have multiple origins per distribution and route to them based on path patterns (behaviors).</p>
+
+  <h3>Supported Origin Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🗄️ Amazon S3 Origin</h4>
+      <ul>
+        <li>Best for: static websites, file downloads, media assets</li>
+        <li>Use OAC (Origin Access Control) — never make bucket public</li>
+        <li>S3 website endpoints support redirects and custom error pages</li>
+        <li>S3 REST API endpoints used for private content with OAC</li>
+        <li>Can use S3 in different region — CloudFront handles geo-routing</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚖️ Application Load Balancer (ALB)</h4>
+      <ul>
+        <li>Best for: dynamic apps, microservices behind ALB</li>
+        <li>Use custom header to restrict ALB to CloudFront only</li>
+        <li>Supports WebSocket connections through CloudFront</li>
+        <li>ALB must be internet-facing (CloudFront connects over internet)</li>
+        <li>Use sticky sessions via CloudFront forwarding cookies</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌐 API Gateway</h4>
+      <ul>
+        <li>Best for: serverless APIs, Lambda-backed endpoints</li>
+        <li>API Gateway has its own CloudFront — adding your own gives extra control</li>
+        <li>Can add WAF rules not available on API Gateway directly</li>
+        <li>Useful for custom domain + caching on top of API Gateway</li>
+        <li>HTTP API recommended over REST API for cost at high volume</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌍 Custom HTTP Origin</h4>
+      <ul>
+        <li>Any publicly accessible HTTP/HTTPS endpoint</li>
+        <li>On-premise servers, third-party APIs, EC2 instances directly</li>
+        <li>Set origin protocol policy: HTTP only / HTTPS only / Match viewer</li>
+        <li>Can set custom HTTP headers CloudFront adds on every origin request</li>
+        <li>Configure connection timeout and read timeout (1–60s)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Origin Groups — Failover</h3>
+  <div class="flow">
+    <div class="flow-node n-cf">
+      <div class="flow-node-title">📋 Cache Behavior → Origin Group</div>
+      <ul class="flow-items"><li>Route a behavior to an Origin Group instead of a single origin</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green">
+        <div class="flow-node-title">🟢 Primary Origin</div>
+        <ul class="flow-items">
+          <li>CloudFront tries this first</li>
+          <li>e.g. S3 bucket us-east-1</li>
+        </ul>
+      </div>
+      <div class="flow-node n-blue">
+        <div class="flow-node-title">🔵 Secondary Origin</div>
+        <ul class="flow-items">
+          <li>Failover if primary returns 5xx or times out</li>
+          <li>e.g. S3 bucket eu-west-1</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-plain">
+      <div class="flow-node-title">⚙️ Failover Trigger</div>
+      <ul class="flow-items">
+        <li>Configure which HTTP status codes trigger failover: 500, 502, 503, 504</li>
+        <li>Also triggers on connection timeout to primary origin</li>
+        <li>CloudFront retries the request against secondary automatically</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Origin Settings Reference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Setting</th><th>What It Does</th><th>Recommended</th></tr>
+    <tr><td>Origin domain name</td><td>Hostname of your S3 bucket, ALB, or custom server</td><td>Use S3 REST endpoint (not website endpoint) for OAC</td></tr>
+    <tr><td>Origin path</td><td>Prefix appended to all origin requests</td><td>Use to serve from a subfolder: <code>/v2</code></td></tr>
+    <tr><td>Origin protocol policy</td><td>HTTP only / HTTPS only / Match viewer</td><td>HTTPS only — always</td></tr>
+    <tr><td>Origin SSL protocols</td><td>Which TLS versions to use toward origin</td><td>TLSv1.2 minimum</td></tr>
+    <tr><td>Connection timeout</td><td>Seconds to wait for TCP connect (1–10s)</td><td>Default 10s is fine</td></tr>
+    <tr><td>Read timeout</td><td>Seconds CloudFront waits for origin to respond (1–60s)</td><td>Increase for slow Lambda cold starts</td></tr>
+    <tr><td>Connection attempts</td><td>How many times to retry origin (1–3)</td><td>3 for resilience</td></tr>
+    <tr><td>Custom headers</td><td>Headers CloudFront adds to every origin request</td><td>Add secret header to lock ALB to CloudFront only</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Restricting ALB to CloudFront Only</h4>
+    <p>Set a custom origin header in CloudFront (e.g. <code>X-CloudFront-Secret: abc123</code>). In your ALB listener rules, add a condition: only forward requests that contain this header. Any request bypassing CloudFront (direct to ALB) will be rejected. Rotate the secret periodically.</p>
+  </div>
+</div></div>
+
+
+<!-- ④ CACHING & BEHAVIORS -->
+<div id="tab-cache" class="tab-panel"><div class="section">
+  <h2>📋 Caching &amp; Cache Behaviors</h2>
+  <p>Cache behaviors are the heart of CloudFront configuration — they define which origin to use, how long to cache, what to forward to the origin, and what functions to run. Every distribution has a <strong>default behavior (<code>*</code>)</strong> and you can add path-specific behaviors that take priority.</p>
+
+  <h3>Cache Behavior Priority</h3>
+  <div class="flow">
+    <div class="flow-node n-plain">
+      <div class="flow-node-title">📥 Incoming Request: GET /api/users/123</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">CloudFront matches path against behaviors in priority order (top = highest)</div>
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">Priority 0 — /api/*</div>
+      <ul class="flow-items">
+        <li>Origin: ALB (api.example.com)</li>
+        <li>TTL: 0 (no cache) · Forward all headers</li>
+        <li>✅ Matches — use this behavior</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">Priority 1 — /static/*</div>
+      <ul class="flow-items"><li>Origin: S3 · TTL: 86400s · Not evaluated (previous matched)</li></ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-plain">
+      <div class="flow-node-title">Default — * (catch-all)</div>
+      <ul class="flow-items"><li>Evaluated last if nothing else matches</li></ul>
+    </div>
+  </div>
+
+  <h3>Cache Key — What Makes a Unique Cache Entry</h3>
+  <div class="card">
+    <h4>🔑 Cache Key Components</h4>
+    <p style="font-size:.82rem;color:var(--muted);">The cache key determines when CloudFront serves a cached response vs fetches a new one. By default only the URL path is the cache key. You can add headers, cookies, and query strings — but <strong>every addition fragments the cache</strong> and reduces hit ratio.</p>
+    <div class="table-wrap" style="margin-top:8px;"><table>
+      <tr><th>Component</th><th>Default</th><th>When to Include</th><th>Impact on cache</th></tr>
+      <tr><td>URL path</td><td>✅ Always included</td><td>Always</td><td>—</td></tr>
+      <tr><td>Query strings</td><td>❌ Excluded</td><td>Include <code>version=</code> for cache busting</td><td>Fragments cache per param value</td></tr>
+      <tr><td>Headers</td><td>❌ Excluded</td><td>Include <code>Accept-Language</code> for i18n</td><td>Fragments per header value</td></tr>
+      <tr><td>Cookies</td><td>❌ Excluded</td><td>Include session cookie for personalised content</td><td>Fragments per cookie value</td></tr>
+      <tr><td>HTTP method</td><td>GET + HEAD cached</td><td>POST/PUT never cached by design</td><td>—</td></tr>
+    </table></div>
+  </div>
+
+  <h3>Cache Policies vs Origin Request Policies</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📦 Cache Policy</h4>
+      <ul>
+        <li>Defines what goes INTO the <strong>cache key</strong></li>
+        <li>Min/Max/Default TTL settings</li>
+        <li>Which headers/cookies/query strings make unique cache entries</li>
+        <li>Rule: only include what actually changes the response</li>
+        <li>AWS managed policies: CachingOptimized, CachingDisabled, CachingOptimizedForUncompressedObjects</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📤 Origin Request Policy</h4>
+      <ul>
+        <li>Defines what CloudFront <strong>forwards to origin</strong> on cache miss</li>
+        <li>Separate from cache key — forward without caching per value</li>
+        <li>e.g. Forward <code>Authorization</code> header to origin but don't include in cache key</li>
+        <li>Forward viewer's IP via <code>CloudFront-Viewer-Address</code></li>
+        <li>AWS managed: AllViewer, CORS-S3Origin, AllViewerExceptHostHeader</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>TTL Settings</h3>
+  <div class="table-wrap"><table>
+    <tr><th>TTL Type</th><th>Meaning</th><th>Recommended Value</th></tr>
+    <tr><td>Minimum TTL</td><td>CloudFront caches for at least this long regardless of origin headers</td><td>0 for dynamic, 60s+ for static</td></tr>
+    <tr><td>Maximum TTL</td><td>CloudFront caches for at most this long even if origin says longer</td><td>86400s (1 day) for static assets</td></tr>
+    <tr><td>Default TTL</td><td>Used when origin sends no <code>Cache-Control</code> header</td><td>86400s for static, 0 for API</td></tr>
+    <tr><td>Origin <code>Cache-Control: max-age=X</code></td><td>Origin tells CloudFront how long to cache</td><td>Set this on your S3 objects/ALB responses</td></tr>
+    <tr><td>Origin <code>Cache-Control: no-cache</code></td><td>CloudFront revalidates on every request (ETags)</td><td>For content that changes frequently</td></tr>
+    <tr><td>Origin <code>Cache-Control: no-store</code></td><td>CloudFront never caches this response</td><td>For truly dynamic/private content</td></tr>
+  </table></div>
+
+  <h3>Invalidations — Evicting Cached Objects</h3>
+  <div class="flow">
+    <div class="flow-node n-cf">
+      <div class="flow-node-title">🗑️ When to Invalidate</div>
+      <ul class="flow-items">
+        <li>Deployed new version of a file with same filename</li>
+        <li>Emergency content removal (legal, security)</li>
+        <li>Cache-busting when TTL is very long</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-green">
+        <div class="flow-node-title">✅ Better: Versioned filenames</div>
+        <ul class="flow-items">
+          <li><code>app.v2.1.0.js</code> instead of <code>app.js</code></li>
+          <li>Old file cached, new file always fresh</li>
+          <li>No invalidation needed, no cost</li>
+        </ul>
+      </div>
+      <div class="flow-node n-blue">
+        <div class="flow-node-title">⚠️ Invalidation pricing</div>
+        <ul class="flow-items">
+          <li>First 1,000 paths/month: FREE</li>
+          <li>Additional: $0.005 per path</li>
+          <li>Wildcard <code>/images/*</code> counts as 1 path</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Compression — Gzip &amp; Brotli</h3>
+  <div class="card">
+    <h4>📦 Automatic Compression</h4>
+    <ul>
+      <li>Enable "Compress objects automatically" on the behavior</li>
+      <li>CloudFront compresses text-based content (HTML, CSS, JS, JSON, XML) with gzip or Brotli</li>
+      <li>Brotli served if viewer sends <code>Accept-Encoding: br</code> — typically 15–25% smaller than gzip</li>
+      <li>Object must be 1 KB–10 MB to be compressed</li>
+      <li>Pre-compressed objects in S3: set <code>Content-Encoding: gzip</code> on the object — CloudFront won't re-compress</li>
+      <li>Compressed and uncompressed versions cached separately (Accept-Encoding is always in cache key)</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ⑤ LAMBDA@EDGE & CF FUNCTIONS -->
+<div id="tab-edge" class="tab-panel"><div class="section">
+  <h2>⚡ Lambda@Edge &amp; CloudFront Functions</h2>
+  <p>CloudFront lets you run code at edge locations to customise requests and responses — without routing traffic back to a central server. Two options: <strong>CloudFront Functions</strong> (lightweight, ultra-fast JS) and <strong>Lambda@Edge</strong> (full Lambda power, Node.js/Python).</p>
+
+  <h3>The Four Trigger Points</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">⚡ CloudFront Event Trigger Points</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ev-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#e07b18"/></marker>
+        </defs>
+        <!-- Viewer -->
+        <rect x="10" y="80" width="80" height="40" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="50" y="97" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">👤 Viewer</text>
+        <text x="50" y="111" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Browser</text>
+
+        <!-- Arrow 1 -->
+        <line x1="90" y1="100" x2="148" y2="100" stroke="#e07b18" stroke-width="1.5" marker-end="url(#ev-a)"/>
+
+        <!-- Viewer Request trigger -->
+        <rect x="148" y="64" width="108" height="32" rx="6" fill="#ede8fc" stroke="rgba(108,71,212,.3)" stroke-width="1.5"/>
+        <text x="202" y="78" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#6c47d4" text-anchor="middle">① Viewer Request</text>
+        <text x="202" y="90" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">CF Fn ✅ · L@E ✅</text>
+
+        <!-- Arrow 2 to CF edge -->
+        <line x1="256" y1="100" x2="295" y2="100" stroke="#e07b18" stroke-width="1.5" marker-end="url(#ev-a)"/>
+
+        <!-- CloudFront edge cache -->
+        <rect x="295" y="66" width="130" height="68" rx="8" fill="#fef3e2" stroke="rgba(224,123,24,.4)" stroke-width="2"/>
+        <text x="360" y="83" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#8a4400" text-anchor="middle">☁️ CloudFront Edge</text>
+        <text x="360" y="96" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Cache check</text>
+        <text x="360" y="108" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#8a4400" text-anchor="middle">HIT → skip to ④</text>
+        <text x="360" y="120" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#8a4400" text-anchor="middle">MISS → continue</text>
+
+        <!-- Arrow 3 to origin request -->
+        <line x1="425" y1="100" x2="455" y2="100" stroke="#e07b18" stroke-width="1.5" marker-end="url(#ev-a)"/>
+
+        <!-- Origin Request trigger -->
+        <rect x="455" y="64" width="108" height="32" rx="6" fill="#ede8fc" stroke="rgba(108,71,212,.3)" stroke-width="1.5"/>
+        <text x="509" y="78" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#6c47d4" text-anchor="middle">② Origin Request</text>
+        <text x="509" y="90" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">L@E only ✅</text>
+
+        <!-- Arrow to Origin -->
+        <line x1="563" y1="100" x2="600" y2="100" stroke="#e07b18" stroke-width="1.5" marker-end="url(#ev-a)"/>
+
+        <!-- Origin -->
+        <rect x="600" y="80" width="110" height="40" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="655" y="97" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">🏠 Origin</text>
+        <text x="655" y="111" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">S3 / ALB / API GW</text>
+
+        <!-- Return arrows -->
+        <line x1="600" y1="144" x2="563" y2="144" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#ev-a)" transform="rotate(180 581 144)"/>
+        <rect x="455" y="128" width="108" height="32" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="509" y="143" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">③ Origin Response</text>
+        <text x="509" y="155" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">L@E only ✅</text>
+        <line x1="455" y1="144" x2="425" y2="144" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#ev-a)" transform="rotate(180 440 144)"/>
+        <rect x="148" y="128" width="108" height="32" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="202" y="143" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">④ Viewer Response</text>
+        <text x="202" y="155" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">CF Fn ✅ · L@E ✅</text>
+        <line x1="148" y1="144" x2="90" y2="144" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#ev-a)" transform="rotate(180 119 144)"/>
+      </svg>
+    </div>
+  </div>
+
+  <h3>CloudFront Functions vs Lambda@Edge</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-cf">🚀 CloudFront Functions</div>
+      <div class="compare-row"><span class="compare-label">Runtime</span><span class="compare-val">JavaScript (ES5.1)</span></div>
+      <div class="compare-row"><span class="compare-label">Max exec time</span><span class="compare-val val-good">&lt;1ms</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val">2 MB</span></div>
+      <div class="compare-row"><span class="compare-label">Triggers</span><span class="compare-val">Viewer Req/Res only</span></div>
+      <div class="compare-row"><span class="compare-label">Network access</span><span class="compare-val val-bad">❌ No</span></div>
+      <div class="compare-row"><span class="compare-label">Price</span><span class="compare-val val-good">$0.10/M invocations</span></div>
+      <div class="compare-row"><span class="compare-label">Scale</span><span class="compare-val val-good">10M req/s</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-purple">⚡ Lambda@Edge</div>
+      <div class="compare-row"><span class="compare-label">Runtime</span><span class="compare-val">Node.js, Python</span></div>
+      <div class="compare-row"><span class="compare-label">Max exec time</span><span class="compare-val val-warn">5s (viewer) 30s (origin)</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val">128MB–10GB</span></div>
+      <div class="compare-row"><span class="compare-label">Triggers</span><span class="compare-val">All 4 events</span></div>
+      <div class="compare-row"><span class="compare-label">Network access</span><span class="compare-val val-good">✅ Yes (AWS SDK)</span></div>
+      <div class="compare-row"><span class="compare-label">Price</span><span class="compare-val val-warn">$0.60/M + duration</span></div>
+      <div class="compare-row"><span class="compare-label">Scale</span><span class="compare-val">Concurrency limits</span></div>
+    </div>
+  </div>
+
+  <h3>Common Use Cases</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🚀 CloudFront Functions — Use For</h4>
+      <ul>
+        <li>URL rewrites and redirects (e.g. <code>/old-path</code> → <code>/new-path</code>)</li>
+        <li>Add/modify HTTP headers (security headers like CSP, HSTS)</li>
+        <li>Normalise cache keys (lowercase URLs, sort query params)</li>
+        <li>Simple A/B testing (assign bucket via cookie)</li>
+        <li>Redirect HTTP → HTTPS</li>
+        <li>SPA routing (rewrite all paths to <code>/index.html</code>)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Lambda@Edge — Use For</h4>
+      <ul>
+        <li>JWT/OAuth token validation at edge before hitting origin</li>
+        <li>Fetch user data from DynamoDB to personalise responses</li>
+        <li>Image resizing/transformation on the fly</li>
+        <li>Bot detection with complex logic</li>
+        <li>Geolocation-based content routing (more complex than CF Functions)</li>
+        <li>Generate or modify responses without hitting origin at all</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>CloudFront Function — URL Rewrite for SPA</h3>
+  <div class="code-block"><span class="code-label">CloudFront Function · JavaScript · SPA routing — serve index.html for all paths</span>
+<pre><span class="cm">// Handler runs in under 1ms — no cold starts, scales to 10M req/s</span>
+<span class="kw">function</span> <span class="fn">handler</span>(event) {
+    <span class="kw">var</span> request = event.request;
+    <span class="kw">var</span> uri = request.uri;
+
+    <span class="cm">// If requesting a file with extension (e.g. .js, .css, .png) — serve as-is</span>
+    <span class="kw">if</span> (uri.match(<span class="str">/\.[a-zA-Z0-9]+$/</span>)) {
+        <span class="kw">return</span> request;
+    }
+
+    <span class="cm">// All other paths (React/Vue/Angular routes) → rewrite to index.html</span>
+    request.uri = <span class="str">'/index.html'</span>;
+    <span class="kw">return</span> request;
+}
+
+<span class="cm">// ── Security headers function (Viewer Response trigger) ──</span>
+<span class="kw">function</span> <span class="fn">handler</span>(event) {
+    <span class="kw">var</span> response = event.response;
+    <span class="kw">var</span> headers  = response.headers;
+
+    headers[<span class="str">'strict-transport-security'</span>] = { value: <span class="str">'max-age=63072000; includeSubDomains; preload'</span> };
+    headers[<span class="str">'x-content-type-options'</span>]      = { value: <span class="str">'nosniff'</span> };
+    headers[<span class="str">'x-frame-options'</span>]             = { value: <span class="str">'DENY'</span> };
+    headers[<span class="str">'referrer-policy'</span>]             = { value: <span class="str">'strict-origin-when-cross-origin'</span> };
+    headers[<span class="str">'permissions-policy'</span>]          = { value: <span class="str">'camera=(), microphone=(), geolocation=()'</span> };
+
+    <span class="kw">return</span> response;
+}</pre></div>
+
+  <h3>Lambda@Edge — JWT Validation (Node.js)</h3>
+  <div class="code-block"><span class="code-label">Lambda@Edge · Node.js · Viewer Request · JWT validation — protect private content</span>
+<pre><span class="kw">const</span> jwt = require(<span class="str">'jsonwebtoken'</span>);
+
+<span class="cm">// Deployed to us-east-1, replicated globally by CloudFront</span>
+exports.<span class="fn">handler</span> = <span class="kw">async</span> (event) => {
+    <span class="kw">const</span> request   = event.Records[<span class="num">0</span>].cf.request;
+    <span class="kw">const</span> headers   = request.headers;
+    <span class="kw">const</span> authHeader = headers[<span class="str">'authorization'</span>]?.[<span class="num">0</span>]?.value;
+
+    <span class="kw">if</span> (!authHeader?.startsWith(<span class="str">'Bearer '</span>)) {
+        <span class="kw">return</span> <span class="fn">unauthorised</span>(<span class="str">'Missing or invalid Authorization header'</span>);
+    }
+
+    <span class="kw">try</span> {
+        <span class="kw">const</span> token   = authHeader.<span class="fn">substring</span>(<span class="num">7</span>);
+        <span class="kw">const</span> decoded = jwt.<span class="fn">verify</span>(token, process.env.JWT_PUBLIC_KEY, {
+            algorithms: [<span class="str">'RS256'</span>]
+        });
+
+        <span class="cm">// Inject claims as headers for origin to consume</span>
+        request.headers[<span class="str">'x-user-id'</span>]    = [{ value: decoded.sub }];
+        request.headers[<span class="str">'x-user-email'</span>] = [{ value: decoded.email }];
+
+        <span class="kw">return</span> request;  <span class="cm">// continue to origin</span>
+    } <span class="kw">catch</span> (err) {
+        <span class="kw">return</span> <span class="fn">unauthorised</span>(<span class="str">'Invalid or expired token'</span>);
+    }
+};
+
+<span class="kw">function</span> <span class="fn">unauthorised</span>(message) {
+    <span class="kw">return</span> {
+        status: <span class="str">'401'</span>,
+        statusDescription: <span class="str">'Unauthorized'</span>,
+        headers: { <span class="str">'content-type'</span>: [{ value: <span class="str">'application/json'</span> }] },
+        body: <span class="tp">JSON</span>.<span class="fn">stringify</span>({ error: message })
+    };
+}</pre></div>
+</div></div>
+
+
+<!-- ⑥ SECURITY & OAC -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Security — OAC, Signed URLs, WAF, Geo-restriction</h2>
+
+  <h3>OAC — Origin Access Control (Private S3)</h3>
+  <p>OAC lets CloudFront access a <strong>private S3 bucket</strong> without making it public. CloudFront signs requests to S3 using SigV4 — S3 checks the signature and only allows requests from your specific distribution.</p>
+  <div class="flow">
+    <div class="flow-node n-plain"><div class="flow-node-title">👤 User requests private file</div></div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-cf">
+      <div class="flow-node-title">☁️ CloudFront Edge (cache miss)</div>
+      <ul class="flow-items">
+        <li>OAC signs the S3 request with SigV4 using CloudFront's service principal</li>
+        <li>Adds <code>Authorization</code>, <code>x-amz-date</code>, <code>x-amz-content-sha256</code> headers</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🗄️ Private S3 Bucket — Bucket Policy</div>
+      <ul class="flow-items">
+        <li>Bucket policy: allow <code>s3:GetObject</code> only from <code>cloudfront.amazonaws.com</code> service principal</li>
+        <li>Condition: <code>aws:SourceArn</code> = your specific CloudFront distribution ARN</li>
+        <li>S3 verifies SigV4 signature → serves object to CloudFront</li>
+        <li>Direct S3 URL access returns 403 Forbidden ✅</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="code-label">S3 Bucket Policy — Allow only CloudFront OAC (not public)</span>
+<pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Sid"</span>:       <span class="str">"AllowCloudFrontOAC"</span>,
+    <span class="str">"Effect"</span>:   <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: { <span class="str">"Service"</span>: <span class="str">"cloudfront.amazonaws.com"</span> },
+    <span class="str">"Action"</span>:   <span class="str">"s3:GetObject"</span>,
+    <span class="str">"Resource"</span>: <span class="str">"arn:aws:s3:::my-private-bucket/*"</span>,
+    <span class="str">"Condition"</span>: {
+      <span class="str">"StringEquals"</span>: {
+        <span class="cm">// Only THIS distribution can access the bucket — not any CF distribution</span>
+        <span class="str">"aws:SourceArn"</span>: <span class="str">"arn:aws:cloudfront::123456789:distribution/E1ABCDEF123456"</span>
+      }
+    }
+  }]
+}</pre></div>
+
+  <h3>Signed URLs &amp; Signed Cookies</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔏 Signed URLs</h4>
+      <ul>
+        <li>Time-limited, access-controlled URL for a <strong>single file</strong></li>
+        <li>Contains: expiry time, IP restriction (optional), signature</li>
+        <li>Best for: individual file downloads, video streaming links</li>
+        <li>Share via download button, email, API response</li>
+        <li>URL looks like: <code>https://d1.cloudfront.net/video.mp4?Expires=1700000000&amp;Signature=...&amp;Key-Pair-Id=...</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🍪 Signed Cookies</h4>
+      <ul>
+        <li>Time-limited access for <strong>multiple files</strong> (entire section)</li>
+        <li>3 cookies: <code>CloudFront-Expires</code>, <code>CloudFront-Signature</code>, <code>CloudFront-Key-Pair-Id</code></li>
+        <li>Best for: subscription video libraries, gated content sections, streaming playlists (HLS)</li>
+        <li>User logs in → set signed cookies → all subsequent requests to <code>/premium/*</code> work</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block"><span class="code-label">C# · CloudFront Signed URL generator using RSA private key</span>
+<pre><span class="kw">using</span> <span class="tp">System.Security.Cryptography</span>;
+<span class="kw">using</span> <span class="tp">System.Text</span>;
+
+<span class="kw">public static class</span> <span class="tp">CloudFrontSigner</span>
+{
+    <span class="cm">// Generate a time-limited CloudFront signed URL</span>
+    <span class="kw">public static string</span> <span class="fn">CreateSignedUrl</span>(
+        <span class="kw">string</span> cloudFrontUrl,        <span class="cm">// https://d1abc.cloudfront.net/video.mp4</span>
+        <span class="kw">string</span> keyPairId,            <span class="cm">// CloudFront key pair ID (from console)</span>
+        <span class="kw">string</span> privateKeyPem,        <span class="cm">// RSA private key in PEM format</span>
+        <span class="tp">DateTime</span> expiresUtc)         <span class="cm">// when URL expires</span>
+    {
+        <span class="kw">var</span> expireEpoch = (<span class="kw">long</span>)expiresUtc.<span class="fn">Subtract</span>(<span class="kw">new</span> <span class="tp">DateTime</span>(<span class="num">1970</span>,<span class="num">1</span>,<span class="num">1</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="num">0</span>,<span class="tp">DateTimeKind</span>.Utc)).<span class="fn">TotalSeconds</span>();
+
+        <span class="cm">// Canned policy (simplest — just expiry + URL)</span>
+        <span class="kw">var</span> policy = <span class="str">$@"{{""Statement"":[{{""Resource"":""{cloudFrontUrl}"",""Condition"":{{""DateLessThan"":{{""AWS:EpochTime"":{expireEpoch}}}}}}}}]}}"</span>;
+        <span class="kw">var</span> policyBytes = <span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(policy);
+
+        <span class="cm">// Sign with RSA private key (SHA-1 — CloudFront requirement)</span>
+        <span class="kw">using var</span> rsa = <span class="tp">RSA</span>.<span class="fn">Create</span>();
+        rsa.<span class="fn">ImportFromPem</span>(privateKeyPem);
+        <span class="kw">var</span> signature = rsa.<span class="fn">SignData</span>(policyBytes, <span class="tp">HashAlgorithmName</span>.SHA1, <span class="tp">RSASignaturePadding</span>.Pkcs1);
+
+        <span class="cm">// CloudFront-safe Base64 (replace +, =, /)</span>
+        <span class="kw">var</span> sig64 = <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(signature)
+            .<span class="fn">Replace</span>(<span class="str">'+'</span>, <span class="str">'-'</span>).<span class="fn">Replace</span>(<span class="str">'='</span>, <span class="str">'_'</span>).<span class="fn">Replace</span>(<span class="str">'/'</span>, <span class="str">'~'</span>);
+        <span class="kw">var</span> policy64 = <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(policyBytes)
+            .<span class="fn">Replace</span>(<span class="str">'+'</span>, <span class="str">'-'</span>).<span class="fn">Replace</span>(<span class="str">'='</span>, <span class="str">'_'</span>).<span class="fn">Replace</span>(<span class="str">'/'</span>, <span class="str">'~'</span>);
+
+        <span class="kw">return</span> <span class="str">$"{cloudFrontUrl}?Expires={expireEpoch}&amp;Signature={sig64}&amp;Key-Pair-Id={keyPairId}"</span>;
+    }
+}
+
+<span class="cm">// Usage — generate a signed URL valid for 1 hour</span>
+<span class="kw">var</span> signedUrl = <span class="tp">CloudFrontSigner</span>.<span class="fn">CreateSignedUrl</span>(
+    <span class="str">"https://d1abc123.cloudfront.net/premium/video.mp4"</span>,
+    <span class="str">"K2JCJMDEHXQW5F"</span>,      <span class="cm">// Key pair ID from CloudFront console</span>
+    File.<span class="fn">ReadAllText</span>(<span class="str">"cf-private-key.pem"</span>),
+    <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddHours</span>(<span class="num">1</span>));
+<span class="cm">// Return signedUrl to authenticated user only</span></pre></div>
+
+  <h3>AWS WAF Integration</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🛡️ What WAF Adds to CloudFront</h4>
+      <ul>
+        <li>Block SQL injection and XSS attacks</li>
+        <li>Rate limiting by IP (e.g. 100 req/5min)</li>
+        <li>Managed rules: OWASP Top 10, AWS managed threat lists</li>
+        <li>Geo-blocking at WAF level (more granular than CF geo-restriction)</li>
+        <li>Block/allow specific IPs or IP ranges</li>
+        <li>Custom rules: block User-Agents, body content, URI patterns</li>
+        <li>WAF logs to CloudWatch, S3, or Kinesis Firehose</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌍 Geo-restriction</h4>
+      <ul>
+        <li>Built into CloudFront — no WAF needed for basic geo blocking</li>
+        <li><strong>Allow list:</strong> only serve to listed countries</li>
+        <li><strong>Block list:</strong> deny requests from listed countries</li>
+        <li>Uses CloudFront's own IP geolocation database</li>
+        <li>Blocked users receive 403 Forbidden</li>
+        <li>Custom error page: configure 403 → your <code>/geo-blocked.html</code></li>
+        <li>Lambda@Edge for more granular logic (city, ISP, etc.)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>HTTPS — SSL/TLS Configuration</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Setting</th><th>Options</th><th>Recommended</th></tr>
+    <tr><td>Viewer protocol policy</td><td>HTTP and HTTPS / Redirect HTTP to HTTPS / HTTPS only</td><td>Redirect HTTP → HTTPS</td></tr>
+    <tr><td>SSL certificate</td><td>CloudFront default cert / Custom ACM cert / IAM cert</td><td>Custom ACM cert for custom domain</td></tr>
+    <tr><td>Security policy</td><td>TLSv1 / TLSv1.1_2016 / TLSv1.2_2021 / TLSv1.2_2019</td><td>TLSv1.2_2021 — TLS 1.3 + 1.2</td></tr>
+    <tr><td>SNI vs Dedicated IP</td><td>SNI (free) / Dedicated IP ($600/month)</td><td>SNI — all modern clients support it</td></tr>
+    <tr><td>HTTP/2 + HTTP/3</td><td>Enable/disable per distribution</td><td>Enable both — significant latency improvement</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ⑦ PERFORMANCE -->
+<div id="tab-perf" class="tab-panel"><div class="section">
+  <h2>⚡ Performance — Optimising CloudFront</h2>
+
+  <h3>Cache Hit Ratio Optimisation</h3>
+  <ul class="checklist">
+    <li>Use versioned filenames (<code>app.a1b2c3.js</code>) instead of invalidations — highest-ROI change for static assets</li>
+    <li>Set long TTLs (1 year = 31536000) on immutable assets — versioning handles freshness</li>
+    <li>Minimise cache key components — only include headers/cookies that actually change the response</li>
+    <li>Normalise query strings in CloudFront Function before they hit the cache key</li>
+    <li>Separate static and dynamic behaviors — long TTL for static, 0 TTL for dynamic</li>
+    <li>Use <code>Cache-Control: public, max-age=31536000, immutable</code> for versioned assets from origin</li>
+  </ul>
+
+  <h3>Origin Shield — Extra Cache Layer</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-cf"><div class="flow-node-title">🌍 Edge PoPs (600+)</div><ul class="flow-items"><li>First cache tier</li><li>Cache miss → Origin Shield</li></ul></div>
+      <div class="flow-node n-blue"><div class="flow-node-title">🛡️ Origin Shield</div><ul class="flow-items"><li>Optional regional cache layer</li><li>Consolidates all cache misses from all PoPs</li><li>~$0.0025–0.0150/10k requests</li></ul></div>
+      <div class="flow-node n-green"><div class="flow-node-title">🏠 Origin</div><ul class="flow-items"><li>Receives far fewer requests</li><li>Lower load, lower cost</li></ul></div>
+    </div>
+  </div>
+  <div class="tip"><h4>💡 When to Enable Origin Shield</h4><p>Enable Origin Shield when your origin is expensive to call (on-prem, slow DB, rate-limited third-party API) or when your content is globally distributed. The overhead of Origin Shield requests (&lt;$15/month for most) is far less than origin compute savings. Choose the Origin Shield region closest to your origin.</p></div>
+
+  <h3>Real-Time Logs &amp; Monitoring</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📊 Standard Logs (Free)</h4>
+      <ul>
+        <li>Delivered to S3 bucket every 5–10 minutes</li>
+        <li>W3C extended format: IP, method, URL, status, bytes, referrer, UA, cache status</li>
+        <li>Use Athena to query: <code>SELECT * WHERE sc-status = 403</code></li>
+        <li>Check <code>x-edge-result-type</code> field for Hit/Miss/Error</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Real-Time Logs ($0.01/1M lines)</h4>
+      <ul>
+        <li>Delivered to Kinesis Data Stream within seconds</li>
+        <li>Configure sampling rate (1–100%)</li>
+        <li>Choose which fields to include</li>
+        <li>Fan out to Lambda → Elasticsearch, Datadog, custom dashboard</li>
+        <li>Use for live monitoring, anomaly detection, live dashboards</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key CloudFront Metrics (CloudWatch)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Metric</th><th>Meaning</th><th>Alert When</th></tr>
+    <tr><td>CacheHitRate</td><td>% of requests served from cache</td><td>&lt;70% for static content</td></tr>
+    <tr><td>TotalErrorRate</td><td>% of 4xx + 5xx responses</td><td>&gt;1%</td></tr>
+    <tr><td>5xxErrorRate</td><td>% of 5xx (origin errors)</td><td>&gt;0.1%</td></tr>
+    <tr><td>OriginLatency</td><td>ms from origin request to first byte</td><td>&gt;500ms consistently</td></tr>
+    <tr><td>BytesDownloaded</td><td>Total bytes sent to viewers</td><td>Monitor for cost spikes</td></tr>
+    <tr><td>BytesUploaded</td><td>Total bytes received from viewers (POST/PUT)</td><td>Unexpected spikes</td></tr>
+    <tr><td>Requests</td><td>Total requests by distribution</td><td>DDoS detection</td></tr>
+  </table></div>
+
+  <h3>Custom Error Pages</h3>
+  <div class="card">
+    <h4>🎨 Friendly Error Pages</h4>
+    <ul>
+      <li>Configure custom error responses per HTTP error code</li>
+      <li>Map 403 Forbidden → <code>/errors/403.html</code> (for geo-blocked users)</li>
+      <li>Map 404 Not Found → <code>/errors/404.html</code> (branded 404 page)</li>
+      <li>Map 500/502/503 → <code>/errors/maintenance.html</code></li>
+      <li>Set TTL for error responses (default 5 mins) — prevents origin hammering during outage</li>
+      <li>Error pages served from S3 or any origin in the distribution</li>
+    </ul>
+  </div>
+
+  <h3>Pricing Summary</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Component</th><th>Price</th><th>Notes</th></tr>
+    <tr><td>Data transfer out (first 10 TB/month)</td><td>$0.0085/GB</td><td>Price class determines which regions used</td></tr>
+    <tr><td>HTTP/HTTPS requests (first 10M)</td><td>$0.0100/10k</td><td>HTTPS slightly more than HTTP</td></tr>
+    <tr><td>Origin data transfer (CF→S3 same region)</td><td>$0.00</td><td>Free between CF and S3 in same region</td></tr>
+    <tr><td>Origin data transfer (CF→ALB/EC2)</td><td>~$0.02/GB</td><td>Standard EC2 data transfer rates</td></tr>
+    <tr><td>Invalidation paths (after first 1,000/month)</td><td>$0.005/path</td><td>Wildcard = 1 path</td></tr>
+    <tr><td>CloudFront Functions</td><td>$0.10/1M invocations</td><td>Sub-millisecond JS functions</td></tr>
+    <tr><td>Lambda@Edge</td><td>$0.60/1M + $0.00005001/GB-s</td><td>Billed in us-east-1 regardless</td></tr>
+    <tr><td>Real-time logs</td><td>$0.01/1M log lines</td><td>Plus Kinesis costs</td></tr>
+    <tr><td>WAF Web ACL</td><td>$5/month + $1/rule + $0.60/1M requests</td><td>Separate from CloudFront</td></tr>
+    <tr><td>Dedicated IP SSL</td><td>$600/month/distribution</td><td>Needed only for TLS 1.0 clients (rare)</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ⑧ CONSOLE SETUP -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create a CloudFront Distribution</h2>
+  <p>Step-by-step walkthrough: serving a React SPA from S3 with HTTPS, custom domain, OAC, and SPA routing.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create &amp; Configure S3 Bucket (private)</div>
+      <div class="console-step-path">S3 → Create bucket</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Bucket name</div>
+        <div class="console-field-value">my-react-app-prod</div>
+        <div class="console-field-hint">Any unique name. Does not need to match domain name.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Block all public access</div>
+        <div class="console-field-value">✅ ENABLED (default)</div>
+        <div class="console-field-hint">Keep this ON — OAC will give CloudFront access without making bucket public.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Static website hosting</div>
+        <div class="console-field-value">❌ DISABLED — use S3 REST endpoint not website endpoint</div>
+        <div class="console-field-hint">With OAC you use the REST endpoint (bucket.s3.region.amazonaws.com). Website endpoint doesn't support OAC.</div>
+      </div>
+      <div class="console-note">💡 Upload your React build: <code>aws s3 sync ./build s3://my-react-app-prod</code></div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Request ACM Certificate</div>
+      <div class="console-step-path">ACM → Request certificate → Must be in us-east-1!</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Certificate type</div>
+        <div class="console-field-value">Public certificate</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Domain names</div>
+        <div class="console-field-value">example.com · *.example.com</div>
+        <div class="console-field-hint">Add both root and wildcard. ACM wildcard doesn't cover root so add both.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Validation method</div>
+        <div class="console-field-value">DNS validation (recommended)</div>
+        <div class="console-field-hint">Add the CNAME records ACM shows you to your DNS. Auto-renews when they stay in DNS.</div>
+      </div>
+      <div class="console-note">⚠️ Certificate MUST be in us-east-1 (N. Virginia) for CloudFront — even if your app is in another region.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Create CloudFront Distribution</div>
+      <div class="console-step-path">CloudFront → Create distribution</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Origin domain</div>
+        <div class="console-field-value">my-react-app-prod.s3.us-east-1.amazonaws.com</div>
+        <div class="console-field-hint">Select your S3 bucket from the dropdown. Use the REST endpoint, NOT the website endpoint.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Origin access</div>
+        <div class="console-field-value">Origin access control settings (recommended) → Create new OAC</div>
+        <div class="console-field-hint">CloudFront will show you the bucket policy to copy. Paste it into your S3 bucket policy.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Viewer protocol policy</div>
+        <div class="console-field-value">Redirect HTTP to HTTPS</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Cache policy</div>
+        <div class="console-field-value">CachingOptimized (AWS managed)</div>
+        <div class="console-field-hint">TTL 1 day min, 1 year max. Origin headers override. Good default for static assets.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Compress objects automatically</div>
+        <div class="console-field-value">✅ Yes</div>
+        <div class="console-field-hint">Enables gzip + Brotli compression for text content. Reduces transfer size 60–80%.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Price class</div>
+        <div class="console-field-value">Use all edge locations (best performance)</div>
+        <div class="console-field-hint">Or choose "Use only North America and Europe" to reduce cost if your users are regional.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Alternate domain names (CNAMEs)</div>
+        <div class="console-field-value">example.com · www.example.com</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Custom SSL certificate</div>
+        <div class="console-field-value">Select the ACM cert from Step 2</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Default root object</div>
+        <div class="console-field-value">index.html</div>
+        <div class="console-field-hint">Serves index.html when the root URL is requested. Required for SPA.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Add CloudFront Function for SPA Routing</div>
+      <div class="console-step-path">CloudFront → Functions → Create function</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Function name</div>
+        <div class="console-field-value">spa-url-rewrite</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Runtime</div>
+        <div class="console-field-value">cloudfront-js-2.0</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Function code</div>
+        <div class="console-field-value">Paste the SPA rewrite function from Tab ⑤</div>
+        <div class="console-field-hint">Rewrites /about, /users/123 etc. to /index.html so React Router handles routing.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Associate with distribution</div>
+        <div class="console-field-value">Distribution → Default behavior → Viewer request</div>
+      </div>
+      <div class="console-note">💡 Publish the function first, then associate. You can test in the console using the Test tab before publishing.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Configure Custom Error Page (404 → SPA)</div>
+      <div class="console-step-path">Distribution → Error pages → Create custom error response</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">HTTP error code</div>
+        <div class="console-field-value">403 (S3 returns 403 for missing files, not 404)</div>
+        <div class="console-field-hint">S3 returns 403 Forbidden (not 404) when a file doesn't exist in a private bucket.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Customize error response</div>
+        <div class="console-field-value">Yes</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Response page path</div>
+        <div class="console-field-value">/index.html</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">HTTP response code</div>
+        <div class="console-field-value">200</div>
+        <div class="console-field-hint">Return 200 so browser doesn't think it's an error. SPA handles the route.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Update DNS &amp; Verify</div>
+      <div class="console-step-path">Route 53 → Hosted zone → Create record</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Record type</div>
+        <div class="console-field-value">A — IPv4 + AAAA — IPv6</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Alias</div>
+        <div class="console-field-value">✅ Yes → Alias to CloudFront distribution</div>
+        <div class="console-field-hint">Route 53 Alias records are free for CloudFront. Select your distribution from the dropdown.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Verify deployment</div>
+        <div class="console-field-value">curl -I https://example.com/index.html</div>
+        <div class="console-field-hint">Check response header: <code>x-cache: Hit from cloudfront</code> on second request confirms caching works.</div>
+      </div>
+      <div class="console-note">💡 Distribution deployment takes 5–15 minutes. Status changes from "In Progress" to "Deployed" in the console.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑨ C# SDK -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — CloudFront Management</h2>
+  <p>Install: <code>dotnet add package AWSSDK.CloudFront</code></p>
+
+  <h3>Pattern 1 — Create Invalidation (Flush Cache)</h3>
+  <div class="code-block"><span class="code-label">C# · CloudFront SDK · Create cache invalidation</span>
+<pre><span class="kw">using</span> <span class="tp">Amazon.CloudFront</span>;
+<span class="kw">using</span> <span class="tp">Amazon.CloudFront.Model</span>;
+
+<span class="kw">public class</span> <span class="tp">CloudFrontManager</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCloudFront</span> _cf;
+
+    <span class="kw">public</span> <span class="fn">CloudFrontManager</span>(<span class="tp">IAmazonCloudFront</span> cf) => _cf = cf;
+
+    <span class="cm">// Invalidate specific paths after deployment</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">InvalidatePathsAsync</span>(
+        <span class="kw">string</span> distributionId,
+        <span class="tp">IList</span>&lt;<span class="kw">string</span>&gt; paths)   <span class="cm">// e.g. ["/index.html", "/static/*"]</span>
+    {
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">CreateInvalidationRequest</span>
+        {
+            DistributionId = distributionId,
+            InvalidationBatch = <span class="kw">new</span> <span class="tp">InvalidationBatch</span>
+            {
+                <span class="cm">// CallerReference must be unique per invalidation request</span>
+                CallerReference = <span class="tp">DateTimeOffset</span>.UtcNow.<span class="fn">ToUnixTimeMilliseconds</span>().<span class="fn">ToString</span>(),
+                Paths = <span class="kw">new</span> <span class="tp">Paths</span>
+                {
+                    Quantity = paths.Count,
+                    Items    = paths.<span class="fn">ToList</span>()
+                }
+            }
+        };
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _cf.<span class="fn">CreateInvalidationAsync</span>(request);
+        <span class="cm">// Returns invalidation ID — use GetInvalidation to poll status</span>
+        <span class="kw">return</span> response.Invalidation.Id;
+    }
+
+    <span class="cm">// Invalidate everything — use after full redeployment</span>
+    <span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">InvalidateAllAsync</span>(<span class="kw">string</span> distributionId)
+        => <span class="fn">InvalidatePathsAsync</span>(distributionId, <span class="kw">new</span>[] { <span class="str">"/*"</span> });
+
+    <span class="cm">// Wait for invalidation to complete (~30–60 seconds)</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">WaitForInvalidationAsync</span>(<span class="kw">string</span> distributionId, <span class="kw">string</span> invalidationId)
+    {
+        <span class="kw">while</span> (<span class="kw">true</span>)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> _cf.<span class="fn">GetInvalidationAsync</span>(<span class="kw">new</span> <span class="tp">GetInvalidationRequest</span>
+            {
+                DistributionId = distributionId,
+                Id             = invalidationId
+            });
+
+            <span class="kw">if</span> (resp.Invalidation.Status == <span class="str">"Completed"</span>) <span class="kw">break</span>;
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>));
+        }
+    }
+}</pre></div>
+
+  <h3>Pattern 2 — Get Distribution Info &amp; Check Status</h3>
+  <div class="code-block"><span class="code-label">C# · Get distribution details · List all distributions</span>
+<pre><span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Distribution</span>&gt; <span class="fn">GetDistributionAsync</span>(<span class="kw">string</span> distributionId)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> _cf.<span class="fn">GetDistributionAsync</span>(<span class="kw">new</span> <span class="tp">GetDistributionRequest</span>
+    {
+        Id = distributionId
+    });
+
+    <span class="kw">var</span> dist = resp.Distribution;
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Domain:  {dist.DomainName}"</span>);
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Status:  {dist.Status}"</span>);                     <span class="cm">// Deployed / InProgress</span>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Enabled: {dist.DistributionConfig.Enabled}"</span>);
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Origins: {dist.DistributionConfig.Origins.Quantity}"</span>);
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Aliases: {string.Join(", ", dist.DistributionConfig.Aliases.Items)}"</span>);
+    <span class="kw">return</span> dist;
+}
+
+<span class="cm">// List all distributions in account</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">DistributionSummary</span>&gt;&gt; <span class="fn">ListDistributionsAsync</span>()
+{
+    <span class="kw">var</span> distributions = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">DistributionSummary</span>&gt;();
+    <span class="kw">string</span>? marker = <span class="kw">null</span>;
+
+    <span class="kw">do</span>
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> _cf.<span class="fn">ListDistributionsAsync</span>(<span class="kw">new</span> <span class="tp">ListDistributionsRequest</span>
+        {
+            Marker  = marker,
+            MaxItems = <span class="str">"100"</span>
+        });
+
+        distributions.<span class="fn">AddRange</span>(resp.DistributionList.Items);
+        marker = resp.DistributionList.IsTruncated ? resp.DistributionList.NextMarker : <span class="kw">null</span>;
+    }
+    <span class="kw">while</span> (marker != <span class="kw">null</span>);
+
+    <span class="kw">return</span> distributions;
+}
+
+<span class="cm">// Enable or disable a distribution (e.g. for emergency maintenance)</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SetDistributionEnabledAsync</span>(<span class="kw">string</span> distributionId, <span class="kw">bool</span> enabled)
+{
+    <span class="kw">var</span> current = <span class="kw">await</span> _cf.<span class="fn">GetDistributionConfigAsync</span>(<span class="kw">new</span> <span class="tp">GetDistributionConfigRequest</span>
+        { Id = distributionId });
+
+    current.DistributionConfig.Enabled = enabled;
+
+    <span class="kw">await</span> _cf.<span class="fn">UpdateDistributionAsync</span>(<span class="kw">new</span> <span class="tp">UpdateDistributionRequest</span>
+    {
+        Id                 = distributionId,
+        DistributionConfig = current.DistributionConfig,
+        IfMatch            = current.ETag   <span class="cm">// optimistic locking — required by CloudFront API</span>
+    });
+}</pre></div>
+
+  <h3>Pattern 3 — CI/CD Deploy Pipeline (S3 + CloudFront Invalidation)</h3>
+  <div class="code-block"><span class="code-label">C# · Deploy script · Upload to S3 · Invalidate CloudFront</span>
+<pre><span class="kw">using</span> <span class="tp">Amazon.S3</span>;
+<span class="kw">using</span> <span class="tp">Amazon.S3.Transfer</span>;
+<span class="kw">using</span> <span class="tp">Amazon.CloudFront</span>;
+
+<span class="kw">public class</span> <span class="tp">DeploymentService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonS3</span>         _s3;
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCloudFront</span> _cf;
+    <span class="kw">private readonly</span> <span class="tp">CloudFrontManager</span>  _cfm;
+
+    <span class="cm">// Full deploy: upload build folder to S3 then invalidate CF cache</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeployAsync</span>(
+        <span class="kw">string</span> buildFolder,       <span class="cm">// local path: ./dist</span>
+        <span class="kw">string</span> s3Bucket,          <span class="cm">// my-react-app-prod</span>
+        <span class="kw">string</span> distributionId)    <span class="cm">// CloudFront distribution ID</span>
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"📦 Uploading build to S3..."</span>);
+
+        <span class="kw">var</span> transfer = <span class="kw">new</span> <span class="tp">TransferUtility</span>(_s3);
+        <span class="kw">await</span> transfer.<span class="fn">UploadDirectoryAsync</span>(<span class="kw">new</span> <span class="tp">TransferUtilityUploadDirectoryRequest</span>
+        {
+            Directory      = buildFolder,
+            BucketName     = s3Bucket,
+            SearchOption   = <span class="tp">SearchOption</span>.AllDirectories,
+            CannedACL      = <span class="tp">S3CannedACL</span>.Private,   <span class="cm">// private — served via CloudFront only</span>
+            StorageClass   = <span class="tp">S3StorageClass</span>.Standard,
+            <span class="cm">// Set long cache headers on versioned assets</span>
+        });
+
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"🗑️ Invalidating CloudFront cache..."</span>);
+        <span class="kw">var</span> invalidationId = <span class="kw">await</span> _cfm.<span class="fn">InvalidatePathsAsync</span>(
+            distributionId,
+            <span class="kw">new</span>[] { <span class="str">"/index.html"</span>, <span class="str">"/asset-manifest.json"</span> });
+        <span class="cm">// Only invalidate entry points — versioned assets auto-bust via filename hash</span>
+
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"⏳ Waiting for invalidation to complete..."</span>);
+        <span class="kw">await</span> _cfm.<span class="fn">WaitForInvalidationAsync</span>(distributionId, invalidationId);
+
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"✅ Deployment complete!"</span>);
+    }
+}</pre></div>
+</div></div>
+
+</div><!-- /.container -->
+
+<div class="container">
+<div class="section" style="padding-top:0;">
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">☁️</div>
+    <h3>You Now Have COMPLETE CloudFront Knowledge!</h3>
+    <p>What CloudFront solves · 600+ PoP edge locations · Request flow (cache hit vs miss vs regional cache) · Cache hit ratio visualised · Distributions · Origins (S3, ALB, API Gateway, custom HTTP) · Origin Groups failover · Cache behaviors + priority order · Cache keys (URL, headers, cookies, query strings) · Cache policies vs origin request policies · TTL (min/max/default/Cache-Control) · Invalidations + versioned filename strategy · Gzip + Brotli compression · Lambda@Edge (4 trigger points, Node.js JWT validation) · CloudFront Functions (JS, SPA routing, security headers) · CF Functions vs Lambda@Edge comparison · OAC (private S3 bucket policy) · Signed URLs + Signed Cookies (C# RSA generator) · AWS WAF integration · Geo-restriction · HTTPS/TLS configuration + SNI · Origin Shield · Real-time logs · CloudWatch metrics · Custom error pages · Pricing breakdown · Full console walkthrough (React SPA on S3 with OAC, ACM cert, custom domain, CF Function, error pages, DNS) · C# SDK (invalidations, list distributions, enable/disable, CI/CD deploy pipeline)</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--cf-d);">Your content is now served globally in milliseconds — fast, secure, and cost-optimised! ⚡🌍</p>
+  </div>
+</div>
+</div>
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

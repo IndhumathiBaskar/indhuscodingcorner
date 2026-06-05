@@ -1,0 +1,1289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon EBS — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --ebs:#1a6a9a;--ebs-l:#d6eef8;--ebs-d:#0e4a6e;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --teal:#1a7a6a;--teal-l:#d0f0ec;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0f14;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#d6eef8 0%,#a8d8f0 45%,#7ac0e8 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'💽';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.07;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--ebs-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--ebs-l);color:var(--ebs-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--ebs-l);letter-spacing:-.01em;}
+.section h3{color:var(--ebs-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* FLOW DIAGRAM */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--ebs-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.flow-diagram-body{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:760px;display:block;margin:0 auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:580px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--ebs-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-row{display:flex;gap:8px;max-width:580px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-ebs{background:var(--ebs-l);border:1.5px solid rgba(26,106,154,.3);}
+.n-ebs .flow-node-title{color:var(--ebs-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--ebs-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--ebs);}
+.step-body h4{color:var(--ebs-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE STEPS */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--ebs-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--ebs-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--ebs-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--ebs);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+
+/* ALERTS */
+.tip{background:var(--ebs-l);border:1px solid rgba(26,106,154,.2);border-left:4px solid var(--ebs);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--ebs-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #101820;border-left:3px solid var(--ebs);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#7ab8d8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(26,106,154,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--ebs-d);}
+
+/* MISC */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* VOLUME TYPE CARDS */
+.vol-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.vol-card{border-radius:var(--r);padding:14px;border:1.5px solid;position:relative;overflow:hidden;}
+.vol-card::after{content:'';position:absolute;bottom:0;right:0;width:40px;height:40px;border-radius:50%;opacity:.12;}
+.v-gp3{background:var(--ebs-l);border-color:rgba(26,106,154,.35);}
+.v-gp3::after{background:var(--ebs);}
+.v-io2{background:var(--purple-l);border-color:rgba(108,71,212,.3);}
+.v-io2::after{background:var(--purple);}
+.v-st1{background:var(--green-l);border-color:rgba(31,122,82,.3);}
+.v-st1::after{background:var(--green);}
+.v-sc1{background:var(--aws-l);border-color:rgba(212,135,42,.3);}
+.v-sc1::after{background:var(--aws);}
+.vol-name{font-weight:700;font-size:.88rem;margin-bottom:2px;}
+.v-gp3 .vol-name{color:var(--ebs-d);}
+.v-io2 .vol-name{color:var(--purple);}
+.v-st1 .vol-name{color:var(--green);}
+.v-sc1 .vol-name{color:var(--aws);}
+.vol-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.v-gp3 .vol-tag{background:rgba(26,106,154,.15);color:var(--ebs-d);}
+.v-io2 .vol-tag{background:rgba(108,71,212,.12);color:var(--purple);}
+.v-st1 .vol-tag{background:rgba(31,122,82,.15);color:var(--green);}
+.v-sc1 .vol-tag{background:rgba(212,135,42,.15);color:var(--aws);}
+.vol-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.73rem;}
+.vol-row:last-child{border-bottom:none;}
+.vol-row-label{color:var(--muted);}
+.vol-row-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text);}
+
+/* METRIC CARDS */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);position:relative;overflow:hidden;}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.mc-iops::before{background:var(--ebs);}
+.mc-tp::before{background:var(--green);}
+.mc-lat::before{background:var(--purple);}
+.mc-size::before{background:var(--aws);}
+.mc-name{font-weight:700;font-size:.82rem;color:var(--text);margin-bottom:3px;}
+.mc-type{font-family:'JetBrains Mono',monospace;font-size:.62rem;padding:2px 7px;border-radius:3px;display:inline-block;margin-bottom:7px;}
+.mc-iops .mc-type{background:var(--ebs-l);color:var(--ebs-d);}
+.mc-tp .mc-type{background:var(--green-l);color:var(--green);}
+.mc-lat .mc-type{background:var(--purple-l);color:var(--purple);}
+.mc-size .mc-type{background:var(--aws-l);color:var(--aws);}
+.mc-metric{display:flex;justify-content:space-between;margin-bottom:4px;}
+.mc-metric-label{font-size:.68rem;color:var(--muted);}
+.mc-metric-val{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);font-weight:600;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--ebs-l),var(--green-l));border:1px solid rgba(26,106,154,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.vol-grid,.metric-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>Amazon <span>EBS</span> — Deep Dive</h1>
+    <p>Elastic Block Store · volume types · IOPS &amp; throughput · snapshots · encryption · Multi-Attach · performance tuning · C# SDK examples</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('types',this)">② Volume Types</button>
+      <button class="tab-btn" onclick="T('performance',this)">③ Performance</button>
+      <button class="tab-btn" onclick="T('snapshots',this)">④ Snapshots</button>
+      <button class="tab-btn" onclick="T('encryption',this)">⑤ Encryption</button>
+      <button class="tab-btn" onclick="T('lifecycle',this)">⑥ Lifecycle</button>
+      <button class="tab-btn" onclick="T('console',this)">⑦ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# SDK</button>
+      <button class="tab-btn" onclick="T('best',this)">⑨ Best Practices</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>💽 What is Amazon EBS?</h2>
+  <p>Amazon Elastic Block Store (EBS) provides <strong>persistent block storage volumes</strong> for use with EC2 instances. Think of it as a high-performance, network-attached hard drive. EBS volumes persist independently from the life of an instance — you can stop an instance, the data remains, and you can reattach the volume to another instance.</p>
+
+  <div class="tip">
+    <h4>💡 EBS in One Sentence</h4>
+    <p>EBS = a durable, high-performance network-attached disk you can plug into any EC2 instance in the same AZ, resize on the fly, snapshot to S3, and encrypt with one checkbox — without ever touching physical hardware.</p>
+  </div>
+
+  <h3>EBS vs Other AWS Storage</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>EBS</th><th>Instance Store</th><th>EFS</th><th>S3</th></tr>
+    <tr><td>Type</td><td>Block (disk)</td><td>Block (local NVMe)</td><td>File (NFS)</td><td>Object</td></tr>
+    <tr><td>Persistence</td><td>✅ Persists on stop</td><td>❌ Lost on stop</td><td>✅ Persistent</td><td>✅ Persistent</td></tr>
+    <tr><td>Multi-instance attach</td><td>⚠️ io2 Multi-Attach only</td><td>❌ Single instance</td><td>✅ Thousands</td><td>✅ Unlimited</td></tr>
+    <tr><td>Max size</td><td>64 TB</td><td>Depends on instance</td><td>Petabytes (auto)</td><td>Unlimited</td></tr>
+    <tr><td>Latency</td><td>~1ms (sub-ms on io2)</td><td>Microseconds</td><td>~1–3ms</td><td>10–50ms</td></tr>
+    <tr><td>Use case</td><td>Boot volumes, databases</td><td>Temp scratch, caches</td><td>Shared app data</td><td>Backups, media</td></tr>
+    <tr><td>Snapshots</td><td>✅ To S3</td><td>❌</td><td>✅ AWS Backup</td><td>N/A (is object store)</td></tr>
+  </table></div>
+
+  <h3>Key EBS Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💽</span><h4>Volume</h4><p>The EBS disk itself. Attached to one EC2 instance at a time (except io2 Multi-Attach). Lives in one AZ.</p></div>
+    <div class="icon-item"><span class="emoji">📸</span><h4>Snapshot</h4><p>Point-in-time backup of a volume stored in S3. Incremental — only changed blocks stored after the first snapshot.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Encryption</h4><p>AES-256 at rest using AWS KMS. Transparent — no app code changes. Enable at volume creation.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>IOPS</h4><p>Input/Output Operations Per Second — the key metric for databases and transactional workloads.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>Throughput</h4><p>MB/s — the key metric for sequential workloads like data warehousing, log processing, video streaming.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Elastic Volumes</h4><p>Modify volume type, size, IOPS, and throughput on a live attached volume — zero downtime.</p></div>
+    <div class="icon-item"><span class="emoji">🗓️</span><h4>DLM</h4><p>Data Lifecycle Manager — automate snapshot creation, retention, and cross-region copy policies.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Multi-Attach</h4><p>io2 only: attach one volume to up to 16 EC2 instances simultaneously in the same AZ.</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Fast Snapshot Restore</h4><p>Pre-warm snapshots so volumes restored from them have full performance immediately — no warm-up delay.</p></div>
+  </div>
+
+  <h3>EBS Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📍</span><h4>AZ-bound</h4><p>EBS volumes are locked to one AZ. To move to another AZ: snapshot → restore in target AZ.</p></div>
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Billing</h4><p>Per GB-month provisioned (not used). Plus per IOPS-month for io1/io2. gp3 IOPS and throughput are free up to baseline.</p></div>
+    <div class="icon-item"><span class="emoji">📏</span><h4>Max size</h4><p>64 TB per volume. No limit on number of volumes. Single instance can have hundreds of EBS volumes attached.</p></div>
+    <div class="icon-item"><span class="emoji">🔌</span><h4>Network-attached</h4><p>EBS traffic uses the EC2 instance's network bandwidth. High-performance instances have dedicated EBS bandwidth.</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Durability</h2><p>99.8–99.9% annual durability for gp2/gp3. 99.999% for io2 Block Express. Replicated within the AZ.</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Free tier</h4><p>30 GB of EBS (gp2 or gp3) per month free for 12 months under the AWS Free Tier.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — VOLUME TYPES
+══════════════════════════════════ -->
+<div id="tab-types" class="tab-panel"><div class="section">
+  <h2>📊 EBS Volume Types</h2>
+  <p>EBS has five volume types across two storage technologies: <strong>SSD</strong> (optimised for IOPS and random I/O) and <strong>HDD</strong> (optimised for throughput and sequential I/O). Choosing the right type is the single biggest lever for both performance and cost.</p>
+
+  <div class="tip">
+    <h4>💡 Quick Decision Rule</h4>
+    <p>Database or boot volume → <strong>gp3</strong> (default). High IOPS critical database (Oracle, SAP HANA) → <strong>io2 Block Express</strong>. Big data sequential reads → <strong>st1</strong>. Cold archival data rarely accessed → <strong>sc1</strong>. Never use <strong>gp2</strong> for new volumes — gp3 is cheaper and better.</p>
+  </div>
+
+  <h3>SSD Volume Types</h3>
+  <div class="vol-grid">
+    <div class="vol-card v-gp3">
+      <div class="vol-name">gp3</div>
+      <div class="vol-tag">General Purpose SSD</div>
+      <div class="vol-row"><span class="vol-row-label">Max IOPS</span><span class="vol-row-val">16,000</span></div>
+      <div class="vol-row"><span class="vol-row-label">Max Throughput</span><span class="vol-row-val">1,000 MB/s</span></div>
+      <div class="vol-row"><span class="vol-row-label">Baseline IOPS</span><span class="vol-row-val">3,000 (free)</span></div>
+      <div class="vol-row"><span class="vol-row-label">Price</span><span class="vol-row-val">$0.08/GB-mo</span></div>
+      <div class="vol-row"><span class="vol-row-label">Size range</span><span class="vol-row-val">1 GB – 16 TB</span></div>
+    </div>
+    <div class="vol-card v-gp3" style="background:var(--surface);border-color:var(--border);">
+      <div class="vol-name" style="color:var(--muted);">gp2 (legacy)</div>
+      <div class="vol-tag" style="background:var(--surface);color:var(--muted);border:1px solid var(--border);">Replaced by gp3</div>
+      <div class="vol-row"><span class="vol-row-label">Max IOPS</span><span class="vol-row-val">16,000</span></div>
+      <div class="vol-row"><span class="vol-row-label">Max Throughput</span><span class="vol-row-val">250 MB/s</span></div>
+      <div class="vol-row"><span class="vol-row-label">IOPS formula</span><span class="vol-row-val">3 × GB (burst)</span></div>
+      <div class="vol-row"><span class="vol-row-label">Price</span><span class="vol-row-val">$0.10/GB-mo</span></div>
+      <div class="vol-row"><span class="vol-row-label">Verdict</span><span class="vol-row-val" style="color:var(--red);">Migrate to gp3</span></div>
+    </div>
+    <div class="vol-card v-io2">
+      <div class="vol-name">io2 Block Express</div>
+      <div class="vol-tag">Provisioned IOPS SSD</div>
+      <div class="vol-row"><span class="vol-row-label">Max IOPS</span><span class="vol-row-val">256,000</span></div>
+      <div class="vol-row"><span class="vol-row-label">Max Throughput</span><span class="vol-row-val">4,000 MB/s</span></div>
+      <div class="vol-row"><span class="vol-row-label">Durability</span><span class="vol-row-val">99.999%</span></div>
+      <div class="vol-row"><span class="vol-row-label">Price</span><span class="vol-row-val">$0.125/GB-mo</span></div>
+      <div class="vol-row"><span class="vol-row-label">IOPS price</span><span class="vol-row-val">$0.065/IOPS-mo</span></div>
+    </div>
+  </div>
+
+  <h3>HDD Volume Types</h3>
+  <div class="vol-grid">
+    <div class="vol-card v-st1">
+      <div class="vol-name">st1</div>
+      <div class="vol-tag">Throughput Optimized HDD</div>
+      <div class="vol-row"><span class="vol-row-label">Max IOPS</span><span class="vol-row-val">500</span></div>
+      <div class="vol-row"><span class="vol-row-label">Max Throughput</span><span class="vol-row-val">500 MB/s</span></div>
+      <div class="vol-row"><span class="vol-row-label">Price</span><span class="vol-row-val">$0.045/GB-mo</span></div>
+      <div class="vol-row"><span class="vol-row-label">Size range</span><span class="vol-row-val">125 GB – 16 TB</span></div>
+      <div class="vol-row"><span class="vol-row-label">Cannot be boot</span><span class="vol-row-val">❌</span></div>
+    </div>
+    <div class="vol-card v-sc1">
+      <div class="vol-name">sc1</div>
+      <div class="vol-tag">Cold HDD</div>
+      <div class="vol-row"><span class="vol-row-label">Max IOPS</span><span class="vol-row-val">250</span></div>
+      <div class="vol-row"><span class="vol-row-label">Max Throughput</span><span class="vol-row-val">250 MB/s</span></div>
+      <div class="vol-row"><span class="vol-row-label">Price</span><span class="vol-row-val">$0.015/GB-mo</span></div>
+      <div class="vol-row"><span class="vol-row-label">Size range</span><span class="vol-row-val">125 GB – 16 TB</span></div>
+      <div class="vol-row"><span class="vol-row-label">Cannot be boot</span><span class="vol-row-val">❌</span></div>
+    </div>
+  </div>
+
+  <h3>gp3 vs gp2 — Why Always Use gp3</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ gp3 Advantages</h4>
+      <ul>
+        <li>Cheaper: $0.08/GB vs $0.10/GB — 20% less expensive</li>
+        <li>Always 3,000 IOPS baseline regardless of volume size</li>
+        <li>Independently configure IOPS (up to 16,000) and throughput (up to 1,000 MB/s) without paying more per GB</li>
+        <li>A 1 GB gp3 volume gets 3,000 IOPS — a 1 GB gp2 gets only 3 IOPS</li>
+        <li>Zero downtime migration: modify gp2 → gp3 in-place</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ gp2 Problems</h4>
+      <ul>
+        <li>IOPS tied to size: 3 IOPS per GB, so small volumes are IOPS-starved</li>
+        <li>Burst bucket model: small volumes deplete burst credits and throttle</li>
+        <li>Max throughput only 250 MB/s vs gp3's 1,000 MB/s</li>
+        <li>More expensive per GB with no benefits over gp3</li>
+        <li>Still the default in some older CloudFormation/CDK templates — always override</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Volume Type Decision Matrix</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Workload</th><th>Best Type</th><th>Why</th></tr>
+    <tr><td>OS boot volume</td><td>gp3</td><td>Cost-effective, 3,000 IOPS baseline is plenty</td></tr>
+    <tr><td>General web/app server data</td><td>gp3</td><td>Default choice for most workloads</td></tr>
+    <tr><td>MySQL / PostgreSQL / MongoDB</td><td>gp3 or io2</td><td>gp3 up to 16K IOPS; io2 if you need more or 99.999% durability</td></tr>
+    <tr><td>Oracle / SAP HANA</td><td>io2 Block Express</td><td>High IOPS with sub-ms latency and IOPS SLA guarantee</td></tr>
+    <tr><td>Kafka log storage</td><td>st1</td><td>Sequential writes, high throughput, low cost</td></tr>
+    <tr><td>Hadoop / Spark data nodes</td><td>st1</td><td>Large sequential reads/writes of HDFS blocks</td></tr>
+    <tr><td>Cold backup / archive data</td><td>sc1</td><td>Lowest cost, infrequent access acceptable</td></tr>
+    <tr><td>Dev/test environments</td><td>gp3 (small)</td><td>Cost-sensitive, burstable enough for dev workloads</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — PERFORMANCE
+══════════════════════════════════ -->
+<div id="tab-performance" class="tab-panel"><div class="section">
+  <h2>⚡ EBS Performance Deep Dive</h2>
+  <p>EBS performance has three axes: <strong>IOPS</strong>, <strong>throughput</strong>, and <strong>latency</strong>. Understanding which bottleneck limits your workload is the key to optimisation.</p>
+
+  <h3>Performance Limits — gp3 vs io2</h3>
+  <div class="metric-grid">
+    <div class="metric-card mc-iops">
+      <div class="mc-name">gp3 IOPS</div>
+      <div class="mc-type">Configurable</div>
+      <div class="mc-metric"><span class="mc-metric-label">Baseline (free)</span><span class="mc-metric-val">3,000</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Max</span><span class="mc-metric-val">16,000</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Extra IOPS cost</span><span class="mc-metric-val">$0.005/IOPS-mo</span></div>
+    </div>
+    <div class="metric-card mc-tp">
+      <div class="mc-name">gp3 Throughput</div>
+      <div class="mc-type">Configurable</div>
+      <div class="mc-metric"><span class="mc-metric-label">Baseline (free)</span><span class="mc-metric-val">125 MB/s</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Max</span><span class="mc-metric-val">1,000 MB/s</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Extra cost</span><span class="mc-metric-val">$0.04/MB/s-mo</span></div>
+    </div>
+    <div class="metric-card mc-iops">
+      <div class="mc-name">io2 Block Express IOPS</div>
+      <div class="mc-type">Provisioned</div>
+      <div class="mc-metric"><span class="mc-metric-label">Min</span><span class="mc-metric-val">100</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Max</span><span class="mc-metric-val">256,000</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">Max IOPS:GB ratio</span><span class="mc-metric-val">1,000:1</span></div>
+    </div>
+    <div class="metric-card mc-lat">
+      <div class="mc-name">Latency</div>
+      <div class="mc-type">Typical</div>
+      <div class="mc-metric"><span class="mc-metric-label">gp3</span><span class="mc-metric-val">~1 ms</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">io2 Block Express</span><span class="mc-metric-val">&lt; 1 ms</span></div>
+      <div class="mc-metric"><span class="mc-metric-label">st1 / sc1</span><span class="mc-metric-val">10–100 ms</span></div>
+    </div>
+  </div>
+
+  <h3>The Two Bottlenecks — Volume vs Instance</h3>
+  <div class="danger">
+    <h4>⚠️ Critical: EBS Performance Has TWO Limits</h4>
+    <p>Your actual EBS throughput is limited by <strong>whichever is lower</strong>: the volume limit OR the EC2 instance's EBS bandwidth limit. Many people provision expensive io2 volumes and are surprised performance doesn't improve — because the instance was the bottleneck, not the volume. Always check both limits.</p>
+  </div>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">⚡ EBS Performance Bottleneck Model</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a6a9a"/>
+          </marker>
+        </defs>
+        <!-- App -->
+        <rect x="20" y="120" width="110" height="50" rx="7" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="75" y="141" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#2a4db0" text-anchor="middle">📱 Application</text>
+        <text x="75" y="157" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">I/O request</text>
+
+        <line x1="130" y1="145" x2="168" y2="145" stroke="#1a6a9a" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Instance limit box -->
+        <rect x="170" y="80" width="170" height="130" rx="8" fill="#fef3e2" stroke="rgba(212,135,42,.35)" stroke-width="2"/>
+        <text x="255" y="102" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🖥️ EC2 Instance</text>
+        <text x="255" y="118" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">EBS Bandwidth Limit</text>
+        <line x1="185" y1="126" x2="325" y2="126" stroke="rgba(212,135,42,.3)" stroke-width="1"/>
+        <text x="255" y="143" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#d4872a" text-anchor="middle">t3.medium: 2.9 Gbps</text>
+        <text x="255" y="158" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#d4872a" text-anchor="middle">m7i.xlarge: 10 Gbps</text>
+        <text x="255" y="173" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#d4872a" text-anchor="middle">m7i.8xlarge: 20 Gbps</text>
+        <text x="255" y="190" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Dedicated EBS bandwidth</text>
+
+        <line x1="340" y1="145" x2="378" y2="145" stroke="#1a6a9a" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Volume limit box -->
+        <rect x="380" y="80" width="170" height="130" rx="8" fill="#d6eef8" stroke="rgba(26,106,154,.35)" stroke-width="2"/>
+        <text x="465" y="102" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#0e4a6e" text-anchor="middle">💽 EBS Volume</text>
+        <text x="465" y="118" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Volume Performance Limit</text>
+        <line x1="395" y1="126" x2="535" y2="126" stroke="rgba(26,106,154,.3)" stroke-width="1"/>
+        <text x="465" y="143" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#0e4a6e" text-anchor="middle">gp3: 16K IOPS</text>
+        <text x="465" y="158" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#0e4a6e" text-anchor="middle">gp3: 1,000 MB/s</text>
+        <text x="465" y="173" font-family="DM Sans,sans-serif" font-size="10" font-weight="600" fill="#0e4a6e" text-anchor="middle">io2: 256K IOPS</text>
+        <text x="465" y="190" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">4,000 MB/s</text>
+
+        <line x1="550" y1="145" x2="588" y2="145" stroke="#1a6a9a" stroke-width="2" marker-end="url(#arr)"/>
+
+        <!-- Actual -->
+        <rect x="590" y="120" width="110" height="50" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="645" y="141" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">✅ Actual I/O</text>
+        <text x="645" y="157" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">MIN(instance, volume)</text>
+
+        <text x="360" y="248" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle">Actual performance = MIN(EC2 instance EBS limit, EBS volume limit)</text>
+        <text x="360" y="265" font-family="DM Sans,sans-serif" font-size="9" fill="#9a9a8a" text-anchor="middle">Check both: aws ec2 describe-instance-types and your volume specs before provisioning</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Instance EBS Bandwidth by Family</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Instance</th><th>EBS Bandwidth</th><th>Max IOPS</th><th>Notes</th></tr>
+    <tr><td>t3.micro</td><td>Up to 2.09 Gbps</td><td>11,800</td><td>Burstable — baseline much lower</td></tr>
+    <tr><td>t3.medium</td><td>Up to 2.09 Gbps</td><td>11,800</td><td>Burstable EBS bandwidth</td></tr>
+    <tr><td>m7i.large</td><td>Up to 10 Gbps</td><td>Up to 40,000</td><td>Baseline 3.1 Gbps</td></tr>
+    <tr><td>m7i.xlarge</td><td>Up to 10 Gbps</td><td>Up to 40,000</td><td>Baseline 6.25 Gbps</td></tr>
+    <tr><td>m7i.4xlarge</td><td>Up to 10 Gbps</td><td>Up to 80,000</td><td>Dedicated 10 Gbps baseline</td></tr>
+    <tr><td>m7i.8xlarge</td><td>20 Gbps</td><td>160,000</td><td>Dedicated bandwidth (no burst)</td></tr>
+    <tr><td>r7i.8xlarge</td><td>20 Gbps</td><td>260,000</td><td>High IOPS for memory-intensive DB</td></tr>
+    <tr><td>i4i.8xlarge</td><td>30 Gbps</td><td>260,000</td><td>Storage-optimised with NVMe local</td></tr>
+  </table></div>
+
+  <h3>EBS-Optimized Instances</h3>
+  <div class="tip">
+    <h4>💡 EBS-Optimized — Always Enabled on Modern Instances</h4>
+    <p>EBS-optimized instances provide <strong>dedicated network bandwidth</strong> for EBS traffic, separate from regular network traffic. Without it, EBS I/O competes with application network traffic causing unpredictable latency. All current-generation instances (C5, M5, R5, m7i, r7g, etc.) are EBS-optimized by default at no extra charge. On older instances (C3, M3), EBS optimization was optional and cost extra.</p>
+  </div>
+
+  <h3>gp3 IOPS Configuration — Cost Calculation</h3>
+  <div class="card">
+    <h4>💰 gp3 Pricing Breakdown Example (100 GB volume)</h4>
+    <ul>
+      <li>Storage: 100 GB × $0.08 = <strong>$8.00/month</strong></li>
+      <li>IOPS free baseline: 3,000 IOPS included at no charge</li>
+      <li>Extra IOPS (e.g. 10,000 total): (10,000 − 3,000) × $0.005 = <strong>$35.00/month</strong></li>
+      <li>Extra throughput (e.g. 500 MB/s total): (500 − 125) × $0.04 = <strong>$15.00/month</strong></li>
+      <li>Total: $8 + $35 + $15 = <strong>$58.00/month</strong> for 100 GB, 10K IOPS, 500 MB/s</li>
+      <li>vs io2 for same IOPS: 100 GB × $0.125 + 10,000 × $0.065 = $662/month — 11× more expensive!</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — SNAPSHOTS
+══════════════════════════════════ -->
+<div id="tab-snapshots" class="tab-panel"><div class="section">
+  <h2>📸 EBS Snapshots</h2>
+  <p>EBS snapshots are <strong>incremental point-in-time backups</strong> stored in S3. The first snapshot copies the entire volume; subsequent snapshots only store changed blocks. Snapshots are the foundation of EBS backup, disaster recovery, and volume migration across AZs or regions.</p>
+
+  <h3>How Incremental Snapshots Work</h3>
+  <div class="flow">
+    <div class="flow-node n-ebs">
+      <div class="flow-node-title">📸 Snapshot 1 (Full — e.g. Monday)</div>
+      <ul class="flow-items">
+        <li>Copies entire volume data to S3 — e.g. 50 GB used → 50 GB stored</li>
+        <li>Takes longest to complete but is the baseline for all future snapshots</li>
+        <li>Cost: 50 GB × $0.05 = $2.50/month while retained</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">📸 Snapshot 2 (Incremental — Tuesday)</div>
+      <ul class="flow-items">
+        <li>Only stores blocks that changed since Snapshot 1 — e.g. 5 GB changed → 5 GB stored</li>
+        <li>Much faster and cheaper than a full backup</li>
+        <li>Still represents the full point-in-time state — restores to a complete volume</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">📸 Snapshot 3 (Incremental — Wednesday)</div>
+      <ul class="flow-items">
+        <li>Only stores blocks changed since Snapshot 2</li>
+        <li>Deleting Snapshot 1 does NOT break Snapshot 2 or 3 — AWS moves required blocks automatically</li>
+        <li>You can safely delete any snapshot; the chain remains intact</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Snapshot Features</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌍 Cross-Region Copy</h4>
+      <ul>
+        <li>Copy snapshots to any AWS region for disaster recovery</li>
+        <li>Can encrypt or change KMS key during copy</li>
+        <li>Creates a fully independent snapshot in the destination region</li>
+        <li>Cost: destination storage ($0.05/GB-month) + data transfer fees</li>
+        <li>Use DLM to automate cross-region copy on a schedule</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔗 Cross-Account Sharing</h4>
+      <ul>
+        <li>Share snapshots with specific AWS account IDs</li>
+        <li>Or make public (not recommended for sensitive data)</li>
+        <li>Recipient copies the snapshot to their account before use</li>
+        <li>Encrypted snapshots can only be shared if you also share the KMS key</li>
+        <li>Used for AMI distribution across teams/accounts</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Fast Snapshot Restore (FSR)</h4>
+      <ul>
+        <li>Pre-warms snapshot data so restored volumes have full performance immediately</li>
+        <li>Without FSR: restored volumes start throttled, ramp up over hours as blocks are fetched from S3</li>
+        <li>Enable per snapshot per AZ — cost: $0.75/DSU-hour per AZ</li>
+        <li>Use for: RDS, high-performance databases, AMI-backed Auto Scaling groups</li>
+        <li>Turn off when not needed — FSR charges are per hour regardless of usage</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🗑️ Recycle Bin</h4>
+      <ul>
+        <li>Retains accidentally deleted snapshots for a configurable period (1 day to 1 year)</li>
+        <li>Recover deleted snapshots before they're permanently gone</li>
+        <li>Cost: $0.0075/GB-month for retained snapshots in Recycle Bin</li>
+        <li>Create Recycle Bin rules in the EC2 → Recycle Bin console section</li>
+        <li>Best practice: enable for all production snapshot types</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Data Lifecycle Manager (DLM) — Automated Snapshots</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Create a DLM Policy</h4><p>Go to EC2 → Elastic Block Store → Lifecycle Manager → Create snapshot lifecycle policy. DLM automates snapshot creation, retention, and cross-region copy on a schedule you define.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Target volumes by tag</h4><p>DLM matches volumes using tags (e.g. <code>Backup=daily</code>). Any volume with that tag gets snapshot automatically. Tag new volumes at launch to enroll them automatically.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Set schedule and retention</h4><p>Example: daily at 02:00 UTC, retain 7 snapshots. DLM creates the snapshot and deletes the oldest one automatically. No Lambda functions or cron jobs needed.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Add cross-region copy rule (optional)</h4><p>Within the same DLM policy, add a cross-region copy action. DLM copies each new snapshot to the target region with its own retention count. One policy handles create + copy + cleanup.</p></div>
+  </div>
+
+  <h3>Snapshot Pricing</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Item</th><th>Price</th><th>Notes</th></tr>
+    <tr><td>Standard snapshot storage</td><td>$0.05/GB-month</td><td>Only changed blocks after first snapshot</td></tr>
+    <tr><td>Archive tier snapshot</td><td>$0.0125/GB-month</td><td>75% cheaper, 24–72h restore time</td></tr>
+    <tr><td>Recycle Bin retention</td><td>$0.0075/GB-month</td><td>For snapshots retained after deletion</td></tr>
+    <tr><td>Fast Snapshot Restore</td><td>$0.75/DSU-hour/AZ</td><td>1 DSU = 1 snapshot enabled in 1 AZ</td></tr>
+    <tr><td>Cross-region copy transfer</td><td>$0.02–$0.09/GB</td><td>Varies by source/destination region pair</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Snapshot Cost Accumulates Silently</h4>
+    <p>Orphaned snapshots from terminated instances are never automatically deleted. They silently accumulate at $0.05/GB-month. A 1 TB volume with 30 daily snapshots costs $50/month just in snapshots. Use DLM retention policies, and periodically audit with <code>describe-snapshots --owner-ids self</code> to find and delete unused ones.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — ENCRYPTION
+══════════════════════════════════ -->
+<div id="tab-encryption" class="tab-panel"><div class="section">
+  <h2>🔐 EBS Encryption</h2>
+  <p>EBS encryption provides AES-256 encryption of data at rest, in transit between the instance and the volume, and in snapshots — all transparently with no application changes required.</p>
+
+  <h3>What Gets Encrypted</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔐 EBS Encryption Scope</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ea" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a6a9a"/>
+          </marker>
+        </defs>
+        <!-- EC2 -->
+        <rect x="20" y="90" width="140" height="70" rx="8" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="90" y="115" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🖥️ EC2 Instance</text>
+        <text x="90" y="131" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Data unencrypted</text>
+        <text x="90" y="147" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">in instance memory</text>
+
+        <!-- Encrypted wire -->
+        <line x1="160" y1="125" x2="260" y2="125" stroke="#1a6a9a" stroke-width="2.5" marker-end="url(#ea)"/>
+        <rect x="175" y="108" width="70" height="18" rx="4" fill="#d4f0e4"/>
+        <text x="210" y="121" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">🔒 Encrypted</text>
+        <text x="210" y="142" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">In-transit (AES-256)</text>
+
+        <!-- EBS Volume -->
+        <rect x="262" y="80" width="180" height="90" rx="8" fill="#d6eef8" stroke="rgba(26,106,154,.35)" stroke-width="2"/>
+        <text x="352" y="106" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#0e4a6e" text-anchor="middle">💽 EBS Volume</text>
+        <text x="352" y="122" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">🔒 Data encrypted at rest</text>
+        <text x="352" y="138" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AES-256 via KMS DEK</text>
+        <text x="352" y="154" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Hardware-accelerated</text>
+
+        <!-- Snapshot arrow -->
+        <line x1="352" y1="170" x2="352" y2="198" stroke="#1a6a9a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ea)"/>
+        <rect x="280" y="200" width="144" height="40" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1.5"/>
+        <text x="352" y="217" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">📸 Snapshot (S3)</text>
+        <text x="352" y="232" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">🔒 Also encrypted</text>
+
+        <!-- KMS -->
+        <rect x="530" y="90" width="160" height="70" rx="8" fill="#ede8fc" stroke="rgba(108,71,212,.25)" stroke-width="1.5"/>
+        <text x="610" y="115" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#6c47d4" text-anchor="middle">🔑 AWS KMS</text>
+        <text x="610" y="131" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Manages encryption key</text>
+        <text x="610" y="147" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AWS-managed or CMK</text>
+        <line x1="442" y1="125" x2="528" y2="125" stroke="#6c47d4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ea)"/>
+        <text x="484" y="118" font-family="DM Sans,sans-serif" font-size="8" fill="#6c47d4">key lookup</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Encryption Key Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 AWS-Managed Key (aws/ebs)</h4>
+      <ul>
+        <li>Free — no KMS key cost</li>
+        <li>AWS manages rotation automatically (every 3 years)</li>
+        <li>Cannot share encrypted snapshots across accounts using this key</li>
+        <li>Cannot use for cross-account snapshot sharing</li>
+        <li>Good for: single-account environments, simple compliance requirements</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔑 Customer Managed Key (CMK)</h4>
+      <ul>
+        <li>$1/month per key + $0.03 per 10,000 API calls</li>
+        <li>You control key rotation, deletion, access policy</li>
+        <li>Can share encrypted snapshots across accounts by sharing the KMS key</li>
+        <li>Required for some compliance frameworks (FedRAMP, PCI-DSS strict)</li>
+        <li>Key deletion has a 7–30 day waiting period — can't be undone</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Enable Account-Level Default Encryption</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Enable in EC2 Settings (per region)</h4><p>EC2 Console → Settings → EBS encryption → Enable. Select default KMS key (aws/ebs or your CMK). From this point, every new EBS volume created in this region is automatically encrypted — even if not explicitly requested at launch.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Enforce via AWS Config rule</h4><p>Use the <code>encrypted-volumes</code> AWS Config managed rule to detect any unencrypted EBS volumes and trigger alerts or auto-remediation. Use AWS Organizations SCPs to prevent creating unencrypted volumes across all accounts.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Encrypt existing unencrypted volumes</h4><p>You cannot encrypt an existing volume in-place. Process: create snapshot → copy snapshot with encryption enabled → restore new encrypted volume from snapshot → swap volumes on the instance (stop instance, detach old, attach new, start). Use AWS Backup or a script to automate this at scale.</p></div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 No Performance Impact</h4>
+    <p>EBS encryption uses hardware-accelerated AES-256 on the Nitro hypervisor. There is <strong>no measurable performance difference</strong> between encrypted and unencrypted volumes on all current-generation instances. There is no reason not to encrypt everything. Enable account-level default encryption in every region today.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>🔄 EBS Volume Lifecycle &amp; Elastic Volumes</h2>
+  <p>EBS volumes have a lifecycle from creation to deletion, and uniquely among block storage, can be <strong>modified while live and attached</strong> — changing type, size, IOPS, and throughput without stopping your instance.</p>
+
+  <h3>Volume States</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-blue" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🟡 Creating</div>
+        <ul class="flow-items"><li>Volume being provisioned</li><li>Not yet attachable</li></ul>
+      </div>
+      <div class="flow-node n-ebs" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🟢 Available</div>
+        <ul class="flow-items"><li>Ready to attach</li><li>Not attached to any instance</li></ul>
+      </div>
+      <div class="flow-node n-green" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🟢 In-Use</div>
+        <ul class="flow-items"><li>Attached to an EC2 instance</li><li>Being read/written to</li></ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-aws" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🟠 Modifying</div>
+        <ul class="flow-items"><li>Elastic Volume change in progress</li><li>Still fully usable during change</li></ul>
+      </div>
+      <div class="flow-node n-bad" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🔴 Deleting</div>
+        <ul class="flow-items"><li>Being permanently deleted</li><li>Data is gone — cannot recover</li></ul>
+      </div>
+      <div class="flow-node n-teal" style="text-align:center;">
+        <div class="flow-node-title" style="justify-content:center;">🔵 Optimizing</div>
+        <ul class="flow-items"><li>After a type change (e.g. gp2→gp3)</li><li>Performance fully available during this</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Elastic Volumes — Live Modification</h3>
+  <div class="tip">
+    <h4>💡 Change Volumes Without Downtime</h4>
+    <p>Elastic Volumes let you modify a volume while it is attached and in use. The change takes effect immediately and the volume stays online throughout. The only caveat: after a modification, you must wait <strong>6 hours</strong> before modifying the same volume again.</p>
+  </div>
+
+  <div class="table-wrap"><table>
+    <tr><th>What You Can Change</th><th>Requires Restart?</th><th>Wait for OS?</th><th>Notes</th></tr>
+    <tr><td>Volume type (e.g. gp2 → gp3)</td><td>❌ No</td><td>❌ No</td><td>Instant switch, optimizing state for minutes</td></tr>
+    <tr><td>Volume size (increase only)</td><td>❌ No</td><td>✅ Yes — extend filesystem</td><td>Must run resize2fs/xfs_growfs after</td></tr>
+    <tr><td>IOPS (gp3, io2)</td><td>❌ No</td><td>❌ No</td><td>New IOPS provisioned within minutes</td></tr>
+    <tr><td>Throughput (gp3)</td><td>❌ No</td><td>❌ No</td><td>New throughput limit applied quickly</td></tr>
+    <tr><td>Volume size (decrease)</td><td>N/A</td><td>N/A</td><td>❌ NOT supported — can only increase</td></tr>
+  </table></div>
+
+  <h3>How to Extend a Filesystem After Volume Resize</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Resize the EBS volume (console or API)</h4><p>Increase volume size via EC2 console or <code>modify-volume</code> API. The volume enters "modifying" state and returns to "in-use" quickly. The OS still sees the old size until you extend the partition.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Extend the partition (if needed)</h4><p>Run <code>sudo growpart /dev/nvme0n1 1</code> to extend partition 1 to fill the new disk size. Check with <code>lsblk</code> first to confirm the device and partition names.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Extend the filesystem</h4><p>For ext4: <code>sudo resize2fs /dev/nvme0n1p1</code>. For XFS (Amazon Linux 2023 default): <code>sudo xfs_growfs /</code>. For LVM: <code>pvresize</code> → <code>lvextend</code> → filesystem resize. Verify with <code>df -h</code>.</p></div>
+  </div>
+
+  <h3>Multi-Attach (io2 only)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔗 What Multi-Attach Does</h4>
+      <ul>
+        <li>Attach one io2 volume to up to 16 EC2 instances in the <strong>same AZ simultaneously</strong></li>
+        <li>All instances have read and write access to the same volume</li>
+        <li>Use case: clustered databases that manage their own locking (Oracle RAC, clustered filesystems)</li>
+        <li>Requires a cluster-aware filesystem (e.g. GFS2, OCFS2) — NOT ext4 or XFS</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Multi-Attach Limitations</h4>
+      <ul>
+        <li>io2 volumes only — not gp3 or any other type</li>
+        <li>All instances and the volume must be in the same AZ</li>
+        <li>You are responsible for I/O consistency — no built-in locking</li>
+        <li>Standard filesystems (ext4, XFS) will corrupt data if used with Multi-Attach</li>
+        <li>Cannot be used as a boot volume</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖱️ Creating &amp; Managing EBS Volumes — Console Walkthrough</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create a New EBS Volume</div>
+      <div class="console-step-path">EC2 → Elastic Block Store → Volumes → Create volume</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Volume type</span>
+        <span class="console-field-value">gp3</span>
+        <span class="console-field-hint">Always choose gp3 for new volumes. Only use io2 for databases requiring more than 16,000 IOPS or 99.999% durability SLA.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Size (GiB)</span>
+        <span class="console-field-value">100</span>
+        <span class="console-field-hint">You can increase later with Elastic Volumes. You cannot decrease. Start conservatively and grow as needed.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">IOPS</span>
+        <span class="console-field-value">3000 (baseline, free)</span>
+        <span class="console-field-hint">gp3 baseline 3,000 IOPS is included at no charge. Only increase if you have measured IOPS requirements exceeding 3,000.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Throughput (MiB/s)</span>
+        <span class="console-field-value">125 (baseline, free)</span>
+        <span class="console-field-hint">125 MB/s baseline is free. Increase to up to 1,000 MB/s if running sequential workloads like data warehousing or log aggregation.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Availability Zone</span>
+        <span class="console-field-value">us-east-1a (must match your EC2 instance)</span>
+        <span class="console-field-hint">EBS volumes are AZ-locked. Must be in the same AZ as the instance you want to attach it to.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Snapshot ID</span>
+        <span class="console-field-value">(leave blank for empty volume, or paste snapshot ID to restore)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Encryption</span>
+        <span class="console-field-value">Encrypt this volume ✅ — KMS key: aws/ebs</span>
+        <span class="console-field-hint">Always encrypt. No performance cost. If account-level default encryption is enabled, this is pre-checked automatically.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Tags</span>
+        <span class="console-field-value">Name=app-data-prod, Environment=production, Backup=daily</span>
+        <span class="console-field-hint">The Backup=daily tag is used by DLM to automatically snapshot this volume. Tag all volumes at creation.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Attach Volume to EC2 Instance</div>
+      <div class="console-step-path">Volumes → Select volume → Actions → Attach volume</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Instance</span>
+        <span class="console-field-value">i-0abc123 (my-web-server-prod)</span>
+        <span class="console-field-hint">Only instances in the same AZ are shown. The instance can be running or stopped.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Device name</span>
+        <span class="console-field-value">/dev/sdf (appears as /dev/nvme1n1 inside the OS)</span>
+        <span class="console-field-hint">Modern Nitro instances use NVMe naming inside the OS regardless of what device name you specify here. Use lsblk inside the instance to find the actual device name.</span>
+      </div>
+      <div class="console-note">After attaching: SSH into the instance and run <code>lsblk</code> to confirm the device appeared. Then format (<code>mkfs.ext4 /dev/nvme1n1</code>) and mount it.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Modify Volume (Elastic Volumes)</div>
+      <div class="console-step-path">Volumes → Select volume → Actions → Modify volume</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Volume type</span>
+        <span class="console-field-value">Change from gp2 → gp3 (zero downtime)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Size</span>
+        <span class="console-field-value">Increase from 100 GiB → 200 GiB</span>
+        <span class="console-field-hint">After the modification completes, run growpart + resize2fs/xfs_growfs inside the OS to use the new space.</span>
+      </div>
+      <div class="console-note">⚠️ After any modification, wait 6 hours before modifying the same volume again.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Create a Snapshot</div>
+      <div class="console-step-path">Volumes → Select volume → Actions → Create snapshot</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Description</span>
+        <span class="console-field-value">Pre-upgrade backup 2026-06-04</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Tags</span>
+        <span class="console-field-value">Name=pre-upgrade-snap, Source=app-data-prod</span>
+      </div>
+      <div class="console-note">Snapshot starts in "pending" state. Monitor in EC2 → Snapshots. For databases, quiesce writes first or use application-consistent snapshots via AWS Backup.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Set Up DLM Automated Snapshots</div>
+      <div class="console-step-path">EC2 → Elastic Block Store → Lifecycle Manager → Create lifecycle policy</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Policy type</span>
+        <span class="console-field-value">EBS snapshot policy</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Target resources</span>
+        <span class="console-field-value">Volumes with tag: Backup=daily</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Schedule</span>
+        <span class="console-field-value">Daily at 02:00 UTC — retain 7 snapshots</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Cross-region copy</span>
+        <span class="console-field-value">Copy to us-west-2, retain 7 copies (optional DR)</span>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — EBS Code Examples</h2>
+  <p>All examples use <strong>AWSSDK.EC2</strong> NuGet package. Install: <code>dotnet add package AWSSDK.EC2</code></p>
+
+  <h3>1. Create and Attach a Volume</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Create gp3 Volume and Attach to EC2</span>
+    <pre><span class="kw">using</span> Amazon.EC2;
+<span class="kw">using</span> Amazon.EC2.Model;
+
+<span class="kw">public class</span> <span class="tp">EbsVolumeService</span>(<span class="tp">IAmazonEC2</span> ec2)
+{
+    <span class="cm">// Create a gp3 volume in a specified AZ</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateVolumeAsync</span>(
+        <span class="kw">string</span> availabilityZone,
+        <span class="kw">int</span>    sizeGb       = <span class="num">100</span>,
+        <span class="kw">int</span>    iops         = <span class="num">3000</span>,
+        <span class="kw">int</span>    throughputMb = <span class="num">125</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">CreateVolumeAsync</span>(<span class="kw">new</span> <span class="tp">CreateVolumeRequest</span>
+        {
+            AvailabilityZone = availabilityZone,
+            VolumeType       = <span class="tp">VolumeType</span>.Gp3,
+            Size             = sizeGb,
+            Iops             = iops,
+            Throughput       = throughputMb,
+            Encrypted        = <span class="kw">true</span>,          <span class="cm">// Always encrypt</span>
+            TagSpecifications =
+            [
+                <span class="kw">new</span> <span class="tp">TagSpecification</span>
+                {
+                    ResourceType = <span class="tp">ResourceType</span>.Volume,
+                    Tags =
+                    [
+                        <span class="kw">new</span> { Key = <span class="str">"Name"</span>,       Value = <span class="str">"app-data-prod"</span> },
+                        <span class="kw">new</span> { Key = <span class="str">"Backup"</span>,     Value = <span class="str">"daily"</span>        },
+                        <span class="kw">new</span> { Key = <span class="str">"ManagedBy"</span>, Value = <span class="str">"dotnet-sdk"</span>   }
+                    ]
+                }
+            ]
+        });
+
+        <span class="kw">var</span> volumeId = resp.Volume.VolumeId;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Created: {volumeId} ({resp.Volume.State})"</span>);
+
+        <span class="cm">// Wait until available before attaching</span>
+        <span class="kw">await</span> <span class="fn">WaitForStateAsync</span>(volumeId, <span class="str">"available"</span>);
+        <span class="kw">return</span> volumeId;
+    }
+
+    <span class="cm">// Attach volume to an EC2 instance</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">AttachVolumeAsync</span>(
+        <span class="kw">string</span> volumeId,
+        <span class="kw">string</span> instanceId,
+        <span class="kw">string</span> device = <span class="str">"/dev/sdf"</span>)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">AttachVolumeAsync</span>(<span class="kw">new</span> <span class="tp">AttachVolumeRequest</span>
+        {
+            VolumeId   = volumeId,
+            InstanceId = instanceId,
+            Device     = device
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Attaching {volumeId} to {instanceId} as {device}: {resp.Attachment.State}"</span>);
+    }
+
+    <span class="cm">// Poll until volume reaches desired state</span>
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">WaitForStateAsync</span>(<span class="kw">string</span> volumeId, <span class="kw">string</span> targetState, <span class="kw">int</span> timeoutSecs = <span class="num">120</span>)
+    {
+        <span class="kw">var</span> deadline = <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddSeconds</span>(timeoutSecs);
+        <span class="kw">while</span> (<span class="tp">DateTime</span>.UtcNow &lt; deadline)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeVolumesAsync</span>(<span class="kw">new</span>()
+                { VolumeIds = [volumeId] });
+            <span class="kw">var</span> state = resp.Volumes[<span class="num">0</span>].State.<span class="fn">ToString</span>();
+            <span class="kw">if</span> (state == targetState) <span class="kw">return</span>;
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"  {volumeId}: {state}..."</span>);
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">5_000</span>);
+        }
+        <span class="kw">throw new</span> <span class="tp">TimeoutException</span>(<span class="str">$"{volumeId} did not reach '{targetState}'"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>2. Modify Volume (gp2 → gp3 migration)</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Elastic Volume Modification</span>
+    <pre><span class="cm">// Upgrade all gp2 volumes in the account to gp3 (saves ~20% cost)</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">MigrateAllGp2ToGp3Async</span>()
+{
+    <span class="kw">string</span>? nextToken = <span class="kw">null</span>;
+    <span class="kw">var</span> migrated = <span class="num">0</span>;
+
+    <span class="kw">do</span>
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeVolumesAsync</span>(<span class="kw">new</span> <span class="tp">DescribeVolumesRequest</span>
+        {
+            Filters   = [<span class="kw">new</span> <span class="tp">Filter</span> { Name = <span class="str">"volume-type"</span>, Values = [<span class="str">"gp2"</span>] }],
+            NextToken = nextToken,
+            MaxResults = <span class="num">100</span>
+        });
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> vol <span class="kw">in</span> resp.Volumes)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">await</span> ec2.<span class="fn">ModifyVolumeAsync</span>(<span class="kw">new</span> <span class="tp">ModifyVolumeRequest</span>
+                {
+                    VolumeId   = vol.VolumeId,
+                    VolumeType = <span class="tp">VolumeType</span>.Gp3,
+                    Iops       = <span class="num">3000</span>,   <span class="cm">// Match or improve on gp2 burst IOPS</span>
+                    Throughput = <span class="num">125</span>    <span class="cm">// gp3 baseline (gp2 max was 250 only at 83+ GB)</span>
+                });
+                <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"✅ Migrated {vol.VolumeId} ({vol.Size} GB) gp2 → gp3"</span>);
+                migrated++;
+            }
+            <span class="kw">catch</span> (<span class="tp">AmazonEC2Exception</span> ex) <span class="kw">when</span> (ex.ErrorCode == <span class="str">"VolumeModificationRateExceeded"</span>)
+            {
+                <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"⏳ {vol.VolumeId}: throttled, skip (modified recently)"</span>);
+            }
+        }
+        nextToken = resp.NextToken;
+    } <span class="kw">while</span> (!<span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(nextToken));
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"\nTotal migrated: {migrated} volumes"</span>);
+}
+
+<span class="cm">// Increase a specific volume's size (no downtime)</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ResizeVolumeAsync</span>(<span class="kw">string</span> volumeId, <span class="kw">int</span> newSizeGb)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">ModifyVolumeAsync</span>(<span class="kw">new</span> <span class="tp">ModifyVolumeRequest</span>
+    {
+        VolumeId = volumeId,
+        Size     = newSizeGb
+    });
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{volumeId}: modifying to {newSizeGb} GB — state: {resp.VolumeModification.ModificationState}"</span>);
+    <span class="cm">// ⚠️ After this: SSH in and run growpart + resize2fs/xfs_growfs to use new space</span>
+}</pre>
+  </div>
+
+  <h3>3. Snapshot Management</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Snapshot Create, List, Copy, Delete</span>
+    <pre><span class="kw">public class</span> <span class="tp">SnapshotService</span>(<span class="tp">IAmazonEC2</span> ec2)
+{
+    <span class="cm">// Create a snapshot</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateSnapshotAsync</span>(<span class="kw">string</span> volumeId, <span class="kw">string</span> description)
+    {
+        <span class="kw">var</span> snap = <span class="kw">await</span> ec2.<span class="fn">CreateSnapshotAsync</span>(<span class="kw">new</span>()
+        {
+            VolumeId    = volumeId,
+            Description = description,
+            TagSpecifications =
+            [
+                <span class="kw">new</span> <span class="tp">TagSpecification</span>
+                {
+                    ResourceType = <span class="tp">ResourceType</span>.Snapshot,
+                    Tags = [<span class="kw">new</span> { Key = <span class="str">"AutoBackup"</span>, Value = <span class="str">"true"</span> }]
+                }
+            ]
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Snapshot {snap.SnapshotId}: {snap.State}"</span>);
+        <span class="kw">return</span> snap.SnapshotId;
+    }
+
+    <span class="cm">// List all completed snapshots owned by this account, newest first</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Snapshot</span>&gt;&gt; <span class="fn">ListSnapshotsAsync</span>(<span class="kw">string</span>? volumeId = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> filters = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">Filter</span>&gt; { <span class="kw">new</span> { Name = <span class="str">"status"</span>, Values = [<span class="str">"completed"</span>] } };
+        <span class="kw">if</span> (volumeId != <span class="kw">null</span>)
+            filters.<span class="fn">Add</span>(<span class="kw">new</span> { Name = <span class="str">"volume-id"</span>, Values = [volumeId] });
+
+        <span class="kw">var</span> resp = <span class="kw">await</span> ec2.<span class="fn">DescribeSnapshotsAsync</span>(<span class="kw">new</span>()
+        {
+            OwnerIds = [<span class="str">"self"</span>],
+            Filters  = filters
+        });
+        <span class="kw">return</span> [.. resp.Snapshots.<span class="fn">OrderByDescending</span>(s => s.StartTime)];
+    }
+
+    <span class="cm">// Copy snapshot to another region for DR</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CopySnapshotToRegionAsync</span>(
+        <span class="kw">string</span> snapshotId,
+        <span class="kw">string</span> sourceRegion,
+        <span class="kw">string</span> destRegion)
+    {
+        <span class="kw">var</span> destClient = <span class="kw">new</span> <span class="tp">AmazonEC2Client</span>(<span class="tp">Amazon.RegionEndpoint</span>.<span class="fn">GetBySystemName</span>(destRegion));
+        <span class="kw">var</span> resp = <span class="kw">await</span> destClient.<span class="fn">CopySnapshotAsync</span>(<span class="kw">new</span>()
+        {
+            SourceRegion     = sourceRegion,
+            SourceSnapshotId = snapshotId,
+            Description      = <span class="str">$"DR copy from {sourceRegion}"</span>,
+            Encrypted        = <span class="kw">true</span>  <span class="cm">// Encrypt in destination too</span>
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Copy started in {destRegion}: {resp.SnapshotId}"</span>);
+        <span class="kw">return</span> resp.SnapshotId;
+    }
+
+    <span class="cm">// Delete snapshots older than N days (cost cleanup)</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt; <span class="fn">DeleteOldSnapshotsAsync</span>(<span class="kw">string</span> volumeId, <span class="kw">int</span> keepDays = <span class="num">30</span>)
+    {
+        <span class="kw">var</span> snaps   = <span class="kw">await</span> <span class="fn">ListSnapshotsAsync</span>(volumeId);
+        <span class="kw">var</span> cutoff  = <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddDays</span>(-keepDays);
+        <span class="kw">var</span> old     = snaps.<span class="fn">Where</span>(s => s.StartTime &lt; cutoff).<span class="fn">ToList</span>();
+        <span class="kw">foreach</span> (<span class="kw">var</span> snap <span class="kw">in</span> old)
+        {
+            <span class="kw">await</span> ec2.<span class="fn">DeleteSnapshotAsync</span>(<span class="kw">new</span>() { SnapshotId = snap.SnapshotId });
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Deleted {snap.SnapshotId} from {snap.StartTime:yyyy-MM-dd}"</span>);
+        }
+        <span class="kw">return</span> old.Count;
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Volume Best Practices</h3>
+  <ul class="checklist">
+    <li>Always use gp3 for new volumes — 20% cheaper than gp2 with a free 3,000 IOPS baseline regardless of size</li>
+    <li>Enable account-level EBS default encryption in every region — zero performance cost, one-time setup</li>
+    <li>Right-size volumes — you pay per GB provisioned, not used. Start small and use Elastic Volumes to grow on demand</li>
+    <li>Separate OS and data onto different volumes — makes snapshots, resizes, and instance migrations cleaner</li>
+    <li>Use gp3 for databases under 16,000 IOPS — io2 is 11× more expensive per IOPS; only use it when gp3 is insufficient</li>
+    <li>Tag all volumes at creation with Name, Environment, and a Backup tag for DLM targeting</li>
+  </ul>
+
+  <h3>Snapshot Best Practices</h3>
+  <ul class="checklist">
+    <li>Use Data Lifecycle Manager (DLM) for automated snapshots — never rely on manual or cron-based snapshots for production</li>
+    <li>Enable Recycle Bin for snapshots with at least 7-day retention — prevents accidental permanent deletion</li>
+    <li>For databases, use application-consistent snapshots — quiesce writes first, or use AWS Backup with VSS (Windows) or freeze/thaw hooks</li>
+    <li>Audit orphaned snapshots monthly with describe-snapshots and delete anything from terminated instances</li>
+    <li>Archive snapshots older than 90 days to snapshot archive tier — 75% cheaper, with 24–72h restore if needed</li>
+    <li>Copy critical snapshots to a second region via DLM cross-region copy rules for DR coverage</li>
+  </ul>
+
+  <h3>Performance Best Practices</h3>
+  <ul class="checklist">
+    <li>Check EC2 instance EBS bandwidth limit before provisioning io2 — the instance is often the bottleneck, not the volume</li>
+    <li>Use CloudWatch metrics — BurstBalance (gp2 legacy), VolumeReadOps, VolumeWriteOps, VolumeQueueLength to spot bottlenecks</li>
+    <li>VolumeQueueLength above 1 per provisioned IOPS indicates the volume is saturated — increase IOPS or upgrade instance</li>
+    <li>Place latency-sensitive workloads on io2 with provisioned IOPS — gp3 has occasional I/O latency spikes under heavy load</li>
+    <li>Use RAID 0 across multiple gp3 volumes to exceed single-volume IOPS/throughput limits on older instance types</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top EBS Mistakes</h4>
+    <p>
+    ❌ <strong>Using gp2 for new volumes</strong> — gp2 is more expensive and worse in every dimension vs gp3. Run the migrate-all-gp2-to-gp3 script immediately.<br>
+    ❌ <strong>Not encrypting volumes</strong> — there is zero performance cost on current-generation Nitro instances. Enable account-level default encryption now — it takes 30 seconds and protects all future volumes permanently.<br>
+    ❌ <strong>Forgetting to extend the filesystem after resize</strong> — resizing the EBS volume does not automatically expand the filesystem inside the OS. You must run <code>growpart</code> and <code>resize2fs</code> / <code>xfs_growfs</code> after the volume modification completes.<br>
+    ❌ <strong>Orphaned snapshots from deleted instances</strong> — AWS never auto-deletes snapshots when you terminate an instance. They accumulate silently. A 1 TB volume snapshotted daily for a year costs over $600 in snapshot storage alone if never cleaned up.<br>
+    ❌ <strong>Provisioning io2 when gp3 is sufficient</strong> — io2 costs 11× more per IOPS than gp3. Measure your actual IOPS requirements with CloudWatch before committing to io2. Most workloads do fine on gp3 at 16,000 IOPS.<br>
+    ❌ <strong>Not checking instance EBS bandwidth before provisioning high IOPS volumes</strong> — a t3.medium maxes out at ~2.9 Gbps of EBS bandwidth (~160 MB/s). An io2 volume with 64,000 IOPS is wasted on it. Always check both limits.<br>
+    ❌ <strong>Snapshots as the only backup strategy</strong> — snapshots are AZ and region-level. Use DLM cross-region copy or AWS Backup for true disaster recovery coverage.
+    </p>
+  </div>
+
+  <h3>EBS vs Instance Store — When to Use Each</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>💽 Use EBS When…</h4>
+      <ul>
+        <li>Data must survive instance stop/start/replacement</li>
+        <li>You need snapshots or point-in-time backups</li>
+        <li>Running a database, application server, or any stateful service</li>
+        <li>You need to resize storage without re-creating the instance</li>
+        <li>Cross-AZ detach/re-attach is required for DR</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Use Instance Store When…</h4>
+      <ul>
+        <li>You need maximum IOPS with microsecond latency (NVMe)</li>
+        <li>Data is truly ephemeral — caches, temp files, scratch space</li>
+        <li>Running a distributed system that replicates data across nodes (Kafka, Cassandra, HDFS)</li>
+        <li>You have fault-tolerant batch jobs that can restart from scratch</li>
+        <li>Cost is critical and data can be rebuilt from S3 or a peer node</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have a COMPLETE Deep Dive into Amazon EBS!</h3>
+    <p>EBS vs other storage types · all 5 volume types (gp3, gp2, io2, st1, sc1) · why gp3 always beats gp2 · IOPS vs throughput vs latency · the two-bottleneck model (volume limit + instance limit) · Elastic Volumes live modification · filesystem extension (growpart + resize2fs) · Multi-Attach for io2 · incremental snapshots · DLM automated policies · Fast Snapshot Restore · cross-region copy · Recycle Bin · AES-256 encryption with KMS · account-level default encryption · volume lifecycle states · AWS Console walkthrough (every field) · 3 C# SDK patterns (create+attach, gp2→gp3 migration, snapshot management) · best practices and top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--ebs-d);">Your EBS storage is now production-ready — encrypted, backed up, right-sized, and cost-optimised! 💽🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
