@@ -1180,12 +1180,30 @@ const TTS = (() => {
     updateUI();
   }
 
+  // -- Clean text before speaking -- strip emojis and symbols
+  function cleanForSpeech(text) {
+    return text
+      // Remove emoji blocks (Unicode ranges)
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+      .replace(/[\u{2600}-\u{27BF}]/gu,   '')
+      .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+      .replace(/[\u{FE00}-\u{FEFF}]/gu,   '')
+      .replace(/[\u{200D}\u{FE0F}]/gu,    '')
+      // Remove common symbol characters read aloud
+      .replace(/[\u2600-\u26FF\u2700-\u27BF]/g, '')
+      // Remove markdown-style noise
+      .replace(/[#*_~`|]/g, '')
+      // Collapse extra whitespace
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
   // ── Speak one sentence then auto-advance ─────────────────────
   function speak() {
     if (!sentences.length || cursor >= sentences.length) { stop(); return; }
     window.speechSynthesis.cancel();
 
-    utterance              = new SpeechSynthesisUtterance(sentences[cursor]);
+    utterance              = new SpeechSynthesisUtterance(cleanForSpeech(sentences[cursor]));
     utterance.rate         = speed;
     utterance.lang         = 'en-US';
 
@@ -1274,7 +1292,7 @@ const TTS = (() => {
     counter().textContent = total ? `${cursor + 1} / ${total}` : '0 / 0';
     progress().style.width = total ? `${((cursor) / total) * 100}%` : '0%';
     if (sentences[cursor]) {
-      sentEl().textContent = sentences[cursor];
+      sentEl().textContent = cleanForSpeech(sentences[cursor]);
     } else if (!total) {
       sentEl().textContent = 'Press ▶ to start reading the current guide.';
     }
