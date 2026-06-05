@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Amazon EFS — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --efs:#1a8a6a;--efs-l:#d0f0e8;--efs-d:#0d5c47;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --aws:#d4872a;--aws-l:#fef3e2;
+  --teal:#1a6a9a;--teal-l:#d6eef8;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#0a0f14;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:860px;margin:0 auto;}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#d0f0e8 0%,#9adece 45%,#5fcab2 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{content:'🗂️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.07;pointer-events:none;}
+.header::after{content:'⚡';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--efs-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--muted);padding:7px 12px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--efs-l);color:var(--efs-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.65rem);font-weight:700;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid var(--efs-l);letter-spacing:-.01em;}
+.section h3{color:var(--efs-d);font-size:.98rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.9rem;}
+
+/* FLOW DIAGRAM */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--efs-l),var(--teal-l));padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.flow-diagram-body{padding:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:760px;display:block;margin:0 auto;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:12px 16px;margin:0 auto;max-width:580px;}
+.flow-node-title{font-weight:700;font-size:.88rem;margin-bottom:6px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.78rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--efs-d);}
+.flow-arrow{text-align:center;padding:4px 0;color:var(--border2);font-size:1.3rem;line-height:1;}
+.flow-row{display:flex;gap:8px;max-width:580px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-efs{background:var(--efs-l);border:1.5px solid rgba(26,138,106,.3);}
+.n-efs .flow-node-title{color:var(--efs-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-aws{background:var(--aws-l);border:1.5px solid rgba(212,135,42,.3);}
+.n-aws .flow-node-title{color:var(--aws);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,154,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:12px;}
+.step-num{background:var(--efs-d);color:#fff;width:30px;height:30px;min-width:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:12px 14px;border-radius:var(--r);flex:1;border-left:3px solid var(--efs);}
+.step-body h4{color:var(--efs-d);margin-bottom:4px;font-size:.88rem;}
+.step-body p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* CONSOLE */
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--efs-d);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.88rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:12px 14px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.console-field-hint{font-size:.72rem;color:var(--muted);}
+.console-note{font-size:.78rem;color:var(--muted);padding:8px 10px;background:var(--efs-l);border-radius:5px;margin-top:8px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--efs-d);margin-bottom:8px;font-size:.88rem;border-bottom:1px solid var(--border);padding-bottom:6px;}
+.card p,.card li{color:var(--muted);font-size:.83rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:12px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--efs);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.5rem;margin-bottom:5px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.76rem;font-weight:600;}
+.icon-item p{font-size:.7rem;color:var(--muted);}
+
+/* ALERTS */
+.tip{background:var(--efs-l);border:1px solid rgba(26,138,106,.2);border-left:4px solid var(--efs);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--efs-d);margin-bottom:5px;font-size:.86rem;}
+.tip p{color:var(--muted);font-size:.83rem;margin:0;}
+.warn{background:var(--aws-l);border:1px solid rgba(212,135,42,.25);border-left:4px solid var(--aws);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--aws);margin-bottom:5px;font-size:.86rem;}
+.warn p{color:var(--muted);font-size:.83rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.86rem;}
+.danger p{color:var(--muted);font-size:.83rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 14px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.86rem;}
+.success p{color:var(--muted);font-size:.83rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:9px 12px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.83rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #101820;border-left:3px solid var(--efs);border-radius:var(--r);padding:clamp(.8rem,2.5vw,1.2rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.76rem);line-height:1.7;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:#5fcab2;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(26,138,106,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--efs-d);}
+
+/* MISC */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:7px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.83rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* STORAGE CLASS CARDS */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:14px 0;}
+.sc-card{border-radius:var(--r);padding:14px;border:1.5px solid;position:relative;overflow:hidden;}
+.sc-card::after{content:'';position:absolute;bottom:0;right:0;width:40px;height:40px;border-radius:50%;opacity:.12;}
+.sc-standard{background:var(--efs-l);border-color:rgba(26,138,106,.35);}
+.sc-standard::after{background:var(--efs);}
+.sc-ia{background:var(--aws-l);border-color:rgba(212,135,42,.3);}
+.sc-ia::after{background:var(--aws);}
+.sc-one{background:var(--blue-l);border-color:rgba(42,77,176,.25);}
+.sc-one::after{background:var(--blue);}
+.sc-oneia{background:var(--purple-l);border-color:rgba(108,71,212,.2);}
+.sc-oneia::after{background:var(--purple);}
+.sc-name{font-weight:700;font-size:.85rem;margin-bottom:3px;}
+.sc-standard .sc-name{color:var(--efs-d);}
+.sc-ia .sc-name{color:var(--aws);}
+.sc-one .sc-name{color:var(--blue);}
+.sc-oneia .sc-name{color:var(--purple);}
+.sc-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.sc-standard .sc-tag{background:rgba(26,138,106,.15);color:var(--efs-d);}
+.sc-ia .sc-tag{background:rgba(212,135,42,.15);color:var(--aws);}
+.sc-one .sc-tag{background:rgba(42,77,176,.12);color:var(--blue);}
+.sc-oneia .sc-tag{background:rgba(108,71,212,.12);color:var(--purple);}
+.sc-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(0,0,0,.06);font-size:.73rem;}
+.sc-row:last-child{border-bottom:none;}
+.sc-row-label{color:var(--muted);}
+.sc-row-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text);}
+
+/* PERF MODE CARDS */
+.perf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:10px;margin:14px 0;}
+.perf-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.perf-card-header{padding:10px 14px;font-weight:700;font-size:.78rem;border-bottom:1px solid var(--border);}
+.ph-gp{background:var(--efs-l);color:var(--efs-d);}
+.ph-max{background:var(--purple-l);color:var(--purple);}
+.ph-elastic{background:var(--green-l);color:var(--green);}
+.perf-card-body{padding:12px 14px;}
+.perf-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--border);font-size:.75rem;}
+.perf-row:last-child{border-bottom:none;}
+.perf-label{color:var(--muted);font-weight:500;}
+.perf-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--efs-l),var(--green-l));border:1px solid rgba(26,138,106,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.85rem;line-height:1.8;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.sc-grid,.perf-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.62rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>Amazon <span>EFS</span> — Deep Dive</h1>
+    <p>Elastic File System · shared NFS storage · storage classes · performance modes · lifecycle · encryption · mount targets · C# SDK examples</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('storage',this)">② Storage Classes</button>
+      <button class="tab-btn" onclick="T('performance',this)">③ Performance</button>
+      <button class="tab-btn" onclick="T('architecture',this)">④ Architecture</button>
+      <button class="tab-btn" onclick="T('security',this)">⑤ Security</button>
+      <button class="tab-btn" onclick="T('lifecycle',this)">⑥ Lifecycle</button>
+      <button class="tab-btn" onclick="T('console',this)">⑦ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# SDK</button>
+      <button class="tab-btn" onclick="T('best',this)">⑨ Best Practices</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🗂️ What is Amazon EFS?</h2>
+  <p>Amazon Elastic File System (EFS) is a fully managed, serverless, <strong>shared network file system</strong> for EC2, ECS, EKS, Lambda, and on-premises servers. It uses the <strong>NFSv4.1/4.0 protocol</strong> and scales automatically from kilobytes to petabytes with no provisioning required — you just mount it and use it.</p>
+
+  <div class="tip">
+    <h4>💡 EFS in One Sentence</h4>
+    <p>EFS = a shared, elastic, fully-managed NFS drive that thousands of servers can mount simultaneously, automatically grows and shrinks as you add or delete files, and costs you only for what you actually store.</p>
+  </div>
+
+  <h3>EFS vs EBS vs S3 vs FSx</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>EFS</th><th>EBS</th><th>S3</th><th>FSx for Windows</th></tr>
+    <tr><td>Protocol</td><td>NFS v4.1/4.0</td><td>Block (iSCSI)</td><td>REST API / S3 SDK</td><td>SMB / NTFS</td></tr>
+    <tr><td>Concurrent access</td><td>✅ Thousands of instances</td><td>⚠️ 1 (io2 multi-attach: 16)</td><td>✅ Unlimited</td><td>✅ Multiple (SMB)</td></tr>
+    <tr><td>OS compatibility</td><td>Linux only (NFS)</td><td>Linux + Windows</td><td>Any (HTTP)</td><td>Windows (SMB)</td></tr>
+    <tr><td>Storage scaling</td><td>Automatic (petabytes)</td><td>Manual resize</td><td>Unlimited</td><td>Provisioned</td></tr>
+    <tr><td>Latency</td><td>~1–3 ms</td><td>~0.1–1 ms</td><td>10–50 ms</td><td>~1 ms</td></tr>
+    <tr><td>Pricing model</td><td>Per GB used</td><td>Per GB provisioned</td><td>Per GB stored + requests</td><td>Per GB provisioned</td></tr>
+    <tr><td>Multi-AZ</td><td>✅ Built-in (Regional)</td><td>❌ Single AZ</td><td>✅ Built-in</td><td>✅ Multi-AZ option</td></tr>
+    <tr><td>Use case</td><td>Shared app data, CMS, home dirs</td><td>Databases, boot volumes</td><td>Object storage, backups</td><td>Windows file shares</td></tr>
+  </table></div>
+
+  <h3>Key EFS Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🗂️</span><h4>File System</h4><p>The EFS resource itself. Has a unique ID and DNS name. Can be mounted by thousands of clients simultaneously.</p></div>
+    <div class="icon-item"><span class="emoji">🔌</span><h4>Mount Target</h4><p>A network endpoint (elastic network interface) in a VPC subnet. Clients connect to the mount target in their AZ.</p></div>
+    <div class="icon-item"><span class="emoji">🚪</span><h4>Access Point</h4><p>Application-specific entry points that enforce a root directory and POSIX identity. Simplify access for containerised apps.</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Storage Classes</h4><p>Standard, Standard-IA, One Zone, One Zone-IA. Lifecycle policy automatically moves infrequently accessed files to IA.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Throughput Modes</h4><p>Elastic (recommended), Provisioned, or Bursting. Controls how much throughput your file system can deliver.</p></div>
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Encryption</h4><p>AES-256 at rest (KMS) and in transit (TLS). Both can be enforced independently.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Performance Modes</h4><p>General Purpose (default, low latency) or Max I/O (higher throughput, higher latency). Choose at creation.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Replication</h4><p>Replicate EFS file systems to another AWS region for disaster recovery with RPO in minutes.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>On-Premises Access</h4><p>Mount EFS from on-premises servers via AWS Direct Connect or VPN using the EFS mount helper.</p></div>
+  </div>
+
+  <h3>EFS Key Facts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📏</span><h4>Scale</h4><p>Scales automatically from 0 to petabytes. No pre-provisioning, no capacity planning, no resize operations.</p></div>
+    <div class="icon-item"><span class="emoji">💰</span><h4>Pricing</h4><p>Pay only for data stored — no minimum fee. Standard: $0.30/GB-month. IA tier: $0.025/GB-month (92% cheaper).</p></div>
+    <div class="icon-item"><span class="emoji">🌍</span><h4>Availability</h4><p>Regional EFS spans all AZs in a region (Standard/Standard-IA). One Zone EFS is limited to a single AZ (cheaper).</p></div>
+    <div class="icon-item"><span class="emoji">🐧</span><h4>Linux only</h4><p>EFS uses NFS — Linux and macOS only. For Windows shared storage use FSx for Windows File Server instead.</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Connections</h4><p>Thousands of concurrent NFS clients. No connection limit per file system — scales horizontally automatically.</p></div>
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Durability</h4><p>Regional EFS: 99.999999999% (11 nines) durability. Data stored across multiple AZs automatically.</p></div>
+  </div>
+
+  <h3>Common EFS Use Cases</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Great Fits for EFS</h4>
+      <ul>
+        <li>CMS and web content shared across multiple web servers (WordPress, Drupal)</li>
+        <li>Container persistent storage shared across ECS tasks or EKS pods</li>
+        <li>Home directories for hundreds of Linux users</li>
+        <li>Machine learning training data shared across multiple GPU instances</li>
+        <li>CI/CD pipeline artifacts shared across build agents</li>
+        <li>Lambda functions that need shared file storage between invocations</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ Poor Fits for EFS</h4>
+      <ul>
+        <li>Relational databases — use EBS (block storage is faster for DB workloads)</li>
+        <li>Windows file shares — use FSx for Windows File Server (SMB protocol)</li>
+        <li>Object/blob storage — use S3 (cheaper and purpose-built for objects)</li>
+        <li>High-frequency trading or sub-millisecond latency — use EBS io2</li>
+        <li>Single-instance workloads where sharing is not needed — EBS is cheaper</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — STORAGE CLASSES
+══════════════════════════════════ -->
+<div id="tab-storage" class="tab-panel"><div class="section">
+  <h2>💾 EFS Storage Classes</h2>
+  <p>EFS has four storage classes across two availability tiers. The Intelligent-Tiering lifecycle policy automatically moves files between Standard and IA classes based on access patterns — dramatically reducing costs for files that are rarely accessed.</p>
+
+  <h3>Storage Class Overview</h3>
+  <div class="sc-grid">
+    <div class="sc-card sc-standard">
+      <div class="sc-name">EFS Standard</div>
+      <div class="sc-tag">Multi-AZ · Frequent access</div>
+      <div class="sc-row"><span class="sc-row-label">Storage price</span><span class="sc-row-val">$0.30/GB-mo</span></div>
+      <div class="sc-row"><span class="sc-row-label">Read requests</span><span class="sc-row-val">Free</span></div>
+      <div class="sc-row"><span class="sc-row-label">Write requests</span><span class="sc-row-val">Free</span></div>
+      <div class="sc-row"><span class="sc-row-label">Availability</span><span class="sc-row-val">99.99%</span></div>
+      <div class="sc-row"><span class="sc-row-label">Durability</span><span class="sc-row-val">11 nines</span></div>
+    </div>
+    <div class="sc-card sc-ia">
+      <div class="sc-name">EFS Standard-IA</div>
+      <div class="sc-tag">Multi-AZ · Infrequent access</div>
+      <div class="sc-row"><span class="sc-row-label">Storage price</span><span class="sc-row-val">$0.025/GB-mo</span></div>
+      <div class="sc-row"><span class="sc-row-label">Read requests</span><span class="sc-row-val">$0.01/GB</span></div>
+      <div class="sc-row"><span class="sc-row-label">Write requests</span><span class="sc-row-val">$0.01/GB</span></div>
+      <div class="sc-row"><span class="sc-row-label">Availability</span><span class="sc-row-val">99.99%</span></div>
+      <div class="sc-row"><span class="sc-row-label">vs Standard</span><span class="sc-row-val">92% cheaper storage</span></div>
+    </div>
+    <div class="sc-card sc-one">
+      <div class="sc-name">EFS One Zone</div>
+      <div class="sc-tag">Single-AZ · Frequent access</div>
+      <div class="sc-row"><span class="sc-row-label">Storage price</span><span class="sc-row-val">$0.16/GB-mo</span></div>
+      <div class="sc-row"><span class="sc-row-label">Read requests</span><span class="sc-row-val">Free</span></div>
+      <div class="sc-row"><span class="sc-row-label">Availability</span><span class="sc-row-val">99.9% (single AZ)</span></div>
+      <div class="sc-row"><span class="sc-row-label">vs Standard</span><span class="sc-row-val">47% cheaper</span></div>
+      <div class="sc-row"><span class="sc-row-label">AZ failure</span><span class="sc-row-val">⚠️ Data at risk</span></div>
+    </div>
+    <div class="sc-card sc-oneia">
+      <div class="sc-name">EFS One Zone-IA</div>
+      <div class="sc-tag">Single-AZ · Infrequent access</div>
+      <div class="sc-row"><span class="sc-row-label">Storage price</span><span class="sc-row-val">$0.0133/GB-mo</span></div>
+      <div class="sc-row"><span class="sc-row-label">Read requests</span><span class="sc-row-val">$0.01/GB</span></div>
+      <div class="sc-row"><span class="sc-row-label">vs Standard</span><span class="sc-row-val">96% cheaper storage</span></div>
+      <div class="sc-row"><span class="sc-row-label">Best for</span><span class="sc-row-val">Dev/test, backups</span></div>
+    </div>
+  </div>
+
+  <h3>Intelligent-Tiering — Automatic Cost Optimisation</h3>
+  <div class="flow">
+    <div class="flow-node n-efs">
+      <div class="flow-node-title">📁 New file written — lands in Standard tier</div>
+      <ul class="flow-items">
+        <li>All new files land in Standard (or One Zone if One Zone file system)</li>
+        <li>Immediately available for low-latency access</li>
+        <li>EFS tracks last-accessed timestamp for each file</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓  Lifecycle policy monitors access patterns</div>
+    <div class="flow-node n-aws">
+      <div class="flow-node-title">📦 File not accessed for N days → moved to IA tier</div>
+      <ul class="flow-items">
+        <li>Configurable threshold: 7, 14, 30, 60, or 90 days of inactivity</li>
+        <li>Move is transparent — file stays at same path, same permissions</li>
+        <li>Storage cost drops from $0.30 → $0.025 per GB-month (92% savings)</li>
+        <li>Retrieval fee applies: $0.01/GB when an IA file is accessed</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓  File accessed again</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🔄 Transition back to Standard (optional)</div>
+      <ul class="flow-items">
+        <li>Enable "Transition to Primary Storage on first access" in lifecycle policy</li>
+        <li>File moves back to Standard tier after being read once</li>
+        <li>Useful for workloads with unpredictable access spikes on archived files</li>
+        <li>If disabled: file stays in IA but is served with slightly higher latency</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Storage Class Selection Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Recommended Class</th><th>Why</th></tr>
+    <tr><td>Production app with frequent file access</td><td>Standard</td><td>Lowest latency, multi-AZ durability, no retrieval fee</td></tr>
+    <tr><td>Large file system with mixed access patterns</td><td>Standard + Intelligent-Tiering</td><td>Active files in Standard, cold files auto-moved to IA — saves 60–80% on storage</td></tr>
+    <tr><td>Dev/test environment</td><td>One Zone</td><td>47% cheaper, single-AZ acceptable for non-production</td></tr>
+    <tr><td>Dev/test with mixed access</td><td>One Zone + IA lifecycle</td><td>Cheapest option overall — 96% cheaper storage for cold files</td></tr>
+    <tr><td>Lambda /tmp replacement</td><td>One Zone</td><td>Lambda in same AZ, low cost, no cross-AZ charges</td></tr>
+    <tr><td>ML training data (read once per job)</td><td>Standard-IA lifecycle</td><td>Data accessed infrequently — IA storage savings outweigh retrieval fees</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ One Zone — Not for Production Critical Data</h4>
+    <p>One Zone EFS stores data in a single Availability Zone. If that AZ experiences an outage, your file system is unavailable. Use One Zone for dev/test, build caches, and non-critical workloads only. For production applications, always use Regional (Standard) EFS which replicates across all AZs in the region automatically.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — PERFORMANCE
+══════════════════════════════════ -->
+<div id="tab-performance" class="tab-panel"><div class="section">
+  <h2>⚡ EFS Performance Modes &amp; Throughput</h2>
+  <p>EFS performance is controlled by two independent settings: <strong>Performance Mode</strong> (latency vs throughput trade-off) and <strong>Throughput Mode</strong> (how much MB/s is available). Both are configured when creating the file system.</p>
+
+  <h3>Performance Modes</h3>
+  <div class="perf-grid">
+    <div class="perf-card">
+      <div class="perf-card-header ph-gp">⚡ General Purpose (Default)</div>
+      <div class="perf-card-body">
+        <div class="perf-row"><span class="perf-label">Latency</span><span class="perf-val">~1 ms (lowest)</span></div>
+        <div class="perf-row"><span class="perf-label">IOPS limit</span><span class="perf-val">35,000 read / 7,000 write</span></div>
+        <div class="perf-row"><span class="perf-label">Best for</span><span class="perf-val">Web serving, CMS, home dirs</span></div>
+        <div class="perf-row"><span class="perf-label">Recommended</span><span class="perf-val">✅ 99% of use cases</span></div>
+      </div>
+    </div>
+    <div class="perf-card">
+      <div class="perf-card-header ph-max">🚀 Max I/O</div>
+      <div class="perf-card-body">
+        <div class="perf-row"><span class="perf-label">Latency</span><span class="perf-val">Higher than GP</span></div>
+        <div class="perf-row"><span class="perf-label">IOPS limit</span><span class="perf-val">Virtually unlimited</span></div>
+        <div class="perf-row"><span class="perf-label">Best for</span><span class="perf-val">Big data, HPC, media processing</span></div>
+        <div class="perf-row"><span class="perf-label">When to use</span><span class="perf-val">Hundreds of parallel clients</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Which Performance Mode to Choose</h4>
+    <p>Start with <strong>General Purpose</strong> — it covers 99% of workloads with the lowest latency. Only switch to Max I/O if you have hundreds of EC2 instances or ECS tasks accessing the file system simultaneously and need aggregate throughput over low per-operation latency. You cannot change the performance mode after creation.</p>
+  </div>
+
+  <h3>Throughput Modes</h3>
+  <div class="perf-grid">
+    <div class="perf-card">
+      <div class="perf-card-header ph-elastic">✨ Elastic (Recommended)</div>
+      <div class="perf-card-body">
+        <div class="perf-row"><span class="perf-label">Read</span><span class="perf-val">Up to 3 GB/s</span></div>
+        <div class="perf-row"><span class="perf-label">Write</span><span class="perf-val">Up to 1 GB/s</span></div>
+        <div class="perf-row"><span class="perf-label">Cost</span><span class="perf-val">$0.06/GB transferred</span></div>
+        <div class="perf-row"><span class="perf-label">Scales</span><span class="perf-val">Automatically, instantly</span></div>
+      </div>
+    </div>
+    <div class="perf-card">
+      <div class="perf-card-header ph-gp">📈 Bursting</div>
+      <div class="perf-card-body">
+        <div class="perf-row"><span class="perf-label">Burst rate</span><span class="perf-val">100 MB/s (min)</span></div>
+        <div class="perf-row"><span class="perf-label">Burst formula</span><span class="perf-val">0.1 MB/s per GB stored</span></div>
+        <div class="perf-row"><span class="perf-label">Cost</span><span class="perf-val">No extra charge</span></div>
+        <div class="perf-row"><span class="perf-label">Burst credits</span><span class="perf-val">Earned when below baseline</span></div>
+      </div>
+    </div>
+    <div class="perf-card">
+      <div class="perf-card-header ph-max">🔒 Provisioned</div>
+      <div class="perf-card-body">
+        <div class="perf-row"><span class="perf-label">You specify</span><span class="perf-val">MB/s (1–3,000+)</span></div>
+        <div class="perf-row"><span class="perf-label">Cost</span><span class="perf-val">$0.06/MB/s-mo provisioned</span></div>
+        <div class="perf-row"><span class="perf-label">Best for</span><span class="perf-val">Predictable high throughput</span></div>
+        <div class="perf-row"><span class="perf-label">Note</span><span class="perf-val">Pay even when idle</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Bursting Throughput — Credit Model</h3>
+  <div class="card">
+    <h4>📊 How Burst Credits Work</h4>
+    <ul>
+      <li>Baseline throughput = 50 KB/s per GB of storage (minimum 100 MB/s guaranteed)</li>
+      <li>Burst throughput = 100 MB/s (for file systems under 1 TB) or more for larger systems</li>
+      <li>When using less than baseline, you earn burst credits at 0.1 MB/s per GB stored</li>
+      <li>Credits accumulate up to 2.1 TB per TB of storage (capped)</li>
+      <li>When you burst above baseline, you spend credits at (burst rate − baseline rate)</li>
+      <li>If credits are exhausted, throughput is throttled to baseline until credits recover</li>
+    </ul>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Bursting Throughput Trap for Small File Systems</h4>
+    <p>A 10 GB EFS file system on Bursting mode has a baseline of only <strong>500 KB/s</strong>. It can burst to 100 MB/s using earned credits, but a small file system earns credits slowly and depletes them quickly. If your application has continuous I/O on a small EFS, use <strong>Elastic throughput mode</strong> instead — it scales to 3 GB/s on demand with no credit model.</p>
+  </div>
+
+  <h3>EFS vs EBS Latency Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Storage</th><th>Typical Latency</th><th>Why</th></tr>
+    <tr><td>EBS io2</td><td>&lt; 0.5 ms</td><td>Block storage, direct attachment, optimised path</td></tr>
+    <tr><td>EBS gp3</td><td>~1 ms</td><td>Network-attached block, dedicated EBS bandwidth</td></tr>
+    <tr><td>EFS (General Purpose)</td><td>1–3 ms</td><td>NFS over network, additional metadata overhead</td></tr>
+    <tr><td>EFS (Max I/O)</td><td>3–10 ms</td><td>Higher aggregate throughput, more latency per op</td></tr>
+    <tr><td>Instance Store (NVMe)</td><td>~0.1 ms</td><td>Physically attached, no network hop</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — ARCHITECTURE
+══════════════════════════════════ -->
+<div id="tab-architecture" class="tab-panel"><div class="section">
+  <h2>🏗️ EFS Architecture</h2>
+  <p>EFS is a <strong>regional service</strong>. A Regional EFS file system is accessible from all AZs in a region through per-AZ mount targets. Understanding how mount targets, access points, and VPC networking work together is key to deploying EFS correctly.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🗂️ EFS Regional Architecture — Multi-AZ Access</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 400" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a6a"/>
+          </marker>
+          <marker id="arr-b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2a4db0"/>
+          </marker>
+        </defs>
+
+        <!-- EFS Core -->
+        <rect x="270" y="30" width="180" height="60" rx="10" fill="#d0f0e8" stroke="rgba(26,138,106,.4)" stroke-width="2"/>
+        <text x="360" y="55" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#0d5c47" text-anchor="middle">🗂️ EFS File System</text>
+        <text x="360" y="72" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Shared · Petabyte scale · Auto-grows</text>
+
+        <!-- Mount Target AZ-1 -->
+        <rect x="30" y="140" width="180" height="55" rx="8" fill="#d0f0e8" stroke="rgba(26,138,106,.3)" stroke-width="1.5"/>
+        <text x="120" y="162" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#0d5c47" text-anchor="middle">🔌 Mount Target</text>
+        <text x="120" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AZ-1 · Private subnet · ENI</text>
+
+        <!-- Mount Target AZ-2 -->
+        <rect x="270" y="140" width="180" height="55" rx="8" fill="#d0f0e8" stroke="rgba(26,138,106,.3)" stroke-width="1.5"/>
+        <text x="360" y="162" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#0d5c47" text-anchor="middle">🔌 Mount Target</text>
+        <text x="360" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AZ-2 · Private subnet · ENI</text>
+
+        <!-- Mount Target AZ-3 -->
+        <rect x="510" y="140" width="180" height="55" rx="8" fill="#d0f0e8" stroke="rgba(26,138,106,.3)" stroke-width="1.5"/>
+        <text x="600" y="162" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#0d5c47" text-anchor="middle">🔌 Mount Target</text>
+        <text x="600" y="178" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AZ-3 · Private subnet · ENI</text>
+
+        <!-- Lines: EFS → Mount targets -->
+        <line x1="310" y1="90" x2="180" y2="140" stroke="#1a8a6a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="360" y1="90" x2="360" y2="138" stroke="#1a8a6a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="410" y1="90" x2="540" y2="140" stroke="#1a8a6a" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+
+        <!-- EC2 instances -->
+        <rect x="30" y="248" width="180" height="50" rx="7" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="120" y="268" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🖥️ EC2 / ECS / Lambda</text>
+        <text x="120" y="284" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Clients in AZ-1</text>
+
+        <rect x="270" y="248" width="180" height="50" rx="7" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="360" y="268" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🖥️ EC2 / ECS / EKS</text>
+        <text x="360" y="284" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Clients in AZ-2</text>
+
+        <rect x="510" y="248" width="180" height="50" rx="7" fill="#fef3e2" stroke="rgba(212,135,42,.3)" stroke-width="1.5"/>
+        <text x="600" y="268" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#d4872a" text-anchor="middle">🖥️ EC2 / On-Premises</text>
+        <text x="600" y="284" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">Clients in AZ-3</text>
+
+        <!-- Lines: Clients → Mount Targets -->
+        <line x1="120" y1="248" x2="120" y2="197" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#arr-b)"/>
+        <line x1="360" y1="248" x2="360" y2="197" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#arr-b)"/>
+        <line x1="600" y1="248" x2="600" y2="197" stroke="#2a4db0" stroke-width="1.5" marker-end="url(#arr-b)"/>
+
+        <!-- VPC boundary -->
+        <rect x="10" y="120" width="700" height="200" rx="10" fill="none" stroke="#dddbd6" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="360" y="115" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle" letter-spacing="1">VPC — one mount target per AZ subnet</text>
+
+        <!-- Labels -->
+        <text x="360" y="336" font-family="DM Sans,sans-serif" font-size="10" fill="#7a7a6a" text-anchor="middle">Clients always connect to mount target in their own AZ — avoids cross-AZ data transfer charges</text>
+        <text x="360" y="354" font-family="DM Sans,sans-serif" font-size="9" fill="#9a9a8a" text-anchor="middle">All mount targets share the same file system — a file written from AZ-1 is immediately visible in AZ-2 and AZ-3</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Mount Targets — Rules &amp; Best Practices</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔌 Mount Target Facts</h4>
+      <ul>
+        <li>One mount target per AZ (per VPC)</li>
+        <li>Each mount target gets a private IP in the subnet</li>
+        <li>Mount targets have their own Security Group — control which clients can connect on port 2049 (NFS)</li>
+        <li>DNS: <code>fs-xxxx.efs.region.amazonaws.com</code> resolves to the mount target IP in your AZ automatically</li>
+        <li>Create a mount target in every AZ where your clients run — otherwise clients cross AZs (latency + cost)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚪 EFS Access Points</h4>
+      <ul>
+        <li>Application-specific entry points into the file system</li>
+        <li>Enforce a <strong>root directory</strong> — app only sees its subtree, not the full file system</li>
+        <li>Enforce <strong>POSIX user and group identity</strong> — all writes appear as a specific UID/GID regardless of the connecting client</li>
+        <li>Simplify container storage — each ECS task or EKS pod gets its own access point</li>
+        <li>Required when using EFS with Lambda</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Mounting EFS on Linux</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Install the EFS mount helper</h4><p>The Amazon EFS mount helper simplifies mounting and enables TLS encryption in transit. On Amazon Linux 2023: <code>sudo yum install -y amazon-efs-utils</code>. On Ubuntu: install via the GitHub package.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Mount via DNS name with TLS</h4><p>Run: <code>sudo mount -t efs -o tls fs-0abc1234:/ /mnt/efs</code>. The <code>-o tls</code> flag encrypts all data in transit. The mount helper handles TLS negotiation automatically using stunnel under the hood.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Persist mount in /etc/fstab</h4><p>Add to /etc/fstab: <code>fs-0abc1234:/ /mnt/efs efs _netdev,tls 0 0</code>. The <code>_netdev</code> option ensures the mount waits for the network before mounting at boot — critical for EFS which requires network connectivity.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Mount via Access Point (for containers)</h4><p>Run: <code>sudo mount -t efs -o tls,accesspoint=fsap-0abc1234 fs-0abc1234:/ /mnt/app</code>. The access point enforces the root directory and POSIX identity automatically, isolating the container from other parts of the file system.</p></div>
+  </div>
+
+  <h3>EFS with ECS / EKS / Lambda</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🐳 ECS Task with EFS Volume</h4>
+      <ul>
+        <li>Define EFS volume in the task definition with the file system ID and access point</li>
+        <li>Mount the volume in the container definition at a specific path</li>
+        <li>ECS mounts EFS before starting the container — persistent across task restarts</li>
+        <li>Use access points to isolate data per task family</li>
+        <li>Works with both EC2 and Fargate launch types</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>λ Lambda with EFS</h4>
+      <ul>
+        <li>Lambda must be in a VPC to access EFS</li>
+        <li>Configure an EFS access point in the Lambda function settings</li>
+        <li>EFS appears at <code>/mnt/efs</code> (or your chosen path) inside the function</li>
+        <li>Enables sharing large ML models or data between Lambda invocations</li>
+        <li>Access point required — Lambda does not mount raw EFS directly</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SECURITY
+══════════════════════════════════ -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 EFS Security</h2>
+  <p>EFS security operates at four layers: <strong>network</strong> (VPC, Security Groups), <strong>file system policy</strong> (resource-based IAM), <strong>access point</strong> (POSIX identity enforcement), and <strong>encryption</strong> (at rest and in transit).</p>
+
+  <h3>Network Security</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Mount Target Security Group</h4><p>Every mount target has a Security Group. Add an inbound rule: <strong>NFS port 2049</strong> from the Security Group of your EC2 instances, ECS tasks, or Lambda functions. Never open port 2049 to 0.0.0.0/0 — use Security Group references.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Client Security Group</h4><p>Your EC2/ECS/Lambda Security Group needs an outbound rule on port 2049 to the mount target Security Group (or use the default allow-all outbound). Add the mount target SG as the source — not an IP range.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>VPC-only access</h4><p>EFS is only accessible from within a VPC (or via Direct Connect/VPN). There is no public endpoint for EFS — it is inherently private. Lambda functions must be VPC-attached to access EFS.</p></div>
+  </div>
+
+  <h3>EFS File System Policy (IAM Resource Policy)</h3>
+  <div class="card">
+    <h4>📋 What EFS File System Policies Control</h4>
+    <ul>
+      <li>Resource-based IAM policy attached directly to the EFS file system</li>
+      <li>Controls which IAM principals (roles, users, accounts) can mount and access the file system</li>
+      <li>Can enforce TLS-only mounting — deny any client not using <code>aws:SecureTransport</code></li>
+      <li>Can deny root access to the file system from all clients</li>
+      <li>Can restrict access to specific access points only</li>
+      <li>Applied in addition to Security Group rules — both must allow access</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">EFS File System Policy — Enforce TLS and restrict to IAM role</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"EnforceTLS"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+      <span class="str">"Principal"</span>: { <span class="str">"AWS"</span>: <span class="str">"*"</span> },
+      <span class="str">"Action"</span>: <span class="str">"*"</span>,
+      <span class="str">"Condition"</span>: {
+        <span class="str">"Bool"</span>: { <span class="str">"aws:SecureTransport"</span>: <span class="str">"false"</span> }
+      }
+    },
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowAppRole"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::123456789012:role/my-app-role"</span>
+      },
+      <span class="str">"Action"</span>: [
+        <span class="str">"elasticfilesystem:ClientMount"</span>,
+        <span class="str">"elasticfilesystem:ClientWrite"</span>
+      ]
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>Encryption</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 Encryption at Rest</h4>
+      <ul>
+        <li>AES-256 using AWS KMS — enable at file system creation</li>
+        <li>Cannot enable encryption on an existing unencrypted EFS — must create new and migrate data</li>
+        <li>AWS-managed key (free) or Customer Managed Key (CMK)</li>
+        <li>All files, directories, and metadata are encrypted</li>
+        <li>No performance impact on encryption at rest</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔒 Encryption in Transit (TLS)</h4>
+      <ul>
+        <li>Enabled via the EFS mount helper with <code>-o tls</code> mount option</li>
+        <li>Uses stunnel to establish a TLS 1.2+ tunnel between client and mount target</li>
+        <li>Enforce via file system policy: deny requests where <code>aws:SecureTransport = false</code></li>
+        <li>Slight CPU overhead (~1–3%) for TLS encryption on the client</li>
+        <li>Always enable for production workloads regardless of VPC isolation</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Enable Both Encryption Types</h4>
+    <p>Enable <strong>both</strong> encryption at rest AND in transit for all production EFS file systems. In-transit TLS protects against network interception within the VPC. At-rest encryption protects the underlying storage layer. Both are free (KMS API call costs are negligible) and required by most compliance frameworks.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>🔄 EFS Lifecycle Management &amp; Backup</h2>
+  <p>EFS lifecycle management automatically moves files between storage classes based on access patterns, while AWS Backup and EFS replication protect against data loss.</p>
+
+  <h3>Lifecycle Policy Configuration</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Policy Setting</th><th>Options</th><th>Recommendation</th></tr>
+    <tr><td>Transition to IA</td><td>7, 14, 30, 60, 90 days of no access</td><td>30 days for most workloads — saves ~80% on cold files</td></tr>
+    <tr><td>Transition to Archive</td><td>90, 180, 270, 365 days of no access</td><td>180+ days for data you almost never access</td></tr>
+    <tr><td>Transition back from IA</td><td>On first access / Never</td><td>Enable "on first access" for workloads with random access spikes</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Lifecycle Cost Savings Example</h4>
+    <p>A 10 TB file system where 80% of files are infrequently accessed: without lifecycle policy costs $3,000/month (all in Standard). With 30-day lifecycle policy: 2 TB in Standard ($600) + 8 TB in IA ($200) = <strong>$800/month — 73% savings</strong>. Retrieval fees on the IA tier add back a small amount, but the savings are substantial for cold-heavy file systems.</p>
+  </div>
+
+  <h3>EFS Backup</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔄 AWS Backup Integration</h4>
+      <ul>
+        <li>Enable in the EFS console or via AWS Backup service</li>
+        <li>Schedules daily (or more frequent) backups automatically</li>
+        <li>Backup stored in a separate Backup vault — not affected by EFS deletion</li>
+        <li>Can restore individual files or the entire file system</li>
+        <li>Cross-region and cross-account copy supported</li>
+        <li>Cost: $0.05/GB-month for backup storage</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌍 EFS Replication</h4>
+      <ul>
+        <li>Replicate to another AWS region for disaster recovery</li>
+        <li>RPO (Recovery Point Objective) in minutes</li>
+        <li>One-to-one: one source EFS → one destination EFS</li>
+        <li>Destination is read-only until you fail over</li>
+        <li>Failover: stop replication → destination becomes standalone read-write</li>
+        <li>Cost: $0.10–$0.50/GB-month for replicated data (depends on destination region)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>EFS Archive Storage Class</h3>
+  <div class="card">
+    <h4>📦 EFS Archive — Lowest Cost Long-Term Storage</h4>
+    <ul>
+      <li>Price: $0.008/GB-month — 97% cheaper than EFS Standard</li>
+      <li>Retrieval: $0.03/GB retrieval fee + first byte latency of milliseconds to minutes</li>
+      <li>Use for: compliance archives, old project data, infrequently accessed logs</li>
+      <li>Configure via lifecycle policy: transition files to Archive after 90–365 days</li>
+      <li>Files in Archive still appear at their original path — access is transparent but slower</li>
+    </ul>
+  </div>
+
+  <h3>EFS vs AWS Backup vs Manual Snapshots</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Method</th><th>Automation</th><th>Granularity</th><th>Cross-region</th><th>Recommended</th></tr>
+    <tr><td>AWS Backup (EFS)</td><td>✅ Fully automated</td><td>File-level restore</td><td>✅ Yes</td><td>✅ Production</td></tr>
+    <tr><td>EFS Replication</td><td>✅ Continuous</td><td>Entire file system</td><td>✅ Yes</td><td>✅ DR requirement</td></tr>
+    <tr><td>rsync to S3/EFS</td><td>Manual / cron</td><td>File-level</td><td>Manual</td><td>⚠️ Dev/test only</td></tr>
+    <tr><td>aws datasync</td><td>✅ Scheduled</td><td>File-level</td><td>✅ Yes</td><td>✅ Migration use case</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CONSOLE SETUP
+══════════════════════════════════ -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖱️ Creating an EFS File System — Console Walkthrough</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create EFS File System</div>
+      <div class="console-step-path">EFS → File systems → Create file system</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Name</span>
+        <span class="console-field-value">my-app-shared-storage</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">VPC</span>
+        <span class="console-field-value">my-production-vpc</span>
+        <span class="console-field-hint">EFS must be in the same VPC as the clients that will mount it. Cannot be changed after creation.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Availability and Durability</span>
+        <span class="console-field-value">Regional (recommended for production)</span>
+        <span class="console-field-hint">Regional stores data across all AZs — 11 nines durability. One Zone is cheaper but risks data loss on AZ failure.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Configure File System Settings</div>
+      <div class="console-step-path">Customize → File system settings</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Lifecycle management</span>
+        <span class="console-field-value">Transition to IA: 30 days · Transition to Archive: 180 days</span>
+        <span class="console-field-hint">Enable lifecycle to automatically move cold files to cheaper IA and Archive tiers. Can save 70–90% on storage cost.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Performance mode</span>
+        <span class="console-field-value">General Purpose (cannot change after creation)</span>
+        <span class="console-field-hint">Use General Purpose for 99% of workloads. Only choose Max I/O if you have hundreds of concurrent clients and need maximum aggregate throughput.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Throughput mode</span>
+        <span class="console-field-value">Elastic (recommended)</span>
+        <span class="console-field-hint">Elastic automatically scales to 3 GB/s read / 1 GB/s write. No burst credits, no capacity planning. Can be changed after creation.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Encryption at rest</span>
+        <span class="console-field-value">Enable ✅ — KMS key: aws/elasticfilesystem</span>
+        <span class="console-field-hint">Always enable. Cannot be enabled on an existing file system — only at creation.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Configure Network Access (Mount Targets)</div>
+      <div class="console-step-path">Network access section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Mount targets</span>
+        <span class="console-field-value">Create one per AZ — each in a private subnet</span>
+        <span class="console-field-hint">Create a mount target in every AZ where your EC2 or ECS instances run. Clients connect to their local AZ mount target — avoids cross-AZ data transfer charges ($0.01/GB).</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Security groups</span>
+        <span class="console-field-value">efs-mount-sg (allows inbound TCP 2049 from app-tier-sg)</span>
+        <span class="console-field-hint">Create a dedicated security group for mount targets. Inbound NFS port 2049 only from your app instance security group — not from 0.0.0.0/0.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">File System Policy</div>
+      <div class="console-step-path">File system policy section</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Enforce in-transit encryption</span>
+        <span class="console-field-value">✅ Enable (adds deny rule for non-TLS connections)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Prevent root access</span>
+        <span class="console-field-value">✅ Enable (unless your app requires root NFS access)</span>
+        <span class="console-field-hint">Prevents root-squash bypass. Applications should use access points with specific POSIX identities instead of root.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Enforce read-only access</span>
+        <span class="console-field-value">Only if you want a read-only file system (e.g. shared config)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Create an Access Point</div>
+      <div class="console-step-path">EFS → File systems → Your FS → Access points → Create</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Root directory path</span>
+        <span class="console-field-value">/app/myservice</span>
+        <span class="console-field-hint">The access point enforces this as the root. The app cannot navigate above this path — provides isolation between services sharing the same EFS.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">POSIX user ID</span>
+        <span class="console-field-value">1001 (UID of your app user)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">POSIX group ID</span>
+        <span class="console-field-value">1001</span>
+        <span class="console-field-hint">All files written through this access point appear owned by UID:GID 1001:1001 — regardless of the actual client user. Simplifies permissions for containers.</span>
+      </div>
+      <div class="console-note">Use this access point ARN in your ECS task definition, EKS PersistentVolume, or Lambda function configuration.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <div class="console-step-title">Enable AWS Backup</div>
+      <div class="console-step-path">EFS → File systems → Your FS → Actions → Manage backups</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Backup plan</span>
+        <span class="console-field-value">Daily backups, retain 35 days</span>
+        <span class="console-field-hint">Always enable AWS Backup for production EFS. The EFS file system alone does not protect against accidental deletion of files — backups do.</span>
+      </div>
+      <div class="console-note">Backups are stored in an AWS Backup vault — separate from the EFS file system. Even if the file system is deleted, the backup remains and can restore to a new file system.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — C# SDK
+══════════════════════════════════ -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — EFS Code Examples</h2>
+  <p>All examples use <strong>AWSSDK.ElasticFileSystem</strong> NuGet package. Install: <code>dotnet add package AWSSDK.ElasticFileSystem</code></p>
+
+  <h3>1. Create an EFS File System</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Create EFS File System with Lifecycle Policy</span>
+    <pre><span class="kw">using</span> Amazon.ElasticFileSystem;
+<span class="kw">using</span> Amazon.ElasticFileSystem.Model;
+
+<span class="kw">public class</span> <span class="tp">EfsService</span>(<span class="tp">IAmazonElasticFileSystem</span> efs)
+{
+    <span class="cm">// Create a production-ready EFS file system</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateFileSystemAsync</span>(<span class="kw">string</span> name)
+    {
+        <span class="kw">var</span> resp = <span class="kw">await</span> efs.<span class="fn">CreateFileSystemAsync</span>(<span class="kw">new</span> <span class="tp">CreateFileSystemRequest</span>
+        {
+            CreationToken    = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>(),  <span class="cm">// Idempotency token</span>
+            PerformanceMode  = <span class="tp">PerformanceMode</span>.GeneralPurpose,
+            ThroughputMode   = <span class="tp">ThroughputMode</span>.Elastic,
+            Encrypted        = <span class="kw">true</span>,
+            Tags             = [
+                <span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Name"</span>,        Value = name          },
+                <span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Environment"</span>, Value = <span class="str">"production"</span>  },
+                <span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"ManagedBy"</span>,   Value = <span class="str">"dotnet-sdk"</span>  }
+            ]
+        });
+
+        <span class="kw">var</span> fsId = resp.FileSystemId;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Created EFS: {fsId} (state: {resp.LifeCycleState})"</span>);
+
+        <span class="cm">// Wait until available before adding mount targets</span>
+        <span class="kw">await</span> <span class="fn">WaitUntilAvailableAsync</span>(fsId);
+
+        <span class="cm">// Apply lifecycle policy: move to IA after 30 days, archive after 180</span>
+        <span class="kw">await</span> efs.<span class="fn">PutLifecycleConfigurationAsync</span>(<span class="kw">new</span>()
+        {
+            FileSystemId = fsId,
+            LifecyclePolicies =
+            [
+                <span class="kw">new</span> <span class="tp">LifecyclePolicy</span>
+                    { TransitionToIA = <span class="tp">TransitionToIARules</span>.AFTER_30_DAYS },
+                <span class="kw">new</span> <span class="tp">LifecyclePolicy</span>
+                    { TransitionToArchive = <span class="tp">TransitionToArchiveRules</span>.AFTER_180_DAYS },
+                <span class="kw">new</span> <span class="tp">LifecyclePolicy</span>
+                    { TransitionToPrimaryStorageClass = <span class="tp">TransitionToPrimaryStorageClassRules</span>.AFTER_1_ACCESS }
+            ]
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Lifecycle policy applied to {fsId}"</span>);
+        <span class="kw">return</span> fsId;
+    }
+
+    <span class="cm">// Poll until file system state is "available"</span>
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">WaitUntilAvailableAsync</span>(<span class="kw">string</span> fsId, <span class="kw">int</span> timeoutSecs = <span class="num">120</span>)
+    {
+        <span class="kw">var</span> deadline = <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddSeconds</span>(timeoutSecs);
+        <span class="kw">while</span> (<span class="tp">DateTime</span>.UtcNow &lt; deadline)
+        {
+            <span class="kw">var</span> resp = <span class="kw">await</span> efs.<span class="fn">DescribeFileSystemsAsync</span>(<span class="kw">new</span>()
+                { FileSystemId = fsId });
+            <span class="kw">if</span> (resp.FileSystems[<span class="num">0</span>].LifeCycleState == <span class="tp">LifeCycleState</span>.Available) <span class="kw">return</span>;
+            <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">4_000</span>);
+        }
+        <span class="kw">throw new</span> <span class="tp">TimeoutException</span>(<span class="str">$"EFS {fsId} did not become available in time"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>2. Create Mount Targets and Access Points</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Mount Targets + Access Points</span>
+    <pre><span class="cm">// Create mount targets — one per subnet (AZ)</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CreateMountTargetsAsync</span>(
+    <span class="kw">string</span>   fsId,
+    <span class="kw">string</span>[] subnetIds,        <span class="cm">// one per AZ e.g. ["subnet-az1", "subnet-az2", "subnet-az3"]</span>
+    <span class="kw">string</span>[] securityGroupIds) <span class="cm">// e.g. ["sg-efs-mount-sg"]</span>
+{
+    <span class="kw">foreach</span> (<span class="kw">var</span> subnetId <span class="kw">in</span> subnetIds)
+    {
+        <span class="kw">var</span> mt = <span class="kw">await</span> efs.<span class="fn">CreateMountTargetAsync</span>(<span class="kw">new</span> <span class="tp">CreateMountTargetRequest</span>
+        {
+            FileSystemId   = fsId,
+            SubnetId       = subnetId,
+            SecurityGroups = [.. securityGroupIds]
+        });
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Mount target {mt.MountTargetId} in {mt.SubnetId}: {mt.LifeCycleState}"</span>);
+    }
+}
+
+<span class="cm">// Create an access point for a specific application / container</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreateAccessPointAsync</span>(
+    <span class="kw">string</span> fsId,
+    <span class="kw">string</span> rootPath,  <span class="cm">// e.g. "/app/myservice"</span>
+    <span class="kw">int</span>    uid = <span class="num">1001</span>,
+    <span class="kw">int</span>    gid = <span class="num">1001</span>)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> efs.<span class="fn">CreateAccessPointAsync</span>(<span class="kw">new</span> <span class="tp">CreateAccessPointRequest</span>
+    {
+        FileSystemId = fsId,
+        PosixUser    = <span class="kw">new</span> <span class="tp">PosixUser</span> { Uid = uid, Gid = gid },
+        RootDirectory = <span class="kw">new</span> <span class="tp">RootDirectory</span>
+        {
+            Path             = rootPath,
+            CreationInfo     = <span class="kw">new</span> <span class="tp">CreationInfo</span>
+            {
+                OwnerUid    = uid,
+                OwnerGid    = gid,
+                Permissions = <span class="str">"755"</span>  <span class="cm">// Creates directory if it doesn't exist</span>
+            }
+        },
+        Tags = [<span class="kw">new</span> <span class="tp">Tag</span> { Key = <span class="str">"Name"</span>, Value = <span class="str">$"ap-{rootPath.Replace('/', '-')}"</span> }]
+    });
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Access point: {resp.AccessPointId} → {rootPath} (UID:{uid})"</span>);
+    <span class="kw">return</span> resp.AccessPointId;
+}</pre>
+  </div>
+
+  <h3>3. Describe File Systems and Storage Usage</h3>
+  <div class="code-block">
+    <span class="code-label">C# — List EFS File Systems and Storage Metrics</span>
+    <pre><span class="cm">// List all EFS file systems with storage breakdown</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PrintFileSystemsAsync</span>()
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> efs.<span class="fn">DescribeFileSystemsAsync</span>(<span class="kw">new</span> <span class="tp">DescribeFileSystemsRequest</span>());
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> fs <span class="kw">in</span> resp.FileSystems)
+    {
+        <span class="kw">var</span> name    = fs.Tags.<span class="fn">FirstOrDefault</span>(t => t.Key == <span class="str">"Name"</span>)?.Value ?? <span class="str">"(no name)"</span>;
+        <span class="kw">var</span> sizeGb  = fs.SizeInBytes.Value / (<span class="num">1024.0</span> * <span class="num">1024</span> * <span class="num">1024</span>);
+        <span class="kw">var</span> sizeIaGb = fs.SizeInBytes.ValueInIA / (<span class="num">1024.0</span> * <span class="num">1024</span> * <span class="num">1024</span>);
+        <span class="kw">var</span> sizeArcGb = fs.SizeInBytes.ValueInArchive / (<span class="num">1024.0</span> * <span class="num">1024</span> * <span class="num">1024</span>);
+
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"""
+            ── {name} ({fs.FileSystemId}) ──
+               State:         {fs.LifeCycleState}
+               Throughput:    {fs.ThroughputMode}
+               Performance:   {fs.PerformanceMode}
+               Total size:    {sizeGb:F2} GB
+               Standard:      {sizeGb - sizeIaGb - sizeArcGb:F2} GB  @ $0.30/GB
+               Infrequent:    {sizeIaGb:F2} GB  @ $0.025/GB
+               Archive:       {sizeArcGb:F2} GB  @ $0.008/GB
+               Encrypted:     {fs.Encrypted}
+               AZ:            {fs.AvailabilityZoneName ?? "Regional"}
+            """</span>);
+    }
+}
+
+<span class="cm">// List access points for a file system</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PrintAccessPointsAsync</span>(<span class="kw">string</span> fsId)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> efs.<span class="fn">DescribeAccessPointsAsync</span>(<span class="kw">new</span>()
+        { FileSystemId = fsId });
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> ap <span class="kw">in</span> resp.AccessPoints)
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(
+            <span class="str">$"  {ap.AccessPointId}  root={ap.RootDirectory.Path}  uid={ap.PosixUser?.Uid}  state={ap.LifeCycleState}"</span>);
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — BEST PRACTICES
+══════════════════════════════════ -->
+<div id="tab-best" class="tab-panel"><div class="section">
+  <h2>✅ Best Practices &amp; Common Mistakes</h2>
+
+  <h3>Architecture Best Practices</h3>
+  <ul class="checklist">
+    <li>Create one mount target per AZ — clients always connect to their local AZ mount target to avoid cross-AZ data transfer charges ($0.01/GB) and latency</li>
+    <li>Use Access Points for every application or container workload — enforces root directory isolation and POSIX identity, prevents one service from accessing another's data</li>
+    <li>Use Regional EFS for production — One Zone is 47% cheaper but an AZ failure makes your data unavailable. Never use One Zone for critical production data</li>
+    <li>Use Elastic throughput mode — eliminates burst credit management, scales instantly, no capacity planning. Only use Provisioned if you have a very consistent, well-characterised throughput requirement</li>
+    <li>Mount with the EFS mount helper and TLS — the <code>amazon-efs-utils</code> package handles TLS, automatic reconnect, and DNS resolution to the correct AZ mount target</li>
+  </ul>
+
+  <h3>Cost Optimisation</h3>
+  <ul class="checklist">
+    <li>Always enable Intelligent-Tiering lifecycle policy (30-day IA transition) — for most file systems, 60–80% of data is cold and moves to IA, reducing costs by 70%+ at no effort</li>
+    <li>Add Archive lifecycle tier (180+ days) for compliance data, old projects, or logs that must be retained but rarely accessed — 97% cheaper than Standard</li>
+    <li>Use One Zone for dev/test and build caches — 47% cheaper, AZ failure risk acceptable for non-production</li>
+    <li>Monitor BurstCreditBalance CloudWatch metric — if consistently hitting zero on Bursting mode, switch to Elastic throughput (better performance and pricing for active file systems)</li>
+    <li>Review PercentIOLimit metric — if consistently above 80% on General Purpose, consider switching to Max I/O performance mode at the next recreation</li>
+  </ul>
+
+  <h3>Security Best Practices</h3>
+  <ul class="checklist">
+    <li>Enable encryption at rest at file system creation — cannot be added later without migration</li>
+    <li>Always mount with <code>-o tls</code> and enforce via file system policy (deny non-SecureTransport) — protects data in transit within the VPC</li>
+    <li>Use specific Security Group references on port 2049, never open to 0.0.0.0/0</li>
+    <li>Apply a file system policy to restrict access to specific IAM roles — prevents unauthorised mounts from other instances in the VPC</li>
+    <li>Enable AWS Backup for all production EFS file systems — protects against accidental file deletion which EFS itself does not prevent</li>
+  </ul>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <div class="danger">
+    <h4>⚠️ Top EFS Mistakes</h4>
+    <p>
+    ❌ <strong>Not creating mount targets in all AZs</strong> — if your EC2 instance is in AZ-2 and there's no mount target in AZ-2, it connects cross-AZ. This costs $0.01/GB in data transfer and adds latency. Create one mount target per AZ at setup.<br>
+    ❌ <strong>Using EFS for a single-instance database</strong> — NFS latency (1–3ms) is much higher than EBS (0.1–1ms). Never use EFS as the storage backend for MySQL, PostgreSQL, or any relational database. Use EBS instead.<br>
+    ❌ <strong>Not enabling lifecycle policy</strong> — without it, all files stay in Standard tier ($0.30/GB) indefinitely. Enable 30-day IA transition and save 70%+ on storage cost for any file system with cold data.<br>
+    ❌ <strong>Using Bursting mode for a small active file system</strong> — a 10 GB EFS on Bursting mode has only 500 KB/s baseline. It exhausts burst credits quickly and throttles. Switch to Elastic throughput for active small file systems.<br>
+    ❌ <strong>Not using Access Points for containerised workloads</strong> — without access points, all ECS tasks share the same file system root and can overwrite each other's data. Always use access points to isolate per-service directories.<br>
+    ❌ <strong>Forgetting to add _netdev to /etc/fstab</strong> — without <code>_netdev</code>, the OS tries to mount EFS before the network is up at boot time and the instance gets stuck. Always use <code>_netdev,tls,_netdev</code> in fstab entries for EFS.<br>
+    ❌ <strong>Not backing up with AWS Backup</strong> — EFS stores data but has no built-in protection against accidental <code>rm -rf</code>. AWS Backup provides file-level recovery. Enable it for every production file system.
+    </p>
+  </div>
+
+  <h3>EFS vs S3 vs FSx for Lustre — HPC Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Need</th><th>EFS</th><th>S3</th><th>FSx for Lustre</th></tr>
+    <tr><td>POSIX filesystem semantics</td><td>✅ Full NFS POSIX</td><td>❌ Object API only</td><td>✅ POSIX (Lustre)</td></tr>
+    <tr><td>Shared access from many instances</td><td>✅ Thousands via NFS</td><td>✅ Unlimited via API</td><td>✅ High concurrency</td></tr>
+    <tr><td>HPC/ML ultra-high throughput</td><td>⚠️ Up to 3 GB/s</td><td>⚠️ API latency</td><td>✅ Hundreds of GB/s</td></tr>
+    <tr><td>Windows clients (SMB)</td><td>❌ Linux/NFS only</td><td>✅ Via S3 API</td><td>❌ Linux only</td></tr>
+    <tr><td>Lowest storage cost</td><td>⚠️ $0.025/GB (IA)</td><td>✅ $0.023/GB (Standard)</td><td>⚠️ $0.14/GB-month</td></tr>
+    <tr><td>Serverless / no capacity planning</td><td>✅ Fully elastic</td><td>✅ Fully elastic</td><td>❌ Provisioned capacity</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+    <h3>You Now Have a COMPLETE Deep Dive into Amazon EFS!</h3>
+    <p>EFS vs EBS vs S3 vs FSx · four storage classes (Standard, Standard-IA, One Zone, One Zone-IA) · Intelligent-Tiering lifecycle with IA and Archive · General Purpose vs Max I/O performance modes · Elastic vs Bursting vs Provisioned throughput · burst credit model · multi-AZ regional architecture SVG diagram · mount targets (one per AZ) · access points (root dir + POSIX identity) · mounting with amazon-efs-utils and TLS · ECS/EKS/Lambda integration · security groups on port 2049 · file system IAM policy · KMS encryption at rest and in transit · AWS Backup and EFS Replication · lifecycle cost savings example · AWS Console walkthrough (every field) · 3 C# SDK patterns (create+lifecycle, mount targets+access points, describe+metrics) · best practices and top mistakes</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--efs-d);">Your EFS file system is now production-ready — shared, elastic, encrypted, and cost-optimised! 🗂️🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
