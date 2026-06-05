@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- PWA hints — improves background audio on mobile -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#faf9f7">
 <title>Indhu's Coding Corner — Tech Reference & Guides</title>
 <meta name="description" content="Practical tech guides on .NET, AWS, Cloud, Design Patterns and more by Indhumathi Baskar.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -604,6 +609,9 @@ footer {
       <button class="tts-btn nav-btn" onclick="ttsStep(5)" title="Skip 5 sentences">⏭</button>
       <span class="tts-counter" id="ttsCounter">0 / 0</span>
     </div>
+    <div id="ttsBgTip" style="font-size:.68rem;color:var(--muted);background:var(--surface);border-radius:5px;padding:6px 9px;line-height:1.5;display:none;">
+      📱 <strong>Screen-lock tip:</strong> For uninterrupted audio when screen turns off, open this site in Chrome → tap <strong>⋮ → Add to Home Screen</strong> (Android) or use the Share → Add to Home Screen (iOS). Then open from your home screen icon.
+    </div>
     <div class="tts-speed-row">
       <span class="tts-speed-label">Speed:</span>
       <div class="tts-speed-btns" id="ttsSpeedBtns">
@@ -1007,7 +1015,7 @@ window.toggleDrawerTopic = function(el) {
 document.getElementById('guideView').style.display = '';
 
 // ═══════════════════════════════════════════════════════════════
-// 🔊 TEXT-TO-SPEECH ENGINE — centralised, works for every guide
+// 🔊 TEXT-TO-SPEECH ENGINE — screen-lock safe, works for every guide
 // ═══════════════════════════════════════════════════════════════
 const TTS = (() => {
   let sentences    = [];
@@ -1016,6 +1024,76 @@ const TTS = (() => {
   let speed        = 1;
   let utterance    = null;
   let minimised    = false;
+
+  // ── Web Audio API keepalive ────────────────────────────────────
+  // Plays a near-silent 1 Hz tone via AudioContext to keep the
+  // browser audio session alive when the screen locks (Android Chrome).
+  // Without this, speechSynthesis is killed as soon as the screen turns off.
+  let audioCtx      = null;
+  let kaNode        = null;
+  let kaGain        = null;
+
+  function startKeepAlive() {
+    try {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        kaGain   = audioCtx.createGain();
+        kaGain.gain.value = 0.001; // virtually silent
+        kaGain.connect(audioCtx.destination);
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (kaNode) { try { kaNode.stop(); } catch(e){} }
+      kaNode            = audioCtx.createOscillator();
+      kaNode.type       = 'sine';
+      kaNode.frequency.value = 1; // 1 Hz — completely inaudible
+      kaNode.connect(kaGain);
+      kaNode.start();
+    } catch(e) { /* AudioContext unavailable (iOS strict mode) */ }
+  }
+
+  function stopKeepAlive() {
+    try { if (kaNode) { kaNode.stop(); kaNode = null; } } catch(e){}
+    try { if (audioCtx) audioCtx.suspend(); } catch(e){}
+  }
+
+  // ── Visibility-change recovery ─────────────────────────────────
+  // Chrome kills speechSynthesis when the page is hidden (screen off).
+  // We detect this and restart the current sentence automatically.
+  let visTimer = null;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      if (playing) {
+        // Give Chrome 1.5s — if speech is gone, restart it
+        visTimer = setTimeout(() => {
+          if (playing && !window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+            speak();
+          }
+        }, 1500);
+      }
+    } else {
+      clearTimeout(visTimer);
+      if (playing && window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    }
+  });
+
+  // ── Watchdog — fixes Chrome's ~15s speech timeout on Android ──
+  // Chrome silently stops speaking after ~15s on some Android versions.
+  // We poll every 10s and restart if synthesis died unexpectedly.
+  let watchdog = null;
+  function startWatchdog() {
+    clearInterval(watchdog);
+    watchdog = setInterval(() => {
+      if (!playing) { clearInterval(watchdog); return; }
+      if (!window.speechSynthesis.speaking && !window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+        speak();
+      }
+    }, 10_000);
+  }
+  function stopWatchdog() { clearInterval(watchdog); watchdog = null; }
 
   const player    = () => document.getElementById('ttsPlayer');
   const trigger   = () => document.getElementById('ttsTrigger');
@@ -1115,6 +1193,8 @@ const TTS = (() => {
       playing = true;
       playBtn().textContent = '⏸';
       dot().classList.add('active');
+      startKeepAlive();  // keep audio session alive (screen-lock fix)
+      startWatchdog();   // detect unexpected speech death (Android fix)
       updateUI();
     };
     utterance.onend = () => {
@@ -1124,7 +1204,11 @@ const TTS = (() => {
         else stop();
       }
     };
-    utterance.onerror = () => { playing && stop(); };
+    utterance.onerror = (e) => {
+      // 'interrupted' is normal between sentences — don't stop
+      if (e.error === 'interrupted') return;
+      if (playing) stop();
+    };
 
     window.speechSynthesis.speak(utterance);
   }
@@ -1149,6 +1233,8 @@ const TTS = (() => {
   function stop() {
     playing = false;
     window.speechSynthesis.cancel();
+    stopKeepAlive();
+    stopWatchdog();
     if (playBtn()) { playBtn().textContent = '▶'; }
     if (dot())     { dot().classList.remove('active'); }
     updateUI();
@@ -1202,6 +1288,12 @@ const TTS = (() => {
     minimised = false;
     player().classList.remove('minimized');
     document.getElementById('ttsMinBtn').textContent = '—';
+    // Show screen-lock tip for 8 seconds on first open
+    const tip = document.getElementById('ttsBgTip');
+    if (tip) {
+      tip.style.display = 'block';
+      setTimeout(() => { tip.style.display = 'none'; }, 8000);
+    }
   }
 
   function close() {
