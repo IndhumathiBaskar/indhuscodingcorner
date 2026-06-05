@@ -1104,53 +1104,123 @@ const TTS = (() => {
   const dot       = () => document.getElementById('ttsDot');
 
   // ── Extract readable text — ACTIVE TAB ONLY ──────────────────
-  function extractSentences() {
+  // ── Segment types ─────────────────────────────────────────────
+  // Each segment: { text, type, rate, pauseAfter }
+  // type: 'heading' | 'subheading' | 'bullet' | 'para' | 'label'
+  // rate: multiplier applied ON TOP of user speed setting
+  // pauseAfter: ms of silence after this segment finishes
+
+  function extractSegments() {
     const frame = document.getElementById('guideFrame');
     let root = null;
     try {
       const doc = frame.contentDocument || frame.contentWindow.document;
-      // Only read the currently visible tab panel
       root = doc.querySelector('.tab-panel.active .section') ||
              doc.querySelector('.tab-panel.active') ||
              doc.querySelector('.section') ||
              doc.body;
     } catch(e) {
-      sentEl().textContent = '⚠️ Cannot read this guide (cross-origin).';
+      sentEl().textContent = 'Cannot read this guide.';
       return [];
     }
 
-    // Walk text nodes inside active tab only — skip code/pre/script/style/svg
-    let text = '';
+    const segments = [];
+
+    // SKIP tags — anything inside these is ignored
+    const SKIP_TAGS = new Set(['SCRIPT','STYLE','CODE','PRE','NOSCRIPT','SVG',
+                                'BUTTON','NAV','FOOTER']);
+
+    function isInsideSkip(el) {
+      let p = el;
+      while (p) {
+        if (SKIP_TAGS.has(p.tagName?.toUpperCase())) return true;
+        p = p.parentElement;
+      }
+      return false;
+    }
+
+    // Walk all relevant block elements in DOM order
     try {
-      const doc2   = document.getElementById('guideFrame').contentDocument
-                  || document.getElementById('guideFrame').contentWindow.document;
-      const walker = doc2.createTreeWalker(
-        root,
-        NodeFilter.SHOW_TEXT,
-        {
-          acceptNode(node) {
-            const tag = node.parentElement?.tagName?.toUpperCase();
-            if (['SCRIPT','STYLE','CODE','PRE','NOSCRIPT','SVG'].includes(tag)) return NodeFilter.FILTER_REJECT;
-            // Also skip if any ancestor is CODE or PRE
-            let el = node.parentElement;
-            while (el) {
-              const t = el.tagName?.toUpperCase();
-              if (t === 'CODE' || t === 'PRE') return NodeFilter.FILTER_REJECT;
-              el = el.parentElement;
-            }
-            if (!node.textContent.trim()) return NodeFilter.FILTER_REJECT;
-            return NodeFilter.FILTER_ACCEPT;
-          }
-        }
+      const doc2 = frame.contentDocument || frame.contentWindow.document;
+      // Select every meaningful block element in reading order
+      const blocks = root.querySelectorAll(
+        'h1,h2,h3,h4,h5,h6,p,li,td,th,dt,dd,.flow-node-title,.step-body'
       );
-      while (walker.nextNode()) text += ' ' + walker.currentNode.textContent;
+
+      blocks.forEach(el => {
+        if (isInsideSkip(el)) return;
+
+        const tag  = el.tagName.toUpperCase();
+        const raw  = (el.innerText || el.textContent || '').replace(/\s+/g,' ').trim();
+        if (!raw || raw.length < 3) return;
+
+        // Determine segment type and speech properties
+        let type       = 'para';
+        let rateMod    = 1.0;    // multiplied with user speed
+        let pauseAfter = 250;    // ms gap after this segment
+
+        if (['H1','H2'].includes(tag)) {
+          type       = 'heading';
+          rateMod    = 0.82;   // noticeably slower for main headings
+          pauseAfter = 700;    // long pause — new major topic
+        } else if (['H3','H4','H5','H6'].includes(tag) ||
+                   el.classList.contains('flow-node-title') ||
+                   el.classList.contains('step-body')) {
+          type       = 'subheading';
+          rateMod    = 0.88;   // slightly slower
+          pauseAfter = 500;    // medium pause — new sub-topic
+        } else if (tag === 'LI') {
+          type       = 'bullet';
+          rateMod    = 0.93;   // just a touch slower than paragraphs
+          pauseAfter = 380;    // clear pause between each bullet point
+        } else if (tag === 'TH') {
+          type       = 'label';
+          rateMod    = 0.88;
+          pauseAfter = 300;
+        } else if (tag === 'TD') {
+          type       = 'para';
+          rateMod    = 1.0;
+          pauseAfter = 220;
+        } else {
+          // p, dd, dt, default
+          type       = 'para';
+          rateMod    = 1.0;
+          pauseAfter = 280;
+        }
+
+        // For headings: keep as one segment (don't split by sentence)
+        if (type === 'heading' || type === 'subheading' || type === 'label') {
+          segments.push({ text: raw, type, rateMod, pauseAfter });
+          return;
+        }
+
+        // For bullets: keep as one segment too (each bullet = one speech unit)
+        if (type === 'bullet') {
+          segments.push({ text: raw, type, rateMod, pauseAfter });
+          return;
+        }
+
+        // For paragraphs/table cells: split by sentence for natural flow
+        const sentParts = raw.match(/[^.!?]+[.!?]+/g) || [raw];
+        sentParts.forEach((s, i) => {
+          const t = s.trim();
+          if (t.length < 5) return;
+          segments.push({
+            text:       t,
+            type,
+            rateMod,
+            pauseAfter: i === sentParts.length - 1 ? pauseAfter : 150
+          });
+        });
+      });
+
     } catch(e) { return []; }
 
-    // Split into clean sentences
-    const raw   = text.replace(/\s+/g, ' ').trim();
-    const parts = raw.match(/[^.!?]+[.!?]+/g) || [raw];
-    return parts.map(s => s.trim()).filter(s => s.length > 6);
+    return segments.filter(s => s.text.length > 3);
   }
+
+  // Keep old name as alias so watchTabSwitches still works
+  function extractSentences() { return extractSegments(); }
 
   // ── Watch tab-btn clicks inside the iframe → reload sentences ─
   function watchTabSwitches() {
@@ -1198,32 +1268,56 @@ const TTS = (() => {
       .trim();
   }
 
-  // ── Speak one sentence then auto-advance ─────────────────────
+  // ── Speak one segment — uses per-segment rate and pauseAfter ─
   function speak() {
     if (!sentences.length || cursor >= sentences.length) { stop(); return; }
     window.speechSynthesis.cancel();
 
-    utterance              = new SpeechSynthesisUtterance(cleanForSpeech(sentences[cursor]));
-    utterance.rate         = speed;
-    utterance.lang         = 'en-US';
+    const seg  = sentences[cursor];
+
+    // seg can be a plain string (old format) or a {text,rateMod,pauseAfter} object
+    const rawText    = typeof seg === 'string' ? seg : seg.text;
+    const rateMod    = typeof seg === 'string' ? 1.0 : (seg.rateMod    ?? 1.0);
+    const pauseAfter = typeof seg === 'string' ? 250 : (seg.pauseAfter ?? 250);
+    const segType    = typeof seg === 'string' ? 'para' : (seg.type ?? 'para');
+
+    const cleanText  = cleanForSpeech(rawText);
+    if (!cleanText) {
+      // Empty after cleaning — skip silently
+      cursor++;
+      if (cursor < sentences.length) speak();
+      else stop();
+      return;
+    }
+
+    utterance        = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate   = Math.max(0.1, Math.min(10, speed * rateMod));
+    utterance.lang   = 'en-US';
+
+    // Slightly lower pitch for headings so they sound authoritative
+    utterance.pitch  = segType === 'heading'    ? 0.85 :
+                       segType === 'subheading' ? 0.92 : 1.0;
 
     utterance.onstart = () => {
       playing = true;
       playBtn().textContent = '⏸';
       dot().classList.add('active');
-      startKeepAlive();  // keep audio session alive (screen-lock fix)
-      startWatchdog();   // detect unexpected speech death (Android fix)
+      startKeepAlive();
+      startWatchdog();
       updateUI();
     };
     utterance.onend = () => {
-      if (playing) {
-        cursor++;
-        if (cursor < sentences.length) speak();
-        else stop();
+      if (!playing) return;
+      cursor++;
+      if (cursor >= sentences.length) { stop(); return; }
+      // Insert the pauseAfter gap before speaking the next segment
+      if (pauseAfter > 0) {
+        setTimeout(() => { if (playing) speak(); }, pauseAfter);
+      } else {
+        speak();
       }
     };
     utterance.onerror = (e) => {
-      // 'interrupted' is normal between sentences — don't stop
       if (e.error === 'interrupted') return;
       if (playing) stop();
     };
@@ -1287,12 +1381,32 @@ const TTS = (() => {
   }
 
   // ── UI sync ──────────────────────────────────────────────────
+  const TYPE_BADGE = {
+    heading:    { label: 'HEADING',     bg: 'rgba(26,138,106,.15)',  color: '#0d5c47' },
+    subheading: { label: 'TOPIC',       bg: 'rgba(42,77,176,.12)',   color: '#2a4db0' },
+    bullet:     { label: 'POINT',       bg: 'rgba(108,71,212,.12)',  color: '#5a37c4' },
+    para:       { label: 'PARAGRAPH',   bg: 'rgba(100,100,80,.10)',  color: '#5a5a4a' },
+    label:      { label: 'LABEL',       bg: 'rgba(212,135,42,.12)',  color: '#a36020' },
+  };
+
   function updateUI() {
     const total = sentences.length;
-    counter().textContent = total ? `${cursor + 1} / ${total}` : '0 / 0';
-    progress().style.width = total ? `${((cursor) / total) * 100}%` : '0%';
-    if (sentences[cursor]) {
-      sentEl().textContent = cleanForSpeech(sentences[cursor]);
+    counter().textContent  = total ? `${cursor + 1} / ${total}` : '0 / 0';
+    progress().style.width = total ? `${(cursor / total) * 100}%` : '0%';
+
+    const seg = sentences[cursor];
+    if (seg) {
+      const rawText  = typeof seg === 'string' ? seg : seg.text;
+      const segType  = typeof seg === 'string' ? 'para' : (seg.type ?? 'para');
+      const badge    = TYPE_BADGE[segType] || TYPE_BADGE.para;
+
+      // Show type badge + clean text
+      sentEl().innerHTML =
+        `<span style="display:inline-block;font-size:.6rem;font-weight:700;
+          letter-spacing:.06em;text-transform:uppercase;padding:1px 6px;
+          border-radius:3px;margin-right:6px;background:${badge.bg};
+          color:${badge.color}">${badge.label}</span>` +
+        cleanForSpeech(rawText);
     } else if (!total) {
       sentEl().textContent = 'Press ▶ to start reading the current guide.';
     }
