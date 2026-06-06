@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Depth-First Search (DFS) — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#2a7a4a;--pc-l:#d4f0e2;--pc-d:#0d5230;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --forest:#1e6b3c;--forest-l:#d2f0e0;
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#080c12;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#d2f0e0 0%,#a8dfc0 45%,#75c49a 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'🌲';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.09;pointer-events:none;}
+.header::after{content:'🔍';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.07;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TAB NAV */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* FLOW DIAGRAM */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#e8f8f0);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(42,122,74,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+
+/* GRIDS */
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+
+/* CALLOUTS */
+.tip{background:var(--pc-l);border:1px solid rgba(42,122,74,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #0d1520;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#60a8d4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(42,122,74,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+
+/* LISTS */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+
+/* TRAVERSAL VISUAL */
+.traversal-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:14px 0;box-shadow:var(--sh-lg);}
+.traversal-vis-title{font-weight:700;font-size:.84rem;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.tree-canvas-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.stack-trace{display:flex;flex-direction:column;gap:4px;margin-top:12px;}
+.stack-row{display:flex;align-items:center;gap:8px;font-size:.75rem;}
+.stack-step-num{background:var(--pc-d);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.stack-label{color:var(--muted);min-width:80px;font-size:.72rem;}
+.stack-pills{display:flex;gap:4px;flex-wrap:wrap;}
+.pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:700;font-size:.73rem;border:1.5px solid;}
+.pill-active{background:var(--pc-l);border-color:var(--pc-d);color:var(--pc-d);}
+.pill-visited{background:var(--surface);border-color:var(--border2);color:var(--muted);text-decoration:line-through;}
+.pill-stack{background:var(--amber-l);border-color:var(--amber);color:var(--amber);}
+.pill-result{background:#fff;border-color:var(--border);color:var(--text);}
+.arrow-right{color:var(--border2);font-size:.9rem;}
+
+/* REAL WORLD CARD */
+.rw-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:10px 0;box-shadow:var(--sh);}
+.rw-header{background:linear-gradient(90deg,var(--pc-l),#eef8f4);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.rw-emoji{font-size:1.3rem;}
+.rw-title{font-weight:700;font-size:.86rem;color:var(--text);}
+.rw-subtitle{font-size:.72rem;color:var(--muted);margin-left:auto;}
+.rw-body{padding:12px 14px;}
+.rw-body p{color:var(--muted);font-size:.82rem;margin:0 0 6px;}
+.rw-body strong{color:var(--text2);}
+
+/* COMPARE GRID */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--green-l));border:1px solid rgba(42,122,74,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+
+/* INTERACTIVE CANVAS */
+#dfs-canvas{display:block;width:100%;max-width:600px;margin:0 auto;border-radius:var(--r);}
+.canvas-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.ctrl-btn{background:var(--pc-d);color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;transition:background .15s;}
+.ctrl-btn:hover{background:var(--forest);}
+.ctrl-btn.secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.secondary:hover{background:var(--border);}
+.vis-log{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);background:var(--surface);padding:10px;border-radius:var(--r);min-height:32px;border:1px solid var(--border);}
+.vis-log span{color:var(--pc-d);font-weight:600;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .stack-pills .pill{width:24px;height:24px;font-size:.65rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>🌲 <span>Depth-First Search (DFS)</span> — Complete Guide</h1>
+    <p>Concepts · Real-World Analogies · Tree/Graph Traversal · Recursive &amp; Iterative · C# Examples · Beginner → Expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('what',this)">① What is DFS?</button>
+      <button class="tab-btn" onclick="T('concepts',this)">② Core Concepts</button>
+      <button class="tab-btn" onclick="T('why',this)">③ Why &amp; When</button>
+      <button class="tab-btn" onclick="T('realworld',this)">④ Real-World</button>
+      <button class="tab-btn" onclick="T('howworks',this)">⑤ How It Works</button>
+      <button class="tab-btn" onclick="T('traversal',this)">⑥ Tree Traversal</button>
+      <button class="tab-btn" onclick="T('visual',this)">⑦ Interactive</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# Code</button>
+      <button class="tab-btn" onclick="T('cheatsheet',this)">⑨ Cheat Sheet</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① WHAT IS DFS -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🌲 What is Depth-First Search?</h2>
+  <p>Let's start from zero. No jargon. Just plain understanding.</p>
+
+  <div class="tip">
+    <h4>💡 DFS in One Sentence</h4>
+    <p>DFS is a way to <strong>explore or search</strong> through a structure (like a tree or graph) by going as <strong>deep as possible</strong> into one path before coming back and trying the next path.</p>
+  </div>
+
+  <h3>🏠 The House Exploration Analogy</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🏠</span><span class="rw-title">Imagine you're exploring a big old house</span></div>
+    <div class="rw-body">
+      <p>You enter the house. You see <strong>3 doors</strong>. You pick door 1 and walk in. Inside, there are <strong>2 more doors</strong>. You pick the first one. It leads to a <strong>room with no doors</strong> — dead end. You come back. Try the second door. Another room. Come back. Now you've finished door 1 completely. Go back to the hallway. Try door 2. Repeat.</p>
+      <p><strong>That is DFS</strong> — you go as deep as possible into one branch, and only come back when you hit a dead end.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🆚</span><span class="rw-title">DFS vs BFS — The maze analogy</span></div>
+    <div class="rw-body">
+      <p><strong>DFS (Depth-First):</strong> You pick one corridor of a maze and follow it all the way until you hit a wall. Then you backtrack and try the next corridor. You go deep first.</p>
+      <p><strong>BFS (Breadth-First):</strong> You check every corridor that's one step away, then every corridor two steps away, then three. You go wide first.</p>
+      <p><em>DFS = "Go deep, explore fully, come back." &nbsp; BFS = "Check all neighbours first, then go further."</em></p>
+    </div>
+  </div>
+
+  <h3>What "structures" does DFS work on?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌳 Trees</h4>
+      <ul>
+        <li>Hierarchical structure — parent → children</li>
+        <li>No cycles — every node has exactly one parent (except root)</li>
+        <li>Examples: file system, HTML DOM, org chart, family tree</li>
+        <li>DFS on trees: go left child all the way down, then right</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🕸️ Graphs</h4>
+      <ul>
+        <li>Network of nodes connected by edges</li>
+        <li>Can have cycles — need to track "visited" nodes</li>
+        <li>Examples: road map, social network, internet links, dependencies</li>
+        <li>DFS on graphs: visit node, mark visited, explore all unvisited neighbours</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Terms to Know First</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Term</th><th>What it means</th><th>Simple example</th></tr>
+    <tr><td><strong>Node / Vertex</strong></td><td>A single point/item in the structure</td><td>A room in the house, a city on a map</td></tr>
+    <tr><td><strong>Edge</strong></td><td>A connection between two nodes</td><td>A door between rooms, a road between cities</td></tr>
+    <tr><td><strong>Root</strong></td><td>The starting node (in a tree, the top node)</td><td>The entrance of the house, the CEO of a company</td></tr>
+    <tr><td><strong>Leaf</strong></td><td>A node with no children (dead end)</td><td>A room with no other doors</td></tr>
+    <tr><td><strong>Path</strong></td><td>A sequence of nodes from one to another</td><td>The route you walked through the house</td></tr>
+    <tr><td><strong>Visited</strong></td><td>Nodes already explored — don't revisit</td><td>Rooms you've already entered</td></tr>
+    <tr><td><strong>Backtrack</strong></td><td>Going back when you hit a dead end</td><td>Coming back from a room with no exits</td></tr>
+    <tr><td><strong>Stack</strong></td><td>The "memory" of where you've been (last in, first out)</td><td>Your mental breadcrumb trail in the house</td></tr>
+    <tr><td><strong>Recursion</strong></td><td>A function that calls itself — DFS's natural fit</td><td>Each room exploration calls the same exploration method</td></tr>
+  </table></div>
+
+  <div class="info">
+    <h4>📚 Before You Continue</h4>
+    <p>If you're brand new to trees and graphs — don't worry! Each concept will be explained step by step as we go through the tabs. Start with Tab ② Core Concepts to build your foundation.</p>
+  </div>
+</div></div>
+
+
+<!-- ② CORE CONCEPTS -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🧱 Core Concepts — Build Your Foundation</h2>
+  <p>Before DFS makes full sense, you need to understand the structures it works on. Let's build them from scratch.</p>
+
+  <h3>Part 1: What is a Tree?</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🌳</span><span class="rw-title">Family Tree — the easiest mental model</span></div>
+    <div class="rw-body">
+      <p>Think of your family tree. <strong>Your grandparent is the root</strong>. They have children (your parent, uncle/aunt). Each of them have their own children (you, your cousins). Nobody connects back upward — it's a one-way, top-down structure. That's a tree.</p>
+    </div>
+  </div>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🌳 A Simple Binary Tree — visualised</div>
+    <div class="flow-diagram-body">
+      <svg viewBox="0 0 480 220" style="width:100%;max-width:480px;display:block;margin:0 auto;" fill="none">
+        <!-- Root -->
+        <circle cx="240" cy="35" r="22" fill="#d2f0e0" stroke="#0d5230" stroke-width="1.5"/>
+        <text x="240" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#0d5230">A</text>
+        <text x="240" y="10" text-anchor="middle" font-size="9" fill="#7a7a6a">Root</text>
+        <!-- Level 1 -->
+        <line x1="240" y1="57" x2="130" y2="93" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="240" y1="57" x2="350" y2="93" stroke="#75c49a" stroke-width="1.5"/>
+        <circle cx="130" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="130" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#2a4db0">B</text>
+        <circle cx="350" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="350" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#2a4db0">C</text>
+        <!-- Level 2 -->
+        <line x1="130" y1="132" x2="70" y2="168" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="130" y1="132" x2="190" y2="168" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="350" y1="132" x2="310" y2="168" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="350" y1="132" x2="420" y2="168" stroke="#75c49a" stroke-width="1.5"/>
+        <circle cx="70" cy="185" r="20" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="70" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">D</text>
+        <circle cx="190" cy="185" r="20" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="190" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">E</text>
+        <circle cx="310" cy="185" r="20" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="310" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">F</text>
+        <circle cx="420" cy="185" r="20" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="420" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">G</text>
+        <!-- Labels -->
+        <text x="70" y="212" text-anchor="middle" font-size="8" fill="#7a7a6a">Leaf</text>
+        <text x="190" y="212" text-anchor="middle" font-size="8" fill="#7a7a6a">Leaf</text>
+        <text x="310" y="212" text-anchor="middle" font-size="8" fill="#7a7a6a">Leaf</text>
+        <text x="420" y="212" text-anchor="middle" font-size="8" fill="#7a7a6a">Leaf</text>
+        <text x="130" y="78" text-anchor="middle" font-size="8" fill="#7a7a6a">Left</text>
+        <text x="350" y="78" text-anchor="middle" font-size="8" fill="#7a7a6a">Right</text>
+      </svg>
+      <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:8px;">
+        <span style="font-size:.72rem;color:var(--muted)"><span style="color:var(--pc-d);font-weight:700">■</span> Root (A) — top level</span>
+        <span style="font-size:.72rem;color:var(--muted)"><span style="color:var(--blue);font-weight:700">■</span> Internal nodes (B, C) — have children</span>
+        <span style="font-size:.72rem;color:var(--muted)"><span style="color:var(--amber);font-weight:700">■</span> Leaves (D,E,F,G) — no children</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Part 2: What is a Graph?</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🕸️</span><span class="rw-title">Graph = Tree + extra connections (and cycles!)</span></div>
+    <div class="rw-body">
+      <p>A graph is like a map of cities and roads. <strong>Cities = nodes.</strong> <strong>Roads = edges.</strong> Unlike trees, in a graph you can have roads looping back — City A → City B → City C → back to City A. That's a cycle. Graphs can be <strong>directed</strong> (one-way roads) or <strong>undirected</strong> (two-way roads).</p>
+    </div>
+  </div>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🕸️ Graph with Cycles — Chennai Metro Example</div>
+    <div class="flow-diagram-body">
+      <svg viewBox="0 0 420 200" style="width:100%;max-width:420px;display:block;margin:0 auto;" fill="none">
+        <circle cx="210" cy="40" r="22" fill="#d2f0e0" stroke="#0d5230" stroke-width="1.5"/>
+        <text x="210" y="45" text-anchor="middle" font-size="10" font-weight="700" fill="#0d5230">Airport</text>
+        <circle cx="90" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="90" y="115" text-anchor="middle" font-size="9" font-weight="700" fill="#2a4db0">Beach</text>
+        <circle cx="330" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="330" y="115" text-anchor="middle" font-size="9" font-weight="700" fill="#2a4db0">Mall</text>
+        <circle cx="210" cy="175" r="22" fill="#ede8fc" stroke="#6c47d4" stroke-width="1.5"/>
+        <text x="210" y="180" text-anchor="middle" font-size="9" font-weight="700" fill="#6c47d4">Station</text>
+        <line x1="210" y1="62" x2="100" y2="91" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="210" y1="62" x2="318" y2="91" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="101" y1="126" x2="190" y2="158" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="318" y1="126" x2="228" y2="158" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="112" y1="110" x2="308" y2="110" stroke="#c47a10" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="210" y="105" text-anchor="middle" font-size="8" fill="#c47a10">cycle edge</text>
+        <text x="140" y="72" text-anchor="middle" font-size="8" fill="#7a7a6a">road</text>
+        <text x="290" y="72" text-anchor="middle" font-size="8" fill="#7a7a6a">road</text>
+      </svg>
+      <p style="text-align:center;font-size:.72rem;color:var(--muted);margin-top:6px;">Unlike trees, graphs can have edges going in multiple directions — creating cycles. DFS needs a <code>visited</code> set to avoid infinite loops.</p>
+    </div>
+  </div>
+
+  <h3>Part 3: The Stack — DFS's secret weapon</h3>
+  <p>DFS uses a <strong>stack</strong> to remember where it came from. A stack is like a pile of plates — you add to the top, and remove from the top (<strong>Last In, First Out = LIFO</strong>).</p>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📚 Stack Operations</h4>
+      <ul>
+        <li><strong>Push</strong> — put item on top (enter a room)</li>
+        <li><strong>Pop</strong> — remove item from top (leave a room)</li>
+        <li><strong>Peek</strong> — look at top item without removing</li>
+        <li>DFS uses the stack (or recursion's call stack) to track path</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📞 Recursion = Implicit Stack</h4>
+      <ul>
+        <li>When a function calls itself, it uses the <em>call stack</em></li>
+        <li>Each recursive call is like "pushing" to the stack</li>
+        <li>When it returns, it "pops" back to the previous call</li>
+        <li>DFS naturally maps to recursion — that's why they pair perfectly</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Part 4: Recursion — the most important concept</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🪞</span><span class="rw-title">Recursion = Russian nesting dolls</span></div>
+    <div class="rw-body">
+      <p>A <strong>Matryoshka doll</strong> contains a smaller version of itself inside. Open it → another doll. Open that → another. Until you reach the smallest one (base case). That's recursion. A function calls a <em>smaller version of itself</em> until it hits a stopping point.</p>
+      <p><strong>Base Case</strong> = the smallest doll (stop condition). <strong>Recursive Case</strong> = keep opening dolls. Without a base case → infinite loop = stack overflow!</p>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>🧠 Mental Model Summary</h4>
+    <p><strong>Tree/Graph</strong> = the structure you're exploring. <strong>Node</strong> = each item in it. <strong>Edge</strong> = connection between nodes. <strong>Stack</strong> = your memory of where you've been. <strong>Recursion</strong> = the elegant way to implement DFS. <strong>Visited set</strong> = don't go in circles.</p>
+  </div>
+</div></div>
+
+
+<!-- ③ WHY & WHEN -->
+<div id="tab-why" class="tab-panel"><div class="section">
+  <h2>🤔 Why DFS? When Should You Use It?</h2>
+
+  <div class="tip">
+    <h4>💡 Why DFS exists</h4>
+    <p>Many real-world problems involve <strong>hierarchical or connected data</strong>. You need a systematic way to visit every node exactly once, discover paths, detect cycles, or check reachability. DFS is one of the most efficient and elegant algorithms for all of these.</p>
+  </div>
+
+  <h3>When DFS is the RIGHT choice ✅</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Find any path</h4><p>Does a path exist from A to B? DFS finds it fast.</p></div>
+    <div class="icon-item"><span class="emoji">🌀</span><h4>Detect cycles</h4><p>Is there a circular dependency? DFS spots it.</p></div>
+    <div class="icon-item"><span class="emoji">🗺️</span><h4>Topological sort</h4><p>Order tasks with dependencies (build systems).</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Connected components</h4><p>Which nodes are connected to each other?</p></div>
+    <div class="icon-item"><span class="emoji">🧩</span><h4>Solve puzzles/mazes</h4><p>Try one path, backtrack, try another.</p></div>
+    <div class="icon-item"><span class="emoji">🌳</span><h4>Tree traversal</h4><p>Visit all nodes in a specific order (pre/in/post).</p></div>
+    <div class="icon-item"><span class="emoji">📁</span><h4>File system search</h4><p>Find a file deep inside nested folders.</p></div>
+    <div class="icon-item"><span class="emoji">🏗️</span><h4>Generate permutations</h4><p>Explore all combinations via backtracking.</p></div>
+    <div class="icon-item"><span class="emoji">🖧</span><h4>Web crawling</h4><p>Follow links deep into a website's structure.</p></div>
+  </div>
+
+  <h3>When DFS is NOT the best choice ❌</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>Why NOT DFS?</th><th>Use Instead</th></tr>
+    <tr><td>Find SHORTEST path in unweighted graph</td><td>DFS doesn't guarantee shortest path</td><td>BFS</td></tr>
+    <tr><td>Find nearest neighbour / closest node</td><td>DFS explores depth, not proximity</td><td>BFS</td></tr>
+    <tr><td>Very deep/infinite trees (deep recursion)</td><td>Risk of stack overflow</td><td>BFS or iterative DFS</td></tr>
+    <tr><td>Shortest weighted path</td><td>Doesn't account for edge weights</td><td>Dijkstra / A*</td></tr>
+    <tr><td>Level-order processing</td><td>DFS doesn't process by level</td><td>BFS</td></tr>
+  </table></div>
+
+  <h3>DFS vs BFS — Side by Side</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">🌲 DFS (Depth-First Search)</div>
+      <div class="compare-row"><span class="compare-label">Direction</span><span class="compare-val val-good">Goes deep first</span></div>
+      <div class="compare-row"><span class="compare-label">Data structure</span><span class="compare-val">Stack / Recursion</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val val-good">O(h) — tree height</span></div>
+      <div class="compare-row"><span class="compare-label">Shortest path?</span><span class="compare-val val-bad">No</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Paths, cycles, puzzles</span></div>
+      <div class="compare-row"><span class="compare-label">Natural code</span><span class="compare-val">Recursive</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">🌊 BFS (Breadth-First Search)</div>
+      <div class="compare-row"><span class="compare-label">Direction</span><span class="compare-val val-good">Goes wide first</span></div>
+      <div class="compare-row"><span class="compare-label">Data structure</span><span class="compare-val">Queue</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val val-warn">O(w) — tree width</span></div>
+      <div class="compare-row"><span class="compare-label">Shortest path?</span><span class="compare-val val-good">Yes (unweighted)</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Shortest path, levels</span></div>
+      <div class="compare-row"><span class="compare-label">Natural code</span><span class="compare-val">Iterative</span></div>
+    </div>
+  </div>
+
+  <h3>Time & Space Complexity</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Metric</th><th>Value</th><th>Explanation</th></tr>
+    <tr><td>Time Complexity</td><td><strong>O(V + E)</strong></td><td>V = vertices (nodes), E = edges. Every node and edge is visited once.</td></tr>
+    <tr><td>Space Complexity (recursive)</td><td><strong>O(h)</strong></td><td>h = height of tree. The call stack depth equals the deepest path.</td></tr>
+    <tr><td>Space Complexity (iterative)</td><td><strong>O(V)</strong></td><td>Worst case — all nodes on the explicit stack.</td></tr>
+    <tr><td>Worst case (unbalanced tree)</td><td><strong>O(n)</strong></td><td>A completely left-leaning tree has height n — deep recursion.</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Stack Overflow Warning</h4>
+    <p>Recursive DFS can hit a stack overflow on very deep trees (10,000+ levels). For such cases, use <strong>iterative DFS</strong> with an explicit stack — same algorithm, no recursion limit.</p>
+  </div>
+</div></div>
+
+
+<!-- ④ REAL WORLD -->
+<div id="tab-realworld" class="tab-panel"><div class="section">
+  <h2>🌍 Real-World Examples — Where You See DFS Daily</h2>
+  <p>DFS isn't just a textbook concept — it's running behind the scenes in systems you use every day.</p>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">📁</span><span class="rw-title">File System Search — Windows Explorer / Finder</span><span class="rw-subtitle">DFS in disguise</span></div>
+    <div class="rw-body">
+      <p>When you do <strong>Ctrl+F to search for a file</strong> in a folder, the OS uses DFS. It opens the first subfolder, goes into its subfolders, all the way down — then comes back up and tries the next subfolder. Your entire <code>C:\Users\Indhu\Documents</code> is a tree. DFS visits every folder depth-first.</p>
+      <p><strong>In code (Team Watson):</strong> Searching for all <code>.csproj</code> files in a solution folder — DFS through the directory tree.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🌐</span><span class="rw-title">Web Crawlers (Google Bot)</span><span class="rw-subtitle">Indexing the web</span></div>
+    <div class="rw-body">
+      <p>Google's crawler starts at a webpage, finds all links on it, follows the <strong>first link deeply</strong> into its sub-pages, sub-sub-pages, until it hits dead ends. Then backtracks and follows the next link. The entire web is a massive graph — DFS is one of the traversal strategies used to index it.</p>
+      <p><strong>Visited set = required!</strong> Without it, the crawler would loop forever between mutually linked pages.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🏗️</span><span class="rw-title">Build Systems (MSBuild, npm, NuGet)</span><span class="rw-subtitle">Dependency resolution</span></div>
+    <div class="rw-body">
+      <p>Your C# project depends on <strong>Package A → Package B → Package C</strong>. Before building, the system must resolve all dependencies in the right order. It uses DFS to traverse the dependency graph. <strong>Topological sort</strong> (a DFS variant) ensures Package C is built before B, B before A.</p>
+      <p><strong>Cycle detection via DFS:</strong> If Package A depends on Package B which depends back on Package A — that's a circular dependency. DFS catches it and throws an error.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🧩</span><span class="rw-title">Sudoku / Puzzle Solvers</span><span class="rw-subtitle">Backtracking = DFS</span></div>
+    <div class="rw-body">
+      <p>Solving Sudoku programmatically uses DFS + backtracking. Try placing 1 in cell (0,0). Go to next empty cell. Try 1. Conflict? Try 2. Still conflict? Backtrack — go back to (0,0) and try 2. Continue. This "try → fail → backtrack → try next" pattern is pure DFS on a decision tree.</p>
+      <p><strong>Chess AI, word search games, N-Queens problem</strong> — all use this same DFS backtracking approach.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🗺️</span><span class="rw-title">GPS Navigation — Route Discovery</span><span class="rw-subtitle">Reachability check</span></div>
+    <div class="rw-body">
+      <p>Before calculating the shortest path, apps like Google Maps first check: <strong>"Is there ANY route from A to B?"</strong> DFS answers this quickly. Start at location A, explore roads, go deep — if you reach B, a path exists. Also used to find all cities reachable from a given city (flood-fill style).</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🖧</span><span class="rw-title">Network Topology Analysis</span><span class="rw-subtitle">AWS VPC / Team Watson</span></div>
+    <div class="rw-body">
+      <p>In AWS, checking if a resource in VPC-A can reach a resource in VPC-B through peering connections — that's a graph reachability problem. DFS traverses the network graph to determine connectivity. Also used to find <strong>strongly connected components</strong> — groups of services that can all communicate with each other.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🌳</span><span class="rw-title">HTML DOM Parsing</span><span class="rw-subtitle">Every browser does this</span></div>
+    <div class="rw-body">
+      <p>Your browser parses HTML into a tree (the DOM). <code>&lt;html&gt; → &lt;body&gt; → &lt;div&gt; → &lt;p&gt;</code>. DFS is used to traverse this tree for operations like <code>getElementById</code>, CSS selector matching, rendering, and JavaScript DOM manipulation. Even React's virtual DOM diffing uses tree traversal algorithms rooted in DFS.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🎮</span><span class="rw-title">Game Development — Fog of War / Pathfinding</span><span class="rw-subtitle">Map exploration</span></div>
+    <div class="rw-body">
+      <p>In strategy games, "fog of war" reveals areas as your unit explores. The map is a grid graph. DFS determines all connected visible cells from your current position. Also used in procedural dungeon generation — the game generates one corridor deeply before branching.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑤ HOW IT WORKS -->
+<div id="tab-howworks" class="tab-panel"><div class="section">
+  <h2>⚙️ How DFS Works — Step by Step</h2>
+  <p>Let's trace through DFS manually, step by step, with no guessing.</p>
+
+  <h3>DFS Algorithm — Plain English</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📋 DFS Algorithm Flow</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc"><div class="flow-node-title">🟢 Start at a node</div><ul class="flow-items"><li>Mark it as visited</li><li>Add it to your path / result</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-blue"><div class="flow-node-title">🔍 Look at this node's neighbours</div><ul class="flow-items"><li>Get the list of connected nodes (children / adjacent)</li><li>For each unvisited neighbour...</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">🔁 Recursively visit the neighbour</div><ul class="flow-items"><li>Call DFS on that neighbour</li><li>This goes deep into that branch completely</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-amber"><div class="flow-node-title">⬅️ Backtrack when done</div><ul class="flow-items"><li>All neighbours explored? Return to the previous node</li><li>Continue with next unvisited neighbour there</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-purple"><div class="flow-node-title">✅ Done!</div><ul class="flow-items"><li>When all nodes reachable from start are visited, DFS is complete</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Manual Trace — Graph DFS Example</h3>
+  <p>Graph: A connects to B, C. B connects to D, E. C connects to F.</p>
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">🔢 DFS Trace: Starting from A</div>
+    <div class="stack-trace">
+      <div class="stack-row">
+        <div class="stack-step-num">1</div>
+        <span class="stack-label">Visit A</span>
+        <div class="stack-pills">
+          <span class="pill pill-active">A</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A] &nbsp; Visited: {A} &nbsp; Result: [A]</span>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-step-num">2</div>
+        <span class="stack-label">Go to B</span>
+        <div class="stack-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-active">B</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A,B] &nbsp; Visited: {A,B} &nbsp; Result: [A,B]</span>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-step-num">3</div>
+        <span class="stack-label">Go to D</span>
+        <div class="stack-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-visited">B</span>
+          <span class="pill pill-active">D</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A,B,D] &nbsp; D is a leaf → backtrack</span>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-step-num">4</div>
+        <span class="stack-label">Back to B → E</span>
+        <div class="stack-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-visited">B</span>
+          <span class="pill pill-visited">D</span>
+          <span class="pill pill-active">E</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A,B,E] &nbsp; E is a leaf → backtrack</span>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-step-num">5</div>
+        <span class="stack-label">Back to A → C</span>
+        <div class="stack-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-visited">B</span>
+          <span class="pill pill-active">C</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A,C] &nbsp; Visited: {A,B,C,D,E}</span>
+        </div>
+      </div>
+      <div class="stack-row">
+        <div class="stack-step-num">6</div>
+        <span class="stack-label">Go to F</span>
+        <div class="stack-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-visited">C</span>
+          <span class="pill pill-active">F</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Stack: [A,C,F] &nbsp; F is leaf → done!</span>
+        </div>
+      </div>
+      <div style="margin-top:10px;padding:10px;background:var(--pc-l);border-radius:var(--r);font-size:.8rem;color:var(--pc-d);font-weight:600;">
+        ✅ DFS Order: A → B → D → E → C → F
+      </div>
+    </div>
+  </div>
+
+  <h3>Pseudocode — The Blueprint</h3>
+  <div class="code-block">
+    <span class="code-label">pseudocode — dfs algorithm</span>
+    <pre><span class="fn">DFS</span>(<span class="tp">node</span>, <span class="tp">visited</span>):
+    <span class="cm">// Base case: if null or already visited, stop</span>
+    <span class="kw">if</span> node <span class="kw">is</span> null <span class="kw">OR</span> node <span class="kw">in</span> visited:
+        <span class="kw">return</span>
+
+    <span class="cm">// Mark as visited</span>
+    visited.<span class="fn">add</span>(node)
+
+    <span class="cm">// Process this node (print, store, check, etc.)</span>
+    <span class="fn">process</span>(node)
+
+    <span class="cm">// Recurse into each unvisited neighbour</span>
+    <span class="kw">for each</span> neighbour <span class="kw">in</span> node.neighbours:
+        <span class="fn">DFS</span>(neighbour, visited)
+
+    <span class="cm">// (Implicit backtrack when this call returns)</span></pre>
+  </div>
+
+  <div class="success">
+    <h4>✅ Key Insight</h4>
+    <p>The magic of recursion: when <code>DFS(neighbour)</code> is called, it will go all the way deep into that subtree before returning. When it returns, we automatically "backtrack" to the current node. No explicit backtracking code needed — the call stack does it!</p>
+  </div>
+</div></div>
+
+
+<!-- ⑥ TREE TRAVERSAL -->
+<div id="tab-traversal" class="tab-panel"><div class="section">
+  <h2>🌳 DFS Tree Traversal — Pre, In, Post Order</h2>
+  <p>When DFS is applied to a tree, there are 3 classic ordering strategies. The only difference is <strong>when you process the current node</strong> — before, between, or after visiting children.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🌳 Example Tree for Traversal</div>
+    <div class="flow-diagram-body">
+      <svg viewBox="0 0 360 200" style="width:100%;max-width:360px;display:block;margin:0 auto;" fill="none">
+        <circle cx="180" cy="35" r="22" fill="#d2f0e0" stroke="#0d5230" stroke-width="2"/>
+        <text x="180" y="41" text-anchor="middle" font-size="15" font-weight="700" fill="#0d5230">4</text>
+        <line x1="180" y1="57" x2="100" y2="93" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="180" y1="57" x2="260" y2="93" stroke="#75c49a" stroke-width="1.5"/>
+        <circle cx="100" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="2"/>
+        <text x="100" y="116" text-anchor="middle" font-size="15" font-weight="700" fill="#2a4db0">2</text>
+        <circle cx="260" cy="110" r="22" fill="#dce4f8" stroke="#2a4db0" stroke-width="2"/>
+        <text x="260" y="116" text-anchor="middle" font-size="15" font-weight="700" fill="#2a4db0">6</text>
+        <line x1="100" y1="132" x2="55" y2="163" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="100" y1="132" x2="145" y2="163" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="260" y1="132" x2="215" y2="163" stroke="#75c49a" stroke-width="1.5"/>
+        <line x1="260" y1="132" x2="305" y2="163" stroke="#75c49a" stroke-width="1.5"/>
+        <circle cx="55" cy="178" r="18" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="55" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">1</text>
+        <circle cx="145" cy="178" r="18" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="145" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">3</text>
+        <circle cx="215" cy="178" r="18" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="215" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">5</text>
+        <circle cx="305" cy="178" r="18" fill="#fef0d0" stroke="#c47a10" stroke-width="1.5"/>
+        <text x="305" y="184" text-anchor="middle" font-size="13" font-weight="700" fill="#c47a10">7</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>① Pre-order Traversal — Root → Left → Right</h3>
+  <div class="card">
+    <h4>📋 Rule: Process node FIRST, then explore children</h4>
+    <p style="margin-top:6px;color:var(--text2)"><strong>Order: 4 → 2 → 1 → 3 → 6 → 5 → 7</strong></p>
+    <p>Use case: <strong>Copy a tree, serialize a tree, prefix expressions, print directory structure</strong> (parent folder before its contents).</p>
+  </div>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📋 Pre-order: visit node → go left → go right</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-row">
+          <div class="flow-node n-pc"><div class="flow-node-title">① Visit 4 (root)</div></div>
+          <div class="flow-node n-blue"><div class="flow-node-title">② Left subtree</div><ul class="flow-items"><li>Visit 2, then 1, then 3</li></ul></div>
+          <div class="flow-node n-green"><div class="flow-node-title">③ Right subtree</div><ul class="flow-items"><li>Visit 6, then 5, then 7</li></ul></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--pc-d);font-weight:700;background:var(--pc-l);padding:8px;border-radius:6px;">
+        Result: [4, 2, 1, 3, 6, 5, 7]
+      </div>
+    </div>
+  </div>
+
+  <h3>② In-order Traversal — Left → Root → Right</h3>
+  <div class="card">
+    <h4>📋 Rule: Explore left first, THEN process node, THEN right</h4>
+    <p style="margin-top:6px;color:var(--text2)"><strong>Order: 1 → 2 → 3 → 4 → 5 → 6 → 7</strong></p>
+    <p>Use case: <strong>Binary Search Tree (BST) — gives sorted order!</strong> Extremely useful for BST validation and sorted output.</p>
+  </div>
+  <div class="success">
+    <h4>💡 BST Magic</h4>
+    <p>For a Binary Search Tree, in-order traversal always gives nodes in <strong>ascending sorted order</strong>. This is the single most common DFS interview use case.</p>
+  </div>
+
+  <h3>③ Post-order Traversal — Left → Right → Root</h3>
+  <div class="card">
+    <h4>📋 Rule: Explore all children FIRST, process node LAST</h4>
+    <p style="margin-top:6px;color:var(--text2)"><strong>Order: 1 → 3 → 2 → 5 → 7 → 6 → 4</strong></p>
+    <p>Use case: <strong>Delete a tree, calculate directory size, evaluate arithmetic expressions, dependency resolution</strong>.</p>
+  </div>
+
+  <h3>Quick Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Traversal</th><th>Order</th><th>Result on example tree</th><th>Classic use case</th></tr>
+    <tr><td>Pre-order</td><td>Node → Left → Right</td><td>4, 2, 1, 3, 6, 5, 7</td><td>Copy tree, print hierarchy</td></tr>
+    <tr><td>In-order</td><td>Left → Node → Right</td><td>1, 2, 3, 4, 5, 6, 7 ✨</td><td>BST sorted output</td></tr>
+    <tr><td>Post-order</td><td>Left → Right → Node</td><td>1, 3, 2, 5, 7, 6, 4</td><td>Delete tree, folder size</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>🧠 Memory Trick</h4>
+    <p><strong>PRE</strong> = node comes PRE (before) children. <strong>IN</strong> = node is IN the middle. <strong>POST</strong> = node comes POST (after) children. The "root" position relative to left/right tells you everything.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑦ INTERACTIVE VISUAL -->
+<div id="tab-visual" class="tab-panel"><div class="section">
+  <h2>🎮 Interactive DFS Visualizer</h2>
+  <p>Press <strong>Step</strong> to go through DFS one step at a time, or <strong>Auto Play</strong> to watch it run automatically.</p>
+
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">🌲 Live DFS on a Tree</div>
+    <canvas id="dfs-canvas" width="560" height="260" style="background:#f8fdf9;border-radius:8px;border:1px solid var(--border);"></canvas>
+    <div class="canvas-controls">
+      <button class="ctrl-btn" onclick="stepDFS()">▶ Step</button>
+      <button class="ctrl-btn" onclick="autoPlay()">⚡ Auto Play</button>
+      <button class="ctrl-btn secondary" onclick="resetDFS()">↺ Reset</button>
+    </div>
+    <div class="vis-log" id="vis-log">Press Step or Auto Play to start DFS traversal...</div>
+  </div>
+
+  <h3>Stack Simulation — What the call stack looks like</h3>
+  <p>As DFS runs, the call stack grows down when we go deeper, and shrinks as we backtrack. Watch how it mirrors the animation above.</p>
+
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">📚 Call Stack Simulation (Pre-order on tree: A, B, D, E, C, F, G)</div>
+    <div class="stack-trace">
+      <div class="stack-row"><div class="stack-step-num">→</div><span class="stack-label">dfs(A)</span><div class="stack-pills"><span class="pill pill-active">A</span><span class="arrow-right">calls</span><span class="pill pill-stack">B</span><span class="pill pill-result">C</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">→→</div><span class="stack-label">dfs(B)</span><div class="stack-pills"><span class="pill pill-visited">A</span><span class="pill pill-active">B</span><span class="arrow-right">calls</span><span class="pill pill-stack">D</span><span class="pill pill-result">E</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">→→→</div><span class="stack-label">dfs(D)</span><div class="stack-pills"><span class="pill pill-visited">A</span><span class="pill pill-visited">B</span><span class="pill pill-active">D</span><span class="arrow-right">leaf → returns</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">←←</div><span class="stack-label">back to B</span><div class="stack-pills"><span class="pill pill-visited">A</span><span class="pill pill-active">B</span><span class="arrow-right">calls</span><span class="pill pill-stack">E</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">→→→</div><span class="stack-label">dfs(E)</span><div class="stack-pills"><span class="pill pill-visited">A</span><span class="pill pill-visited">B</span><span class="pill pill-active">E</span><span class="arrow-right">leaf → returns</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">←←←</div><span class="stack-label">back to A</span><div class="stack-pills"><span class="pill pill-active">A</span><span class="arrow-right">calls</span><span class="pill pill-stack">C</span></div></div>
+      <div class="stack-row"><div class="stack-step-num">→→</div><span class="stack-label">dfs(C)→F→G</span><div class="stack-pills"><span class="pill pill-visited">A</span><span class="pill pill-active">C</span><span class="arrow-right">then F, then G...</span></div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑧ C# CODE -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# Code Examples</h2>
+  <p>All examples use real Team Watson context. From basic recursive to iterative, tree to graph.</p>
+
+  <h3>1. The TreeNode Class</h3>
+  <div class="code-block">
+    <span class="code-label">c# — binary tree node definition</span>
+    <pre><span class="cm">// Basic building block for all tree examples</span>
+<span class="kw">public class</span> <span class="tp">TreeNode</span>
+{
+    <span class="kw">public int</span> Val;
+    <span class="kw">public</span> <span class="tp">TreeNode</span>? Left;
+    <span class="kw">public</span> <span class="tp">TreeNode</span>? Right;
+
+    <span class="kw">public</span> <span class="fn">TreeNode</span>(<span class="kw">int</span> val)
+    {
+        Val = val;
+        Left = <span class="kw">null</span>;
+        Right = <span class="kw">null</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>2. Pre-order DFS (Root → Left → Right)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — recursive pre-order traversal</span>
+    <pre><span class="cm">// Pre-order: visit node FIRST, then explore children</span>
+<span class="cm">// Use case: printing a folder structure (parent before contents)</span>
+<span class="kw">public static void</span> <span class="fn">PreOrder</span>(<span class="tp">TreeNode</span>? node)
+{
+    <span class="kw">if</span> (node == <span class="kw">null</span>) <span class="kw">return</span>;  <span class="cm">// base case</span>
+
+    <span class="tp">Console</span>.<span class="fn">Write</span>(node.Val + <span class="str">" "</span>);  <span class="cm">// ① process node</span>
+    <span class="fn">PreOrder</span>(node.Left);            <span class="cm">// ② go left</span>
+    <span class="fn">PreOrder</span>(node.Right);           <span class="cm">// ③ go right</span>
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">var</span> root = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">4</span>);
+root.Left = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">2</span>);
+root.Right = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">6</span>);
+root.Left.Left = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">1</span>);
+root.Left.Right = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">3</span>);
+root.Right.Left = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">5</span>);
+root.Right.Right = <span class="kw">new</span> <span class="tp">TreeNode</span>(<span class="num">7</span>);
+
+<span class="fn">PreOrder</span>(root);
+<span class="cm">// Output: 4 2 1 3 6 5 7</span></pre>
+  </div>
+
+  <h3>3. In-order DFS (Left → Root → Right)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — recursive in-order traversal (gives sorted output for BST)</span>
+    <pre><span class="kw">public static void</span> <span class="fn">InOrder</span>(<span class="tp">TreeNode</span>? node)
+{
+    <span class="kw">if</span> (node == <span class="kw">null</span>) <span class="kw">return</span>;
+
+    <span class="fn">InOrder</span>(node.Left);             <span class="cm">// ① go left first</span>
+    <span class="tp">Console</span>.<span class="fn">Write</span>(node.Val + <span class="str">" "</span>);  <span class="cm">// ② THEN process node</span>
+    <span class="fn">InOrder</span>(node.Right);            <span class="cm">// ③ then right</span>
+}
+
+<span class="cm">// Output: 1 2 3 4 5 6 7  ← sorted! BST magic ✨</span></pre>
+  </div>
+
+  <h3>4. Post-order DFS (Left → Right → Root)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — recursive post-order traversal</span>
+    <pre><span class="cm">// Post-order: children fully explored before processing parent</span>
+<span class="cm">// Use case: calculating folder sizes (need child sizes first)</span>
+<span class="kw">public static void</span> <span class="fn">PostOrder</span>(<span class="tp">TreeNode</span>? node)
+{
+    <span class="kw">if</span> (node == <span class="kw">null</span>) <span class="kw">return</span>;
+
+    <span class="fn">PostOrder</span>(node.Left);           <span class="cm">// ① go left</span>
+    <span class="fn">PostOrder</span>(node.Right);          <span class="cm">// ② go right</span>
+    <span class="tp">Console</span>.<span class="fn">Write</span>(node.Val + <span class="str">" "</span>);  <span class="cm">// ③ THEN process node</span>
+}
+
+<span class="cm">// Output: 1 3 2 5 7 6 4</span></pre>
+  </div>
+
+  <h3>5. Iterative DFS (using Stack — no recursion)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — iterative dfs using explicit stack</span>
+    <pre><span class="cm">// Use this when recursion depth is too large (stack overflow risk)</span>
+<span class="kw">public static</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt; <span class="fn">IterativeDFS</span>(<span class="tp">TreeNode</span>? root)
+{
+    <span class="kw">var</span> result = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt;();
+    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> result;
+
+    <span class="kw">var</span> stack = <span class="kw">new</span> <span class="tp">Stack</span>&lt;<span class="tp">TreeNode</span>&gt;();
+    stack.<span class="fn">Push</span>(root);  <span class="cm">// start with root on stack</span>
+
+    <span class="kw">while</span> (stack.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">var</span> node = stack.<span class="fn">Pop</span>();  <span class="cm">// take top of stack</span>
+        result.<span class="fn">Add</span>(node.Val);    <span class="cm">// process it</span>
+
+        <span class="cm">// Push RIGHT first so LEFT is processed first (LIFO)</span>
+        <span class="kw">if</span> (node.Right != <span class="kw">null</span>) stack.<span class="fn">Push</span>(node.Right);
+        <span class="kw">if</span> (node.Left != <span class="kw">null</span>)  stack.<span class="fn">Push</span>(node.Left);
+    }
+
+    <span class="kw">return</span> result;
+    <span class="cm">// Returns: [4, 2, 1, 3, 6, 5, 7]  (pre-order)</span>
+}</pre>
+  </div>
+
+  <h3>6. DFS on a Graph (with visited tracking)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — graph dfs using adjacency list</span>
+    <pre><span class="cm">// Graph represented as adjacency list</span>
+<span class="cm">// Team Watson use case: find all services reachable from Entry API</span>
+<span class="kw">public class</span> <span class="tp">GraphDFS</span>
+{
+    <span class="kw">private</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt; _graph;
+
+    <span class="kw">public</span> <span class="fn">GraphDFS</span>()
+    {
+        _graph = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt;
+        {
+            { <span class="str">"EntryAPI"</span>, <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; { <span class="str">"AuthService"</span>, <span class="str">"DataService"</span> } },
+            { <span class="str">"AuthService"</span>, <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; { <span class="str">"TokenStore"</span> } },
+            { <span class="str">"DataService"</span>, <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; { <span class="str">"Database"</span>, <span class="str">"Cache"</span> } },
+            { <span class="str">"TokenStore"</span>, <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;() },
+            { <span class="str">"Database"</span>,  <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;() },
+            { <span class="str">"Cache"</span>,     <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;() }
+        };
+    }
+
+    <span class="kw">public void</span> <span class="fn">DFS</span>(<span class="kw">string</span> node, <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt; visited)
+    {
+        <span class="kw">if</span> (visited.<span class="fn">Contains</span>(node)) <span class="kw">return</span>;  <span class="cm">// already visited</span>
+
+        visited.<span class="fn">Add</span>(node);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Visiting: {node}"</span>);
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> neighbour <span class="kw">in</span> _graph[node])
+        {
+            <span class="fn">DFS</span>(neighbour, visited);
+        }
+    }
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">var</span> graph = <span class="kw">new</span> <span class="tp">GraphDFS</span>();
+<span class="kw">var</span> visited = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt;();
+graph.<span class="fn">DFS</span>(<span class="str">"EntryAPI"</span>, visited);
+<span class="cm">// Output:</span>
+<span class="cm">// Visiting: EntryAPI</span>
+<span class="cm">// Visiting: AuthService</span>
+<span class="cm">// Visiting: TokenStore</span>
+<span class="cm">// Visiting: DataService</span>
+<span class="cm">// Visiting: Database</span>
+<span class="cm">// Visiting: Cache</span></pre>
+  </div>
+
+  <h3>7. Detect Cycle in Directed Graph</h3>
+  <div class="code-block">
+    <span class="code-label">c# — cycle detection using dfs (for dependency checking)</span>
+    <pre><span class="cm">// Team Watson: detect circular NuGet dependencies</span>
+<span class="cm">// Uses "recursion stack" — tracks current DFS path</span>
+<span class="kw">public class</span> <span class="tp">CycleDetector</span>
+{
+    <span class="kw">private</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt; _deps;
+
+    <span class="kw">public bool</span> <span class="fn">HasCycle</span>(<span class="kw">string</span> node,
+                          <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt; visited,
+                          <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt; inStack)
+    {
+        visited.<span class="fn">Add</span>(node);
+        inStack.<span class="fn">Add</span>(node);  <span class="cm">// add to current path</span>
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> dep <span class="kw">in</span> _deps.<span class="fn">GetValueOrDefault</span>(node, <span class="kw">new</span>()))
+        {
+            <span class="kw">if</span> (!visited.<span class="fn">Contains</span>(dep))
+            {
+                <span class="kw">if</span> (<span class="fn">HasCycle</span>(dep, visited, inStack))
+                    <span class="kw">return true</span>;  <span class="cm">// cycle found deeper</span>
+            }
+            <span class="kw">else if</span> (inStack.<span class="fn">Contains</span>(dep))
+            {
+                <span class="kw">return true</span>;  <span class="cm">// back edge = cycle!</span>
+            }
+        }
+
+        inStack.<span class="fn">Remove</span>(node);  <span class="cm">// remove from path on backtrack</span>
+        <span class="kw">return false</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>8. Find File in Directory (Real-world DFS)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — file system dfs using directoryinfo</span>
+    <pre><span class="cm">// Real Team Watson use case: find all .csproj files in a solution</span>
+<span class="kw">public static</span> <span class="tp">IEnumerable</span>&lt;<span class="kw">string</span>&gt; <span class="fn">FindFiles</span>(<span class="kw">string</span> rootPath,
+                                              <span class="kw">string</span> extension)
+{
+    <span class="kw">var</span> dir = <span class="kw">new</span> <span class="tp">DirectoryInfo</span>(rootPath);
+
+    <span class="cm">// DFS: process files in this dir first</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> file <span class="kw">in</span> dir.<span class="fn">GetFiles</span>(<span class="str">$"*{extension}"</span>))
+        <span class="kw">yield return</span> file.FullName;
+
+    <span class="cm">// Then recurse into each subdirectory (going deeper)</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> subDir <span class="kw">in</span> dir.<span class="fn">GetDirectories</span>())
+    {
+        <span class="kw">foreach</span> (<span class="kw">var</span> found <span class="kw">in</span> <span class="fn">FindFiles</span>(subDir.FullName, extension))
+            <span class="kw">yield return</span> found;
+    }
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">var</span> projects = <span class="fn">FindFiles</span>(<span class="str">@"C:\TeamWatson\Solution"</span>, <span class="str">".csproj"</span>);
+<span class="kw">foreach</span> (<span class="kw">var</span> p <span class="kw">in</span> projects)
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(p);</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑨ CHEAT SHEET -->
+<div id="tab-cheatsheet" class="tab-panel"><div class="section">
+  <h2>📋 DFS Cheat Sheet — Quick Reference</h2>
+
+  <h3>Algorithm Template</h3>
+  <div class="code-block">
+    <span class="code-label">c# — dfs master template (copy & adapt)</span>
+    <pre><span class="cm">// ======= RECURSIVE DFS TEMPLATE =======</span>
+<span class="kw">void</span> <span class="fn">DFS</span>(<span class="tp">TreeNode</span>? node)
+{
+    <span class="kw">if</span> (node == <span class="kw">null</span>) <span class="kw">return</span>;  <span class="cm">// base case</span>
+    <span class="cm">// [Pre-order] process here for Root→Left→Right</span>
+    <span class="fn">DFS</span>(node.Left);
+    <span class="cm">// [In-order]  process here for Left→Root→Right</span>
+    <span class="fn">DFS</span>(node.Right);
+    <span class="cm">// [Post-order] process here for Left→Right→Root</span>
+}
+
+<span class="cm">// ======= GRAPH DFS TEMPLATE =======</span>
+<span class="kw">void</span> <span class="fn">DFS</span>(<span class="kw">string</span> node, <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt; visited)
+{
+    <span class="kw">if</span> (visited.<span class="fn">Contains</span>(node)) <span class="kw">return</span>;
+    visited.<span class="fn">Add</span>(node);
+    <span class="cm">// process node here</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> neighbour <span class="kw">in</span> graph[node])
+        <span class="fn">DFS</span>(neighbour, visited);
+}
+
+<span class="cm">// ======= ITERATIVE DFS TEMPLATE =======</span>
+<span class="kw">void</span> <span class="fn">IterativeDFS</span>(<span class="tp">TreeNode</span>? root)
+{
+    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span>;
+    <span class="kw">var</span> stack = <span class="kw">new</span> <span class="tp">Stack</span>&lt;<span class="tp">TreeNode</span>&gt;();
+    stack.<span class="fn">Push</span>(root);
+    <span class="kw">while</span> (stack.Count > <span class="num">0</span>)
+    {
+        <span class="kw">var</span> node = stack.<span class="fn">Pop</span>();
+        <span class="cm">// process node here</span>
+        <span class="kw">if</span> (node.Right != <span class="kw">null</span>) stack.<span class="fn">Push</span>(node.Right);
+        <span class="kw">if</span> (node.Left != <span class="kw">null</span>)  stack.<span class="fn">Push</span>(node.Left);
+    }
+}</pre>
+  </div>
+
+  <h3>Pick Your Strategy</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem Type</th><th>DFS Strategy</th><th>What to Track</th></tr>
+    <tr><td>Tree traversal (all orders)</td><td>Recursive DFS</td><td>Nothing (trees have no cycles)</td></tr>
+    <tr><td>Graph traversal</td><td>Recursive/Iterative DFS</td><td>visited HashSet</td></tr>
+    <tr><td>Cycle detection</td><td>DFS with recursion stack</td><td>visited + inStack HashSets</td></tr>
+    <tr><td>Path exists A→B?</td><td>DFS + early return true</td><td>visited HashSet</td></tr>
+    <tr><td>All paths A→B?</td><td>DFS backtracking</td><td>path List, visited HashSet</td></tr>
+    <tr><td>Topological sort</td><td>Post-order DFS</td><td>visited + result stack</td></tr>
+    <tr><td>Connected components</td><td>DFS in a loop for each unvisited</td><td>visited HashSet</td></tr>
+    <tr><td>Puzzle solving</td><td>DFS + backtrack (undo choices)</td><td>current state</td></tr>
+    <tr><td>Deep trees (> 10k nodes)</td><td>Iterative DFS</td><td>explicit Stack</td></tr>
+  </table></div>
+
+  <h3>Complexity Summary</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⏱️ Time Complexity</h4>
+      <ul>
+        <li><strong>Tree DFS:</strong> O(n) — visit every node once</li>
+        <li><strong>Graph DFS:</strong> O(V + E) — vertices + edges</li>
+        <li><strong>Backtracking:</strong> O(b^d) — branching factor, depth</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💾 Space Complexity</h4>
+      <ul>
+        <li><strong>Balanced tree:</strong> O(log n) — call stack height</li>
+        <li><strong>Skewed tree:</strong> O(n) — all nodes in stack</li>
+        <li><strong>Graph:</strong> O(V) — visited set + stack</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common Mistakes to Avoid</h3>
+  <ul class="badlist">
+    <li>Forgetting the null check base case in recursive DFS → NullReferenceException</li>
+    <li>No visited set in graph DFS → infinite loop on cycles</li>
+    <li>Pushing LEFT before RIGHT in iterative DFS → wrong order (push RIGHT first!)</li>
+    <li>Using DFS for shortest path in graphs → wrong answer (use BFS)</li>
+    <li>Recursion on very deep trees without stack overflow protection</li>
+    <li>Mutating visited set without backtracking in "all paths" problems</li>
+  </ul>
+
+  <h3>Signs You Need DFS</h3>
+  <ul class="checklist">
+    <li>Problem involves a tree or graph structure</li>
+    <li>You need to explore "all possibilities" or "all paths"</li>
+    <li>Problem mentions "reachability" or "connected"</li>
+    <li>You need to detect cycles or dependencies</li>
+    <li>You're solving a puzzle where you try options and backtrack</li>
+    <li>You need to visit every node exactly once</li>
+    <li>Problem involves hierarchical/recursive structure</li>
+  </ul>
+
+  <div class="completion">
+    <h3>🌲 You've mastered DFS!</h3>
+    <p>You started with "what is a tree?" and ended with recursive, iterative, cycle detection, and real-world DFS in C#. That's the full journey from beginner to confident. Practice these patterns: <strong>DFS on tree</strong> → <strong>DFS on graph</strong> → <strong>DFS with backtracking</strong>. Those three cover 90% of interview questions.</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'visual') setTimeout(resetDFS, 100);
+}
+
+/* ---- DFS CANVAS VISUALIZER ---- */
+const TREE = {
+  nodes: [
+    { id: 0, label: 'A', x: 280, y: 40 },
+    { id: 1, label: 'B', x: 155, y: 110 },
+    { id: 2, label: 'C', x: 405, y: 110 },
+    { id: 3, label: 'D', x: 85,  y: 185 },
+    { id: 4, label: 'E', x: 225, y: 185 },
+    { id: 5, label: 'F', x: 335, y: 185 },
+    { id: 6, label: 'G', x: 475, y: 185 },
+  ],
+  edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]],
+  children: [[1,2],[3,4],[5,6],[],[],[],[]],
+};
+
+const ORDER = [0,1,3,4,2,5,6]; // pre-order
+const MESSAGES = [
+  '▶ Start at A (root). Mark visited. Push to stack.',
+  '→ Visit B (left child of A). Go deep.',
+  '→ Visit D (left child of B). Leaf node — backtrack!',
+  '← Back to B. Visit E (right child of B). Leaf — backtrack!',
+  '← Back to A. Visit C (right child of A). Go deep.',
+  '→ Visit F (left child of C). Leaf — backtrack!',
+  '→ Visit G (right child of C). Leaf — done! ✅',
+];
+
+let step = 0;
+let visitedSet = new Set();
+let autoTimer = null;
+
+const canvas = document.getElementById('dfs-canvas');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 560 * dpr;
+  canvas.height = 260 * dpr;
+  canvas.style.width = '100%';
+  canvas.style.maxWidth = '560px';
+  canvas.style.height = 'auto';
+  ctx.scale(dpr, dpr);
+
+  function drawTree() {
+    ctx.clearRect(0, 0, 560, 260);
+    // Draw edges
+    ctx.strokeStyle = '#a8dfc0';
+    ctx.lineWidth = 2;
+    TREE.edges.forEach(([a, b]) => {
+      ctx.beginPath();
+      ctx.moveTo(TREE.nodes[a].x, TREE.nodes[a].y);
+      ctx.lineTo(TREE.nodes[b].x, TREE.nodes[b].y);
+      ctx.stroke();
+    });
+    // Draw nodes
+    TREE.nodes.forEach((n, i) => {
+      const isActive = ORDER[step - 1] === i;
+      const isVisited = visitedSet.has(i);
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 22, 0, Math.PI * 2);
+      if (isActive) {
+        ctx.fillStyle = '#0d5230';
+        ctx.strokeStyle = '#0d5230';
+      } else if (isVisited) {
+        ctx.fillStyle = '#d2f0e0';
+        ctx.strokeStyle = '#2a7a4a';
+      } else {
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#c4c0b8';
+      }
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = isActive ? '#ffffff' : isVisited ? '#0d5230' : '#7a7a6a';
+      ctx.font = 'bold 15px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.label, n.x, n.y);
+    });
+    // Draw traversal order at bottom
+    if (step > 0) {
+      const visited = ORDER.slice(0, step).map(i => TREE.nodes[i].label).join(' → ');
+      ctx.fillStyle = '#0d5230';
+      ctx.font = '600 12px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Path: ' + visited, 280, 245);
+    }
+  }
+
+  window.stepDFS = function() {
+    if (step >= ORDER.length) return;
+    visitedSet.add(ORDER[step]);
+    step++;
+    drawTree();
+    const log = document.getElementById('vis-log');
+    if (log) log.innerHTML = MESSAGES[step-1];
+  };
+
+  window.resetDFS = function() {
+    clearInterval(autoTimer);
+    step = 0;
+    visitedSet.clear();
+    drawTree();
+    const log = document.getElementById('vis-log');
+    if (log) log.innerHTML = 'Press Step or Auto Play to start DFS traversal...';
+  };
+
+  window.autoPlay = function() {
+    clearInterval(autoTimer);
+    if (step >= ORDER.length) resetDFS();
+    autoTimer = setInterval(() => {
+      if (step >= ORDER.length) { clearInterval(autoTimer); return; }
+      stepDFS();
+    }, 900);
+  };
+
+  drawTree();
+}
+</script>
+</body>
+</html>
