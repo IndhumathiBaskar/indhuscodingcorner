@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS Private CA — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#1d5a8a;--pc-l:#ddeef8;--pc-d:#0d3559;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#080c12;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#ddeef8 0%,#b8d8f0 45%,#8abede 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'🏛️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.07;pointer-events:none;}
+.header::after{content:'🔐';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+.container{max-width:880px;margin:0 auto;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#eef5fb);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:820px;display:block;margin:0 auto;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(29,90,138,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+.tip{background:var(--pc-l);border:1px solid rgba(29,90,138,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #0d1520;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#60a8d4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(29,90,138,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:9px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--pc-d);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:11px 13px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:9px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 9px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--muted);padding:7px 9px;background:var(--pc-l);border-radius:5px;margin-top:7px;}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+.cert-field{display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:10px 0;}
+.cf-row{display:flex;border-bottom:1px solid var(--border);}
+.cf-row:last-child{border-bottom:none;}
+.cf-label{background:var(--surface);padding:7px 12px;font-size:.71rem;font-weight:700;color:var(--text2);width:160px;flex-shrink:0;border-right:1px solid var(--border);}
+.cf-val{padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:.69rem;color:var(--text);flex:1;}
+.cf-val.ok{color:var(--green);}
+.cf-val.warn{color:var(--amber);}
+.cf-val.info{color:var(--blue);}
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--green-l));border:1px solid rgba(29,90,138,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+  .cf-label{width:110px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>🏛️ AWS <span>Private CA</span> — Complete Guide</h1>
+    <p>Private Certificate Authority · CA Hierarchy · Certificate Lifecycle · mTLS · OCSP/CRL · ACM Integration · Templates · Revocation · C# SDK · beginner→expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('hierarchy',this)">② CA Hierarchy</button>
+      <button class="tab-btn" onclick="T('lifecycle',this)">③ Certificate Lifecycle</button>
+      <button class="tab-btn" onclick="T('templates',this)">④ Templates &amp; Types</button>
+      <button class="tab-btn" onclick="T('revocation',this)">⑤ Revocation</button>
+      <button class="tab-btn" onclick="T('mtls',this)">⑥ mTLS &amp; Use Cases</button>
+      <button class="tab-btn" onclick="T('security',this)">⑦ Security &amp; IAM</button>
+      <button class="tab-btn" onclick="T('console',this)">⑧ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑨ C# SDK</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① OVERVIEW -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🏛️ What is AWS Private CA?</h2>
+  <p>AWS Private CA (formerly ACM Private CA) is a <strong>managed private certificate authority service</strong>. It lets you create your own internal PKI (Public Key Infrastructure) to issue X.509 certificates for internal services, devices, users, and applications — without managing your own CA software, HSMs, or CRL infrastructure.</p>
+
+  <div class="tip">
+    <h4>💡 Private CA in One Sentence</h4>
+    <p>AWS Private CA = a fully managed internal certificate authority that issues trusted X.509 certificates for your own organisation's resources (servers, services, IoT devices, users) — trusted inside your organisation but not by browsers or public internet.</p>
+  </div>
+
+  <h3>Public CA vs Private CA — The Key Difference</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌍 Public CA (Let's Encrypt, DigiCert)</h4>
+      <ul>
+        <li>Trusted by all browsers and OS trust stores globally</li>
+        <li>Must prove domain ownership (DNS/HTTP validation)</li>
+        <li>Certificates for public-facing websites and APIs</li>
+        <li>Cannot issue certs for internal IPs or internal hostnames</li>
+        <li>Free (Let's Encrypt) or paid — but not controlled by you</li>
+        <li>Subject to public CA/Browser Forum rules</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏛️ Private CA (AWS Private CA)</h4>
+      <ul>
+        <li>Trusted only within your organisation (you control the trust store)</li>
+        <li>Issue certs for internal IPs, hostnames, services, devices, users</li>
+        <li>Full control: validity period, extensions, subject fields</li>
+        <li>Used for: mTLS, internal APIs, IoT devices, VPN, code signing</li>
+        <li>~$400/month per CA + $0.75 per cert issued</li>
+        <li>No domain validation — you control who gets what cert</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>What AWS Private CA Manages for You</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔑</span><h4>Key Management</h4><p>CA private keys stored in AWS-managed HSMs. You never see or touch the key.</p></div>
+    <div class="icon-item"><span class="emoji">📜</span><h4>Certificate Signing</h4><p>Signs CSRs and issues X.509 certificates with your CA's signature.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>CRL Publishing</h4><p>Publishes Certificate Revocation Lists to S3 automatically.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>OCSP Responses</h4><p>Managed OCSP responder for real-time revocation checking.</p></div>
+    <div class="icon-item"><span class="emoji">⏰</span><h4>Audit Logs</h4><p>All CA operations logged to CloudTrail automatically.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Cross-account</h4><p>Share CA with other AWS accounts via RAM (Resource Access Manager).</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>ACM Integration</h4><p>ACM can auto-renew certs from Private CA — same as public certs.</p></div>
+    <div class="icon-item"><span class="emoji">🏷️</span><h4>Templates</h4><p>Pre-built certificate templates for TLS, code signing, IoT, OCSP, mTLS.</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>HA + Durability</h4><p>Multi-AZ, 99.9% SLA. No patching, no backups, no infrastructure.</p></div>
+  </div>
+
+  <h3>Key Terminology</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td><strong>CA (Certificate Authority)</strong></td><td>Entity that signs and issues X.509 certificates. Its own cert establishes trust.</td></tr>
+    <tr><td><strong>Root CA</strong></td><td>Top of the trust hierarchy. Self-signed. Rarely used to issue end-entity certs directly.</td></tr>
+    <tr><td><strong>Subordinate CA</strong></td><td>CA signed by Root or another Subordinate CA. Issues end-entity certificates.</td></tr>
+    <tr><td><strong>End-entity certificate</strong></td><td>Leaf certificate issued to a server, device, or user. Cannot sign other certs.</td></tr>
+    <tr><td><strong>CSR</strong></td><td>Certificate Signing Request — public key + subject info sent to CA for signing.</td></tr>
+    <tr><td><strong>PKI</strong></td><td>Public Key Infrastructure — the full system of CAs, certs, and revocation.</td></tr>
+    <tr><td><strong>CRL</strong></td><td>Certificate Revocation List — file listing revoked certificate serial numbers.</td></tr>
+    <tr><td><strong>OCSP</strong></td><td>Online Certificate Status Protocol — real-time revocation check by serial number.</td></tr>
+    <tr><td><strong>mTLS</strong></td><td>Mutual TLS — both client and server present and verify certificates.</td></tr>
+    <tr><td><strong>Trust store</strong></td><td>Collection of trusted CA certificates installed on a system/app.</td></tr>
+    <tr><td><strong>RAM</strong></td><td>Resource Access Manager — share Private CA across AWS accounts.</td></tr>
+  </table></div>
+
+  <h3>Pricing</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Component</th><th>Price</th><th>Notes</th></tr>
+    <tr><td>Private CA (General Purpose)</td><td>$400/month per CA</td><td>Root or Subordinate CA. Pro-rated hourly.</td></tr>
+    <tr><td>Private CA (Short-lived cert mode)</td><td>$50/month per CA</td><td>For certs &lt;7 days. No revocation needed.</td></tr>
+    <tr><td>Certificates issued (first 1,000/month)</td><td>$0.75 per cert</td><td>Per issuance — not per renewal</td></tr>
+    <tr><td>Certificates issued (1,001–10,000/month)</td><td>$0.35 per cert</td><td>Volume discount</td></tr>
+    <tr><td>Certificates via ACM</td><td>$0.00</td><td>ACM-managed certs from Private CA are free per cert (CA fee still applies)</td></tr>
+    <tr><td>OCSP managed responder</td><td>Included</td><td>No extra cost for the OCSP endpoint</td></tr>
+    <tr><td>CRL (S3 storage)</td><td>Standard S3 rates</td><td>Usually cents per month</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ② CA HIERARCHY -->
+<div id="tab-hierarchy" class="tab-panel"><div class="section">
+  <h2>🔗 CA Hierarchy — Root, Subordinate &amp; Trust</h2>
+  <p>A well-designed CA hierarchy separates the high-value Root CA (kept offline or rarely used) from Subordinate CAs that do the day-to-day certificate issuance. This limits blast radius — if a Subordinate CA is compromised, you revoke it without touching the Root.</p>
+
+  <h3>Two-Tier Hierarchy (Recommended)</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🏛️ AWS Private CA — Two-Tier Hierarchy</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="pc-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1d5a8a"/></marker>
+          <marker id="gr-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1f7a52"/></marker>
+        </defs>
+
+        <!-- ROOT CA -->
+        <rect x="210" y="10" width="300" height="68" rx="9" fill="#ddeef8" stroke="rgba(29,90,138,.5)" stroke-width="2.5"/>
+        <text x="360" y="33" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#0d3559" text-anchor="middle">🏛️ Root CA (Self-signed)</text>
+        <text x="360" y="50" font-family="DM Sans,sans-serif" font-size="9" fill="#7a7a6a" text-anchor="middle">AWS Private CA · RSA 4096 or EC P-384</text>
+        <text x="360" y="65" font-family="JetBrains Mono,monospace" font-size="8" fill="#1d5a8a" text-anchor="middle">Validity: 10 years · RARELY signs anything directly</text>
+
+        <!-- Root → Sub arrows -->
+        <line x1="280" y1="78" x2="170" y2="152" stroke="#1d5a8a" stroke-width="1.8" marker-end="url(#pc-a)"/>
+        <line x1="360" y1="78" x2="360" y2="152" stroke="#1d5a8a" stroke-width="1.8" marker-end="url(#pc-a)"/>
+        <line x1="440" y1="78" x2="550" y2="152" stroke="#1d5a8a" stroke-width="1.8" marker-end="url(#pc-a)"/>
+
+        <!-- SUB CA 1 - Internal TLS -->
+        <rect x="60" y="152" width="220" height="60" rx="8" fill="#ddeef8" stroke="rgba(29,90,138,.35)" stroke-width="1.5"/>
+        <text x="170" y="172" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">🔗 Subordinate CA — TLS</text>
+        <text x="170" y="186" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Signs server/client TLS certs</text>
+        <text x="170" y="200" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#1d5a8a" text-anchor="middle">Validity: 3 years · RSA 2048 / EC P-256</text>
+
+        <!-- SUB CA 2 - IoT -->
+        <rect x="250" y="152" width="220" height="60" rx="8" fill="#ddeef8" stroke="rgba(29,90,138,.35)" stroke-width="1.5"/>
+        <text x="360" y="172" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">🔗 Subordinate CA — IoT</text>
+        <text x="360" y="186" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Signs device identity certs</text>
+        <text x="360" y="200" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#1d5a8a" text-anchor="middle">Validity: 3 years · EC P-256</text>
+
+        <!-- SUB CA 3 - Code Signing -->
+        <rect x="440" y="152" width="220" height="60" rx="8" fill="#ddeef8" stroke="rgba(29,90,138,.35)" stroke-width="1.5"/>
+        <text x="550" y="172" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">🔗 Subordinate CA — Code</text>
+        <text x="550" y="186" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Signs software artifacts</text>
+        <text x="550" y="200" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#1d5a8a" text-anchor="middle">Validity: 3 years · RSA 2048</text>
+
+        <!-- End Entity certs from TLS Sub -->
+        <line x1="120" y1="212" x2="80" y2="268" stroke="#1f7a52" stroke-width="1.3" marker-end="url(#gr-a)"/>
+        <line x1="170" y1="212" x2="170" y2="268" stroke="#1f7a52" stroke-width="1.3" marker-end="url(#gr-a)"/>
+        <line x1="220" y1="212" x2="260" y2="268" stroke="#1f7a52" stroke-width="1.3" marker-end="url(#gr-a)"/>
+
+        <rect x="20" y="268" width="120" height="42" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="80" y="285" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">🖥️ Server TLS cert</text>
+        <text x="80" y="298" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">api.internal:443</text>
+        <text x="80" y="308" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">1 year validity</text>
+
+        <rect x="110" y="268" width="120" height="42" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="170" y="285" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">👤 Client mTLS cert</text>
+        <text x="170" y="298" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">service-account</text>
+        <text x="170" y="308" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">90 days validity</text>
+
+        <rect x="200" y="268" width="120" height="42" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="260" y="285" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">🔌 ALB mTLS cert</text>
+        <text x="260" y="298" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">load-balancer</text>
+        <text x="260" y="308" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">1 year validity</text>
+
+        <!-- End Entity from IoT -->
+        <line x1="360" y1="212" x2="360" y2="268" stroke="#1f7a52" stroke-width="1.3" marker-end="url(#gr-a)"/>
+        <rect x="300" y="268" width="120" height="42" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="360" y="285" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">📡 IoT Device cert</text>
+        <text x="360" y="298" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">device-id:001</text>
+        <text x="360" y="308" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">5 year validity</text>
+
+        <!-- End Entity from Code -->
+        <line x1="550" y1="212" x2="550" y2="268" stroke="#1f7a52" stroke-width="1.3" marker-end="url(#gr-a)"/>
+        <rect x="490" y="268" width="120" height="42" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="550" y="285" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">📦 Code signing cert</text>
+        <text x="550" y="298" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#7a7a6a" text-anchor="middle">Lambda deploy</text>
+        <text x="550" y="308" font-family="JetBrains Mono,monospace" font-size="7" fill="#7a7a6a" text-anchor="middle">3 year validity</text>
+
+        <!-- Trust store note -->
+        <rect x="10" y="332" width="700" height="118" rx="8" fill="rgba(29,90,138,.03)" stroke="rgba(29,90,138,.12)" stroke-width="1"/>
+        <text x="360" y="352" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">🔐 How Trust Works — Root CA in Trust Store</text>
+        <text x="30" y="372" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">1. Install Root CA cert in all systems/services that must trust your internal certs</text>
+        <text x="30" y="386" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">2. Any cert signed by Root → Subordinate → End Entity is automatically trusted</text>
+        <text x="30" y="400" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">3. Deploy via: Systems Manager Parameter Store · Secrets Manager · EC2 user data · ECS environment · Kubernetes ConfigMap</text>
+        <text x="30" y="420" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">4. If Subordinate CA is compromised → revoke it → Root CA and other Subordinates remain valid</text>
+        <text x="30" y="436" font-family="JetBrains Mono,monospace" font-size="8" fill="#1d5a8a">Chain: End-entity cert → signed by Subordinate CA → signed by Root CA → trusted by trust store</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Root CA vs Subordinate CA</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">🏛️ Root CA</div>
+      <div class="compare-row"><span class="compare-label">Signed by</span><span class="compare-val">Itself (self-signed)</span></div>
+      <div class="compare-row"><span class="compare-label">Typical validity</span><span class="compare-val">10–20 years</span></div>
+      <div class="compare-row"><span class="compare-label">Issues certs to</span><span class="compare-val">Subordinate CAs only</span></div>
+      <div class="compare-row"><span class="compare-label">Key algorithm</span><span class="compare-val">RSA 4096 / EC P-384</span></div>
+      <div class="compare-row"><span class="compare-label">Usage frequency</span><span class="compare-val val-good">Rarely — sub CAs only</span></div>
+      <div class="compare-row"><span class="compare-label">In trust store?</span><span class="compare-val val-good">✅ Yes — the anchor</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">🔗 Subordinate CA</div>
+      <div class="compare-row"><span class="compare-label">Signed by</span><span class="compare-val">Root or another Sub CA</span></div>
+      <div class="compare-row"><span class="compare-label">Typical validity</span><span class="compare-val">2–5 years</span></div>
+      <div class="compare-row"><span class="compare-label">Issues certs to</span><span class="compare-val">End-entity certs</span></div>
+      <div class="compare-row"><span class="compare-label">Key algorithm</span><span class="compare-val">RSA 2048 / EC P-256</span></div>
+      <div class="compare-row"><span class="compare-label">Usage frequency</span><span class="compare-val val-warn">Daily — all issuance</span></div>
+      <div class="compare-row"><span class="compare-label">In trust store?</span><span class="compare-val val-warn">⚠️ Optional (via chain)</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-green">📜 End-entity cert</div>
+      <div class="compare-row"><span class="compare-label">Signed by</span><span class="compare-val">Subordinate CA</span></div>
+      <div class="compare-row"><span class="compare-label">Typical validity</span><span class="compare-val">1 day–5 years</span></div>
+      <div class="compare-row"><span class="compare-label">Issues certs to</span><span class="compare-val val-bad">❌ Cannot sign others</span></div>
+      <div class="compare-row"><span class="compare-label">Used for</span><span class="compare-val">Server/client/device</span></div>
+      <div class="compare-row"><span class="compare-label">CA flag</span><span class="compare-val val-bad">❌ BasicConstraints CA:FALSE</span></div>
+      <div class="compare-row"><span class="compare-label">In trust store?</span><span class="compare-val val-bad">❌ Never</span></div>
+    </div>
+  </div>
+
+  <h3>External Root CA — Chaining to On-Premise PKI</h3>
+  <div class="card">
+    <h4>🔗 Hybrid PKI — AWS Subordinate under On-Prem Root</h4>
+    <ul>
+      <li>Create AWS Private CA as a Subordinate CA</li>
+      <li>Generate CSR from AWS Private CA → send to your on-prem Root CA to sign</li>
+      <li>Import the signed certificate back into AWS Private CA → activate it</li>
+      <li>Now AWS Subordinate CA is trusted by your existing on-prem PKI trust stores</li>
+      <li>Use case: enterprises with existing PKI who want cloud-native certificate issuance</li>
+      <li>Best of both worlds — existing trust chain + AWS managed infrastructure</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ③ CERTIFICATE LIFECYCLE -->
+<div id="tab-lifecycle" class="tab-panel"><div class="section">
+  <h2>🔄 Certificate Lifecycle — Issue, Renew, Revoke</h2>
+
+  <h3>Full Certificate Lifecycle</h3>
+  <div class="flow">
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">📝 Step 1 — Generate Key Pair + CSR</div>
+      <ul class="flow-items">
+        <li>Application generates RSA/EC key pair locally (private key NEVER leaves)</li>
+        <li>Creates CSR with: Subject (CN, O, OU), SANs, public key</li>
+        <li>OR: Use ACM to manage key generation and CSR automatically</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Submit CSR to AWS Private CA via SDK / ACM / console</div>
+    <div class="flow-node n-pc">
+      <div class="flow-node-title">🏛️ Step 2 — AWS Private CA Signs the Certificate</div>
+      <ul class="flow-items">
+        <li>Validates CSR structure and policy constraints</li>
+        <li>Applies certificate template (TLS, code signing, mTLS client, etc.)</li>
+        <li>Signs with Subordinate CA private key (in HSM)</li>
+        <li>Returns signed certificate + certificate chain (Sub CA + Root CA)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Install cert + chain on server / device / service</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Step 3 — Certificate in Use</div>
+      <ul class="flow-items">
+        <li>Server presents cert during TLS handshake</li>
+        <li>Client verifies: chain → Root CA in trust store, not expired, not revoked</li>
+        <li>Certificate valid until expiry (or until revoked)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-row">
+      <div class="flow-node n-amber">
+        <div class="flow-node-title">⏰ Step 4a — Renewal (near expiry)</div>
+        <ul class="flow-items">
+          <li>ACM auto-renews if managed via ACM</li>
+          <li>Manual: generate new key pair + CSR → issue new cert</li>
+          <li>Old cert remains valid until expiry or revocation</li>
+        </ul>
+      </div>
+      <div class="flow-node n-bad">
+        <div class="flow-node-title">❌ Step 4b — Revocation (emergency)</div>
+        <ul class="flow-items">
+          <li>Private key compromised or no longer needed</li>
+          <li>Call RevokeCertificate API → reason code</li>
+          <li>Published to CRL + OCSP within minutes</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Certificate Fields — X.509 Structure</h3>
+  <div class="cert-field">
+    <div class="cf-row"><div class="cf-label">Version</div><div class="cf-val info">v3 (always for Private CA)</div></div>
+    <div class="cf-row"><div class="cf-label">Serial Number</div><div class="cf-val">Unique 128-bit random — generated by AWS Private CA</div></div>
+    <div class="cf-row"><div class="cf-label">Signature Algorithm</div><div class="cf-val ok">SHA256withRSA or SHA256withECDSA</div></div>
+    <div class="cf-row"><div class="cf-label">Issuer (CA)</div><div class="cf-val">CN=My-Subordinate-CA, O=MyOrg, C=US</div></div>
+    <div class="cf-row"><div class="cf-label">Valid From</div><div class="cf-val">Issue timestamp</div></div>
+    <div class="cf-row"><div class="cf-label">Valid To</div><div class="cf-val warn">Issue + validity period (e.g. 1 year)</div></div>
+    <div class="cf-row"><div class="cf-label">Subject (CN)</div><div class="cf-val">api.internal.myorg.com · or device-001 · or user@myorg.com</div></div>
+    <div class="cf-row"><div class="cf-label">Public Key</div><div class="cf-val info">RSA 2048 or EC P-256 — the resource's public key</div></div>
+    <div class="cf-row"><div class="cf-label">Subject Alt Names</div><div class="cf-val">DNS:api.internal · DNS:*.svc.cluster.local · IP:10.0.1.5</div></div>
+    <div class="cf-row"><div class="cf-label">Key Usage</div><div class="cf-val">Digital Signature · Key Encipherment (TLS) · or Non Repudiation (code signing)</div></div>
+    <div class="cf-row"><div class="cf-label">Extended Key Usage</div><div class="cf-val">TLS Web Server Auth · TLS Web Client Auth · Code Signing</div></div>
+    <div class="cf-row"><div class="cf-label">BasicConstraints</div><div class="cf-val warn">CA:FALSE — end-entity cannot sign other certs</div></div>
+    <div class="cf-row"><div class="cf-label">CRL Distribution Point</div><div class="cf-val">https://crl.private-ca.myregion.amazonaws.com/crl/abc123.crl</div></div>
+    <div class="cf-row"><div class="cf-label">OCSP Access Info</div><div class="cf-val">http://ocsp.acm-pca.myregion.amazonaws.com/</div></div>
+    <div class="cf-row"><div class="cf-label">CA's Signature</div><div class="cf-val ok">ECDSA/RSA over all above fields — proves Subordinate CA vouches for this cert</div></div>
+  </div>
+
+  <h3>Validity Period Best Practices</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Certificate Type</th><th>Recommended Validity</th><th>Reason</th></tr>
+    <tr><td>Root CA</td><td>10–20 years</td><td>Changing root requires updating all trust stores — expensive</td></tr>
+    <tr><td>Subordinate CA</td><td>2–5 years</td><td>Balance between operational overhead and security</td></tr>
+    <tr><td>TLS server cert (ACM-managed)</td><td>13 months (auto-renew at 60 days)</td><td>ACM handles renewal automatically</td></tr>
+    <tr><td>mTLS client cert (service-to-service)</td><td>90 days</td><td>Short-lived = compromise window is small</td></tr>
+    <tr><td>IoT device cert</td><td>1–5 years</td><td>Devices are hard to update in the field</td></tr>
+    <tr><td>Short-lived cert (SPIFFE/SVID)</td><td>1 hour – 24 hours</td><td>No revocation needed — expires before attackers can exploit</td></tr>
+    <tr><td>Code signing cert</td><td>3 years</td><td>Signed artifacts remain valid even after cert expires (timestamp)</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ④ TEMPLATES & TYPES -->
+<div id="tab-templates" class="tab-panel"><div class="section">
+  <h2>📋 Certificate Templates &amp; Types</h2>
+  <p>AWS Private CA uses <strong>certificate templates</strong> to pre-configure the correct X.509 extensions for each use case. Using the wrong template can cause TLS failures, mTLS authentication failures, or security policy violations.</p>
+
+  <h3>AWS Managed Certificate Templates</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Template ARN (short name)</th><th>Use Case</th><th>Key Usage</th><th>EKU</th></tr>
+    <tr><td><code>EndEntityCertificate/V1</code></td><td>General TLS server certificate</td><td>Digital Sig, Key Enc</td><td>TLS Web Server Auth</td></tr>
+    <tr><td><code>EndEntityClientAuthCertificate/V1</code></td><td>mTLS client authentication</td><td>Digital Sig</td><td>TLS Web Client Auth</td></tr>
+    <tr><td><code>EndEntityServerAuthCertificate/V1</code></td><td>TLS server only</td><td>Digital Sig, Key Enc</td><td>TLS Web Server Auth</td></tr>
+    <tr><td><code>CodeSigningCertificate/V1</code></td><td>Sign software artifacts</td><td>Digital Sig</td><td>Code Signing</td></tr>
+    <tr><td><code>OCSPSigningCertificate/V1</code></td><td>Sign OCSP responses</td><td>Digital Sig</td><td>OCSP Signing</td></tr>
+    <tr><td><code>BlankEndEntityCertificate_APIPassthrough/V1</code></td><td>Custom extensions via API</td><td>As specified</td><td>As specified</td></tr>
+    <tr><td><code>SubordinateCACertificate_PathLen0/V1</code></td><td>Sub CA that issues end-entity only</td><td>Key Cert Sign, CRL Sign</td><td>CA:TRUE, PathLen:0</td></tr>
+    <tr><td><code>RootCACertificate/V1</code></td><td>Root CA self-signed</td><td>Key Cert Sign, CRL Sign</td><td>CA:TRUE</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 PathLen Constraint</h4>
+    <p><code>PathLen:0</code> means this Subordinate CA can only issue end-entity certs — it cannot sign other CA certificates. <code>PathLen:1</code> means it can sign one more level of sub CAs. Use <code>PathLen:0</code> on all leaf-issuing Subordinate CAs for maximum security.</p>
+  </div>
+
+  <h3>Common Certificate Types Explained</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🖥️ TLS Server Certificate</h4>
+      <ul>
+        <li>Used by servers to prove their identity during TLS handshake</li>
+        <li>Subject: <code>CN=api.internal.myorg.com</code></li>
+        <li>SAN: <code>DNS:api.internal</code>, <code>DNS:*.svc.cluster.local</code>, <code>IP:10.0.1.5</code></li>
+        <li>EKU: <code>TLS Web Server Authentication (1.3.6.1.5.5.7.3.1)</code></li>
+        <li>Key Usage: Digital Signature, Key Encipherment</li>
+        <li>Presented by server — verified by client against trust store</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>👤 mTLS Client Certificate</h4>
+      <ul>
+        <li>Used by clients (services, users, devices) to authenticate TO a server</li>
+        <li>Subject: <code>CN=order-service</code> or <code>CN=user@myorg.com</code></li>
+        <li>EKU: <code>TLS Web Client Authentication (1.3.6.1.5.5.7.3.2)</code></li>
+        <li>Key Usage: Digital Signature only (no Key Encipherment)</li>
+        <li>Presented by client — server verifies it against its trusted CA list</li>
+        <li>Proves who the client is — no passwords or API keys needed</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📡 IoT Device Certificate</h4>
+      <ul>
+        <li>Unique identity certificate per IoT device</li>
+        <li>Subject: <code>CN=device-serial-001</code></li>
+        <li>Private key generated on device — never transmitted</li>
+        <li>Device presents cert to AWS IoT Core for authentication</li>
+        <li>EKU: TLS Client Auth (device authenticates to cloud)</li>
+        <li>Longer validity (1–5 years) — devices hard to update</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📦 Code Signing Certificate</h4>
+      <ul>
+        <li>Signs software artifacts: Lambda packages, containers, executables</li>
+        <li>EKU: <code>Code Signing (1.3.6.1.5.5.7.3.3)</code></li>
+        <li>Key Usage: Digital Signature</li>
+        <li>Signed code verifiable even after cert expires (with timestamp)</li>
+        <li>Works with AWS Signer for Lambda function signing</li>
+        <li>Prevents deployment of unsigned/tampered code</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Custom Extensions via API Passthrough</h3>
+  <div class="card">
+    <h4>🔧 BlankEndEntityCertificate — Custom X.509 Extensions</h4>
+    <p style="font-size:.82rem;color:var(--muted);">Use <code>BlankEndEntityCertificate_APIPassthrough/V1</code> to specify any X.509 v3 extension in the IssueCertificate API call. Use cases: SPIFFE SVIDs (URI SAN for service identity), custom OIDs for policy embedding, device attributes, or any non-standard extension your application needs to read from the cert.</p>
+    <div class="code-block" style="margin-top:8px;"><span class="code-label">Custom extension in IssueCertificate API</span>
+<pre>{
+  <span class="str">"TemplateArn"</span>: <span class="str">"arn:aws:acm-pca:::template/BlankEndEntityCertificate_APIPassthrough/V1"</span>,
+  <span class="str">"Extensions"</span>: {
+    <span class="str">"SubjectAlternativeNames"</span>: [{
+      <span class="str">"UniformResourceIdentifier"</span>: <span class="str">"spiffe://myorg.com/ns/default/sa/order-service"</span>
+    }],  <span class="cm">// SPIFFE SVID URI SAN — used by service mesh (Istio/Linkerd)</span>
+    <span class="str">"CustomExtensions"</span>: [{
+      <span class="str">"ObjectIdentifier"</span>: <span class="str">"1.3.6.1.4.1.99999.1"</span>,
+      <span class="str">"Value"</span>: <span class="str">"aGVsbG8="</span>,  <span class="cm">// Base64 encoded custom value</span>
+      <span class="str">"Critical"</span>: <span class="kw">false</span>
+    }]
+  }
+}</pre></div>
+  </div>
+</div></div>
+
+
+<!-- ⑤ REVOCATION -->
+<div id="tab-revocation" class="tab-panel"><div class="section">
+  <h2>🚫 Revocation — CRL &amp; OCSP</h2>
+  <p>Revocation is how you invalidate a certificate before its expiry — typically when a private key is compromised, an employee leaves, or a service is decommissioned. AWS Private CA supports two revocation mechanisms: <strong>CRL</strong> (batch file) and <strong>OCSP</strong> (real-time).</p>
+
+  <div class="tip">
+    <h4>💡 Short-Lived Certs Eliminate Revocation</h4>
+    <p>If you issue certs valid for 24 hours or less, revocation is irrelevant — the cert expires before an attacker can exploit it. For high-security microservice environments, use the <strong>Short-lived cert mode CA</strong> ($50/month) with validity &lt;7 days. Much simpler operationally.</p>
+  </div>
+
+  <h3>CRL vs OCSP</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">📄 CRL (Certificate Revocation List)</div>
+      <div class="compare-row"><span class="compare-label">Format</span><span class="compare-val">Signed file (DER)</span></div>
+      <div class="compare-row"><span class="compare-label">Delivery</span><span class="compare-val">Published to S3</span></div>
+      <div class="compare-row"><span class="compare-label">Update frequency</span><span class="compare-val val-warn">Every 7 days (or on revoke)</span></div>
+      <div class="compare-row"><span class="compare-label">Lookup type</span><span class="compare-val">Download full list</span></div>
+      <div class="compare-row"><span class="compare-label">Latency to detect</span><span class="compare-val val-warn">Up to 7 days</span></div>
+      <div class="compare-row"><span class="compare-label">Bandwidth</span><span class="compare-val val-warn">Grows with # revoked</span></div>
+      <div class="compare-row"><span class="compare-label">Privacy</span><span class="compare-val val-good">✅ Client downloads list</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-green">📡 OCSP (Online Cert Status Protocol)</div>
+      <div class="compare-row"><span class="compare-label">Format</span><span class="compare-val">HTTP request/response</span></div>
+      <div class="compare-row"><span class="compare-label">Delivery</span><span class="compare-val">AWS managed endpoint</span></div>
+      <div class="compare-row"><span class="compare-label">Update frequency</span><span class="compare-val val-good">Real-time</span></div>
+      <div class="compare-row"><span class="compare-label">Lookup type</span><span class="compare-val">Per-cert serial query</span></div>
+      <div class="compare-row"><span class="compare-label">Latency to detect</span><span class="compare-val val-good">Seconds</span></div>
+      <div class="compare-row"><span class="compare-label">Bandwidth</span><span class="compare-val val-good">Constant per query</span></div>
+      <div class="compare-row"><span class="compare-label">Privacy</span><span class="compare-val val-warn">⚠️ OCSP server knows cert</span></div>
+    </div>
+  </div>
+
+  <h3>CRL Flow — How It Works</h3>
+  <div class="flow">
+    <div class="flow-node n-bad">
+      <div class="flow-node-title">🔓 Private key compromised — must revoke</div>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-label">Call RevokeCertificate API with reason code</div>
+    <div class="flow-node n-pc">
+      <div class="flow-node-title">🏛️ AWS Private CA marks cert as revoked</div>
+      <ul class="flow-items">
+        <li>Reason codes: KEY_COMPROMISE · CA_COMPROMISE · AFFILIATION_CHANGED · SUPERSEDED · CESSATION_OF_OPERATION · PRIVILEGE_WITHDRAWN</li>
+        <li>New CRL generated immediately with this cert's serial number</li>
+        <li>CRL published to configured S3 bucket within minutes</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-amber">
+      <div class="flow-node-title">📄 CRL file on S3 (public read)</div>
+      <ul class="flow-items">
+        <li>Clients download CRL from URL embedded in cert (<code>CDP extension</code>)</li>
+        <li>CRL is signed by CA — tamper-evident</li>
+        <li>Contains: list of revoked serial numbers + revocation timestamps + reason codes</li>
+        <li>CRL TTL: clients cache until nextUpdate field (typically 7 days)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">✅ Client checks CRL during TLS handshake</div>
+      <ul class="flow-items">
+        <li>If serial number found in CRL → reject connection</li>
+        <li>If not found → accept (cert is valid)</li>
+        <li>If CRL download fails → depends on soft/hard fail policy</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Revocation Reason Codes</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Reason Code</th><th>When to Use</th></tr>
+    <tr><td><code>KEY_COMPROMISE</code></td><td>Private key was exposed, stolen, or suspected stolen</td></tr>
+    <tr><td><code>CA_COMPROMISE</code></td><td>The CA that issued this cert was compromised</td></tr>
+    <tr><td><code>AFFILIATION_CHANGED</code></td><td>Subject changed role/department — cert subject no longer accurate</td></tr>
+    <tr><td><code>SUPERSEDED</code></td><td>Certificate replaced by a new one (normal renewal with old key)</td></tr>
+    <tr><td><code>CESSATION_OF_OPERATION</code></td><td>Service or device decommissioned — cert no longer needed</td></tr>
+    <tr><td><code>PRIVILEGE_WITHDRAWN</code></td><td>Subject no longer authorised to hold this cert (employee offboarding)</td></tr>
+    <tr><td><code>UNSPECIFIED</code></td><td>Use only when no other reason applies — avoid if possible</td></tr>
+  </table></div>
+
+  <h3>CRL S3 Bucket Configuration</h3>
+  <div class="code-block"><span class="code-label">S3 bucket policy — public CRL access for relying parties</span>
+<pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowPrivateCAPublishCRL"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: { <span class="str">"Service"</span>: <span class="str">"acm-pca.amazonaws.com"</span> },
+      <span class="str">"Action"</span>: [<span class="str">"s3:GetBucketAcl"</span>, <span class="str">"s3:GetBucketLocation"</span>, <span class="str">"s3:PutObject"</span>],
+      <span class="str">"Resource"</span>: [<span class="str">"arn:aws:s3:::my-crl-bucket"</span>, <span class="str">"arn:aws:s3:::my-crl-bucket/*"</span>]
+    },
+    {
+      <span class="str">"Sid"</span>: <span class="str">"AllowPublicReadCRL"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+      <span class="str">"Action"</span>: <span class="str">"s3:GetObject"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"arn:aws:s3:::my-crl-bucket/crl/*"</span>
+      <span class="cm">// CRL must be publicly readable — relying parties need to download it</span>
+    }
+  ]
+}</pre></div>
+</div></div>
+
+
+<!-- ⑥ mTLS & USE CASES -->
+<div id="tab-mtls" class="tab-panel"><div class="section">
+  <h2>🔗 mTLS &amp; Real-World Use Cases</h2>
+  <p>Mutual TLS (mTLS) is the most powerful use case for AWS Private CA. Unlike standard TLS where only the server presents a certificate, in mTLS <strong>both sides present certificates</strong> — enabling cryptographic authentication without passwords or API keys.</p>
+
+  <h3>Standard TLS vs mTLS</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔐 Standard TLS vs Mutual TLS (mTLS) — Side by Side</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="tls-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1d5a8a"/></marker>
+          <marker id="gr-a2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#1f7a52"/></marker>
+        </defs>
+        <!-- Standard TLS -->
+        <text x="180" y="20" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1d5a8a" text-anchor="middle">Standard TLS (one-way)</text>
+        <rect x="20" y="30" width="80" height="36" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="60" y="51" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">👤 Client</text>
+        <rect x="260" y="30" width="80" height="36" rx="6" fill="#ddeef8" stroke="rgba(29,90,138,.3)" stroke-width="1.5"/>
+        <text x="300" y="51" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">🖥️ Server</text>
+        <!-- TLS arrows -->
+        <line x1="100" y1="48" x2="258" y2="48" stroke="#1d5a8a" stroke-width="1.5" marker-end="url(#tls-a)"/>
+        <text x="180" y="42" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1d5a8a" text-anchor="middle">ClientHello</text>
+        <line x1="258" y1="78" x2="100" y2="78" stroke="#1d5a8a" stroke-width="1.5" marker-end="url(#tls-a)" transform="rotate(180 179 78)"/>
+        <text x="180" y="95" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1d5a8a" text-anchor="middle">ServerHello + ✅ Server cert</text>
+        <line x1="100" y1="110" x2="258" y2="110" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#gr-a2)"/>
+        <text x="180" y="125" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1f7a52" text-anchor="middle">Client verifies server cert only → ✅ Connected</text>
+        <text x="180" y="145" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">❌ Server does NOT know who the client is</text>
+        <text x="180" y="158" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">App layer must handle auth (tokens, API keys, etc.)</text>
+
+        <!-- mTLS -->
+        <text x="540" y="20" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#1f7a52" text-anchor="middle">mTLS (mutual)</text>
+        <rect x="380" y="30" width="80" height="36" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="420" y="51" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#2a4db0" text-anchor="middle">👤 Client</text>
+        <rect x="620" y="30" width="80" height="36" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="660" y="51" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1f7a52" text-anchor="middle">🖥️ Server</text>
+        <line x1="460" y1="48" x2="618" y2="48" stroke="#1d5a8a" stroke-width="1.5" marker-end="url(#tls-a)"/>
+        <text x="540" y="42" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1d5a8a" text-anchor="middle">ClientHello</text>
+        <line x1="618" y1="74" x2="460" y2="74" stroke="#1d5a8a" stroke-width="1.5" marker-end="url(#tls-a)" transform="rotate(180 539 74)"/>
+        <text x="540" y="91" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1d5a8a" text-anchor="middle">ServerHello + ✅ Server cert + CertRequest</text>
+        <line x1="460" y1="106" x2="618" y2="106" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#gr-a2)"/>
+        <text x="540" y="120" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1f7a52" text-anchor="middle">✅ Client cert (from Private CA)</text>
+        <line x1="460" y1="134" x2="618" y2="134" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#gr-a2)"/>
+        <text x="540" y="148" font-family="DM Sans,sans-serif" font-size="8.5" fill="#1f7a52" text-anchor="middle">CertVerify (proves private key ownership)</text>
+        <rect x="390" y="162" width="330" height="40" rx="5" fill="#d4f0e4" stroke="rgba(31,122,82,.2)" stroke-width="1"/>
+        <text x="555" y="178" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#1f7a52" text-anchor="middle">✅ Both verified cryptographically</text>
+        <text x="555" y="192" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a7a6a" text-anchor="middle">Server knows: client is order-service · no passwords needed</text>
+
+        <!-- comparison row -->
+        <rect x="10" y="230" width="700" height="78" rx="8" fill="rgba(29,90,138,.03)" stroke="rgba(29,90,138,.12)" stroke-width="1"/>
+        <text x="360" y="250" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#0d3559" text-anchor="middle">mTLS Use Cases — Where Private CA Shines</text>
+        <text x="30" y="268" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">🔗 Service-to-service auth in microservices (no shared API keys — cert IS the identity)</text>
+        <text x="30" y="282" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">⚖️ ALB mTLS — authenticate callers before Lambda/ECS even runs</text>
+        <text x="30" y="296" font-family="DM Sans,sans-serif" font-size="9" fill="#3a3a30">📡 IoT device authentication to AWS IoT Core · 🏥 Healthcare / financial compliance</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>mTLS with ALB — Authenticate at the Load Balancer</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Issue client cert from Private CA</h4>
+      <p>Order-service gets a cert with <code>CN=order-service</code>, EKU: TLS Client Auth, issued by your Subordinate CA.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Configure ALB with trust store</h4>
+      <p>Create an ALB trust store containing your Root CA cert. ALB will only allow requests from clients presenting certs signed by this CA. Optionally configure "Verify" mode (reject without cert) vs "Passthrough" mode.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>ALB passes client identity headers downstream</h4>
+      <p>After mTLS, ALB injects headers: <code>X-Amzn-Mtls-Clientcert-Subject</code>, <code>X-Amzn-Mtls-Clientcert-Fingerprint</code> — your backend reads these without any auth logic of its own.</p>
+    </div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Backend authorises based on CN/SAN</h4>
+      <p>Read <code>X-Amzn-Mtls-Clientcert-Subject</code> → extract <code>CN=order-service</code> → check authorisation. Rejected certs never reach your backend at all.</p>
+    </div>
+  </div>
+
+  <h3>Other Real-World Use Cases</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌐 Internal HTTPS (VPC/Kubernetes)</h4>
+      <ul>
+        <li>Issue certs for internal services: <code>api.svc.cluster.local</code></li>
+        <li>Kubernetes cert-manager integration — auto-issue and renew certs</li>
+        <li>Eliminate self-signed cert warnings in internal dashboards</li>
+        <li>Enable HTTPS on internal ALBs with trusted certs</li>
+        <li>Works with internal IPs and RFC 1918 addresses (public CA can't do this)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📡 IoT Device Identity</h4>
+      <ul>
+        <li>Each device gets a unique cert during manufacturing</li>
+        <li>Device authenticates to AWS IoT Core with its cert</li>
+        <li>No shared secrets — compromise of one device doesn't affect others</li>
+        <li>Revoke compromised devices individually</li>
+        <li>Scale to millions of devices — Private CA handles volume</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🛡️ SPIFFE/SVID — Service Mesh</h4>
+      <ul>
+        <li>Issue SPIFFE-compatible SVIDs for Istio/Linkerd</li>
+        <li>URI SAN: <code>spiffe://myorg.com/ns/default/sa/order-service</code></li>
+        <li>Short-lived (1hr) certs — auto-rotated by the mesh</li>
+        <li>Private CA acts as the SPIRE server upstream CA</li>
+        <li>Zero-trust networking inside your cluster</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>👤 Employee / VPN Client Certs</h4>
+      <ul>
+        <li>Issue personal certs to employees for VPN auth</li>
+        <li>Client VPN (AWS) uses Private CA for client authentication</li>
+        <li>Employee leaves → revoke their cert → VPN access gone instantly</li>
+        <li>No password resets — revocation is the offboarding step</li>
+        <li>Works with smart cards and hardware tokens (YubiKey)</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑦ SECURITY & IAM -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Security, IAM &amp; Cross-Account Sharing</h2>
+
+  <h3>IAM Permissions — Who Can Do What</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🏛️ CA Admin Actions</h4>
+      <ul>
+        <li><code>acm-pca:CreateCertificateAuthority</code> — create new CA</li>
+        <li><code>acm-pca:DeleteCertificateAuthority</code> — delete CA (irreversible)</li>
+        <li><code>acm-pca:UpdateCertificateAuthority</code> — update CRL/OCSP config</li>
+        <li><code>acm-pca:ImportCertificateAuthorityCertificate</code> — activate CA</li>
+        <li><code>acm-pca:GetCertificateAuthorityCsr</code> — get CSR for signing</li>
+        <li><code>acm-pca:PutPolicy</code> — set RAM sharing policy</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📜 Certificate Operator Actions</h4>
+      <ul>
+        <li><code>acm-pca:IssueCertificate</code> — issue new cert (most important)</li>
+        <li><code>acm-pca:GetCertificate</code> — download issued cert</li>
+        <li><code>acm-pca:RevokeCertificate</code> — revoke a cert</li>
+        <li><code>acm-pca:ListPermissions</code> — view who can issue</li>
+        <li><code>acm-pca:DescribeCertificateAuthority</code> — view CA details</li>
+        <li><code>acm-pca:GetCertificateAuthorityCertificate</code> — download CA cert</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>CA Resource-Based Policy — Cross-Account Sharing</h3>
+  <div class="code-block"><span class="code-label">CA resource policy — allow Account B to issue certs from Account A's Private CA</span>
+<pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [{
+    <span class="str">"Sid"</span>: <span class="str">"AllowCrossAccountIssuance"</span>,
+    <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+    <span class="str">"Principal"</span>: {
+      <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::ACCOUNT_B_ID:root"</span>
+    },
+    <span class="str">"Action"</span>: [
+      <span class="str">"acm-pca:IssueCertificate"</span>,
+      <span class="str">"acm-pca:GetCertificate"</span>,
+      <span class="str">"acm-pca:DescribeCertificateAuthority"</span>,
+      <span class="str">"acm-pca:GetCertificateAuthorityCertificate"</span>
+    ],
+    <span class="str">"Resource"</span>: <span class="str">"arn:aws:acm-pca:us-east-1:ACCOUNT_A_ID:certificate-authority/CA-ID"</span>,
+    <span class="str">"Condition"</span>: {
+      <span class="str">"StringEquals"</span>: {
+        <span class="cm">// Only allow specific template — prevents Account B from issuing CA certs</span>
+        <span class="str">"acm-pca:TemplateArn"</span>:
+          <span class="str">"arn:aws:acm-pca:::template/EndEntityCertificate/V1"</span>
+      }
+    }
+  }]
+}</pre></div>
+
+  <div class="tip">
+    <h4>💡 RAM vs Resource Policy</h4>
+    <p>Use <strong>AWS RAM (Resource Access Manager)</strong> to share a Private CA with other AWS accounts or AWS Organizations. RAM sharing is simpler than resource policies for org-wide sharing. Both RAM and resource-based policies work — RAM is preferred for org-level, resource policy for specific accounts.</p>
+  </div>
+
+  <h3>CloudTrail Audit — Every CA Operation is Logged</h3>
+  <div class="card">
+    <h4>📋 What CloudTrail Captures for Private CA</h4>
+    <ul>
+      <li><code>IssueCertificate</code> — who issued, which CA, template, subject, validity</li>
+      <li><code>RevokeCertificate</code> — who revoked, serial number, reason code, timestamp</li>
+      <li><code>CreateCertificateAuthority</code> — CA creation details</li>
+      <li><code>DeleteCertificateAuthority</code> — with 7-day safety window before permanent deletion</li>
+      <li>All API calls: IAM principal, source IP, AWS account, request parameters</li>
+      <li>Use CloudTrail Insights to detect unusual issuance volumes (bulk cert issuance attack)</li>
+    </ul>
+  </div>
+
+  <h3>Security Best Practices</h3>
+  <ul class="checklist">
+    <li>Use two-tier hierarchy — Root CA issues only to Subordinate CAs, never to end entities directly</li>
+    <li>Restrict <code>IssueCertificate</code> to specific template ARNs via IAM conditions — prevent CA cert issuance</li>
+    <li>Enable CRL and OCSP on all CAs — clients need a way to check revocation</li>
+    <li>Store Root CA cert in AWS Secrets Manager or SSM Parameter Store for distribution to trust stores</li>
+    <li>Use short-lived certs (&lt;24hr) for service mesh / SPIFFE to eliminate revocation overhead</li>
+    <li>Enable CloudTrail for all Private CA API calls — alert on RevokeCertificate and unusual IssueCertificate volume</li>
+    <li>Use separate Subordinate CAs per environment (dev/staging/prod) — compromise in dev doesn't affect prod</li>
+    <li>Tag all CAs and certs for cost allocation and audit — <code>Environment=prod</code>, <code>Team=platform</code></li>
+    <li>Configure CloudWatch alarm on <code>CertificateCount</code> approaching CA limits</li>
+    <li>Use RAM to share CA across accounts — avoids each account needing its own $400/month CA</li>
+  </ul>
+
+  <h3>Private CA Deletion Safety</h3>
+  <div class="warn">
+    <h4>⚠️ Deleting a CA — Restoration Window</h4>
+    <p>When you call <code>DeleteCertificateAuthority</code>, the CA enters a <strong>7-30 day restoration window</strong> (you choose). During this time it's disabled but can be restored. After the window, deletion is permanent and the CA private key is destroyed. All certs issued by this CA will immediately fail validation since the CA cert is gone. Plan CA deletion carefully — revoke all issued certs first.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑧ CONSOLE SETUP -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Private CA &amp; Issue a Certificate</h2>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <div class="console-step-title">Create Root CA</div>
+      <div class="console-step-path">AWS Certificate Manager → Private CA → Create CA</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">CA type</div>
+        <div class="console-field-value">Root</div>
+        <div class="console-field-hint">Start with Root. You'll create a Subordinate CA next that issues actual certs.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Key algorithm</div>
+        <div class="console-field-value">RSA 4096</div>
+        <div class="console-field-hint">For Root CA use RSA 4096 or EC P-384. Higher security — Root key rarely used.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Subject distinguished name — Common Name</div>
+        <div class="console-field-value">MyOrg Root CA</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Organisation (O)</div>
+        <div class="console-field-value">MyOrganisation Ltd</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Country (C)</div>
+        <div class="console-field-value">US</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">CA validity</div>
+        <div class="console-field-value">10 years</div>
+        <div class="console-field-hint">Root CA should be long-lived. Changing it requires updating all trust stores.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">CRL configuration</div>
+        <div class="console-field-value">Enable CRL → S3 bucket: my-crl-bucket · Custom CNAME (optional)</div>
+        <div class="console-field-hint">Create an S3 bucket first with the correct bucket policy (see Tab ⑤). CNAME hides the S3 URL from cert CRL field.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">OCSP</div>
+        <div class="console-field-value">Enable OCSP → AWS managed responder</div>
+        <div class="console-field-hint">Free — AWS manages the OCSP endpoint. Clients can do real-time revocation checks.</div>
+      </div>
+      <div class="console-note">💡 After creation, Root CA status is "Pending Certificate" — you must install a self-signed certificate. Click "Install CA certificate" → Create and install self-signed certificate.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <div class="console-step-title">Create Subordinate CA</div>
+      <div class="console-step-path">Private CA → Create CA → Subordinate</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">CA type</div>
+        <div class="console-field-value">Subordinate</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Key algorithm</div>
+        <div class="console-field-value">RSA 2048 or EC P-256</div>
+        <div class="console-field-hint">Subordinate CA can use a smaller key — it's used more frequently for signing.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Common Name</div>
+        <div class="console-field-value">MyOrg TLS Subordinate CA</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">CA validity</div>
+        <div class="console-field-value">3 years</div>
+        <div class="console-field-hint">Must be shorter than Root CA validity. Subordinate CA expiry = all its certs must be renewed.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Parent CA</div>
+        <div class="console-field-value">MyOrg Root CA (select from dropdown)</div>
+        <div class="console-field-hint">AWS will sign the Subordinate CA cert with the Root CA — creates the chain of trust.</div>
+      </div>
+      <div class="console-note">💡 Status moves from "Pending Certificate" → "Active" automatically when the Root CA signs it. The chain is: Sub CA cert → signed by Root CA → Root CA is self-signed.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <div class="console-step-title">Issue a TLS Server Certificate via ACM</div>
+      <div class="console-step-path">ACM → Request certificate → Private</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Certificate type</div>
+        <div class="console-field-value">Private</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">CA to use</div>
+        <div class="console-field-value">MyOrg TLS Subordinate CA</div>
+        <div class="console-field-hint">Use the Subordinate CA — never issue directly from Root CA.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Domain names (SAN)</div>
+        <div class="console-field-value">api.internal.myorg.com · *.internal.myorg.com · 10.0.1.5</div>
+        <div class="console-field-hint">Add all names the server will be reached by. Internal IPs supported — public CA can't do this.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Certificate validity</div>
+        <div class="console-field-value">13 months (ACM default for auto-renewal)</div>
+        <div class="console-field-hint">ACM auto-renews at 60 days before expiry. For manual certs, set 1 year.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Algorithm</div>
+        <div class="console-field-value">RSA 2048 or EC P-256</div>
+        <div class="console-field-hint">P-256 is faster and equally secure — preferred for server certs.</div>
+      </div>
+      <div class="console-note">✅ ACM-issued private certs can be deployed to: ALB, NLB, CloudFront, API Gateway, Elastic Beanstalk. For EC2 or ECS, download and install manually.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <div class="console-step-title">Grant ACM Permission to Issue from Private CA</div>
+      <div class="console-step-path">Private CA → CA details → Resource-based policy</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Action</div>
+        <div class="console-field-value">Grant ACM permission → Add permission</div>
+        <div class="console-field-hint">This allows ACM to automatically issue and renew certs from your Private CA. Required for ACM auto-renewal to work.</div>
+      </div>
+      <div class="console-note">💡 Alternatively, in the Private CA console → Actions → Create permission → Principal: acm.amazonaws.com</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <div class="console-step-title">Distribute Root CA to Trust Stores</div>
+      <div class="console-step-path">Private CA → CA details → Export CA certificate</div>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <div class="console-field-label">Download Root CA cert</div>
+        <div class="console-field-value">Export body (PEM) → root-ca.pem</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Store in SSM Parameter Store</div>
+        <div class="console-field-value">/myorg/pki/root-ca-cert (SecureString)</div>
+        <div class="console-field-hint">EC2 user data, ECS task definitions, and Lambda functions read this at startup to add to their local trust store.</div>
+      </div>
+      <div class="console-field">
+        <div class="console-field-label">Add to EC2 trust store</div>
+        <div class="console-field-value">sudo cp root-ca.pem /usr/local/share/ca-certificates/ && sudo update-ca-certificates</div>
+      </div>
+      <div class="console-note">💡 For ALB mTLS — create an ALB Trust Store (EC2 → Load Balancers → Trust stores) and upload your Root CA or Subordinate CA cert.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑨ C# SDK -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — AWS Private CA</h2>
+  <p>Install: <code>dotnet add package AWSSDK.ACMPCA</code></p>
+
+  <h3>Pattern 1 — Issue a Certificate from a CSR</h3>
+  <div class="code-block"><span class="code-label">C# · ACMPCA SDK · Issue certificate from CSR + download</span>
+<pre><span class="kw">using</span> <span class="tp">Amazon.ACMPCA</span>;
+<span class="kw">using</span> <span class="tp">Amazon.ACMPCA.Model</span>;
+<span class="kw">using</span> <span class="tp">System.Security.Cryptography</span>;
+<span class="kw">using</span> <span class="tp">System.Security.Cryptography.X509Certificates</span>;
+<span class="kw">using</span> <span class="tp">System.Text</span>;
+
+<span class="kw">public class</span> <span class="tp">PrivateCaService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonACMPCA</span> _pca;
+    <span class="kw">private const string</span> CaArn = <span class="str">"arn:aws:acm-pca:us-east-1:123456789:certificate-authority/CA-ID"</span>;
+
+    <span class="kw">public</span> <span class="fn">PrivateCaService</span>(<span class="tp">IAmazonACMPCA</span> pca) => _pca = pca;
+
+    <span class="cm">// ── Step 1: Generate key pair + CSR locally ──</span>
+    <span class="kw">public static</span> (<span class="kw">string</span> csrPem, <span class="tp">RSA</span> privateKey) <span class="fn">GenerateCsrAndKey</span>(
+        <span class="kw">string</span> commonName, <span class="kw">string</span>[] sanDnsNames)
+    {
+        <span class="kw">var</span> rsa     = <span class="tp">RSA</span>.<span class="fn">Create</span>(<span class="num">2048</span>);
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">CertificateRequest</span>(
+            <span class="str">$"CN={commonName},O=MyOrg,C=US"</span>,
+            rsa,
+            <span class="tp">HashAlgorithmName</span>.SHA256,
+            <span class="tp">RSASignaturePadding</span>.Pkcs1);
+
+        <span class="cm">// Add Subject Alternative Names</span>
+        <span class="kw">var</span> sanBuilder = <span class="kw">new</span> <span class="tp">SubjectAlternativeNameBuilder</span>();
+        <span class="kw">foreach</span> (<span class="kw">var</span> dns <span class="kw">in</span> sanDnsNames) sanBuilder.<span class="fn">AddDnsName</span>(dns);
+        request.CertificateExtensions.<span class="fn">Add</span>(sanBuilder.<span class="fn">Build</span>());
+
+        <span class="kw">var</span> csrBytes = request.<span class="fn">CreateSigningRequest</span>();
+        <span class="kw">var</span> csrPem   = <span class="str">"-----BEGIN CERTIFICATE REQUEST-----\n"</span>
+                     + <span class="tp">Convert</span>.<span class="fn">ToBase64String</span>(csrBytes, <span class="tp">Base64FormattingOptions</span>.InsertLineBreaks)
+                     + <span class="str">"\n-----END CERTIFICATE REQUEST-----"</span>;
+
+        <span class="kw">return</span> (csrPem, rsa);  <span class="cm">// Store privateKey securely — NEVER transmit it</span>
+    }
+
+    <span class="cm">// ── Step 2: Submit CSR to AWS Private CA ──</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">IssueCertificateAsync</span>(
+        <span class="kw">string</span> csrPem,
+        <span class="kw">int</span> validityDays = <span class="num">365</span>)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _pca.<span class="fn">IssueCertificateAsync</span>(<span class="kw">new</span> <span class="tp">IssueCertificateRequest</span>
+        {
+            CertificateAuthorityArn = CaArn,
+            Csr = <span class="kw">new</span> <span class="tp">MemoryStream</span>(<span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(csrPem)),
+            <span class="cm">// Template determines Key Usage and EKU extensions</span>
+            TemplateArn = <span class="str">"arn:aws:acm-pca:::template/EndEntityCertificate/V1"</span>,
+            SigningAlgorithm = <span class="tp">SigningAlgorithm</span>.SHA256WITHRSA,
+            Validity = <span class="kw">new</span> <span class="tp">Validity</span>
+            {
+                Type  = <span class="tp">ValidityPeriodType</span>.DAYS,
+                Value = validityDays
+            },
+            <span class="cm">// IdempotencyToken ensures same request = same cert if retried</span>
+            IdempotencyToken = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>(<span class="str">"N"</span>)
+        });
+
+        <span class="kw">return</span> response.CertificateArn;  <span class="cm">// ARN to retrieve cert once issued</span>
+    }
+
+    <span class="cm">// ── Step 3: Wait and download the signed certificate ──</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;(<span class="kw">string</span> certPem, <span class="kw">string</span> chainPem)&gt; <span class="fn">GetCertificateAsync</span>(<span class="kw">string</span> certArn)
+    {
+        <span class="kw">while</span> (<span class="kw">true</span>)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> resp = <span class="kw">await</span> _pca.<span class="fn">GetCertificateAsync</span>(<span class="kw">new</span> <span class="tp">GetCertificateRequest</span>
+                {
+                    CertificateAuthorityArn = CaArn,
+                    CertificateArn          = certArn
+                });
+                <span class="kw">return</span> (resp.Certificate, resp.CertificateChain);
+                <span class="cm">// Certificate = end-entity cert PEM</span>
+                <span class="cm">// CertificateChain = Subordinate CA + Root CA PEM (install alongside cert)</span>
+            }
+            <span class="kw">catch</span> (<span class="tp">RequestInProgressException</span>)
+            {
+                <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">2</span>));  <span class="cm">// issuance takes 1-5 seconds</span>
+            }
+        }
+    }
+
+    <span class="cm">// ── All-in-one: Generate key + CSR → Issue → Download ──</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;(<span class="kw">string</span> certPem, <span class="kw">string</span> chainPem, <span class="tp">RSA</span> privateKey)&gt;
+        <span class="fn">ProvisionCertificateAsync</span>(<span class="kw">string</span> commonName, <span class="kw">string</span>[] dnsNames, <span class="kw">int</span> validityDays = <span class="num">365</span>)
+    {
+        <span class="kw">var</span> (csrPem, privateKey) = <span class="fn">GenerateCsrAndKey</span>(commonName, dnsNames);
+        <span class="kw">var</span> certArn              = <span class="kw">await</span> <span class="fn">IssueCertificateAsync</span>(csrPem, validityDays);
+        <span class="kw">var</span> (cert, chain)        = <span class="kw">await</span> <span class="fn">GetCertificateAsync</span>(certArn);
+        <span class="kw">return</span> (cert, chain, privateKey);
+    }
+}</pre></div>
+
+  <h3>Pattern 2 — Revoke a Certificate</h3>
+  <div class="code-block"><span class="code-label">C# · Revoke certificate · Reason codes · Verify revocation</span>
+<pre><span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RevokeCertificateAsync</span>(<span class="kw">string</span> certArn, <span class="kw">string</span> reason = <span class="str">"KEY_COMPROMISE"</span>)
+{
+    <span class="cm">// Extract serial number from cert ARN (last part after /certificate/)</span>
+    <span class="kw">var</span> serialNumber = certArn.<span class="fn">Split</span>(<span class="str">'/'</span>).Last();
+
+    <span class="kw">await</span> _pca.<span class="fn">RevokeCertificateAsync</span>(<span class="kw">new</span> <span class="tp">RevokeCertificateRequest</span>
+    {
+        CertificateAuthorityArn = CaArn,
+        CertificateSerial       = serialNumber,
+        RevocationReason        = reason  <span class="cm">// KEY_COMPROMISE · CESSATION_OF_OPERATION · etc</span>
+    });
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"✅ Revoked: {certArn} — reason: {reason}"</span>);
+    <span class="cm">// CRL updated automatically. OCSP reflects revocation within minutes.</span>
+}</pre></div>
+
+  <h3>Pattern 3 — List &amp; Monitor CAs</h3>
+  <div class="code-block"><span class="code-label">C# · List all CAs · Describe CA · Monitor expiry</span>
+<pre><span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">MonitorCAsAsync</span>()
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> _pca.<span class="fn">ListCertificateAuthoritiesAsync</span>(<span class="kw">new</span> <span class="tp">ListCertificateAuthoritiesRequest</span>());
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> ca <span class="kw">in</span> resp.CertificateAuthorities)
+    {
+        <span class="kw">var</span> detail = <span class="kw">await</span> _pca.<span class="fn">DescribeCertificateAuthorityAsync</span>(
+            <span class="kw">new</span> <span class="tp">DescribeCertificateAuthorityRequest</span> { CertificateAuthorityArn = ca.Arn });
+
+        <span class="kw">var</span> d = detail.CertificateAuthority;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"CA: {d.CertificateAuthorityConfiguration.Subject.CommonName}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Status: {d.Status}"</span>);          <span class="cm">// ACTIVE · DISABLED · EXPIRED</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Type: {d.Type}"</span>);              <span class="cm">// ROOT · SUBORDINATE</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Created: {d.CreatedAt:u}"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Expiry: {d.NotAfter:u}"</span>);
+
+        <span class="cm">// Warn if CA expires within 90 days</span>
+        <span class="kw">if</span> (d.NotAfter.HasValue && d.NotAfter.Value < <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddDays</span>(<span class="num">90</span>))
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"⚠️ WARNING: CA expires soon — {d.NotAfter:yyyy-MM-dd}"</span>);
+    }
+}
+
+<span class="cm">// Download CA certificate (for distributing to trust stores)</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetCaCertificateAsync</span>(<span class="kw">string</span> caArn)
+{
+    <span class="kw">var</span> resp = <span class="kw">await</span> _pca.<span class="fn">GetCertificateAuthorityCertificateAsync</span>(
+        <span class="kw">new</span> <span class="tp">GetCertificateAuthorityCertificateRequest</span> { CertificateAuthorityArn = caArn });
+    <span class="kw">return</span> resp.Certificate;  <span class="cm">// Root CA PEM — distribute to all trust stores</span>
+}</pre></div>
+
+<div class="completion">
+    <div style="font-size:2rem;margin-bottom:8px;">🏛️</div>
+    <h3>You Now Have COMPLETE AWS Private CA Knowledge!</h3>
+    <p>What Private CA is · Public vs Private CA differences · Fully managed: HSM key storage, CRL, OCSP, HA · CA hierarchy (Root → Subordinate → End-entity) · Two-tier hierarchy design + SVG diagram · PathLen constraints · Chain of trust + trust store distribution · External Root / hybrid PKI · Certificate lifecycle (generate CSR → sign → install → renew → revoke) · X.509 certificate structure (all fields) · Validity period best practices (per cert type) · Certificate templates (EndEntity, ClientAuth, CodeSigning, OCSP, Blank/passthrough) · SPIFFE SVID custom extensions · CRL vs OCSP (comparison, flow, S3 bucket policy) · Revocation reason codes · Short-lived certs eliminate revocation · mTLS explained (standard TLS vs mTLS SVG) · mTLS with ALB (trust store, client identity headers) · IoT device certs · SPIFFE/service mesh · Employee VPN certs · IAM permissions (admin vs operator) · Cross-account resource policy · RAM sharing · CloudTrail audit · CA deletion safety window · Full console walkthrough (Root CA → Subordinate CA → ACM cert → distribute trust) · C# SDK (generate CSR + key locally, issue cert, wait + download, revoke, list + monitor CAs)</p>
+    <p style="margin-top:10px;font-weight:600;color:var(--pc-d);">Your internal PKI is now production-ready — every service, device, and user authenticated with cryptographic identity! 🔐</p>
+</div>
+
+</div></div>
+
+</div><!-- /.container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+// Scroll active tab button into view on mobile
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    this.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  });
+});
+</script>
+</body>
+</html>

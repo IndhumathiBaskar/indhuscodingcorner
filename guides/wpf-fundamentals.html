@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPF Fundamentals — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f7ff;--surface:#f0eeff;--card:#fff;--border:#ddd9f5;--border2:#b8b0e8;
+  --wpf:#5b3fd4;--wpf-l:#ede8fc;--wpf-d:#3a20a0;
+  --xaml:#2a7abf;--xaml-l:#d6eaf8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --teal:#1a7a6a;--teal-l:#d0f0ec;
+  --pink:#a0286a;--pink-l:#f5d0e8;
+  --text:#16141f;--text2:#3a3650;--muted:#706a90;
+  --code-bg:#0d0b18;--r:9px;
+  --sh:0 1px 4px rgba(91,63,212,.06),0 4px 16px rgba(91,63,212,.06);
+  --sh-lg:0 2px 8px rgba(91,63,212,.08),0 8px 32px rgba(91,63,212,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* ── HEADER ── */
+.header{
+  background:linear-gradient(135deg,#1a0a3a 0%,#2d1472 50%,#4a1fa8 100%);
+  border-bottom:1px solid #2d1472;
+  padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 50%,rgba(91,63,212,.4) 0%,transparent 60%),
+             radial-gradient(ellipse at 70% 50%,rgba(42,122,191,.3) 0%,transparent 60%);
+  pointer-events:none;
+}
+.header-badge{
+  display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  border-radius:100px;padding:4px 14px;font-size:.7rem;letter-spacing:.1em;
+  text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;
+}
+.header h1{color:#fff;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;position:relative;}
+.header h1 span{color:#a78bfa;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(248,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--wpf-l);color:var(--wpf-d);font-weight:700;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.15rem,3.5vw,1.7rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid var(--wpf-l);letter-spacing:-.02em;}
+.section h3{color:var(--wpf-d);font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+
+/* BEGINNER CALLOUT */
+.beginner{background:linear-gradient(135deg,#f0eeff,#e8f4ff);border:1.5px solid var(--border);border-left:4px solid var(--wpf);border-radius:var(--r);padding:13px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--wpf);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.beginner p{color:var(--text2);font-size:.84rem;margin:0;}
+
+/* ANALOGY BOX */
+.analogy{background:linear-gradient(135deg,var(--orange-l),#fff8f0);border:1.5px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:13px 16px;margin:14px 0;}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.analogy p{color:var(--text2);font-size:.84rem;margin:0;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:13px 16px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.9rem;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.flow-items{list-style:none;font-size:.8rem;color:var(--text2);}
+.flow-items li{padding:3px 0 3px 15px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--wpf);}
+.flow-arrow{text-align:center;padding:5px 0;color:var(--border2);font-size:1.4rem;line-height:1;}
+.flow-row{display:flex;gap:10px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-wpf{background:var(--wpf-l);border:1.5px solid rgba(91,63,212,.25);}
+.n-wpf .flow-node-title{color:var(--wpf-d);}
+.n-xaml{background:var(--xaml-l);border:1.5px solid rgba(42,122,191,.25);}
+.n-xaml .flow-node-title{color:var(--xaml);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.2);}
+.n-green .flow-node-title{color:var(--green);}
+.n-orange{background:var(--orange-l);border:1.5px solid rgba(201,96,10,.2);}
+.n-orange .flow-node-title{color:var(--orange);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,122,106,.2);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-pink{background:var(--pink-l);border:1.5px solid rgba(160,40,106,.2);}
+.n-pink .flow-node-title{color:var(--pink);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:13px;}
+.step-num{background:var(--wpf);color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(91,63,212,.3);}
+.step-body{background:var(--surface);padding:13px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--wpf);}
+.step-body h4{color:var(--wpf-d);margin-bottom:5px;font-size:.9rem;}
+.step-body p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--wpf-d);margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--wpf);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.78rem;font-weight:600;}
+.icon-item p{font-size:.71rem;color:var(--muted);}
+
+/* ALERTS */
+.tip{background:var(--wpf-l);border:1px solid rgba(91,63,212,.2);border-left:4px solid var(--wpf);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.tip h4{color:var(--wpf-d);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:12px 15px;border-radius:var(--r);margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.success p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #1a1530;border-left:3px solid var(--wpf);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:13px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.2);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:#a78bfa;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;display:block;}
+/* syntax */
+.kw{color:#cba6f7;} .str{color:#a6e3a1;} .cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;} .fn{color:#89b4fa;} .num{color:#fab387;} .ky{color:#f38ba8;}
+.at{color:#f9e2af;} .tag{color:#f38ba8;} .prop{color:#89b4fa;} .val{color:#a6e3a1;}
+code{background:rgba(91,63,212,.12);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--wpf-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* XAML PREVIEW */
+.xaml-preview{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0;}
+.xaml-preview .code-block{margin:0;}
+.preview-box{background:linear-gradient(135deg,#e8e4ff,#d8f0ff);border:2px solid var(--border);border-radius:var(--r);display:flex;align-items:center;justify-content:center;min-height:100px;font-size:.8rem;color:var(--text2);padding:12px;flex-direction:column;gap:8px;}
+.preview-box .sim-btn{background:var(--wpf);color:#fff;border:none;padding:5px 14px;border-radius:4px;font-size:.75rem;cursor:default;}
+.preview-box .sim-input{background:#fff;border:1.5px solid var(--border2);border-radius:4px;padding:4px 8px;font-size:.75rem;width:130px;}
+.preview-box .sim-label{font-size:.75rem;color:var(--text2);}
+
+/* LAYOUT DIAGRAMS */
+.layout-demo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:14px 0;}
+.layout-box{border:2px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.layout-title{background:var(--surface);padding:7px 12px;font-size:.72rem;font-weight:700;color:var(--wpf-d);border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+.layout-vis{padding:10px;min-height:90px;display:flex;gap:5px;background:#fff;}
+.lv-stack{flex-direction:column;}
+.lv-item{background:var(--wpf-l);border:1px solid rgba(91,63,212,.3);border-radius:4px;padding:5px 8px;font-size:.68rem;color:var(--wpf-d);font-weight:600;text-align:center;}
+.lv-item.accent{background:var(--wpf);color:#fff;}
+.lv-grid2{display:grid;grid-template-columns:1fr 1fr;gap:5px;width:100%;}
+.lv-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;width:100%;}
+.lv-dock-top{grid-column:1/-1;}
+.lv-canvas-wrap{position:relative;width:100%;height:80px;}
+.lv-abs{position:absolute;background:var(--wpf-l);border:1px solid rgba(91,63,212,.3);border-radius:3px;padding:3px 6px;font-size:.62rem;color:var(--wpf-d);font-weight:600;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#1a0a3a,#2d1472);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;color:#fff;}
+.completion h3{font-size:1.15rem;font-weight:800;margin-bottom:12px;}
+.completion p{color:rgba(255,255,255,.75);font-size:.86rem;line-height:1.9;margin:0;}
+
+/* DIAGRAM WRAP */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{background:linear-gradient(90deg,var(--wpf-l),var(--xaml-l));padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.layout-demo,.xaml-preview{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.63rem;}
+  .step{gap:9px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Part 1 of 2 · Fundamentals</div>
+    <h1>WPF <span>Fundamentals</span></h1>
+    <p>Windows Presentation Foundation · XAML · Controls · Layouts · Data Binding · Styles · Beginner to Intermediate</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① What is WPF</button>
+      <button class="tab-btn" onclick="T('xaml',this)">② XAML Basics</button>
+      <button class="tab-btn" onclick="T('controls',this)">③ Controls</button>
+      <button class="tab-btn" onclick="T('layouts',this)">④ Layouts</button>
+      <button class="tab-btn" onclick="T('binding',this)">⑤ Data Binding</button>
+      <button class="tab-btn" onclick="T('styles',this)">⑥ Styles &amp; Templates</button>
+      <button class="tab-btn" onclick="T('events',this)">⑦ Events &amp; Commands</button>
+      <button class="tab-btn" onclick="T('resources',this)">⑧ Resources</button>
+      <button class="tab-btn" onclick="T('first',this)">⑨ First App</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHAT IS WPF
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🖥️ What is WPF?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Complete Beginner? Start Here</div>
+    <p>WPF stands for <strong>Windows Presentation Foundation</strong>. It is Microsoft's framework for building desktop applications that run on Windows. Think of it as the tools and rules for building a Windows app with buttons, text boxes, lists, menus — all the visual things a user sees and interacts with.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Think of WPF like building a house. <strong>XAML</strong> is the architectural blueprint (what goes where, what it looks like). <strong>C#</strong> is the electrical wiring and plumbing (the logic that makes things actually work). You need both — the blueprint describes the rooms, and the wiring makes the lights turn on.</p>
+  </div>
+
+  <h3>Why Was WPF Created?</h3>
+  <p>Before WPF, Windows apps were built with WinForms. WinForms was simple but had big limitations — every pixel had to be drawn manually, resizing was painful, and animations were nearly impossible. WPF was introduced in 2006 with .NET 3.0 to fix all of this.</p>
+
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🎨</span><h4>GPU Rendering</h4><p>WPF uses DirectX under the hood — your graphics card renders the UI, not the CPU. Everything is smooth and scalable.</p></div>
+    <div class="icon-item"><span class="emoji">📐</span><h4>Vector-Based</h4><p>WPF draws everything as vectors. Resize your window to any size — text and shapes stay crisp and sharp.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Data Binding</h4><p>Connect UI controls directly to your data. Change the data, the screen updates automatically — no manual refresh code.</p></div>
+    <div class="icon-item"><span class="emoji">🎭</span><h4>Styles &amp; Templates</h4><p>Change how any control looks completely. A button doesn't have to look like a button — it can look like anything.</p></div>
+    <div class="icon-item"><span class="emoji">✨</span><h4>Animations</h4><p>Smooth animations built in — fade in, slide, rotate, resize. All declarable in XAML without complex code.</p></div>
+    <div class="icon-item"><span class="emoji">📝</span><h4>XAML</h4><p>Describe your UI in a readable XML-based language. Designers and developers can work on the same file.</p></div>
+  </div>
+
+  <h3>WPF vs WinForms vs Other Options</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>WPF</th><th>WinForms</th><th>MAUI</th><th>UWP/WinUI 3</th></tr>
+    <tr><td>Introduced</td><td>2006 (.NET 3.0)</td><td>2002 (.NET 1.0)</td><td>2022 (.NET 6)</td><td>2012 / 2021</td></tr>
+    <tr><td>UI Description</td><td>XAML</td><td>Designer / Code</td><td>XAML</td><td>XAML</td></tr>
+    <tr><td>Rendering</td><td>DirectX (GPU)</td><td>GDI+ (CPU)</td><td>Native per platform</td><td>DirectX (GPU)</td></tr>
+    <tr><td>Platform</td><td>Windows only</td><td>Windows only</td><td>Win, Mac, iOS, Android</td><td>Windows only</td></tr>
+    <tr><td>Data binding</td><td>✅ Powerful</td><td>⚠️ Basic</td><td>✅ Powerful</td><td>✅ Powerful</td></tr>
+    <tr><td>Still used?</td><td>✅ Widely used</td><td>✅ Legacy apps</td><td>✅ New cross-platform</td><td>✅ Modern Windows</td></tr>
+    <tr><td>Best for</td><td>Enterprise desktop apps</td><td>Quick simple tools</td><td>Cross-platform</td><td>Modern Windows Store</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Should You Learn WPF in 2024+?</h4>
+    <p>Yes — WPF is still widely used in enterprise environments (banking, healthcare, manufacturing). The XAML and MVVM patterns you learn in WPF transfer directly to MAUI, WinUI 3, and even Xamarin. It is an excellent foundation for any Windows or .NET UI development.</p>
+  </div>
+
+  <h3>How a WPF App is Structured</h3>
+  <div class="diagram-wrap">
+    <div class="diagram-header">🏗️ WPF Application Structure</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b3fd4"/>
+          </marker>
+        </defs>
+        <!-- App.xaml -->
+        <rect x="270" y="20" width="180" height="55" rx="8" fill="#ede8fc" stroke="rgba(91,63,212,.35)" stroke-width="2"/>
+        <text x="360" y="43" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#3a20a0" text-anchor="middle">App.xaml</text>
+        <text x="360" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="#706a90" text-anchor="middle">Entry point · Global resources</text>
+
+        <!-- Arrows -->
+        <line x1="270" y1="47" x2="195" y2="107" stroke="#5b3fd4" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="360" y1="75" x2="360" y2="107" stroke="#5b3fd4" stroke-width="1.5" marker-end="url(#arr)"/>
+        <line x1="450" y1="47" x2="525" y2="107" stroke="#5b3fd4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- MainWindow.xaml -->
+        <rect x="260" y="110" width="200" height="55" rx="8" fill="#ede8fc" stroke="rgba(91,63,212,.35)" stroke-width="2"/>
+        <text x="360" y="133" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#3a20a0" text-anchor="middle">MainWindow.xaml</text>
+        <text x="360" y="150" font-family="JetBrains Mono,monospace" font-size="9" fill="#706a90" text-anchor="middle">Main window · XAML layout</text>
+
+        <!-- Resources -->
+        <rect x="30" y="110" width="160" height="55" rx="8" fill="#d6eaf8" stroke="rgba(42,122,191,.3)" stroke-width="1.5"/>
+        <text x="110" y="133" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#2a7abf" text-anchor="middle">ResourceDictionary</text>
+        <text x="110" y="150" font-family="JetBrains Mono,monospace" font-size="9" fill="#706a90" text-anchor="middle">Styles · Colours · Templates</text>
+
+        <!-- Models -->
+        <rect x="530" y="110" width="160" height="55" rx="8" fill="#d0f0ec" stroke="rgba(26,122,106,.25)" stroke-width="1.5"/>
+        <text x="610" y="133" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#1a7a6a" text-anchor="middle">Models / Data</text>
+        <text x="610" y="150" font-family="JetBrains Mono,monospace" font-size="9" fill="#706a90" text-anchor="middle">C# classes · ViewModels</text>
+
+        <!-- Arrow down -->
+        <line x1="360" y1="165" x2="360" y2="197" stroke="#5b3fd4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Code behind -->
+        <rect x="230" y="200" width="260" height="55" rx="8" fill="#ede8fc" stroke="rgba(91,63,212,.3)" stroke-width="1.5"/>
+        <text x="360" y="223" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#3a20a0" text-anchor="middle">MainWindow.xaml.cs</text>
+        <text x="360" y="240" font-family="JetBrains Mono,monospace" font-size="9" fill="#706a90" text-anchor="middle">Code-behind · Event handlers · Logic</text>
+
+        <!-- Arrow down -->
+        <line x1="360" y1="255" x2="360" y2="287" stroke="#5b3fd4" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <!-- Runtime -->
+        <rect x="200" y="290" width="320" height="38" rx="8" fill="linear-gradient(135deg,#1a0a3a,#2d1472)" stroke="rgba(91,63,212,.5)" stroke-width="2"/>
+        <rect x="200" y="290" width="320" height="38" rx="8" fill="#2d1472"/>
+        <text x="360" y="314" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#a78bfa" text-anchor="middle">WPF Runtime (DirectX GPU Rendering)</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>The Two Files Every Window Has</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📄 MainWindow.xaml — The Blueprint</h4>
+      <ul>
+        <li>Written in XAML (a form of XML)</li>
+        <li>Describes <em>what</em> the UI looks like and <em>where</em> things are placed</li>
+        <li>Designers can edit this without touching C# logic</li>
+        <li>Visual Studio shows a live preview of this file</li>
+        <li>Converted to C# objects automatically at compile time</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚙️ MainWindow.xaml.cs — The Logic</h4>
+      <ul>
+        <li>Written in C# — this is the "code-behind"</li>
+        <li>Contains event handlers (what happens when button is clicked)</li>
+        <li>Uses <code>InitializeComponent()</code> to load the XAML</li>
+        <li>Can access any named XAML element directly</li>
+        <li>In MVVM pattern, this file stays nearly empty</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>WPF Key Concepts at a Glance</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📝</span><h4>XAML</h4><p>XML-based markup language to describe UI. Like HTML for web but for Windows.</p></div>
+    <div class="icon-item"><span class="emoji">🏠</span><h4>Window</h4><p>The main container. Every WPF app has at least one Window with a title bar, minimize/maximize/close buttons.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Controls</h4><p>The building blocks — Button, TextBox, Label, ListBox, DataGrid, etc. Everything the user interacts with.</p></div>
+    <div class="icon-item"><span class="emoji">📐</span><h4>Panels/Layouts</h4><p>Containers that arrange controls. Grid, StackPanel, DockPanel, WrapPanel, Canvas.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Data Binding</h4><p>Connect a control's property to a C# property. They stay in sync automatically.</p></div>
+    <div class="icon-item"><span class="emoji">🎨</span><h4>Styles</h4><p>Reusable appearance settings. Define once, apply to many controls. Like CSS for Windows apps.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Templates</h4><p>Completely redefine what a control looks like. Make a Button look like a circle — totally possible.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Events</h4><p>Things that happen — Click, KeyDown, MouseEnter, TextChanged. You write C# code to respond to them.</p></div>
+    <div class="icon-item"><span class="emoji">📁</span><h4>Resources</h4><p>Store reusable things (colours, styles, templates) in one place and reference them anywhere.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — XAML BASICS
+══════════════════════════════════ -->
+<div id="tab-xaml" class="tab-panel"><div class="section">
+  <h2>📝 XAML Basics</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Beginner Explanation</div>
+    <p>XAML (pronounced "zammel") is like HTML but for Windows apps. Just like HTML uses tags like <code>&lt;div&gt;</code> and <code>&lt;button&gt;</code>, XAML uses tags like <code>&lt;Grid&gt;</code> and <code>&lt;Button&gt;</code>. Each tag creates a visual element on the screen.</p>
+  </div>
+
+  <h3>XAML Syntax Rules</h3>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Basic Syntax Breakdown</span>
+    <pre><span class="cm">&lt;!-- 1. Every element is an XML tag --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Click Me"</span> <span class="prop">Width</span>=<span class="val">"100"</span> <span class="prop">Height</span>=<span class="val">"30"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- 2. Attributes set properties on the control --&gt;</span>
+<span class="tag">&lt;TextBox</span>
+    <span class="prop">Width</span>=<span class="val">"200"</span>
+    <span class="prop">Height</span>=<span class="val">"30"</span>
+    <span class="prop">Text</span>=<span class="val">"Type here..."</span>
+    <span class="prop">FontSize</span>=<span class="val">"14"</span>
+    <span class="prop">Foreground</span>=<span class="val">"DarkBlue"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- 3. Controls can contain other controls (children) --&gt;</span>
+<span class="tag">&lt;StackPanel&gt;</span>
+    <span class="tag">&lt;Label</span> <span class="prop">Content</span>=<span class="val">"Name:"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBox</span> <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>  <span class="prop">Content</span>=<span class="val">"Save"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span>
+
+<span class="cm">&lt;!-- 4. Property Element Syntax — for complex values --&gt;</span>
+<span class="tag">&lt;Button&gt;</span>
+    <span class="tag">&lt;Button.Background&gt;</span>
+        <span class="tag">&lt;LinearGradientBrush&gt;</span>
+            <span class="tag">&lt;GradientStop</span> <span class="prop">Color</span>=<span class="val">"Blue"</span>  <span class="prop">Offset</span>=<span class="val">"0"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;GradientStop</span> <span class="prop">Color</span>=<span class="val">"Purple"</span><span class="prop">Offset</span>=<span class="val">"1"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/LinearGradientBrush&gt;</span>
+    <span class="tag">&lt;/Button.Background&gt;</span>
+    <span class="tag">&lt;Button.Content&gt;</span>Fancy Button<span class="tag">&lt;/Button.Content&gt;</span>
+<span class="tag">&lt;/Button&gt;</span></pre>
+  </div>
+
+  <h3>The x: Namespace — Special XAML Features</h3>
+  <div class="card">
+    <h4>🔑 What <code>x:</code> Prefix Means</h4>
+    <p>The <code>x:</code> prefix gives you access to special XAML features. The most important ones you'll use every day:</p>
+    <ul>
+      <li><code>x:Name="myButton"</code> — gives the control a name so you can access it in C# code</li>
+      <li><code>x:Key="myStyle"</code> — gives a resource a key so you can reference it elsewhere</li>
+      <li><code>x:Type="local:MyClass"</code> — references a C# type</li>
+      <li><code>x:Static</code> — references a static field or property</li>
+      <li><code>x:Null</code> — sets a property to null</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — x:Name to access controls in C#</span>
+    <pre><span class="cm">&lt;!-- XAML: give controls names --&gt;</span>
+<span class="tag">&lt;StackPanel&gt;</span>
+    <span class="tag">&lt;TextBox</span>  <span class="prop">x:Name</span>=<span class="val">"txtName"</span>    <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBox</span>  <span class="prop">x:Name</span>=<span class="val">"txtEmail"</span>   <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>   <span class="prop">x:Name</span>=<span class="val">"btnSave"</span>    <span class="prop">Content</span>=<span class="val">"Save"</span>
+              <span class="prop">Click</span>=<span class="val">"btnSave_Click"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBlock</span><span class="prop">x:Name</span>=<span class="val">"txtResult"</span>  <span class="prop">Text</span>=<span class="val">""</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# Code-Behind — access named controls</span>
+    <pre><span class="kw">private void</span> <span class="fn">btnSave_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+{
+    <span class="cm">// Access controls by their x:Name directly</span>
+    <span class="kw">string</span> name  = txtName.Text;
+    <span class="kw">string</span> email = txtEmail.Text;
+
+    <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(name))
+    {
+        txtResult.Text = <span class="str">"Please enter a name!"</span>;
+        <span class="kw">return</span>;
+    }
+    txtResult.Text = <span class="str">$"Saved: {name} ({email})"</span>;
+}</pre>
+  </div>
+
+  <h3>Markup Extensions — the Curly Brace Syntax</h3>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What are Curly Braces in XAML?</div>
+    <p>When you see <code>{...}</code> inside an attribute value in XAML, it is called a <strong>Markup Extension</strong>. It means "don't treat this as a plain string — go compute/find a value". The most common ones are <code>{Binding}</code>, <code>{StaticResource}</code>, and <code>{DynamicResource}</code>.</p>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Common Markup Extensions</span>
+    <pre><span class="cm">&lt;!-- StaticResource: look up a resource by key (resolved once at load) --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Background</span>=<span class="val">"{StaticResource PrimaryBrush}"</span>
+        <span class="prop">Style</span>=<span class="val">"{StaticResource PrimaryButtonStyle}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- DynamicResource: same but re-evaluated if resource changes at runtime --&gt;</span>
+<span class="tag">&lt;TextBlock</span> <span class="prop">Foreground</span>=<span class="val">"{DynamicResource ThemeForeground}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Binding: connect to C# data (covered in depth in Tab 5) --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">Text</span>=<span class="val">"{Binding UserName}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;Label</span>   <span class="prop">Content</span>=<span class="val">"{Binding FullName, Mode=OneWay}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- x:Static: reference a static C# value --&gt;</span>
+<span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{x:Static local:AppConstants.AppTitle}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- x:Null: explicitly set a property to null --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Background</span>=<span class="val">"{x:Null}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- RelativeSource: bind to a property of a related element --&gt;</span>
+<span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Title,
+    RelativeSource={RelativeSource AncestorType=Window}}"</span><span class="tag">/&gt;</span></pre>
+  </div>
+
+  <h3>XAML Namespaces</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Understanding Namespace Declarations</span>
+    <pre><span class="tag">&lt;Window</span>
+    <span class="cm">&lt;!-- Default namespace = WPF controls (Button, Grid, etc.) --&gt;</span>
+    <span class="prop">xmlns</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml/presentation"</span>
+
+    <span class="cm">&lt;!-- x: namespace = XAML language features (x:Name, x:Key etc.) --&gt;</span>
+    <span class="prop">xmlns:x</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml"</span>
+
+    <span class="cm">&lt;!-- d: namespace = design-time only (Visual Studio designer) --&gt;</span>
+    <span class="prop">xmlns:d</span>=<span class="val">"http://schemas.microsoft.com/expression/blend/2008"</span>
+
+    <span class="cm">&lt;!-- mc: namespace = markup compatibility --&gt;</span>
+    <span class="prop">xmlns:mc</span>=<span class="val">"http://schemas.openxmlformats.org/markup-compatibility/2006"</span>
+
+    <span class="cm">&lt;!-- local: namespace = your own C# classes in the project --&gt;</span>
+    <span class="prop">xmlns:local</span>=<span class="val">"clr-namespace:MyApp"</span>
+
+    <span class="prop">x:Class</span>=<span class="val">"MyApp.MainWindow"</span>
+    <span class="prop">Title</span>=<span class="val">"My Application"</span>
+    <span class="prop">Width</span>=<span class="val">"800"</span> <span class="prop">Height</span>=<span class="val">"450"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;Grid&gt;</span>
+        <span class="cm">&lt;!-- Content goes here --&gt;</span>
+    <span class="tag">&lt;/Grid&gt;</span>
+<span class="tag">&lt;/Window&gt;</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 You Don't Need to Type Namespaces Manually</h4>
+    <p>Visual Studio auto-generates these namespace declarations when you create a new WPF project. You only need to understand what they mean, not memorise them. The one you'll add yourself most often is <code>xmlns:local</code> to reference your own classes, and custom control libraries like <code>xmlns:mahApps</code>.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — CONTROLS
+══════════════════════════════════ -->
+<div id="tab-controls" class="tab-panel"><div class="section">
+  <h2>🧩 WPF Controls</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is a Control?</div>
+    <p>A control is anything the user can see or interact with — a button, a text box, a checkbox, a dropdown list. WPF comes with dozens of built-in controls. You place them in XAML and they appear on screen.</p>
+  </div>
+
+  <h3>The Control Hierarchy</h3>
+  <div class="flow">
+    <div class="flow-node n-wpf">
+      <div class="flow-node-title">🏗️ UIElement — the base of everything visual</div>
+      <ul class="flow-items">
+        <li>Provides: input handling, focus, rendering</li>
+        <li>Has: Visibility, Opacity, RenderTransform</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ extends</div>
+    <div class="flow-node n-xaml">
+      <div class="flow-node-title">📦 FrameworkElement — adds layout</div>
+      <ul class="flow-items">
+        <li>Adds: Width, Height, Margin, HorizontalAlignment, VerticalAlignment</li>
+        <li>Adds: DataContext, Style, Resources, Name</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ extends</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🎛️ Control — adds appearance and interaction</div>
+      <ul class="flow-items">
+        <li>Adds: Background, Foreground, FontSize, FontFamily, Padding, BorderBrush</li>
+        <li>Adds: Template (the visual tree that draws the control)</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">↓ many subclasses</div>
+    <div class="flow-row">
+      <div class="flow-node n-orange"><div class="flow-node-title">⬜ ContentControl</div><ul class="flow-items"><li>Button, Label, Window, GroupBox</li><li>Has one child: Content</li></ul></div>
+      <div class="flow-node n-teal"><div class="flow-node-title">📋 ItemsControl</div><ul class="flow-items"><li>ListBox, ComboBox, DataGrid, TreeView</li><li>Has many children: Items</li></ul></div>
+      <div class="flow-node n-pink"><div class="flow-node-title">📝 TextBoxBase</div><ul class="flow-items"><li>TextBox, RichTextBox</li><li>Editable text input</li></ul></div>
+    </div>
+  </div>
+
+  <h3>Essential Controls — With Examples</h3>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Button variants</span>
+    <pre><span class="cm">&lt;!-- Standard button --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Click Me"</span>
+        <span class="prop">Width</span>=<span class="val">"100"</span> <span class="prop">Height</span>=<span class="val">"35"</span>
+        <span class="prop">Click</span>=<span class="val">"Button_Click"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Toggle button — stays pressed/released --&gt;</span>
+<span class="tag">&lt;ToggleButton</span> <span class="prop">Content</span>=<span class="val">"Bold"</span> <span class="prop">IsChecked</span>=<span class="val">"False"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Repeat button — fires repeatedly while held --&gt;</span>
+<span class="tag">&lt;RepeatButton</span> <span class="prop">Content</span>=<span class="val">"Hold Me"</span> <span class="prop">Interval</span>=<span class="val">"100"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Button with an image inside --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Width</span>=<span class="val">"120"</span> <span class="prop">Height</span>=<span class="val">"40"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;StackPanel</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Image</span> <span class="prop">Source</span>=<span class="val">"save.png"</span> <span class="prop">Width</span>=<span class="val">"16"</span> <span class="prop">Margin</span>=<span class="val">"0,0,6,0"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Save"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/StackPanel&gt;</span>
+<span class="tag">&lt;/Button&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Text controls</span>
+    <pre><span class="cm">&lt;!-- TextBlock: display-only text (no user input) --&gt;</span>
+<span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Hello World"</span>
+           <span class="prop">FontSize</span>=<span class="val">"16"</span>
+           <span class="prop">FontWeight</span>=<span class="val">"Bold"</span>
+           <span class="prop">Foreground</span>=<span class="val">"Navy"</span>
+           <span class="prop">TextWrapping</span>=<span class="val">"Wrap"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Label: display text, supports access key (Alt+key focus) --&gt;</span>
+<span class="tag">&lt;Label</span> <span class="prop">Content</span>=<span class="val">"_Name:"</span>         <span class="cm">&lt;!-- Alt+N focuses the next control --&gt;</span>
+       <span class="prop">Target</span>=<span class="val">"{Binding ElementName=txtName}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- TextBox: single-line user input --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">x:Name</span>=<span class="val">"txtName"</span>
+         <span class="prop">Width</span>=<span class="val">"200"</span>
+         <span class="prop">MaxLength</span>=<span class="val">"50"</span>
+         <span class="prop">PlaceholderText</span>=<span class="val">"Enter name..."</span>
+         <span class="prop">TextChanged</span>=<span class="val">"txtName_TextChanged"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- TextBox: multi-line --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">AcceptsReturn</span>=<span class="val">"True"</span>
+         <span class="prop">AcceptsTab</span>=<span class="val">"True"</span>
+         <span class="prop">TextWrapping</span>=<span class="val">"Wrap"</span>
+         <span class="prop">VerticalScrollBarVisibility</span>=<span class="val">"Auto"</span>
+         <span class="prop">Height</span>=<span class="val">"100"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- PasswordBox: hidden input for passwords --&gt;</span>
+<span class="tag">&lt;PasswordBox</span> <span class="prop">x:Name</span>=<span class="val">"txtPassword"</span>
+             <span class="prop">PasswordChar</span>=<span class="val">"●"</span>
+             <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Selection controls</span>
+    <pre><span class="cm">&lt;!-- CheckBox: true/false toggle --&gt;</span>
+<span class="tag">&lt;CheckBox</span> <span class="prop">Content</span>=<span class="val">"I agree to terms"</span>
+          <span class="prop">IsChecked</span>=<span class="val">"False"</span>
+          <span class="prop">Checked</span>=<span class="val">"CheckBox_Checked"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- RadioButton: select ONE from a group --&gt;</span>
+<span class="tag">&lt;StackPanel&gt;</span>
+    <span class="tag">&lt;RadioButton</span> <span class="prop">GroupName</span>=<span class="val">"theme"</span> <span class="prop">Content</span>=<span class="val">"Light"</span> <span class="prop">IsChecked</span>=<span class="val">"True"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;RadioButton</span> <span class="prop">GroupName</span>=<span class="val">"theme"</span> <span class="prop">Content</span>=<span class="val">"Dark"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;RadioButton</span> <span class="prop">GroupName</span>=<span class="val">"theme"</span> <span class="prop">Content</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span>
+
+<span class="cm">&lt;!-- ComboBox: drop-down selection --&gt;</span>
+<span class="tag">&lt;ComboBox</span> <span class="prop">x:Name</span>=<span class="val">"cboCountry"</span> <span class="prop">Width</span>=<span class="val">"200"</span>
+           <span class="prop">SelectedIndex</span>=<span class="val">"0"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;ComboBoxItem</span> <span class="prop">Content</span>=<span class="val">"United Kingdom"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ComboBoxItem</span> <span class="prop">Content</span>=<span class="val">"United States"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ComboBoxItem</span> <span class="prop">Content</span>=<span class="val">"Australia"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/ComboBox&gt;</span>
+
+<span class="cm">&lt;!-- Slider: pick a numeric value visually --&gt;</span>
+<span class="tag">&lt;Slider</span> <span class="prop">Minimum</span>=<span class="val">"0"</span> <span class="prop">Maximum</span>=<span class="val">"100"</span>
+        <span class="prop">Value</span>=<span class="val">"50"</span>
+        <span class="prop">TickFrequency</span>=<span class="val">"10"</span>
+        <span class="prop">IsSnapToTickEnabled</span>=<span class="val">"True"</span><span class="tag">/&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — List controls</span>
+    <pre><span class="cm">&lt;!-- ListBox: show a list, user can select items --&gt;</span>
+<span class="tag">&lt;ListBox</span> <span class="prop">x:Name</span>=<span class="val">"lstFruits"</span> <span class="prop">Height</span>=<span class="val">"100"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;ListBoxItem</span> <span class="prop">Content</span>=<span class="val">"Apple"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ListBoxItem</span> <span class="prop">Content</span>=<span class="val">"Banana"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ListBoxItem</span> <span class="prop">Content</span>=<span class="val">"Cherry"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/ListBox&gt;</span>
+
+<span class="cm">&lt;!-- ListView: like ListBox but better for tabular data --&gt;</span>
+<span class="tag">&lt;ListView</span> <span class="prop">x:Name</span>=<span class="val">"lvProducts"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;ListView.View&gt;</span>
+        <span class="tag">&lt;GridView&gt;</span>
+            <span class="tag">&lt;GridViewColumn</span> <span class="prop">Header</span>=<span class="val">"Name"</span>
+                            <span class="prop">DisplayMemberBinding</span>=<span class="val">"{Binding Name}"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;GridViewColumn</span> <span class="prop">Header</span>=<span class="val">"Price"</span>
+                            <span class="prop">DisplayMemberBinding</span>=<span class="val">"{Binding Price}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/GridView&gt;</span>
+    <span class="tag">&lt;/ListView.View&gt;</span>
+<span class="tag">&lt;/ListView&gt;</span>
+
+<span class="cm">&lt;!-- DataGrid: Excel-like table with sorting, editing --&gt;</span>
+<span class="tag">&lt;DataGrid</span> <span class="prop">x:Name</span>=<span class="val">"dgOrders"</span>
+           <span class="prop">AutoGenerateColumns</span>=<span class="val">"True"</span>
+           <span class="prop">CanUserAddRows</span>=<span class="val">"False"</span>
+           <span class="prop">IsReadOnly</span>=<span class="val">"True"</span><span class="tag">/&gt;</span></pre>
+  </div>
+
+  <h3>Common Properties Every Control Has</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Property</th><th>What it Does</th><th>Example Value</th></tr>
+    <tr><td><code>Width / Height</code></td><td>Fixed size. Use <code>Auto</code> to size to content.</td><td><code>200</code>, <code>Auto</code></td></tr>
+    <tr><td><code>Margin</code></td><td>Space outside the control (left, top, right, bottom)</td><td><code>10</code>, <code>10,5</code>, <code>10,5,10,5</code></td></tr>
+    <tr><td><code>Padding</code></td><td>Space inside the control (between border and content)</td><td><code>8,4</code></td></tr>
+    <tr><td><code>HorizontalAlignment</code></td><td>How control aligns horizontally in its container</td><td><code>Left</code>, <code>Center</code>, <code>Right</code>, <code>Stretch</code></td></tr>
+    <tr><td><code>VerticalAlignment</code></td><td>How control aligns vertically in its container</td><td><code>Top</code>, <code>Center</code>, <code>Bottom</code>, <code>Stretch</code></td></tr>
+    <tr><td><code>Visibility</code></td><td>Show, hide, or collapse the control</td><td><code>Visible</code>, <code>Hidden</code>, <code>Collapsed</code></td></tr>
+    <tr><td><code>IsEnabled</code></td><td>Whether user can interact with it</td><td><code>True</code>, <code>False</code></td></tr>
+    <tr><td><code>ToolTip</code></td><td>Hover text shown when mouse rests on control</td><td><code>"Click to save"</code></td></tr>
+    <tr><td><code>FontSize</code></td><td>Text size in device-independent pixels</td><td><code>14</code>, <code>18</code></td></tr>
+    <tr><td><code>Background</code></td><td>Fill colour of the control</td><td><code>LightBlue</code>, <code>#336699</code></td></tr>
+    <tr><td><code>Foreground</code></td><td>Text / drawing colour</td><td><code>DarkRed</code>, <code>#FFFFFF</code></td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Visibility vs Collapsed</h4>
+    <p><code>Visibility="Hidden"</code> hides the control but it still takes up space in the layout. <code>Visibility="Collapsed"</code> hides it AND removes it from the layout — other controls move to fill the gap. Use <code>Collapsed</code> for showing/hiding sections of a form.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — LAYOUTS
+══════════════════════════════════ -->
+<div id="tab-layouts" class="tab-panel"><div class="section">
+  <h2>📐 Layouts &amp; Panels</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is a Panel?</div>
+    <p>A Panel is a container that decides where to put its children. Think of it like a table in HTML or a layout manager in Java Swing. You put controls inside a panel, and the panel decides the arrangement. WPF has 6 main panels — each with a different arrangement style.</p>
+  </div>
+
+  <h3>The 6 Layout Panels</h3>
+  <div class="layout-demo">
+    <div class="layout-box">
+      <div class="layout-title">StackPanel (Vertical)</div>
+      <div class="layout-vis lv-stack">
+        <div class="lv-item">Button 1</div>
+        <div class="lv-item accent">Button 2</div>
+        <div class="lv-item">Button 3</div>
+      </div>
+    </div>
+    <div class="layout-box">
+      <div class="layout-title">StackPanel (Horizontal)</div>
+      <div class="layout-vis" style="align-items:center;">
+        <div class="lv-item">Btn1</div>
+        <div class="lv-item accent">Btn2</div>
+        <div class="lv-item">Btn3</div>
+      </div>
+    </div>
+    <div class="layout-box">
+      <div class="layout-title">Grid (2×2)</div>
+      <div class="layout-vis">
+        <div class="lv-grid2" style="width:100%">
+          <div class="lv-item">R0 C0</div>
+          <div class="lv-item accent">R0 C1</div>
+          <div class="lv-item accent">R1 C0</div>
+          <div class="lv-item">R1 C1</div>
+        </div>
+      </div>
+    </div>
+    <div class="layout-box">
+      <div class="layout-title">WrapPanel</div>
+      <div class="layout-vis" style="flex-wrap:wrap;align-content:flex-start;">
+        <div class="lv-item" style="margin:2px;">Tag A</div>
+        <div class="lv-item accent" style="margin:2px;">Tag B</div>
+        <div class="lv-item" style="margin:2px;">Tag C</div>
+        <div class="lv-item" style="margin:2px;">Tag D</div>
+        <div class="lv-item accent" style="margin:2px;">Tag E</div>
+      </div>
+    </div>
+    <div class="layout-box">
+      <div class="layout-title">DockPanel</div>
+      <div class="layout-vis" style="flex-direction:column;gap:3px;">
+        <div class="lv-item lv-dock-top accent" style="text-align:center;">Top (Menu)</div>
+        <div style="display:flex;gap:3px;flex:1;">
+          <div class="lv-item" style="width:40px;text-align:center;">Left</div>
+          <div class="lv-item" style="flex:1;text-align:center;">Center (Fill)</div>
+        </div>
+        <div class="lv-item" style="text-align:center;">Bottom (Status)</div>
+      </div>
+    </div>
+    <div class="layout-box">
+      <div class="layout-title">Canvas (Absolute)</div>
+      <div class="layout-vis" style="position:relative;min-height:80px;">
+        <div class="lv-abs" style="left:5px;top:5px;">A</div>
+        <div class="lv-abs" style="left:55px;top:30px;background:var(--wpf);color:#fff;">B</div>
+        <div class="lv-abs" style="left:20px;top:55px;">C</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Grid — The Most Important Panel</h3>
+  <p>Grid is the most used panel in WPF. It works like an HTML table — you define rows and columns, then place controls in specific cells using <code>Grid.Row</code> and <code>Grid.Column</code> attached properties.</p>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Grid layout (login form example)</span>
+    <pre><span class="tag">&lt;Grid</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+    <span class="cm">&lt;!-- Define 3 rows: Auto = fits content, * = fills remaining space --&gt;</span>
+    <span class="tag">&lt;Grid.RowDefinitions&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Row 0: fits label height --&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Row 1: fits textbox height --&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Row 2: fits label height --&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Row 3: fits textbox height --&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>     <span class="cm">&lt;!-- Row 4: fills remaining space --&gt;</span>
+        <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Row 5: fits button height --&gt;</span>
+    <span class="tag">&lt;/Grid.RowDefinitions&gt;</span>
+
+    <span class="cm">&lt;!-- Define 2 columns: Auto for labels, * for inputs --&gt;</span>
+    <span class="tag">&lt;Grid.ColumnDefinitions&gt;</span>
+        <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>   <span class="cm">&lt;!-- Column 0: label width --&gt;</span>
+        <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>      <span class="cm">&lt;!-- Column 1: fills rest --&gt;</span>
+    <span class="tag">&lt;/Grid.ColumnDefinitions&gt;</span>
+
+    <span class="cm">&lt;!-- Row 0, Column 0 --&gt;</span>
+    <span class="tag">&lt;Label</span> <span class="prop">Grid.Row</span>=<span class="val">"0"</span> <span class="prop">Grid.Column</span>=<span class="val">"0"</span>
+           <span class="prop">Content</span>=<span class="val">"Username:"</span> <span class="prop">Margin</span>=<span class="val">"0,0,10,5"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- Row 0, Column 1 --&gt;</span>
+    <span class="tag">&lt;TextBox</span> <span class="prop">Grid.Row</span>=<span class="val">"0"</span> <span class="prop">Grid.Column</span>=<span class="val">"1"</span>
+             <span class="prop">x:Name</span>=<span class="val">"txtUsername"</span> <span class="prop">Margin</span>=<span class="val">"0,0,0,5"</span><span class="tag">/&gt;</span>
+
+    <span class="tag">&lt;Label</span>   <span class="prop">Grid.Row</span>=<span class="val">"2"</span> <span class="prop">Grid.Column</span>=<span class="val">"0"</span> <span class="prop">Content</span>=<span class="val">"Password:"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;PasswordBox</span><span class="prop">Grid.Row</span>=<span class="val">"2"</span> <span class="prop">Grid.Column</span>=<span class="val">"1"</span> <span class="prop">x:Name</span>=<span class="val">"txtPassword"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- Span across both columns using ColumnSpan --&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Grid.Row</span>=<span class="val">"5"</span> <span class="prop">Grid.Column</span>=<span class="val">"0"</span>
+            <span class="prop">Grid.ColumnSpan</span>=<span class="val">"2"</span>
+            <span class="prop">Content</span>=<span class="val">"Login"</span>
+            <span class="prop">HorizontalAlignment</span>=<span class="val">"Right"</span>
+            <span class="prop">Width</span>=<span class="val">"80"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Grid&gt;</span></pre>
+  </div>
+
+  <h3>StackPanel</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — StackPanel examples</span>
+    <pre><span class="cm">&lt;!-- Vertical StackPanel (default) — items stacked top to bottom --&gt;</span>
+<span class="tag">&lt;StackPanel</span> <span class="prop">Orientation</span>=<span class="val">"Vertical"</span> <span class="prop">Margin</span>=<span class="val">"10"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Section Title"</span> <span class="prop">FontSize</span>=<span class="val">"18"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBox</span>   <span class="prop">Width</span>=<span class="val">"300"</span> <span class="prop">Margin</span>=<span class="val">"0,8"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>    <span class="prop">Content</span>=<span class="val">"Submit"</span> <span class="prop">HorizontalAlignment</span>=<span class="val">"Left"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span>
+
+<span class="cm">&lt;!-- Horizontal StackPanel — items side by side --&gt;</span>
+<span class="tag">&lt;StackPanel</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"New"</span>    <span class="prop">Margin</span>=<span class="val">"0,0,5,0"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Open"</span>   <span class="prop">Margin</span>=<span class="val">"0,0,5,0"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Save"</span>   <span class="prop">Margin</span>=<span class="val">"0,0,5,0"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Delete"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+
+  <h3>DockPanel — Great for App Shell Layout</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — DockPanel for a typical app shell</span>
+    <pre><span class="tag">&lt;DockPanel</span> <span class="prop">LastChildFill</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+    <span class="cm">&lt;!-- Menu at top --&gt;</span>
+    <span class="tag">&lt;Menu</span> <span class="prop">DockPanel.Dock</span>=<span class="val">"Top"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_File"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_New"</span>  <span class="prop">Click</span>=<span class="val">"New_Click"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_Open"</span> <span class="prop">Click</span>=<span class="val">"Open_Click"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Separator</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"E_xit"</span> <span class="prop">Click</span>=<span class="val">"Exit_Click"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/MenuItem&gt;</span>
+    <span class="tag">&lt;/Menu&gt;</span>
+
+    <span class="cm">&lt;!-- Toolbar below menu --&gt;</span>
+    <span class="tag">&lt;ToolBar</span> <span class="prop">DockPanel.Dock</span>=<span class="val">"Top"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"New"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Save"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/ToolBar&gt;</span>
+
+    <span class="cm">&lt;!-- Status bar at bottom --&gt;</span>
+    <span class="tag">&lt;StatusBar</span> <span class="prop">DockPanel.Dock</span>=<span class="val">"Bottom"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;StatusBarItem&gt;</span>
+            <span class="tag">&lt;TextBlock</span> <span class="prop">x:Name</span>=<span class="val">"statusText"</span> <span class="prop">Text</span>=<span class="val">"Ready"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StatusBarItem&gt;</span>
+    <span class="tag">&lt;/StatusBar&gt;</span>
+
+    <span class="cm">&lt;!-- Side panel --&gt;</span>
+    <span class="tag">&lt;Border</span> <span class="prop">DockPanel.Dock</span>=<span class="val">"Left"</span> <span class="prop">Width</span>=<span class="val">"200"</span>
+            <span class="prop">Background</span>=<span class="val">"#F5F5F5"</span> <span class="prop">BorderThickness</span>=<span class="val">"0,0,1,0"</span>
+            <span class="prop">BorderBrush</span>=<span class="val">"#DDD"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Navigation"</span> <span class="prop">Margin</span>=<span class="val">"10"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Border&gt;</span>
+
+    <span class="cm">&lt;!-- Main content area (LastChildFill=True makes this fill remaining space) --&gt;</span>
+    <span class="tag">&lt;ScrollViewer&gt;</span>
+        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Main content here"</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/ScrollViewer&gt;</span>
+<span class="tag">&lt;/DockPanel&gt;</span></pre>
+  </div>
+
+  <h3>Layout Panel Quick Reference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Panel</th><th>How it arranges</th><th>Best used for</th><th>Key property</th></tr>
+    <tr><td><code>Grid</code></td><td>Rows and columns (like a table)</td><td>Forms, complex layouts</td><td><code>RowDefinitions</code>, <code>ColumnDefinitions</code></td></tr>
+    <tr><td><code>StackPanel</code></td><td>One after another (vertical or horizontal)</td><td>Button bars, simple forms</td><td><code>Orientation</code></td></tr>
+    <tr><td><code>DockPanel</code></td><td>Edges first, last child fills middle</td><td>App shell (menu + toolbar + status)</td><td><code>DockPanel.Dock</code></td></tr>
+    <tr><td><code>WrapPanel</code></td><td>Left to right, wraps to next line</td><td>Tag lists, image galleries</td><td><code>Orientation</code>, <code>ItemWidth</code></td></tr>
+    <tr><td><code>Canvas</code></td><td>Absolute X,Y positioning</td><td>Drawing, games, custom positioning</td><td><code>Canvas.Left</code>, <code>Canvas.Top</code></td></tr>
+    <tr><td><code>UniformGrid</code></td><td>Equal-sized cells, fills automatically</td><td>Dashboards, icon grids</td><td><code>Rows</code>, <code>Columns</code></td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — DATA BINDING
+══════════════════════════════════ -->
+<div id="tab-binding" class="tab-panel"><div class="section">
+  <h2>🔗 Data Binding</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is Data Binding?</div>
+    <p>Data binding is a connection between a UI control and a piece of data. When the data changes, the UI updates automatically. When the user types in a TextBox, the underlying data updates automatically. You don't write any code to sync them — WPF does it for you. This is one of the most powerful features of WPF.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Think of a thermometer on a wall. The thermometer display (UI) is bound to the actual temperature (data). When the temperature changes, the display changes automatically — you don't manually update the number. Data binding in WPF works the same way.</p>
+  </div>
+
+  <h3>Binding Modes — How Data Flows</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Mode</th><th>Data Flow</th><th>When UI changes</th><th>When to Use</th></tr>
+    <tr><td><code>OneWay</code></td><td>Data → UI only</td><td>Does NOT update data</td><td>Read-only display (labels, text blocks)</td></tr>
+    <tr><td><code>TwoWay</code></td><td>Data ↔ UI both ways</td><td>Updates data too</td><td>Forms, editable fields</td></tr>
+    <tr><td><code>OneWayToSource</code></td><td>UI → Data only</td><td>Updates data only</td><td>Rare — when data comes from UI</td></tr>
+    <tr><td><code>OneTime</code></td><td>Data → UI once at load</td><td>Never updates again</td><td>Static content, initial values</td></tr>
+  </table></div>
+
+  <h3>Step 1 — Create a C# class to bind to</h3>
+  <div class="code-block">
+    <span class="code-label">C# — A simple data class (Model)</span>
+    <pre><span class="cm">// This is the data that our UI will display and edit</span>
+<span class="kw">public class</span> <span class="tp">Person</span>
+{
+    <span class="kw">public string</span> FirstName { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span> LastName  { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public int</span>    Age       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> FullName  => <span class="str">$"{FirstName} {LastName}"</span>;
+}</pre>
+  </div>
+
+  <h3>Step 2 — Set DataContext in code-behind</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Setting DataContext (the binding source)</span>
+    <pre><span class="kw">public partial class</span> <span class="tp">MainWindow</span> : <span class="tp">Window</span>
+{
+    <span class="kw">private</span> <span class="tp">Person</span> _person = <span class="kw">new</span> <span class="tp">Person</span>
+    {
+        FirstName = <span class="str">"Alice"</span>,
+        LastName  = <span class="str">"Smith"</span>,
+        Age       = <span class="num">30</span>
+    };
+
+    <span class="kw">public</span> <span class="fn">MainWindow</span>()
+    {
+        <span class="fn">InitializeComponent</span>();
+        <span class="cm">// DataContext = the object all bindings in this window look at</span>
+        DataContext = _person;
+    }
+}</pre>
+  </div>
+
+  <h3>Step 3 — Bind controls to properties in XAML</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Binding to Person properties</span>
+    <pre><span class="tag">&lt;StackPanel</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+    <span class="cm">&lt;!-- OneWay: just display the full name --&gt;</span>
+    <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding FullName}"</span>
+               <span class="prop">FontSize</span>=<span class="val">"18"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- TwoWay: user can edit, changes go back to Person object --&gt;</span>
+    <span class="tag">&lt;TextBox</span>   <span class="prop">Text</span>=<span class="val">"{Binding FirstName, Mode=TwoWay,
+               UpdateSourceTrigger=PropertyChanged}"</span>
+               <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+
+    <span class="tag">&lt;TextBox</span>   <span class="prop">Text</span>=<span class="val">"{Binding LastName, Mode=TwoWay,
+               UpdateSourceTrigger=PropertyChanged}"</span>
+               <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- Bind to Age as a number --&gt;</span>
+    <span class="tag">&lt;Slider</span>    <span class="prop">Value</span>=<span class="val">"{Binding Age, Mode=TwoWay}"</span>
+               <span class="prop">Minimum</span>=<span class="val">"0"</span> <span class="prop">Maximum</span>=<span class="val">"120"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Age}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+
+  <h3>INotifyPropertyChanged — Making Live Updates Work</h3>
+
+  <div class="warn">
+    <h4>⚠️ The Missing Piece — Why UI Doesn't Update</h4>
+    <p>If you run the above example, the UI won't update when the data changes in code. That's because WPF doesn't know the data changed. To make WPF listen for changes, your class must implement <code>INotifyPropertyChanged</code> and fire <code>PropertyChanged</code> whenever a property value changes.</p>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — Person with INotifyPropertyChanged (live binding)</span>
+    <pre><span class="kw">using</span> System.ComponentModel;
+<span class="kw">using</span> System.Runtime.CompilerServices;
+
+<span class="kw">public class</span> <span class="tp">Person</span> : <span class="tp">INotifyPropertyChanged</span>
+{
+    <span class="kw">private string</span> _firstName = <span class="str">""</span>;
+    <span class="kw">private string</span> _lastName  = <span class="str">""</span>;
+    <span class="kw">private int</span>    _age;
+
+    <span class="kw">public string</span> FirstName
+    {
+        <span class="kw">get</span> => _firstName;
+        <span class="kw">set</span>
+        {
+            <span class="kw">if</span> (_firstName == value) <span class="kw">return</span>;
+            _firstName = value;
+            <span class="fn">OnPropertyChanged</span>();           <span class="cm">// Tell WPF this changed</span>
+            <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(FullName)); <span class="cm">// FullName also changed</span>
+        }
+    }
+
+    <span class="kw">public string</span> LastName
+    {
+        <span class="kw">get</span> => _lastName;
+        <span class="kw">set</span> { <span class="kw">if</span> (_lastName != value) { _lastName = value; <span class="fn">OnPropertyChanged</span>(); <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(FullName)); } }
+    }
+
+    <span class="kw">public int</span> Age
+    {
+        <span class="kw">get</span> => _age;
+        <span class="kw">set</span> { <span class="kw">if</span> (_age != value) { _age = value; <span class="fn">OnPropertyChanged</span>(); } }
+    }
+
+    <span class="kw">public string</span> FullName => <span class="str">$"{FirstName} {LastName}"</span>;
+
+    <span class="cm">// INotifyPropertyChanged implementation</span>
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? name = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(name));
+}</pre>
+  </div>
+
+  <h3>Binding to Collections — ObservableCollection</h3>
+  <div class="code-block">
+    <span class="code-label">C# — ObservableCollection for live list binding</span>
+    <pre><span class="kw">using</span> System.Collections.ObjectModel;
+
+<span class="kw">public partial class</span> <span class="tp">MainWindow</span> : <span class="tp">Window</span>
+{
+    <span class="cm">// ObservableCollection notifies WPF when items are added/removed</span>
+    <span class="kw">public</span> <span class="tp">ObservableCollection</span>&lt;<span class="tp">Person</span>&gt; People { <span class="kw">get</span>; } = <span class="kw">new</span>();
+
+    <span class="kw">public</span> <span class="fn">MainWindow</span>()
+    {
+        <span class="fn">InitializeComponent</span>();
+        DataContext = <span class="kw">this</span>;  <span class="cm">// Bind to the Window itself</span>
+
+        People.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Person</span> { FirstName = <span class="str">"Alice"</span>, Age = <span class="num">30</span> });
+        People.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Person</span> { FirstName = <span class="str">"Bob"</span>,   Age = <span class="num">25</span> });
+    }
+
+    <span class="kw">private void</span> <span class="fn">AddPerson_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+    {
+        <span class="cm">// ListBox updates automatically — no code needed to refresh UI</span>
+        People.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Person</span> { FirstName = <span class="str">"New Person"</span>, Age = <span class="num">20</span> });
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Bind ListBox to ObservableCollection</span>
+    <pre><span class="tag">&lt;StackPanel&gt;</span>
+    <span class="tag">&lt;ListBox</span> <span class="prop">ItemsSource</span>=<span class="val">"{Binding People}"</span>
+             <span class="prop">DisplayMemberPath</span>=<span class="val">"FirstName"</span>
+             <span class="prop">Height</span>=<span class="val">"150"</span><span class="tag">/&gt;</span>
+
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Add Person"</span>
+            <span class="prop">Click</span>=<span class="val">"AddPerson_Click"</span>
+            <span class="prop">Margin</span>=<span class="val">"0,8,0,0"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+
+  <h3>Value Converters — Transform Data for Display</h3>
+  <div class="code-block">
+    <span class="code-label">C# — BooleanToVisibilityConverter example</span>
+    <pre><span class="cm">// Converts true → Visible, false → Collapsed</span>
+<span class="kw">public class</span> <span class="tp">BoolToVisibilityConverter</span> : <span class="tp">IValueConverter</span>
+{
+    <span class="kw">public object</span> <span class="fn">Convert</span>(<span class="kw">object</span> value, <span class="tp">Type</span> targetType,
+                          <span class="kw">object</span> parameter, <span class="tp">CultureInfo</span> culture)
+    {
+        <span class="kw">return</span> value <span class="kw">is true</span> ? <span class="tp">Visibility</span>.Visible : <span class="tp">Visibility</span>.Collapsed;
+    }
+
+    <span class="kw">public object</span> <span class="fn">ConvertBack</span>(<span class="kw">object</span> value, <span class="tp">Type</span> targetType,
+                              <span class="kw">object</span> parameter, <span class="tp">CultureInfo</span> culture)
+    {
+        <span class="kw">return</span> value <span class="kw">is</span> <span class="tp">Visibility</span>.Visible;
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Using the converter</span>
+    <pre><span class="tag">&lt;Window.Resources&gt;</span>
+    <span class="tag">&lt;local:BoolToVisibilityConverter</span> <span class="prop">x:Key</span>=<span class="val">"BoolToVis"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Window.Resources&gt;</span>
+
+<span class="cm">&lt;!-- Panel visible only when IsLoggedIn = true --&gt;</span>
+<span class="tag">&lt;StackPanel</span> <span class="prop">Visibility</span>=<span class="val">"{Binding IsLoggedIn,
+             Converter={StaticResource BoolToVis}}"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Welcome back!"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span>
+
+<span class="cm">&lt;!-- Note: WPF has a built-in BooleanToVisibilityConverter too --&gt;</span>
+<span class="tag">&lt;Window.Resources&gt;</span>
+    <span class="tag">&lt;BooleanToVisibilityConverter</span> <span class="prop">x:Key</span>=<span class="val">"BoolToVis"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Window.Resources&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — STYLES & TEMPLATES
+══════════════════════════════════ -->
+<div id="tab-styles" class="tab-panel"><div class="section">
+  <h2>🎨 Styles &amp; Templates</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Styles = CSS for WPF</div>
+    <p>If you know CSS for web development, WPF Styles work the same way. A Style is a collection of property settings you define once and apply to many controls. Instead of setting <code>FontSize="14" Foreground="Navy" Padding="8"</code> on every button, you define a Style once and just say <code>Style="{StaticResource PrimaryButton}"</code>.</p>
+  </div>
+
+  <h3>Basic Style</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Defining and using a Style</span>
+    <pre><span class="tag">&lt;Window.Resources&gt;</span>
+
+    <span class="cm">&lt;!-- Named style — apply it manually with Style="{StaticResource...}" --&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"PrimaryButtonStyle"</span> <span class="prop">TargetType</span>=<span class="val">"Button"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span>  <span class="prop">Value</span>=<span class="val">"#5B3FD4"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Foreground"</span>  <span class="prop">Value</span>=<span class="val">"White"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"FontSize"</span>    <span class="prop">Value</span>=<span class="val">"14"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"FontWeight"</span>  <span class="prop">Value</span>=<span class="val">"SemiBold"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Padding"</span>     <span class="prop">Value</span>=<span class="val">"16,8"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"BorderThickness"</span> <span class="prop">Value</span>=<span class="val">"0"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Cursor"</span>     <span class="prop">Value</span>=<span class="val">"Hand"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+
+    <span class="cm">&lt;!-- Implicit style — auto applied to ALL TextBoxes (no x:Key) --&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">TargetType</span>=<span class="val">"TextBox"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"FontSize"</span>        <span class="prop">Value</span>=<span class="val">"13"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Padding"</span>         <span class="prop">Value</span>=<span class="val">"6,4"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"BorderBrush"</span>     <span class="prop">Value</span>=<span class="val">"#AAAACC"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"BorderThickness"</span> <span class="prop">Value</span>=<span class="val">"1"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+
+<span class="tag">&lt;/Window.Resources&gt;</span>
+
+<span class="cm">&lt;!-- Use the named style --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Save"</span> <span class="prop">Style</span>=<span class="val">"{StaticResource PrimaryButtonStyle}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Cancel"</span> <span class="prop">Style</span>=<span class="val">"{StaticResource PrimaryButtonStyle}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- TextBox style applied automatically --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span></pre>
+  </div>
+
+  <h3>Style Triggers — React to State Changes</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Style with Triggers (hover effect, disabled state)</span>
+    <pre><span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"HoverButtonStyle"</span> <span class="prop">TargetType</span>=<span class="val">"Button"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span>  <span class="prop">Value</span>=<span class="val">"#5B3FD4"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Foreground"</span>  <span class="prop">Value</span>=<span class="val">"White"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Opacity"</span>    <span class="prop">Value</span>=<span class="val">"1"</span><span class="tag">/&gt;</span>
+
+    <span class="tag">&lt;Style.Triggers&gt;</span>
+        <span class="cm">&lt;!-- Mouse hover: darken background --&gt;</span>
+        <span class="tag">&lt;Trigger</span> <span class="prop">Property</span>=<span class="val">"IsMouseOver"</span> <span class="prop">Value</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#3a20a0"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/Trigger&gt;</span>
+
+        <span class="cm">&lt;!-- Pressed: slightly smaller scale (via render transform) --&gt;</span>
+        <span class="tag">&lt;Trigger</span> <span class="prop">Property</span>=<span class="val">"IsPressed"</span> <span class="prop">Value</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#2a1070"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/Trigger&gt;</span>
+
+        <span class="cm">&lt;!-- Disabled: grey out --&gt;</span>
+        <span class="tag">&lt;Trigger</span> <span class="prop">Property</span>=<span class="val">"IsEnabled"</span> <span class="prop">Value</span>=<span class="val">"False"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#AAAAAA"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Opacity"</span>    <span class="prop">Value</span>=<span class="val">"0.6"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/Trigger&gt;</span>
+
+        <span class="cm">&lt;!-- DataTrigger: trigger based on a binding value --&gt;</span>
+        <span class="tag">&lt;DataTrigger</span> <span class="prop">Binding</span>=<span class="val">"{Binding HasErrors}"</span> <span class="prop">Value</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#C00000"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/DataTrigger&gt;</span>
+    <span class="tag">&lt;/Style.Triggers&gt;</span>
+<span class="tag">&lt;/Style&gt;</span></pre>
+  </div>
+
+  <h3>DataTemplate — How Each Item in a List Looks</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — DataTemplate for a custom list item</span>
+    <pre><span class="tag">&lt;ListBox</span> <span class="prop">ItemsSource</span>=<span class="val">"{Binding People}"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;ListBox.ItemTemplate&gt;</span>
+        <span class="tag">&lt;DataTemplate&gt;</span>
+            <span class="cm">&lt;!-- Each Person in the list shows as a card --&gt;</span>
+            <span class="tag">&lt;Border</span> <span class="prop">Background</span>=<span class="val">"#F0EEFF"</span>
+                    <span class="prop">BorderBrush</span>=<span class="val">"#CCBBFF"</span>
+                    <span class="prop">BorderThickness</span>=<span class="val">"1"</span>
+                    <span class="prop">CornerRadius</span>=<span class="val">"6"</span>
+                    <span class="prop">Padding</span>=<span class="val">"10,8"</span>
+                    <span class="prop">Margin</span>=<span class="val">"2"</span><span class="tag">&gt;</span>
+                <span class="tag">&lt;StackPanel</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span><span class="tag">&gt;</span>
+                    <span class="tag">&lt;Ellipse</span> <span class="prop">Width</span>=<span class="val">"36"</span> <span class="prop">Height</span>=<span class="val">"36"</span>
+                             <span class="prop">Fill</span>=<span class="val">"#5B3FD4"</span> <span class="prop">Margin</span>=<span class="val">"0,0,10,0"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;StackPanel&gt;</span>
+                        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding FullName}"</span>
+                                   <span class="prop">FontWeight</span>=<span class="val">"Bold"</span> <span class="prop">FontSize</span>=<span class="val">"13"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Age,
+                                   StringFormat='Age: {0}'}"</span>
+                                   <span class="prop">Foreground</span>=<span class="val">"Gray"</span> <span class="prop">FontSize</span>=<span class="val">"11"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;/StackPanel&gt;</span>
+                <span class="tag">&lt;/StackPanel&gt;</span>
+            <span class="tag">&lt;/Border&gt;</span>
+        <span class="tag">&lt;/DataTemplate&gt;</span>
+    <span class="tag">&lt;/ListBox.ItemTemplate&gt;</span>
+<span class="tag">&lt;/ListBox&gt;</span></pre>
+  </div>
+
+  <h3>Style Inheritance</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — BasedOn to inherit and extend styles</span>
+    <pre><span class="tag">&lt;Window.Resources&gt;</span>
+    <span class="cm">&lt;!-- Base style with common button settings --&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"BaseButton"</span> <span class="prop">TargetType</span>=<span class="val">"Button"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Padding"</span>    <span class="prop">Value</span>=<span class="val">"14,7"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"FontSize"</span>  <span class="prop">Value</span>=<span class="val">"13"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Cursor"</span>    <span class="prop">Value</span>=<span class="val">"Hand"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+
+    <span class="cm">&lt;!-- Primary inherits base, adds blue colour --&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"PrimaryBtn"</span>
+           <span class="prop">TargetType</span>=<span class="val">"Button"</span>
+           <span class="prop">BasedOn</span>=<span class="val">"{StaticResource BaseButton}"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#5B3FD4"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Foreground"</span> <span class="prop">Value</span>=<span class="val">"White"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+
+    <span class="cm">&lt;!-- Danger inherits base, adds red colour --&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"DangerBtn"</span>
+           <span class="prop">TargetType</span>=<span class="val">"Button"</span>
+           <span class="prop">BasedOn</span>=<span class="val">"{StaticResource BaseButton}"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span> <span class="prop">Value</span>=<span class="val">"#C00000"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Foreground"</span> <span class="prop">Value</span>=<span class="val">"White"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+<span class="tag">&lt;/Window.Resources&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — EVENTS & COMMANDS
+══════════════════════════════════ -->
+<div id="tab-events" class="tab-panel"><div class="section">
+  <h2>⚡ Events &amp; Commands</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Events vs Commands</div>
+    <p>An <strong>Event</strong> is something that happens — a button click, a key press, mouse movement. You write C# code to react to events. A <strong>Command</strong> is a more advanced pattern — instead of wiring events directly to code-behind, you bind a button to a command object on your ViewModel. Commands are used heavily in MVVM (covered in Part 2).</p>
+  </div>
+
+  <h3>Routed Events — WPF's Special Event System</h3>
+  <div class="card">
+    <h4>📡 What Makes WPF Events Different</h4>
+    <p>WPF uses <strong>Routed Events</strong> which travel through the visual tree. There are three types:</p>
+    <ul>
+      <li><strong>Bubbling</strong> — starts at source, travels UP to root. Example: Click on a button inside a Grid — the Grid also receives the Click event.</li>
+      <li><strong>Tunneling</strong> — starts at root, travels DOWN to source. Preview events (PreviewMouseDown, PreviewKeyDown) are tunneling — parent sees it first.</li>
+      <li><strong>Direct</strong> — only fires on the source element. Like regular .NET events.</li>
+    </ul>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Common event wiring</span>
+    <pre><span class="tag">&lt;StackPanel&gt;</span>
+    <span class="cm">&lt;!-- Button events --&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Save"</span>
+            <span class="prop">Click</span>=<span class="val">"SaveButton_Click"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- TextBox events --&gt;</span>
+    <span class="tag">&lt;TextBox</span> <span class="prop">TextChanged</span>=<span class="val">"TextBox_TextChanged"</span>
+             <span class="prop">GotFocus</span>=<span class="val">"TextBox_GotFocus"</span>
+             <span class="prop">LostFocus</span>=<span class="val">"TextBox_LostFocus"</span>
+             <span class="prop">KeyDown</span>=<span class="val">"TextBox_KeyDown"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- Mouse events --&gt;</span>
+    <span class="tag">&lt;Border</span> <span class="prop">Width</span>=<span class="val">"100"</span> <span class="prop">Height</span>=<span class="val">"100"</span>
+            <span class="prop">Background</span>=<span class="val">"LightBlue"</span>
+            <span class="prop">MouseEnter</span>=<span class="val">"Border_MouseEnter"</span>
+            <span class="prop">MouseLeave</span>=<span class="val">"Border_MouseLeave"</span>
+            <span class="prop">MouseLeftButtonDown</span>=<span class="val">"Border_Click"</span><span class="tag">/&gt;</span>
+
+    <span class="cm">&lt;!-- Window-level keyboard: PreviewKeyDown intercepts before child gets it --&gt;</span>
+    <span class="tag">&lt;Grid</span> <span class="prop">PreviewKeyDown</span>=<span class="val">"Grid_PreviewKeyDown"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — Event handler patterns</span>
+    <pre><span class="cm">// Button click — simplest event</span>
+<span class="kw">private void</span> <span class="fn">SaveButton_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+{
+    <span class="cm">// sender = the Button that was clicked</span>
+    <span class="kw">var</span> button = (<span class="tp">Button</span>)sender;
+    button.IsEnabled = <span class="kw">false</span>;      <span class="cm">// disable after click</span>
+    <span class="fn">SaveData</span>();
+    button.IsEnabled = <span class="kw">true</span>;
+}
+
+<span class="cm">// TextChanged — fires on every keystroke</span>
+<span class="kw">private void</span> <span class="fn">TextBox_TextChanged</span>(<span class="kw">object</span> sender, <span class="tp">TextChangedEventArgs</span> e)
+{
+    <span class="kw">var</span> tb = (<span class="tp">TextBox</span>)sender;
+    <span class="cm">// Validate as user types</span>
+    <span class="kw">bool</span> valid = tb.Text.Length >= <span class="num">3</span>;
+    tb.Background = valid ? <span class="tp">Brushes</span>.White : <span class="tp">Brushes</span>.LightPink;
+}
+
+<span class="cm">// KeyDown — respond to specific keys</span>
+<span class="kw">private void</span> <span class="fn">TextBox_KeyDown</span>(<span class="kw">object</span> sender, <span class="tp">KeyEventArgs</span> e)
+{
+    <span class="kw">if</span> (e.Key == <span class="tp">Key</span>.Enter)
+    {
+        <span class="fn">SaveButton_Click</span>(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">RoutedEventArgs</span>());
+        e.Handled = <span class="kw">true</span>;  <span class="cm">// stops event bubbling further</span>
+    }
+    <span class="kw">if</span> (e.Key == <span class="tp">Key</span>.Escape)
+        <span class="fn">Close</span>();
+}
+
+<span class="cm">// MouseEnter/Leave — hover effects in code</span>
+<span class="kw">private void</span> <span class="fn">Border_MouseEnter</span>(<span class="kw">object</span> sender, <span class="tp">MouseEventArgs</span> e)
+    => ((<span class="tp">Border</span>)sender).Background = <span class="tp">Brushes</span>.SkyBlue;
+
+<span class="kw">private void</span> <span class="fn">Border_MouseLeave</span>(<span class="kw">object</span> sender, <span class="tp">MouseEventArgs</span> e)
+    => ((<span class="tp">Border</span>)sender).Background = <span class="tp">Brushes</span>.LightBlue;</pre>
+  </div>
+
+  <h3>ICommand — Commands for MVVM</h3>
+  <div class="code-block">
+    <span class="code-label">C# — RelayCommand implementation (reusable)</span>
+    <pre><span class="cm">// A reusable RelayCommand class — put this in your project</span>
+<span class="kw">public class</span> <span class="tp">RelayCommand</span> : <span class="tp">ICommand</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">Action</span>&lt;<span class="kw">object</span>?&gt;    _execute;
+    <span class="kw">private readonly</span> <span class="tp">Func</span>&lt;<span class="kw">object</span>?, <span class="kw">bool</span>&gt;? _canExecute;
+
+    <span class="kw">public</span> <span class="tp">RelayCommand</span>(<span class="tp">Action</span>&lt;<span class="kw">object</span>?&gt; execute,
+                        <span class="tp">Func</span>&lt;<span class="kw">object</span>?, <span class="kw">bool</span>&gt;? canExecute = <span class="kw">null</span>)
+    {
+        _execute    = execute;
+        _canExecute = canExecute;
+    }
+
+    <span class="cm">// WPF calls this to know if button should be enabled/disabled</span>
+    <span class="kw">public bool</span> <span class="fn">CanExecute</span>(<span class="kw">object</span>? parameter)
+        => _canExecute?.Invoke(parameter) ?? <span class="kw">true</span>;
+
+    <span class="cm">// WPF calls this when button is clicked</span>
+    <span class="kw">public void</span> <span class="fn">Execute</span>(<span class="kw">object</span>? parameter)
+        => _execute(parameter);
+
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? CanExecuteChanged
+    {
+        <span class="kw">add</span>    => <span class="tp">CommandManager</span>.RequerySuggested += value;
+        <span class="kw">remove</span> => <span class="tp">CommandManager</span>.RequerySuggested -= value;
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# + XAML — Using RelayCommand in a ViewModel</span>
+    <pre><span class="cm">// ViewModel with a SaveCommand</span>
+<span class="kw">public class</span> <span class="tp">FormViewModel</span> : <span class="tp">INotifyPropertyChanged</span>
+{
+    <span class="kw">private string</span> _name = <span class="str">""</span>;
+    <span class="kw">public string</span> Name
+    {
+        <span class="kw">get</span> => _name;
+        <span class="kw">set</span> { _name = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+
+    <span class="cm">// Command — button binds to this instead of Click event</span>
+    <span class="kw">public</span> <span class="tp">ICommand</span> SaveCommand { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">FormViewModel</span>()
+    {
+        SaveCommand = <span class="kw">new</span> <span class="tp">RelayCommand</span>(
+            execute:    _ => <span class="fn">Save</span>(),
+            canExecute: _ => !<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(Name) <span class="cm">// disabled when empty</span>
+        );
+    }
+
+    <span class="kw">private void</span> <span class="fn">Save</span>() => <span class="tp">MessageBox</span>.<span class="fn">Show</span>(<span class="str">$"Saved: {Name}"</span>);
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? n = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(n));
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Bind Button to Command</span>
+    <pre><span class="cm">&lt;!-- Button auto-disabled when CanExecute returns false --&gt;</span>
+<span class="tag">&lt;StackPanel&gt;</span>
+    <span class="tag">&lt;TextBox</span>  <span class="prop">Text</span>=<span class="val">"{Binding Name, UpdateSourceTrigger=PropertyChanged}"</span>
+              <span class="prop">Width</span>=<span class="val">"200"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>   <span class="prop">Content</span>=<span class="val">"Save"</span>
+              <span class="prop">Command</span>=<span class="val">"{Binding SaveCommand}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/StackPanel&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — RESOURCES
+══════════════════════════════════ -->
+<div id="tab-resources" class="tab-panel"><div class="section">
+  <h2>📁 Resources &amp; Resource Dictionaries</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What are Resources?</div>
+    <p>Resources are reusable objects you define once and use anywhere in your app. Colours, brushes, styles, templates, strings — anything can be a resource. Instead of writing <code>Background="#5B3FD4"</code> on 20 buttons, you define one resource called <code>PrimaryColor</code> and reference it everywhere. When you want to change the colour, you change it in one place.</p>
+  </div>
+
+  <h3>Where to Define Resources</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-wpf">
+        <div class="flow-node-title">🪟 Window.Resources</div>
+        <ul class="flow-items">
+          <li>Accessible to all controls in this window only</li>
+          <li>Define inside <code>&lt;Window.Resources&gt;</code></li>
+          <li>Good for window-specific styles</li>
+        </ul>
+      </div>
+      <div class="flow-node n-xaml">
+        <div class="flow-node-title">📦 Control.Resources</div>
+        <ul class="flow-items">
+          <li>Accessible only inside that control and its children</li>
+          <li>e.g. <code>&lt;Grid.Resources&gt;</code></li>
+          <li>Good for localised styles</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↑ More specific = higher priority</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">🌍 App.xaml Application.Resources — Global (recommended)</div>
+      <ul class="flow-items">
+        <li>Accessible from EVERY window and control in the entire app</li>
+        <li>Best place for colours, global styles, converters</li>
+        <li>Define inside <code>&lt;Application.Resources&gt;</code> in App.xaml</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — App.xaml with global resources</span>
+    <pre><span class="tag">&lt;Application</span> <span class="prop">x:Class</span>=<span class="val">"MyApp.App"</span>
+             <span class="prop">xmlns</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml/presentation"</span>
+             <span class="prop">xmlns:x</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml"</span>
+             <span class="prop">StartupUri</span>=<span class="val">"MainWindow.xaml"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;Application.Resources&gt;</span>
+
+        <span class="cm">&lt;!-- Colour resources --&gt;</span>
+        <span class="tag">&lt;Color</span>  <span class="prop">x:Key</span>=<span class="val">"PrimaryColor"</span><span class="tag">&gt;</span>#5B3FD4<span class="tag">&lt;/Color&gt;</span>
+        <span class="tag">&lt;Color</span>  <span class="prop">x:Key</span>=<span class="val">"AccentColor"</span><span class="tag">&gt;</span>#2A7ABF<span class="tag">&lt;/Color&gt;</span>
+
+        <span class="cm">&lt;!-- SolidColorBrush resources (use these for Background/Foreground) --&gt;</span>
+        <span class="tag">&lt;SolidColorBrush</span> <span class="prop">x:Key</span>=<span class="val">"PrimaryBrush"</span>
+                         <span class="prop">Color</span>=<span class="val">"{StaticResource PrimaryColor}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;SolidColorBrush</span> <span class="prop">x:Key</span>=<span class="val">"AccentBrush"</span>
+                         <span class="prop">Color</span>=<span class="val">"{StaticResource AccentColor}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;SolidColorBrush</span> <span class="prop">x:Key</span>=<span class="val">"DangerBrush"</span>  <span class="prop">Color</span>=<span class="val">"#C00000"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- String resources --&gt;</span>
+        <span class="tag">&lt;sys:String</span> <span class="prop">x:Key</span>=<span class="val">"AppTitle"</span><span class="tag">&gt;</span>My Awesome App<span class="tag">&lt;/sys:String&gt;</span>
+
+        <span class="cm">&lt;!-- Global font size --&gt;</span>
+        <span class="tag">&lt;sys:Double</span> <span class="prop">x:Key</span>=<span class="val">"BaseFontSize"</span><span class="tag">&gt;</span>13<span class="tag">&lt;/sys:Double&gt;</span>
+
+        <span class="cm">&lt;!-- Converters --&gt;</span>
+        <span class="tag">&lt;BooleanToVisibilityConverter</span> <span class="prop">x:Key</span>=<span class="val">"BoolToVis"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- Merge in a separate ResourceDictionary file --&gt;</span>
+        <span class="tag">&lt;ResourceDictionary.MergedDictionaries&gt;</span>
+            <span class="tag">&lt;ResourceDictionary</span> <span class="prop">Source</span>=<span class="val">"Themes/ButtonStyles.xaml"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;ResourceDictionary</span> <span class="prop">Source</span>=<span class="val">"Themes/TextStyles.xaml"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/ResourceDictionary.MergedDictionaries&gt;</span>
+
+    <span class="tag">&lt;/Application.Resources&gt;</span>
+<span class="tag">&lt;/Application&gt;</span></pre>
+  </div>
+
+  <h3>ResourceDictionary Files — Organise Your Styles</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Themes/ButtonStyles.xaml (separate file)</span>
+    <pre><span class="tag">&lt;ResourceDictionary</span>
+    <span class="prop">xmlns</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml/presentation"</span>
+    <span class="prop">xmlns:x</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;Style</span> <span class="prop">x:Key</span>=<span class="val">"PrimaryBtn"</span> <span class="prop">TargetType</span>=<span class="val">"Button"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Background"</span>
+                <span class="prop">Value</span>=<span class="val">"{StaticResource PrimaryBrush}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Foreground"</span>  <span class="prop">Value</span>=<span class="val">"White"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Padding"</span>     <span class="prop">Value</span>=<span class="val">"14,7"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+
+<span class="tag">&lt;/ResourceDictionary&gt;</span></pre>
+  </div>
+
+  <h3>StaticResource vs DynamicResource</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>StaticResource</th><th>DynamicResource</th></tr>
+    <tr><td>When resolved</td><td>Once at load time</td><td>Every time it's needed</td></tr>
+    <tr><td>Performance</td><td>Faster</td><td>Slightly slower</td></tr>
+    <tr><td>If resource changes</td><td>UI does NOT update</td><td>UI updates automatically</td></tr>
+    <tr><td>Use for</td><td>Colours, styles that don't change</td><td>Themes that can switch at runtime</td></tr>
+    <tr><td>Forward reference</td><td>Resource must be defined BEFORE use</td><td>Can reference resources defined later</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — FIRST APP
+══════════════════════════════════ -->
+<div id="tab-first" class="tab-panel"><div class="section">
+  <h2>🚀 Your First WPF App — Step by Step</h2>
+  <p>Let's build a complete working <strong>Contact Manager</strong> app from scratch. It will have a form to add contacts, a list to display them, and a delete button. This uses everything from the previous tabs.</p>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Create the project in Visual Studio</h4><p>Open Visual Studio → Create new project → Search "WPF" → Choose <strong>WPF Application (.NET)</strong> → Name it "ContactManager" → Select .NET 8 → Create. You'll see App.xaml and MainWindow.xaml already created.</p></div>
+  </div>
+
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Create the Contact model</h4><p>Right-click the project → Add → Class → Name it <strong>Contact.cs</strong></p></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — Contact.cs</span>
+    <pre><span class="kw">using</span> System.ComponentModel;
+<span class="kw">using</span> System.Runtime.CompilerServices;
+
+<span class="kw">namespace</span> ContactManager;
+
+<span class="kw">public class</span> <span class="tp">Contact</span> : <span class="tp">INotifyPropertyChanged</span>
+{
+    <span class="kw">private string</span> _name  = <span class="str">""</span>;
+    <span class="kw">private string</span> _email = <span class="str">""</span>;
+    <span class="kw">private string</span> _phone = <span class="str">""</span>;
+
+    <span class="kw">public string</span> Name
+    {
+        <span class="kw">get</span> => _name;
+        <span class="kw">set</span> { _name = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+    <span class="kw">public string</span> Email
+    {
+        <span class="kw">get</span> => _email;
+        <span class="kw">set</span> { _email = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+    <span class="kw">public string</span> Phone
+    {
+        <span class="kw">get</span> => _phone;
+        <span class="kw">set</span> { _phone = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? n = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(n));
+}</pre>
+  </div>
+
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Design the MainWindow XAML</h4><p>Replace the contents of MainWindow.xaml with this complete layout:</p></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — MainWindow.xaml (complete layout)</span>
+    <pre><span class="tag">&lt;Window</span> <span class="prop">x:Class</span>=<span class="val">"ContactManager.MainWindow"</span>
+        <span class="prop">xmlns</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml/presentation"</span>
+        <span class="prop">xmlns:x</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml"</span>
+        <span class="prop">Title</span>=<span class="val">"Contact Manager"</span>
+        <span class="prop">Width</span>=<span class="val">"700"</span> <span class="prop">Height</span>=<span class="val">"500"</span>
+        <span class="prop">MinWidth</span>=<span class="val">"500"</span> <span class="prop">MinHeight</span>=<span class="val">"400"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;Grid&gt;</span>
+        <span class="tag">&lt;Grid.ColumnDefinitions&gt;</span>
+            <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"260"</span><span class="tag">/&gt;</span>    <span class="cm">&lt;!-- Left: form --&gt;</span>
+            <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>       <span class="cm">&lt;!-- Right: list --&gt;</span>
+        <span class="tag">&lt;/Grid.ColumnDefinitions&gt;</span>
+
+        <span class="cm">&lt;!-- ── LEFT PANEL: Add Contact Form ── --&gt;</span>
+        <span class="tag">&lt;Border</span> <span class="prop">Grid.Column</span>=<span class="val">"0"</span>
+                <span class="prop">Background</span>=<span class="val">"#F0EEFF"</span>
+                <span class="prop">BorderBrush</span>=<span class="val">"#CCBBEE"</span>
+                <span class="prop">BorderThickness</span>=<span class="val">"0,0,1,0"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;StackPanel</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+                <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Add Contact"</span>
+                           <span class="prop">FontSize</span>=<span class="val">"18"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span>
+                           <span class="prop">Foreground</span>=<span class="val">"#3A20A0"</span>
+                           <span class="prop">Margin</span>=<span class="val">"0,0,0,20"</span><span class="tag">/&gt;</span>
+
+                <span class="tag">&lt;Label</span>   <span class="prop">Content</span>=<span class="val">"Name"</span>      <span class="prop">FontWeight</span>=<span class="val">"SemiBold"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;TextBox</span> <span class="prop">x:Name</span>=<span class="val">"txtName"</span>  <span class="prop">Margin</span>=<span class="val">"0,2,0,10"</span><span class="tag">/&gt;</span>
+
+                <span class="tag">&lt;Label</span>   <span class="prop">Content</span>=<span class="val">"Email"</span>     <span class="prop">FontWeight</span>=<span class="val">"SemiBold"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;TextBox</span> <span class="prop">x:Name</span>=<span class="val">"txtEmail"</span> <span class="prop">Margin</span>=<span class="val">"0,2,0,10"</span><span class="tag">/&gt;</span>
+
+                <span class="tag">&lt;Label</span>   <span class="prop">Content</span>=<span class="val">"Phone"</span>     <span class="prop">FontWeight</span>=<span class="val">"SemiBold"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;TextBox</span> <span class="prop">x:Name</span>=<span class="val">"txtPhone"</span> <span class="prop">Margin</span>=<span class="val">"0,2,0,20"</span><span class="tag">/&gt;</span>
+
+                <span class="tag">&lt;Button</span>  <span class="prop">Content</span>=<span class="val">"Add Contact"</span>
+                         <span class="prop">Click</span>=<span class="val">"AddContact_Click"</span>
+                         <span class="prop">Background</span>=<span class="val">"#5B3FD4"</span>
+                         <span class="prop">Foreground</span>=<span class="val">"White"</span>
+                         <span class="prop">Padding</span>=<span class="val">"0,10"</span>
+                         <span class="prop">FontWeight</span>=<span class="val">"SemiBold"</span>
+                         <span class="prop">BorderThickness</span>=<span class="val">"0"</span><span class="tag">/&gt;</span>
+
+                <span class="tag">&lt;TextBlock</span> <span class="prop">x:Name</span>=<span class="val">"txtError"</span>
+                           <span class="prop">Foreground</span>=<span class="val">"Red"</span>
+                           <span class="prop">Margin</span>=<span class="val">"0,8,0,0"</span>
+                           <span class="prop">TextWrapping</span>=<span class="val">"Wrap"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;/StackPanel&gt;</span>
+        <span class="tag">&lt;/Border&gt;</span>
+
+        <span class="cm">&lt;!-- ── RIGHT PANEL: Contact List ── --&gt;</span>
+        <span class="tag">&lt;Grid</span> <span class="prop">Grid.Column</span>=<span class="val">"1"</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Grid.RowDefinitions&gt;</span>
+                <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;/Grid.RowDefinitions&gt;</span>
+
+            <span class="tag">&lt;TextBlock</span> <span class="prop">Grid.Row</span>=<span class="val">"0"</span>
+                       <span class="prop">Text</span>=<span class="val">"{Binding Count,
+                            Source={x:Static local:App.Contacts},
+                            StringFormat='Contacts ({0})'}"</span>
+                       <span class="prop">FontSize</span>=<span class="val">"16"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span>
+                       <span class="prop">Foreground</span>=<span class="val">"#3A20A0"</span>
+                       <span class="prop">Margin</span>=<span class="val">"0,0,0,10"</span><span class="tag">/&gt;</span>
+
+            <span class="tag">&lt;ListView</span> <span class="prop">Grid.Row</span>=<span class="val">"1"</span>
+                      <span class="prop">x:Name</span>=<span class="val">"lvContacts"</span>
+                      <span class="prop">ItemsSource</span>=<span class="val">"{Binding}"</span>
+                      <span class="prop">BorderBrush</span>=<span class="val">"#CCBBEE"</span><span class="tag">&gt;</span>
+                <span class="tag">&lt;ListView.View&gt;</span>
+                    <span class="tag">&lt;GridView&gt;</span>
+                        <span class="tag">&lt;GridViewColumn</span> <span class="prop">Header</span>=<span class="val">"Name"</span>  <span class="prop">Width</span>=<span class="val">"120"</span>
+                            <span class="prop">DisplayMemberBinding</span>=<span class="val">"{Binding Name}"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;GridViewColumn</span> <span class="prop">Header</span>=<span class="val">"Email"</span> <span class="prop">Width</span>=<span class="val">"150"</span>
+                            <span class="prop">DisplayMemberBinding</span>=<span class="val">"{Binding Email}"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;GridViewColumn</span> <span class="prop">Header</span>=<span class="val">"Phone"</span> <span class="prop">Width</span>=<span class="val">"100"</span>
+                            <span class="prop">DisplayMemberBinding</span>=<span class="val">"{Binding Phone}"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;/GridView&gt;</span>
+                <span class="tag">&lt;/ListView.View&gt;</span>
+            <span class="tag">&lt;/ListView&gt;</span>
+
+            <span class="tag">&lt;Button</span> <span class="prop">Grid.Row</span>=<span class="val">"2"</span>
+                    <span class="prop">Content</span>=<span class="val">"Delete Selected"</span>
+                    <span class="prop">Click</span>=<span class="val">"DeleteContact_Click"</span>
+                    <span class="prop">HorizontalAlignment</span>=<span class="val">"Right"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,10,0,0"</span>
+                    <span class="prop">Background</span>=<span class="val">"#C00000"</span>
+                    <span class="prop">Foreground</span>=<span class="val">"White"</span>
+                    <span class="prop">Padding</span>=<span class="val">"14,7"</span>
+                    <span class="prop">BorderThickness</span>=<span class="val">"0"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/Grid&gt;</span>
+    <span class="tag">&lt;/Grid&gt;</span>
+<span class="tag">&lt;/Window&gt;</span></pre>
+  </div>
+
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Write the code-behind</h4><p>Open MainWindow.xaml.cs and replace its contents:</p></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — MainWindow.xaml.cs (complete code-behind)</span>
+    <pre><span class="kw">using</span> System.Collections.ObjectModel;
+<span class="kw">using</span> System.Windows;
+
+<span class="kw">namespace</span> ContactManager;
+
+<span class="kw">public partial class</span> <span class="tp">MainWindow</span> : <span class="tp">Window</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">ObservableCollection</span>&lt;<span class="tp">Contact</span>&gt; _contacts = <span class="kw">new</span>();
+
+    <span class="kw">public</span> <span class="fn">MainWindow</span>()
+    {
+        <span class="fn">InitializeComponent</span>();
+
+        <span class="cm">// Seed some sample data</span>
+        _contacts.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Contact</span> { Name=<span class="str">"Alice Smith"</span>, Email=<span class="str">"alice@example.com"</span>, Phone=<span class="str">"07700000001"</span> });
+        _contacts.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Contact</span> { Name=<span class="str">"Bob Jones"</span>,  Email=<span class="str">"bob@example.com"</span>,   Phone=<span class="str">"07700000002"</span> });
+
+        <span class="cm">// Set the DataContext of the ListView to the collection</span>
+        lvContacts.DataContext = _contacts;
+    }
+
+    <span class="kw">private void</span> <span class="fn">AddContact_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+    {
+        <span class="cm">// Validate</span>
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(txtName.Text))
+        {
+            txtError.Text = <span class="str">"Name is required."</span>;
+            txtName.<span class="fn">Focus</span>();
+            <span class="kw">return</span>;
+        }
+
+        <span class="cm">// Add the new contact — ListView updates automatically</span>
+        _contacts.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Contact</span>
+        {
+            Name  = txtName.Text.Trim(),
+            Email = txtEmail.Text.Trim(),
+            Phone = txtPhone.Text.Trim()
+        });
+
+        <span class="cm">// Clear the form</span>
+        txtName.Text  = <span class="str">""</span>;
+        txtEmail.Text = <span class="str">""</span>;
+        txtPhone.Text = <span class="str">""</span>;
+        txtError.Text = <span class="str">""</span>;
+        txtName.<span class="fn">Focus</span>();
+    }
+
+    <span class="kw">private void</span> <span class="fn">DeleteContact_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+    {
+        <span class="kw">if</span> (lvContacts.SelectedItem <span class="kw">is</span> <span class="tp">Contact</span> selected)
+        {
+            <span class="kw">var</span> result = <span class="tp">MessageBox</span>.<span class="fn">Show</span>(
+                <span class="str">$"Delete {selected.Name}?"</span>,
+                <span class="str">"Confirm Delete"</span>,
+                <span class="tp">MessageBoxButton</span>.YesNo,
+                <span class="tp">MessageBoxImage</span>.Warning);
+
+            <span class="kw">if</span> (result == <span class="tp">MessageBoxResult</span>.Yes)
+                _contacts.<span class="fn">Remove</span>(selected);
+        }
+        <span class="kw">else</span>
+        {
+            <span class="tp">MessageBox</span>.<span class="fn">Show</span>(<span class="str">"Please select a contact to delete."</span>);
+        }
+    }
+}</pre>
+  </div>
+
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body"><h4>Run the app</h4><p>Press <strong>F5</strong> to build and run. You'll see the Contact Manager with a form on the left and list on the right. Add contacts, delete them — everything works automatically through ObservableCollection binding.</p></div>
+  </div>
+
+  <h3>What You Just Used</h3>
+  <ul class="checklist">
+    <li>Grid layout with ColumnDefinitions to split the window into two panels</li>
+    <li>StackPanel to stack the form fields vertically</li>
+    <li>TextBox, Label, and Button controls with x:Name for code access</li>
+    <li>ListView with GridView columns and DisplayMemberBinding</li>
+    <li>ObservableCollection bound to ListView.ItemsSource — auto-updates on Add/Remove</li>
+    <li>INotifyPropertyChanged on the Contact model</li>
+    <li>Event handlers for Click events in code-behind</li>
+    <li>MessageBox for confirmation dialogs</li>
+  </ul>
+
+  <div class="completion">
+    <h3>WPF Fundamentals Complete!</h3>
+    <p>You now understand XAML syntax and namespaces · all 6 layout panels (Grid, StackPanel, DockPanel, WrapPanel, Canvas, UniformGrid) · all essential controls (Button, TextBox, ListBox, ComboBox, CheckBox, DataGrid) · data binding with INotifyPropertyChanged and ObservableCollection · Styles, Triggers, and DataTemplates · Resource Dictionaries in App.xaml · Routed Events and ICommand with RelayCommand · and built a complete Contact Manager app from scratch. Part 2 covers MVVM, Commands deep dive, Custom Controls, Dependency Properties, Animations, and Threading.</p>
+    <p style="margin-top:12px;font-weight:700;color:#a78bfa;">Ready for WPF Advanced → Part 2! 🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
