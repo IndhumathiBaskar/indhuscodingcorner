@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WPF Advanced — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0f0d1a;--surface:#1a1630;--card:#1e1a30;--border:#2d2850;--border2:#3d3870;
+  --wpf:#8b6fff;--wpf-l:rgba(139,111,255,.15);--wpf-d:#a98bff;
+  --green:#34d399;--green-l:rgba(52,211,153,.12);
+  --blue:#60a5fa;--blue-l:rgba(96,165,250,.12);
+  --orange:#fb923c;--orange-l:rgba(251,146,60,.12);
+  --pink:#f472b6;--pink-l:rgba(244,114,182,.12);
+  --teal:#2dd4bf;--teal-l:rgba(45,212,191,.12);
+  --red:#f87171;--red-l:rgba(248,113,113,.08);--red-b:rgba(248,113,113,.25);
+  --yellow:#fbbf24;--yellow-l:rgba(251,191,36,.1);
+  --text:#e8e4ff;--text2:#c4bef0;--muted:#8a84aa;
+  --code-bg:#080610;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.2);
+  --sh-lg:0 2px 8px rgba(0,0,0,.4),0 8px 32px rgba(139,111,255,.1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.75;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#050310 0%,#0d0828 40%,#150d35 100%);
+  border-bottom:1px solid var(--border);
+  padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(139,111,255,.2) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 30%,rgba(96,165,250,.15) 0%,transparent 50%),
+             radial-gradient(ellipse at 60% 80%,rgba(244,114,182,.1) 0%,transparent 50%);
+  pointer-events:none;
+}
+.header-badge{
+  display:inline-block;background:rgba(139,111,255,.15);border:1px solid rgba(139,111,255,.3);
+  border-radius:100px;padding:4px 14px;font-size:.7rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--wpf-d);margin-bottom:16px;
+  font-family:'JetBrains Mono',monospace;
+}
+.header h1{color:#fff;font-size:clamp(1.6rem,5vw,2.6rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;position:relative;}
+.header h1 span{
+  background:linear-gradient(135deg,#8b6fff,#60a5fa,#f472b6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.header p{color:var(--muted);font-size:.88rem;position:relative;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(15,13,26,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--wpf-l);color:var(--wpf-d);font-weight:700;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.15rem,3.5vw,1.7rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;border-bottom:2px solid var(--border);letter-spacing:-.02em;}
+.section h3{color:var(--wpf-d);font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+
+/* CALLOUTS */
+.beginner{background:var(--wpf-l);border:1px solid rgba(139,111,255,.25);border-left:4px solid var(--wpf);border-radius:var(--r);padding:13px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--wpf-d);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.beginner p{color:var(--text2);font-size:.84rem;margin:0;}
+.analogy{background:var(--orange-l);border:1px solid rgba(251,146,60,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:13px 16px;margin:14px 0;}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--orange);font-family:'JetBrains Mono',monospace;margin-bottom:4px;}
+.analogy p{color:var(--text2);font-size:.84rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(52,211,153,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(251,146,60,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(52,211,153,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.success p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:13px;}
+.step-num{background:linear-gradient(135deg,var(--wpf),var(--blue));color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 10px rgba(139,111,255,.4);}
+.step-body{background:var(--surface);padding:13px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--wpf);}
+.step-body h4{color:var(--wpf-d);margin-bottom:5px;font-size:.9rem;}
+.step-body p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:13px 16px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.9rem;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.flow-items{list-style:none;font-size:.8rem;color:var(--text2);}
+.flow-items li{padding:3px 0 3px 15px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--wpf);}
+.flow-arrow{text-align:center;padding:5px 0;color:var(--border2);font-size:1.4rem;line-height:1;}
+.flow-row{display:flex;gap:10px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-wpf{background:var(--wpf-l);border:1.5px solid rgba(139,111,255,.3);}
+.n-wpf .flow-node-title{color:var(--wpf-d);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(52,211,153,.2);}
+.n-green .flow-node-title{color:var(--green);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(96,165,250,.2);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-orange{background:var(--orange-l);border:1.5px solid rgba(251,146,60,.2);}
+.n-orange .flow-node-title{color:var(--orange);}
+.n-pink{background:var(--pink-l);border:1.5px solid rgba(244,114,182,.2);}
+.n-pink .flow-node-title{color:var(--pink);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(45,212,191,.2);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--wpf-d);margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:13px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--wpf);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.78rem;font-weight:600;}
+.icon-item p{font-size:.71rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #1a1530;border-left:3px solid var(--wpf);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:13px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 24px rgba(0,0,0,.4);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.75;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:#a78bfa;text-transform:uppercase;letter-spacing:.09em;margin-bottom:5px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.tag{color:#f38ba8;}.prop{color:#89b4fa;}.val{color:#a6e3a1;}
+code{background:rgba(139,111,255,.15);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--wpf-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{background:linear-gradient(90deg,var(--wpf-l),var(--blue-l));padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#0d0828,#150d35,#0d1528);border:1px solid rgba(139,111,255,.3);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;position:relative;overflow:hidden;}
+.completion::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,rgba(139,111,255,.1) 0%,transparent 70%);pointer-events:none;}
+.completion h3{font-size:1.15rem;font-weight:800;margin-bottom:12px;color:#fff;position:relative;}
+.completion p{color:var(--muted);font-size:.86rem;line-height:1.9;margin:0;position:relative;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.63rem;}
+  .step{gap:9px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Part 2 of 2 · Advanced</div>
+    <h1>WPF <span>Advanced</span></h1>
+    <p>MVVM Pattern · Commands · Dependency Properties · Custom Controls · Animations · Threading · Navigation · Real-World Patterns</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('mvvm',this)">① MVVM Pattern</button>
+      <button class="tab-btn" onclick="T('commands',this)">② Commands Deep Dive</button>
+      <button class="tab-btn" onclick="T('dependency',this)">③ Dependency Properties</button>
+      <button class="tab-btn" onclick="T('custom',this)">④ Custom Controls</button>
+      <button class="tab-btn" onclick="T('animation',this)">⑤ Animations</button>
+      <button class="tab-btn" onclick="T('threading',this)">⑥ Threading</button>
+      <button class="tab-btn" onclick="T('navigation',this)">⑦ Navigation</button>
+      <button class="tab-btn" onclick="T('patterns',this)">⑧ Real-World Patterns</button>
+      <button class="tab-btn" onclick="T('fullapp',this)">⑨ Full MVVM App</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — MVVM
+══════════════════════════════════ -->
+<div id="tab-mvvm" class="tab-panel active"><div class="section">
+  <h2>🏛️ MVVM Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is MVVM?</div>
+    <p>MVVM stands for <strong>Model–View–ViewModel</strong>. It is a pattern for organising your WPF code so the UI (View) is completely separated from the logic (ViewModel). The View knows nothing about how data is fetched or saved. The ViewModel knows nothing about buttons or text boxes. They communicate only through data binding.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>restaurant menu</strong> is the View — it displays food options. The <strong>kitchen</strong> is the Model — it holds the actual ingredients and recipes. The <strong>waiter</strong> is the ViewModel — takes your order from the menu and communicates it to the kitchen, then brings the result back to display. The menu never goes into the kitchen. The kitchen never writes on the menu.</p>
+  </div>
+
+  <h3>The Three Layers</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🏛️ MVVM Architecture — Data Flow</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b6fff"/>
+          </marker>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#60a5fa"/>
+          </marker>
+        </defs>
+
+        <!-- VIEW -->
+        <rect x="30" y="40" width="190" height="250" rx="10" fill="rgba(244,114,182,.08)" stroke="rgba(244,114,182,.3)" stroke-width="2"/>
+        <text x="125" y="65" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#f472b6" text-anchor="middle">VIEW</text>
+        <text x="125" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a84aa" text-anchor="middle">MainWindow.xaml</text>
+        <rect x="50" y="95" width="150" height="30" rx="5" fill="rgba(244,114,182,.12)" stroke="rgba(244,114,182,.2)" stroke-width="1"/>
+        <text x="125" y="115" font-family="JetBrains Mono,monospace" font-size="10" fill="#f472b6" text-anchor="middle">Button, TextBox</text>
+        <rect x="50" y="135" width="150" height="30" rx="5" fill="rgba(244,114,182,.12)" stroke="rgba(244,114,182,.2)" stroke-width="1"/>
+        <text x="125" y="155" font-family="JetBrains Mono,monospace" font-size="10" fill="#f472b6" text-anchor="middle">ListView, DataGrid</text>
+        <rect x="50" y="175" width="150" height="30" rx="5" fill="rgba(244,114,182,.12)" stroke="rgba(244,114,182,.2)" stroke-width="1"/>
+        <text x="125" y="195" font-family="JetBrains Mono,monospace" font-size="10" fill="#f472b6" text-anchor="middle">{Binding ...}</text>
+        <text x="125" y="260" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">Only XAML · No logic</text>
+        <text x="125" y="275" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">DataContext = ViewModel</text>
+
+        <!-- Binding arrows -->
+        <line x1="220" y1="160" x2="265" y2="160" stroke="#8b6fff" stroke-width="2" marker-end="url(#arr)"/>
+        <line x1="265" y1="175" x2="220" y2="175" stroke="#8b6fff" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="243" y="153" font-family="JetBrains Mono,monospace" font-size="8" fill="#8b6fff" text-anchor="middle">Binding</text>
+        <text x="243" y="193" font-family="JetBrains Mono,monospace" font-size="8" fill="#8b6fff" text-anchor="middle">Commands</text>
+
+        <!-- VIEWMODEL -->
+        <rect x="267" y="40" width="190" height="250" rx="10" fill="rgba(139,111,255,.1)" stroke="rgba(139,111,255,.35)" stroke-width="2"/>
+        <text x="362" y="65" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#a98bff" text-anchor="middle">VIEWMODEL</text>
+        <text x="362" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a84aa" text-anchor="middle">ContactViewModel.cs</text>
+        <rect x="287" y="95" width="150" height="30" rx="5" fill="rgba(139,111,255,.15)" stroke="rgba(139,111,255,.25)" stroke-width="1"/>
+        <text x="362" y="115" font-family="JetBrains Mono,monospace" font-size="10" fill="#a98bff" text-anchor="middle">Properties + INPC</text>
+        <rect x="287" y="135" width="150" height="30" rx="5" fill="rgba(139,111,255,.15)" stroke="rgba(139,111,255,.25)" stroke-width="1"/>
+        <text x="362" y="155" font-family="JetBrains Mono,monospace" font-size="10" fill="#a98bff" text-anchor="middle">ICommand objects</text>
+        <rect x="287" y="175" width="150" height="30" rx="5" fill="rgba(139,111,255,.15)" stroke="rgba(139,111,255,.25)" stroke-width="1"/>
+        <text x="362" y="195" font-family="JetBrains Mono,monospace" font-size="10" fill="#a98bff" text-anchor="middle">Business logic</text>
+        <text x="362" y="260" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">No UI references</text>
+        <text x="362" y="275" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">Fully unit-testable</text>
+
+        <!-- Call arrows -->
+        <line x1="457" y1="155" x2="502" y2="155" stroke="#60a5fa" stroke-width="2" marker-end="url(#arr2)"/>
+        <line x1="502" y1="175" x2="457" y2="175" stroke="#60a5fa" stroke-width="2" marker-end="url(#arr2)"/>
+        <text x="480" y="148" font-family="JetBrains Mono,monospace" font-size="8" fill="#60a5fa" text-anchor="middle">calls</text>
+        <text x="480" y="193" font-family="JetBrains Mono,monospace" font-size="8" fill="#60a5fa" text-anchor="middle">returns</text>
+
+        <!-- MODEL -->
+        <rect x="504" y="40" width="190" height="250" rx="10" fill="rgba(96,165,250,.08)" stroke="rgba(96,165,250,.3)" stroke-width="2"/>
+        <text x="599" y="65" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#60a5fa" text-anchor="middle">MODEL</text>
+        <text x="599" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a84aa" text-anchor="middle">Contact.cs / Services</text>
+        <rect x="524" y="95" width="150" height="30" rx="5" fill="rgba(96,165,250,.12)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+        <text x="599" y="115" font-family="JetBrains Mono,monospace" font-size="10" fill="#60a5fa" text-anchor="middle">Data classes (POCOs)</text>
+        <rect x="524" y="135" width="150" height="30" rx="5" fill="rgba(96,165,250,.12)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+        <text x="599" y="155" font-family="JetBrains Mono,monospace" font-size="10" fill="#60a5fa" text-anchor="middle">Repositories</text>
+        <rect x="524" y="175" width="150" height="30" rx="5" fill="rgba(96,165,250,.12)" stroke="rgba(96,165,250,.2)" stroke-width="1"/>
+        <text x="599" y="195" font-family="JetBrains Mono,monospace" font-size="10" fill="#60a5fa" text-anchor="middle">API / Database</text>
+        <text x="599" y="260" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">Pure data + rules</text>
+        <text x="599" y="275" font-family="Sora,sans-serif" font-size="9" fill="#8a84aa" text-anchor="middle">No UI, no WPF</text>
+
+        <text x="360" y="315" font-family="Sora,sans-serif" font-size="10" fill="#8a84aa" text-anchor="middle">View has NO reference to Model · ViewModel has NO reference to WPF controls</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>ViewModelBase — Your Foundation Class</h3>
+  <p>Every ViewModel inherits from a base class that implements <code>INotifyPropertyChanged</code>. Write this once and reuse everywhere.</p>
+
+  <div class="code-block">
+    <span class="code-label">C# — ViewModelBase.cs</span>
+    <pre><span class="kw">using</span> System.ComponentModel;
+<span class="kw">using</span> System.Runtime.CompilerServices;
+
+<span class="kw">namespace</span> MyApp.ViewModels;
+
+<span class="cm">/// Base class for all ViewModels.</span>
+<span class="cm">/// Provides INotifyPropertyChanged so the UI auto-updates.</span>
+<span class="kw">public abstract class</span> <span class="tp">ViewModelBase</span> : <span class="tp">INotifyPropertyChanged</span>
+{
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+
+    <span class="cm">// Call this in any property setter to notify WPF of changes</span>
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? name = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(name));
+
+    <span class="cm">// Set a backing field, notify if changed, return true if changed</span>
+    <span class="kw">protected bool</span> <span class="fn">SetProperty</span>&lt;<span class="tp">T</span>&gt;(<span class="kw">ref</span> <span class="tp">T</span> field, <span class="tp">T</span> value,
+                                   [<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? name = <span class="kw">null</span>)
+    {
+        <span class="kw">if</span> (<span class="tp">EqualityComparer</span>&lt;<span class="tp">T</span>&gt;.Default.<span class="fn">Equals</span>(field, value)) <span class="kw">return false</span>;
+        field = value;
+        <span class="fn">OnPropertyChanged</span>(name);
+        <span class="kw">return true</span>;
+    }
+}</pre>
+  </div>
+
+  <h3>A Complete ViewModel</h3>
+  <div class="code-block">
+    <span class="code-label">C# — ContactsViewModel.cs (full example)</span>
+    <pre><span class="kw">using</span> System.Collections.ObjectModel;
+<span class="kw">using</span> System.Windows.Input;
+
+<span class="kw">namespace</span> MyApp.ViewModels;
+
+<span class="kw">public class</span> <span class="tp">ContactsViewModel</span> : <span class="tp">ViewModelBase</span>
+{
+    <span class="cm">// ── Backing fields ──────────────────────────────────────────</span>
+    <span class="kw">private string</span>   _searchText   = <span class="str">""</span>;
+    <span class="kw">private</span> <span class="tp">Contact</span>? _selectedContact;
+    <span class="kw">private bool</span>     _isLoading;
+
+    <span class="cm">// ── Properties (bound to UI) ────────────────────────────────</span>
+    <span class="kw">public</span> <span class="tp">ObservableCollection</span>&lt;<span class="tp">Contact</span>&gt; Contacts { <span class="kw">get</span>; } = <span class="kw">new</span>();
+
+    <span class="kw">public string</span> SearchText
+    {
+        <span class="kw">get</span> => _searchText;
+        <span class="kw">set</span>
+        {
+            <span class="kw">if</span> (<span class="fn">SetProperty</span>(<span class="kw">ref</span> _searchText, value))
+                <span class="fn">FilterContacts</span>();   <span class="cm">// re-filter when search changes</span>
+        }
+    }
+
+    <span class="kw">public</span> <span class="tp">Contact</span>? SelectedContact
+    {
+        <span class="kw">get</span> => _selectedContact;
+        <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _selectedContact, value);
+    }
+
+    <span class="kw">public bool</span> IsLoading
+    {
+        <span class="kw">get</span> => _isLoading;
+        <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _isLoading, value);
+    }
+
+    <span class="cm">// Computed property — no backing field needed</span>
+    <span class="kw">public bool</span> HasContacts => Contacts.Count > <span class="num">0</span>;
+    <span class="kw">public string</span> Title    => <span class="str">$"Contacts ({Contacts.Count})"</span>;
+
+    <span class="cm">// ── Commands (bound to Buttons) ─────────────────────────────</span>
+    <span class="kw">public</span> <span class="tp">ICommand</span> AddCommand    { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> DeleteCommand { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> RefreshCommand{ <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">ContactsViewModel</span>()
+    {
+        AddCommand     = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">AddContact</span>());
+        DeleteCommand  = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">DeleteContact</span>(),
+                                            _ => SelectedContact != <span class="kw">null</span>);
+        RefreshCommand = <span class="kw">new</span> <span class="tp">AsyncRelayCommand</span>(<span class="fn">LoadContactsAsync</span>);
+
+        <span class="cm">// Load initial data</span>
+        _ = <span class="fn">LoadContactsAsync</span>();
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">LoadContactsAsync</span>()
+    {
+        IsLoading = <span class="kw">true</span>;
+        Contacts.<span class="fn">Clear</span>();
+        <span class="kw">var</span> data = <span class="kw">await</span> _contactService.<span class="fn">GetAllAsync</span>();
+        <span class="kw">foreach</span> (<span class="kw">var</span> c <span class="kw">in</span> data) Contacts.<span class="fn">Add</span>(c);
+        IsLoading = <span class="kw">false</span>;
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(HasContacts));
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Title));
+    }
+
+    <span class="kw">private void</span> <span class="fn">AddContact</span>()    { <span class="cm">/* open add dialog */</span> }
+    <span class="kw">private void</span> <span class="fn">DeleteContact</span>() { <span class="kw">if</span> (SelectedContact != <span class="kw">null</span>) Contacts.<span class="fn">Remove</span>(SelectedContact); }
+    <span class="kw">private void</span> <span class="fn">FilterContacts</span>(){ <span class="cm">/* filter logic */</span> }
+
+    <span class="kw">private readonly</span> <span class="tp">IContactService</span> _contactService = <span class="kw">new</span> <span class="tp">ContactService</span>();
+}</pre>
+  </div>
+
+  <h3>Wiring ViewModel to View</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Setting DataContext to ViewModel</span>
+    <pre><span class="tag">&lt;Window</span> <span class="prop">x:Class</span>=<span class="val">"MyApp.MainWindow"</span>
+        <span class="prop">xmlns:vm</span>=<span class="val">"clr-namespace:MyApp.ViewModels"</span><span class="tag">&gt;</span>
+
+    <span class="cm">&lt;!-- Option A: Set DataContext in XAML (simplest) --&gt;</span>
+    <span class="tag">&lt;Window.DataContext&gt;</span>
+        <span class="tag">&lt;vm:ContactsViewModel</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Window.DataContext&gt;</span>
+
+    <span class="tag">&lt;Grid&gt;</span>
+        <span class="cm">&lt;!-- Title shows contact count --&gt;</span>
+        <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Title}"</span> <span class="prop">FontSize</span>=<span class="val">"18"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- Loading indicator --&gt;</span>
+        <span class="tag">&lt;ProgressBar</span> <span class="prop">IsIndeterminate</span>=<span class="val">"True"</span>
+                     <span class="prop">Visibility</span>=<span class="val">"{Binding IsLoading,
+                                  Converter={StaticResource BoolToVis}}"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- List bound to collection --&gt;</span>
+        <span class="tag">&lt;ListView</span> <span class="prop">ItemsSource</span>=<span class="val">"{Binding Contacts}"</span>
+                  <span class="prop">SelectedItem</span>=<span class="val">"{Binding SelectedContact}"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- Buttons bound to commands --&gt;</span>
+        <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Add"</span>    <span class="prop">Command</span>=<span class="val">"{Binding AddCommand}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Delete"</span> <span class="prop">Command</span>=<span class="val">"{Binding DeleteCommand}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Refresh"</span><span class="prop">Command</span>=<span class="val">"{Binding RefreshCommand}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Grid&gt;</span>
+<span class="tag">&lt;/Window&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — Option B: Set DataContext in code-behind (more control)</span>
+    <pre><span class="kw">public partial class</span> <span class="tp">MainWindow</span> : <span class="tp">Window</span>
+{
+    <span class="kw">public</span> <span class="fn">MainWindow</span>(<span class="tp">ContactsViewModel</span> vm)  <span class="cm">// inject via DI</span>
+    {
+        <span class="fn">InitializeComponent</span>();
+        DataContext = vm;
+    }
+}</pre>
+  </div>
+
+  <h3>MVVM Rules — What Goes Where</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🖼️</span><h4>View (XAML)</h4><p>XAML only. Bindings to ViewModel. No business logic. Code-behind can have UI-only code (animations, focus).</p></div>
+    <div class="icon-item"><span class="emoji">⚙️</span><h4>ViewModel (C#)</h4><p>Properties with INPC. ICommand for buttons. Calls services. No <code>Button</code>, <code>TextBox</code>, <code>MessageBox</code> references.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Model (C#)</h4><p>Plain C# classes. Data shapes. No WPF, no ViewModel references. Can be shared with non-WPF projects.</p></div>
+    <div class="icon-item"><span class="emoji">🔧</span><h4>Service (C#)</h4><p>Database access, API calls, file I/O. Injected into ViewModel. Returns Model objects.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Repository</h4><p>Abstracts data access. ViewModel depends on interface, not concrete class — easy to mock in tests.</p></div>
+    <div class="icon-item"><span class="emoji">📬</span><h4>Messenger/EventAgg.</h4><p>ViewModels talk to each other without direct references. Publish/subscribe pattern for loose coupling.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — COMMANDS DEEP DIVE
+══════════════════════════════════ -->
+<div id="tab-commands" class="tab-panel"><div class="section">
+  <h2>⚡ Commands Deep Dive</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Why Commands Instead of Click Events?</div>
+    <p>With events, your button logic lives in code-behind, tightly coupled to the UI. With Commands, the logic lives in your ViewModel — the button just binds to it. This means you can <strong>unit test</strong> your logic without ever touching the UI, and reuse commands on multiple buttons, keyboard shortcuts, and menu items at once.</p>
+  </div>
+
+  <h3>RelayCommand — Synchronous</h3>
+  <div class="code-block">
+    <span class="code-label">C# — RelayCommand (full production version)</span>
+    <pre><span class="kw">public class</span> <span class="tp">RelayCommand</span> : <span class="tp">ICommand</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">Action</span>&lt;<span class="kw">object</span>?&gt;     _execute;
+    <span class="kw">private readonly</span> <span class="tp">Func</span>&lt;<span class="kw">object</span>?, <span class="kw">bool</span>&gt;? _canExecute;
+
+    <span class="kw">public</span> <span class="tp">RelayCommand</span>(<span class="tp">Action</span>&lt;<span class="kw">object</span>?&gt;     execute,
+                        <span class="tp">Func</span>&lt;<span class="kw">object</span>?, <span class="kw">bool</span>&gt;? canExecute = <span class="kw">null</span>)
+    {
+        _execute    = execute    ?? <span class="kw">throw new</span> <span class="tp">ArgumentNullException</span>(<span class="kw">nameof</span>(execute));
+        _canExecute = canExecute;
+    }
+
+    <span class="cm">// WPF asks this before each user interaction — enables/disables button</span>
+    <span class="kw">public bool</span> <span class="fn">CanExecute</span>(<span class="kw">object</span>? parameter)
+        => _canExecute?.Invoke(parameter) ?? <span class="kw">true</span>;
+
+    <span class="kw">public void</span> <span class="fn">Execute</span>(<span class="kw">object</span>? parameter)
+        => _execute(parameter);
+
+    <span class="cm">// Hook into WPF's CommandManager — auto re-evaluates CanExecute</span>
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? CanExecuteChanged
+    {
+        <span class="kw">add</span>    => <span class="tp">CommandManager</span>.RequerySuggested += value;
+        <span class="kw">remove</span> => <span class="tp">CommandManager</span>.RequerySuggested -= value;
+    }
+
+    <span class="cm">// Call this manually if CanExecute depends on something WPF can't detect</span>
+    <span class="kw">public void</span> <span class="fn">RaiseCanExecuteChanged</span>()
+        => <span class="tp">CommandManager</span>.<span class="fn">InvalidateRequerySuggested</span>();
+}</pre>
+  </div>
+
+  <h3>AsyncRelayCommand — For async Operations</h3>
+  <div class="code-block">
+    <span class="code-label">C# — AsyncRelayCommand (handles async properly)</span>
+    <pre><span class="kw">public class</span> <span class="tp">AsyncRelayCommand</span> : <span class="tp">ICommand</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">Func</span>&lt;<span class="tp">Task</span>&gt;         _execute;
+    <span class="kw">private readonly</span> <span class="tp">Func</span>&lt;<span class="kw">bool</span>&gt;?        _canExecute;
+    <span class="kw">private bool</span> _isExecuting;
+
+    <span class="kw">public</span> <span class="tp">AsyncRelayCommand</span>(<span class="tp">Func</span>&lt;<span class="tp">Task</span>&gt; execute, <span class="tp">Func</span>&lt;<span class="kw">bool</span>&gt;? canExecute = <span class="kw">null</span>)
+    {
+        _execute    = execute;
+        _canExecute = canExecute;
+    }
+
+    <span class="kw">public bool</span> <span class="fn">CanExecute</span>(<span class="kw">object</span>? parameter)
+        => !_isExecuting && (_canExecute?.Invoke() ?? <span class="kw">true</span>);
+
+    <span class="kw">public async void</span> <span class="fn">Execute</span>(<span class="kw">object</span>? parameter)
+    {
+        _isExecuting = <span class="kw">true</span>;
+        <span class="tp">CommandManager</span>.<span class="fn">InvalidateRequerySuggested</span>(); <span class="cm">// disable button</span>
+        <span class="kw">try</span>
+        {
+            <span class="kw">await</span> _execute();
+        }
+        <span class="kw">finally</span>
+        {
+            _isExecuting = <span class="kw">false</span>;
+            <span class="tp">CommandManager</span>.<span class="fn">InvalidateRequerySuggested</span>(); <span class="cm">// re-enable button</span>
+        }
+    }
+
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? CanExecuteChanged
+    {
+        <span class="kw">add</span>    => <span class="tp">CommandManager</span>.RequerySuggested += value;
+        <span class="kw">remove</span> => <span class="tp">CommandManager</span>.RequerySuggested -= value;
+    }
+}
+
+<span class="cm">// Usage in ViewModel:</span>
+SaveCommand = <span class="kw">new</span> <span class="tp">AsyncRelayCommand</span>(
+    execute:    <span class="fn">SaveAsync</span>,             <span class="cm">// button auto-disables while saving</span>
+    canExecute: () => IsFormValid
+);
+
+<span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>()
+{
+    <span class="kw">await</span> _service.<span class="fn">SaveAsync</span>(CurrentContact);
+    <span class="tp">MessageBox</span>.<span class="fn">Show</span>(<span class="str">"Saved!"</span>);
+}</pre>
+  </div>
+
+  <h3>Built-In WPF Commands</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Using built-in ApplicationCommands and RoutedCommands</span>
+    <pre><span class="cm">&lt;!-- WPF has built-in commands: ApplicationCommands, NavigationCommands, etc. --&gt;</span>
+<span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_Copy"</span>  <span class="prop">Command</span>=<span class="val">"ApplicationCommands.Copy"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_Paste"</span> <span class="prop">Command</span>=<span class="val">"ApplicationCommands.Paste"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;MenuItem</span> <span class="prop">Header</span>=<span class="val">"_Undo"</span>  <span class="prop">Command</span>=<span class="val">"ApplicationCommands.Undo"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Bind keyboard shortcuts to custom commands --&gt;</span>
+<span class="tag">&lt;Window.InputBindings&gt;</span>
+    <span class="cm">&lt;!-- Ctrl+S triggers SaveCommand --&gt;</span>
+    <span class="tag">&lt;KeyBinding</span> <span class="prop">Key</span>=<span class="val">"S"</span> <span class="prop">Modifiers</span>=<span class="val">"Ctrl"</span>
+                <span class="prop">Command</span>=<span class="val">"{Binding SaveCommand}"</span><span class="tag">/&gt;</span>
+    <span class="cm">&lt;!-- Ctrl+N triggers NewCommand --&gt;</span>
+    <span class="tag">&lt;KeyBinding</span> <span class="prop">Key</span>=<span class="val">"N"</span> <span class="prop">Modifiers</span>=<span class="val">"Ctrl"</span>
+                <span class="prop">Command</span>=<span class="val">"{Binding NewCommand}"</span><span class="tag">/&gt;</span>
+    <span class="cm">&lt;!-- Delete key triggers DeleteCommand --&gt;</span>
+    <span class="tag">&lt;KeyBinding</span> <span class="prop">Key</span>=<span class="val">"Delete"</span>
+                <span class="prop">Command</span>=<span class="val">"{Binding DeleteCommand}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Window.InputBindings&gt;</span>
+
+<span class="cm">&lt;!-- Pass command parameter --&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Export PDF"</span>
+        <span class="prop">Command</span>=<span class="val">"{Binding ExportCommand}"</span>
+        <span class="prop">CommandParameter</span>=<span class="val">"PDF"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Export Excel"</span>
+        <span class="prop">Command</span>=<span class="val">"{Binding ExportCommand}"</span>
+        <span class="prop">CommandParameter</span>=<span class="val">"Excel"</span><span class="tag">/&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — DEPENDENCY PROPERTIES
+══════════════════════════════════ -->
+<div id="tab-dependency" class="tab-panel"><div class="section">
+  <h2>🔧 Dependency Properties</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is a Dependency Property?</div>
+    <p>A Dependency Property is WPF's special type of property that supports data binding, styles, animations, and inheritance. Every WPF property you've bound to — <code>Width</code>, <code>Background</code>, <code>Text</code> — is a Dependency Property. When you create custom controls, you define your own Dependency Properties so they can be bound to, styled, and animated just like built-in ones.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-tag">💡 Analogy</div>
+    <p>A normal C# property is like writing a value on a sticky note attached to an object. A Dependency Property is like having a smart property that can ask several sources for its value — "What did the Style say? What did the animation set? What did the binding provide?" — and uses the highest-priority answer.</p>
+  </div>
+
+  <h3>Value Priority — How WPF Decides the Final Value</h3>
+  <div class="flow">
+    <div class="flow-node n-wpf">
+      <div class="flow-node-title">① Highest — Local Value (set directly on the element)</div>
+      <ul class="flow-items"><li><code>button.Background = Brushes.Red;</code> or <code>Background="Red"</code> in XAML</li></ul>
+    </div>
+    <div class="flow-arrow">↓ if not set, use</div>
+    <div class="flow-node n-blue">
+      <div class="flow-node-title">② Animation value (while animating)</div>
+      <ul class="flow-items"><li>Storyboard animations temporarily override everything below</li></ul>
+    </div>
+    <div class="flow-arrow">↓ if not set, use</div>
+    <div class="flow-node n-green">
+      <div class="flow-node-title">③ Style Setter value</div>
+      <ul class="flow-items"><li>Value set via a Style's Setter</li></ul>
+    </div>
+    <div class="flow-arrow">↓ if not set, use</div>
+    <div class="flow-node n-orange">
+      <div class="flow-node-title">④ Inherited from parent element</div>
+      <ul class="flow-items"><li>FontSize, FontFamily, DataContext inherit down the visual tree</li></ul>
+    </div>
+    <div class="flow-arrow">↓ if not set, use</div>
+    <div class="flow-node n-teal">
+      <div class="flow-node-title">⑤ Lowest — Default value (set when property is registered)</div>
+      <ul class="flow-items"><li>e.g. Button.Background default is transparent</li></ul>
+    </div>
+  </div>
+
+  <h3>Creating a Dependency Property</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Custom control with a Dependency Property</span>
+    <pre><span class="kw">public class</span> <span class="tp">RatingControl</span> : <span class="tp">Control</span>
+{
+    <span class="cm">// ── Step 1: Register the dependency property ──────────────────</span>
+    <span class="cm">// This is the "real" property that WPF knows about</span>
+    <span class="kw">public static readonly</span> <span class="tp">DependencyProperty</span> ValueProperty =
+        <span class="tp">DependencyProperty</span>.<span class="fn">Register</span>(
+            name:             <span class="str">"Value"</span>,          <span class="cm">// must match CLR property name</span>
+            propertyType:     <span class="kw">typeof</span>(<span class="kw">int</span>),
+            ownerType:        <span class="kw">typeof</span>(<span class="tp">RatingControl</span>),
+            typeMetadata:     <span class="kw">new</span> <span class="tp">PropertyMetadata</span>(
+                defaultValue:         <span class="num">0</span>,                <span class="cm">// default = 0 stars</span>
+                propertyChangedCallback: <span class="fn">OnValueChanged</span> <span class="cm">// callback on change</span>
+            ),
+            validateValueCallback: <span class="fn">ValidateValue</span>      <span class="cm">// validation</span>
+        );
+
+    <span class="cm">// ── Step 2: Create CLR wrapper property ──────────────────────</span>
+    <span class="cm">// This is the C# property developers use in XAML and code</span>
+    <span class="kw">public int</span> Value
+    {
+        <span class="kw">get</span> => (<span class="kw">int</span>)<span class="fn">GetValue</span>(ValueProperty);
+        <span class="kw">set</span> => <span class="fn">SetValue</span>(ValueProperty, value);
+    }
+
+    <span class="cm">// ── Step 3: Callback when value changes ──────────────────────</span>
+    <span class="kw">private static void</span> <span class="fn">OnValueChanged</span>(
+        <span class="tp">DependencyObject</span> d, <span class="tp">DependencyPropertyChangedEventArgs</span> e)
+    {
+        <span class="kw">var</span> control = (<span class="tp">RatingControl</span>)d;
+        control.<span class="fn">UpdateStars</span>((<span class="kw">int</span>)e.NewValue);
+    }
+
+    <span class="cm">// ── Step 4: Validation callback ──────────────────────────────</span>
+    <span class="kw">private static bool</span> <span class="fn">ValidateValue</span>(<span class="kw">object</span> value)
+        => (<span class="kw">int</span>)value is >= <span class="num">0</span> <span class="kw">and</span> <= <span class="num">5</span>;  <span class="cm">// only 0-5 stars allowed</span>
+
+    <span class="kw">private void</span> <span class="fn">UpdateStars</span>(<span class="kw">int</span> value) { <span class="cm">/* redraw stars */</span> }
+
+    <span class="cm">// ── Attached Property (a property that belongs to another element) ──</span>
+    <span class="cm">// Example: Grid.Row, Grid.Column are attached properties on Grid</span>
+    <span class="kw">public static readonly</span> <span class="tp">DependencyProperty</span> IsHighlightedProperty =
+        <span class="tp">DependencyProperty</span>.<span class="fn">RegisterAttached</span>(
+            <span class="str">"IsHighlighted"</span>,
+            <span class="kw">typeof</span>(<span class="kw">bool</span>),
+            <span class="kw">typeof</span>(<span class="tp">RatingControl</span>),
+            <span class="kw">new</span> <span class="tp">PropertyMetadata</span>(<span class="kw">false</span>));
+
+    <span class="cm">// Attached properties need static get/set accessors</span>
+    <span class="kw">public static bool</span> <span class="fn">GetIsHighlighted</span>(<span class="tp">DependencyObject</span> obj)
+        => (<span class="kw">bool</span>)obj.<span class="fn">GetValue</span>(IsHighlightedProperty);
+
+    <span class="kw">public static void</span> <span class="fn">SetIsHighlighted</span>(<span class="tp">DependencyObject</span> obj, <span class="kw">bool</span> value)
+        => obj.<span class="fn">SetValue</span>(IsHighlightedProperty, value);
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Never Put Logic in the CLR Wrapper</h4>
+    <p>The CLR wrapper (<code>get</code> / <code>set</code>) calls <code>GetValue</code> and <code>SetValue</code> — nothing else. WPF sometimes calls <code>SetValue</code> directly, bypassing your wrapper. Any logic goes in the <code>PropertyChangedCallback</code>, not the wrapper setter.</p>
+  </div>
+
+  <h3>Attached Properties — Real World Use</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Using an attached property</span>
+    <pre><span class="cm">&lt;!-- Grid.Row and Grid.Column are attached properties defined on Grid
+     but used on child elements --&gt;</span>
+<span class="tag">&lt;Grid&gt;</span>
+    <span class="tag">&lt;Button</span> <span class="prop">Grid.Row</span>=<span class="val">"0"</span> <span class="prop">Grid.Column</span>=<span class="val">"1"</span> <span class="prop">Content</span>=<span class="val">"I am in row 0, column 1"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Grid&gt;</span>
+
+<span class="cm">&lt;!-- Your own attached property usage --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">local:RatingControl.IsHighlighted</span>=<span class="val">"True"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Useful pattern: PasswordBox binding helper --&gt;</span>
+<span class="cm">&lt;!-- PasswordBox doesn't support normal binding (security), --&gt;</span>
+<span class="cm">&lt;!-- so create an attached property to bridge it --&gt;</span>
+<span class="tag">&lt;PasswordBox</span> <span class="prop">local:PasswordHelper.BoundPassword</span>=<span class="val">"{Binding Password,
+              Mode=TwoWay}"</span><span class="tag">/&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — CUSTOM CONTROLS
+══════════════════════════════════ -->
+<div id="tab-custom" class="tab-panel"><div class="section">
+  <h2>🎛️ Custom Controls &amp; User Controls</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 User Control vs Custom Control</div>
+    <p>A <strong>User Control</strong> is like a reusable form section — you compose existing controls together (a label + textbox + button as one unit). A <strong>Custom Control</strong> is a fully new control with its own look-and-feel defined in a ControlTemplate — like building a star rating widget or a custom progress ring from scratch.</p>
+  </div>
+
+  <h3>User Control — Reusable UI Composition</h3>
+
+  <div class="code-block">
+    <span class="code-label">XAML — ContactCard.xaml (User Control)</span>
+    <pre><span class="tag">&lt;UserControl</span> <span class="prop">x:Class</span>=<span class="val">"MyApp.Controls.ContactCard"</span>
+             <span class="prop">xmlns</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml/presentation"</span>
+             <span class="prop">xmlns:x</span>=<span class="val">"http://schemas.microsoft.com/winfx/2006/xaml"</span>
+             <span class="prop">x:Name</span>=<span class="val">"root"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;Border</span> <span class="prop">Background</span>=<span class="val">"#1A1630"</span>
+            <span class="prop">BorderBrush</span>=<span class="val">"#3D3870"</span>
+            <span class="prop">BorderThickness</span>=<span class="val">"1"</span>
+            <span class="prop">CornerRadius</span>=<span class="val">"10"</span>
+            <span class="prop">Padding</span>=<span class="val">"16"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;StackPanel&gt;</span>
+            <span class="cm">&lt;!-- Bind to the UserControl's own dependency properties --&gt;</span>
+            <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding ContactName,
+                        ElementName=root}"</span>
+                       <span class="prop">FontSize</span>=<span class="val">"16"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Email,
+                        ElementName=root}"</span>
+                       <span class="prop">Foreground</span>=<span class="val">"Gray"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StackPanel&gt;</span>
+    <span class="tag">&lt;/Border&gt;</span>
+<span class="tag">&lt;/UserControl&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — ContactCard.xaml.cs (with Dependency Properties)</span>
+    <pre><span class="kw">public partial class</span> <span class="tp">ContactCard</span> : <span class="tp">UserControl</span>
+{
+    <span class="cm">// Expose ContactName as a bindable dependency property</span>
+    <span class="kw">public static readonly</span> <span class="tp">DependencyProperty</span> ContactNameProperty =
+        <span class="tp">DependencyProperty</span>.<span class="fn">Register</span>(<span class="kw">nameof</span>(ContactName), <span class="kw">typeof</span>(<span class="kw">string</span>),
+            <span class="kw">typeof</span>(<span class="tp">ContactCard</span>), <span class="kw">new</span> <span class="tp">PropertyMetadata</span>(<span class="str">""</span>));
+
+    <span class="kw">public string</span> ContactName
+    {
+        <span class="kw">get</span> => (<span class="kw">string</span>)<span class="fn">GetValue</span>(ContactNameProperty);
+        <span class="kw">set</span> => <span class="fn">SetValue</span>(ContactNameProperty, value);
+    }
+
+    <span class="kw">public static readonly</span> <span class="tp">DependencyProperty</span> EmailProperty =
+        <span class="tp">DependencyProperty</span>.<span class="fn">Register</span>(<span class="kw">nameof</span>(Email), <span class="kw">typeof</span>(<span class="kw">string</span>),
+            <span class="kw">typeof</span>(<span class="tp">ContactCard</span>), <span class="kw">new</span> <span class="tp">PropertyMetadata</span>(<span class="str">""</span>));
+
+    <span class="kw">public string</span> Email
+    {
+        <span class="kw">get</span> => (<span class="kw">string</span>)<span class="fn">GetValue</span>(EmailProperty);
+        <span class="kw">set</span> => <span class="fn">SetValue</span>(EmailProperty, value);
+    }
+
+    <span class="kw">public</span> <span class="fn">ContactCard</span>() => <span class="fn">InitializeComponent</span>();
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Using ContactCard in another window</span>
+    <pre><span class="tag">&lt;Window</span> <span class="prop">xmlns:controls</span>=<span class="val">"clr-namespace:MyApp.Controls"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;StackPanel&gt;</span>
+        <span class="cm">&lt;!-- Static values --&gt;</span>
+        <span class="tag">&lt;controls:ContactCard</span>
+            <span class="prop">ContactName</span>=<span class="val">"Alice Smith"</span>
+            <span class="prop">Email</span>=<span class="val">"alice@example.com"</span><span class="tag">/&gt;</span>
+
+        <span class="cm">&lt;!-- Bound to ViewModel properties --&gt;</span>
+        <span class="tag">&lt;controls:ContactCard</span>
+            <span class="prop">ContactName</span>=<span class="val">"{Binding SelectedContact.Name}"</span>
+            <span class="prop">Email</span>=<span class="val">"{Binding SelectedContact.Email}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/StackPanel&gt;</span>
+<span class="tag">&lt;/Window&gt;</span></pre>
+  </div>
+
+  <h3>Custom Control — Full ControlTemplate</h3>
+  <div class="code-block">
+    <span class="code-label">C# — LoadingSpinner custom control</span>
+    <pre><span class="cm">// 1. Define the control class</span>
+<span class="kw">public class</span> <span class="tp">LoadingSpinner</span> : <span class="tp">Control</span>
+{
+    <span class="kw">static</span> <span class="fn">LoadingSpinner</span>()
+    {
+        <span class="cm">// Tell WPF to look for the default style in Themes/Generic.xaml</span>
+        <span class="tp">DefaultStyleKeyProperty</span>.<span class="fn">OverrideMetadata</span>(
+            <span class="kw">typeof</span>(<span class="tp">LoadingSpinner</span>),
+            <span class="kw">new</span> <span class="tp">FrameworkPropertyMetadata</span>(<span class="kw">typeof</span>(<span class="tp">LoadingSpinner</span>)));
+    }
+
+    <span class="kw">public static readonly</span> <span class="tp">DependencyProperty</span> IsSpinningProperty =
+        <span class="tp">DependencyProperty</span>.<span class="fn">Register</span>(<span class="kw">nameof</span>(IsSpinning), <span class="kw">typeof</span>(<span class="kw">bool</span>),
+            <span class="kw">typeof</span>(<span class="tp">LoadingSpinner</span>), <span class="kw">new</span> <span class="tp">PropertyMetadata</span>(<span class="kw">false</span>));
+
+    <span class="kw">public bool</span> IsSpinning
+    {
+        <span class="kw">get</span> => (<span class="kw">bool</span>)<span class="fn">GetValue</span>(IsSpinningProperty);
+        <span class="kw">set</span> => <span class="fn">SetValue</span>(IsSpinningProperty, value);
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Themes/Generic.xaml (the visual template)</span>
+    <pre><span class="tag">&lt;ResourceDictionary&gt;</span>
+    <span class="tag">&lt;Style</span> <span class="prop">TargetType</span>=<span class="val">"{x:Type local:LoadingSpinner}"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Width"</span>  <span class="prop">Value</span>=<span class="val">"40"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Height"</span> <span class="prop">Value</span>=<span class="val">"40"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;Setter</span> <span class="prop">Property</span>=<span class="val">"Template"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Setter.Value&gt;</span>
+                <span class="tag">&lt;ControlTemplate</span> <span class="prop">TargetType</span>=<span class="val">"{x:Type local:LoadingSpinner}"</span><span class="tag">&gt;</span>
+                    <span class="tag">&lt;Grid&gt;</span>
+                        <span class="tag">&lt;Ellipse</span> <span class="prop">Width</span>=<span class="val">"40"</span> <span class="prop">Height</span>=<span class="val">"40"</span>
+                                 <span class="prop">StrokeThickness</span>=<span class="val">"4"</span>
+                                 <span class="prop">Stroke</span>=<span class="val">"#3D3870"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;Arc</span> <span class="prop">x:Name</span>=<span class="val">"PART_Arc"</span>
+                              <span class="prop">Width</span>=<span class="val">"40"</span> <span class="prop">Height</span>=<span class="val">"40"</span>
+                              <span class="prop">StrokeThickness</span>=<span class="val">"4"</span>
+                              <span class="prop">Stroke</span>=<span class="val">"#8B6FFF"</span>
+                              <span class="prop">RenderTransformOrigin</span>=<span class="val">"0.5,0.5"</span><span class="tag">&gt;</span>
+                            <span class="tag">&lt;Arc.RenderTransform&gt;</span>
+                                <span class="tag">&lt;RotateTransform</span> <span class="prop">x:Name</span>=<span class="val">"SpinTransform"</span><span class="tag">/&gt;</span>
+                            <span class="tag">&lt;/Arc.RenderTransform&gt;</span>
+                        <span class="tag">&lt;/Arc&gt;</span>
+                    <span class="tag">&lt;/Grid&gt;</span>
+                    <span class="tag">&lt;ControlTemplate.Triggers&gt;</span>
+                        <span class="tag">&lt;Trigger</span> <span class="prop">Property</span>=<span class="val">"IsSpinning"</span> <span class="prop">Value</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+                            <span class="tag">&lt;Trigger.EnterActions&gt;</span>
+                                <span class="tag">&lt;BeginStoryboard&gt;</span>
+                                    <span class="tag">&lt;Storyboard</span> <span class="prop">RepeatBehavior</span>=<span class="val">"Forever"</span><span class="tag">&gt;</span>
+                                        <span class="tag">&lt;DoubleAnimation</span>
+                                            <span class="prop">Storyboard.TargetName</span>=<span class="val">"SpinTransform"</span>
+                                            <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"Angle"</span>
+                                            <span class="prop">From</span>=<span class="val">"0"</span> <span class="prop">To</span>=<span class="val">"360"</span>
+                                            <span class="prop">Duration</span>=<span class="val">"0:0:1"</span><span class="tag">/&gt;</span>
+                                    <span class="tag">&lt;/Storyboard&gt;</span>
+                                <span class="tag">&lt;/BeginStoryboard&gt;</span>
+                            <span class="tag">&lt;/Trigger.EnterActions&gt;</span>
+                        <span class="tag">&lt;/Trigger&gt;</span>
+                    <span class="tag">&lt;/ControlTemplate.Triggers&gt;</span>
+                <span class="tag">&lt;/ControlTemplate&gt;</span>
+            <span class="tag">&lt;/Setter.Value&gt;</span>
+        <span class="tag">&lt;/Setter&gt;</span>
+    <span class="tag">&lt;/Style&gt;</span>
+<span class="tag">&lt;/ResourceDictionary&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — ANIMATIONS
+══════════════════════════════════ -->
+<div id="tab-animation" class="tab-panel"><div class="section">
+  <h2>✨ Animations</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 How WPF Animations Work</div>
+    <p>WPF animations change a property's value over time. You say "change <code>Opacity</code> from 0 to 1 over 0.3 seconds" and WPF does it smoothly. Animations are defined in XAML using <code>Storyboard</code> and triggered by events or triggers. You can also start animations from C# code.</p>
+  </div>
+
+  <h3>Storyboard — Container for Animations</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Fade in animation on load</span>
+    <pre><span class="tag">&lt;Border</span> <span class="prop">x:Name</span>=<span class="val">"myPanel"</span>
+        <span class="prop">Background</span>=<span class="val">"#1E1A30"</span>
+        <span class="prop">Opacity</span>=<span class="val">"0"</span><span class="tag">&gt;</span>
+
+    <span class="tag">&lt;Border.Triggers&gt;</span>
+        <span class="cm">&lt;!-- Run this animation when the element loads --&gt;</span>
+        <span class="tag">&lt;EventTrigger</span> <span class="prop">RoutedEvent</span>=<span class="val">"Loaded"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;BeginStoryboard&gt;</span>
+                <span class="tag">&lt;Storyboard&gt;</span>
+                    <span class="cm">&lt;!-- Fade in: Opacity 0 → 1 over 0.5 seconds --&gt;</span>
+                    <span class="tag">&lt;DoubleAnimation</span>
+                        <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"Opacity"</span>
+                        <span class="prop">From</span>=<span class="val">"0"</span> <span class="prop">To</span>=<span class="val">"1"</span>
+                        <span class="prop">Duration</span>=<span class="val">"0:0:0.5"</span>
+                        <span class="prop">EasingFunction</span>=<span class="val">"{StaticResource EaseOut}"</span><span class="tag">/&gt;</span>
+                    <span class="cm">&lt;!-- Slide up: move from 20px below to original position --&gt;</span>
+                    <span class="tag">&lt;DoubleAnimation</span>
+                        <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"(UIElement.RenderTransform).(TranslateTransform.Y)"</span>
+                        <span class="prop">From</span>=<span class="val">"20"</span> <span class="prop">To</span>=<span class="val">"0"</span>
+                        <span class="prop">Duration</span>=<span class="val">"0:0:0.5"</span><span class="tag">/&gt;</span>
+                <span class="tag">&lt;/Storyboard&gt;</span>
+            <span class="tag">&lt;/BeginStoryboard&gt;</span>
+        <span class="tag">&lt;/EventTrigger&gt;</span>
+    <span class="tag">&lt;/Border.Triggers&gt;</span>
+
+    <span class="tag">&lt;Border.RenderTransform&gt;</span>
+        <span class="tag">&lt;TranslateTransform</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Border.RenderTransform&gt;</span>
+
+    <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"I fade in and slide up!"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Border&gt;</span></pre>
+  </div>
+
+  <h3>Animation Types</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Animation Class</th><th>Animates</th><th>Example Use</th></tr>
+    <tr><td><code>DoubleAnimation</code></td><td>double (Width, Height, Opacity)</td><td>Fade in, resize, slide</td></tr>
+    <tr><td><code>ColorAnimation</code></td><td>Color value</td><td>Background colour shift</td></tr>
+    <tr><td><code>ThicknessAnimation</code></td><td>Margin, Padding, BorderThickness</td><td>Expand padding on hover</td></tr>
+    <tr><td><code>PointAnimation</code></td><td>Point (geometry positions)</td><td>Path morphing</td></tr>
+    <tr><td><code>ObjectAnimationUsingKeyFrames</code></td><td>Any object value</td><td>Swap images, change visibility</td></tr>
+    <tr><td><code>DoubleAnimationUsingKeyFrames</code></td><td>double with multiple keyframes</td><td>Bounce, complex motion</td></tr>
+  </table></div>
+
+  <h3>Easing Functions — Natural Motion</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Easing functions for natural feel</span>
+    <pre><span class="tag">&lt;Window.Resources&gt;</span>
+    <span class="tag">&lt;CubicEase</span>    <span class="prop">x:Key</span>=<span class="val">"EaseOut"</span>   <span class="prop">EasingMode</span>=<span class="val">"EaseOut"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;CubicEase</span>    <span class="prop">x:Key</span>=<span class="val">"EaseIn"</span>    <span class="prop">EasingMode</span>=<span class="val">"EaseIn"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;CubicEase</span>    <span class="prop">x:Key</span>=<span class="val">"EaseInOut"</span> <span class="prop">EasingMode</span>=<span class="val">"EaseInOut"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;BounceEase</span>   <span class="prop">x:Key</span>=<span class="val">"Bounce"</span>    <span class="prop">Bounces</span>=<span class="val">"2"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ElasticEase</span>  <span class="prop">x:Key</span>=<span class="val">"Elastic"</span>   <span class="prop">Oscillations</span>=<span class="val">"2"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;BackEase</span>     <span class="prop">x:Key</span>=<span class="val">"Back"</span>      <span class="prop">Amplitude</span>=<span class="val">"0.5"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Window.Resources&gt;</span>
+
+<span class="cm">&lt;!-- Button hover animation with easing --&gt;</span>
+<span class="tag">&lt;Style</span> <span class="prop">TargetType</span>=<span class="val">"Button"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;Style.Triggers&gt;</span>
+        <span class="tag">&lt;Trigger</span> <span class="prop">Property</span>=<span class="val">"IsMouseOver"</span> <span class="prop">Value</span>=<span class="val">"True"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Trigger.EnterActions&gt;</span>
+                <span class="tag">&lt;BeginStoryboard&gt;</span>
+                    <span class="tag">&lt;Storyboard&gt;</span>
+                        <span class="tag">&lt;DoubleAnimation</span>
+                            <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"(UIElement.RenderTransform)
+                                                         .(ScaleTransform.ScaleX)"</span>
+                            <span class="prop">To</span>=<span class="val">"1.05"</span> <span class="prop">Duration</span>=<span class="val">"0:0:0.15"</span>
+                            <span class="prop">EasingFunction</span>=<span class="val">"{StaticResource EaseOut}"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;DoubleAnimation</span>
+                            <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"(UIElement.RenderTransform)
+                                                         .(ScaleTransform.ScaleY)"</span>
+                            <span class="prop">To</span>=<span class="val">"1.05"</span> <span class="prop">Duration</span>=<span class="val">"0:0:0.15"</span>
+                            <span class="prop">EasingFunction</span>=<span class="val">"{StaticResource EaseOut}"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;/Storyboard&gt;</span>
+                <span class="tag">&lt;/BeginStoryboard&gt;</span>
+            <span class="tag">&lt;/Trigger.EnterActions&gt;</span>
+            <span class="tag">&lt;Trigger.ExitActions&gt;</span>
+                <span class="tag">&lt;BeginStoryboard&gt;</span>
+                    <span class="tag">&lt;Storyboard&gt;</span>
+                        <span class="tag">&lt;DoubleAnimation</span>
+                            <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"(UIElement.RenderTransform)
+                                                         .(ScaleTransform.ScaleX)"</span>
+                            <span class="prop">To</span>=<span class="val">"1"</span> <span class="prop">Duration</span>=<span class="val">"0:0:0.1"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;DoubleAnimation</span>
+                            <span class="prop">Storyboard.TargetProperty</span>=<span class="val">"(UIElement.RenderTransform)
+                                                         .(ScaleTransform.ScaleY)"</span>
+                            <span class="prop">To</span>=<span class="val">"1"</span> <span class="prop">Duration</span>=<span class="val">"0:0:0.1"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;/Storyboard&gt;</span>
+                <span class="tag">&lt;/BeginStoryboard&gt;</span>
+            <span class="tag">&lt;/Trigger.ExitActions&gt;</span>
+        <span class="tag">&lt;/Trigger&gt;</span>
+    <span class="tag">&lt;/Style.Triggers&gt;</span>
+<span class="tag">&lt;/Style&gt;</span></pre>
+  </div>
+
+  <h3>Animations from C# Code</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Programmatic animations</span>
+    <pre><span class="cm">// Fade an element in</span>
+<span class="kw">public static void</span> <span class="fn">FadeIn</span>(<span class="tp">UIElement</span> element, <span class="kw">double</span> durationSeconds = <span class="num">0.3</span>)
+{
+    <span class="kw">var</span> anim = <span class="kw">new</span> <span class="tp">DoubleAnimation</span>
+    {
+        From             = <span class="num">0</span>,
+        To               = <span class="num">1</span>,
+        Duration         = <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(durationSeconds),
+        EasingFunction   = <span class="kw">new</span> <span class="tp">CubicEase</span> { EasingMode = <span class="tp">EasingMode</span>.EaseOut }
+    };
+    element.<span class="fn">BeginAnimation</span>(<span class="tp">UIElement</span>.OpacityProperty, anim);
+}
+
+<span class="cm">// Shake animation for validation errors</span>
+<span class="kw">public static void</span> <span class="fn">Shake</span>(<span class="tp">FrameworkElement</span> element)
+{
+    <span class="kw">var</span> transform = <span class="kw">new</span> <span class="tp">TranslateTransform</span>();
+    element.RenderTransform = transform;
+
+    <span class="kw">var</span> anim = <span class="kw">new</span> <span class="tp">DoubleAnimationUsingKeyFrames</span>
+    {
+        Duration = <span class="kw">new</span> <span class="tp">Duration</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromMilliseconds</span>(<span class="num">400</span>))
+    };
+    anim.KeyFrames.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">EasingDoubleKeyFrame</span>(<span class="num">-10</span>, <span class="tp">KeyTime</span>.<span class="fn">FromPercent</span>(<span class="num">0.1</span>)));
+    anim.KeyFrames.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">EasingDoubleKeyFrame</span>( <span class="num">10</span>, <span class="tp">KeyTime</span>.<span class="fn">FromPercent</span>(<span class="num">0.3</span>)));
+    anim.KeyFrames.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">EasingDoubleKeyFrame</span>( <span class="num">-6</span>, <span class="tp">KeyTime</span>.<span class="fn">FromPercent</span>(<span class="num">0.5</span>)));
+    anim.KeyFrames.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">EasingDoubleKeyFrame</span>(  <span class="num">6</span>, <span class="tp">KeyTime</span>.<span class="fn">FromPercent</span>(<span class="num">0.7</span>)));
+    anim.KeyFrames.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">EasingDoubleKeyFrame</span>(  <span class="num">0</span>, <span class="tp">KeyTime</span>.<span class="fn">FromPercent</span>(<span class="num">1.0</span>)));
+
+    transform.<span class="fn">BeginAnimation</span>(<span class="tp">TranslateTransform</span>.XProperty, anim);
+}
+
+<span class="cm">// Usage — shake a text box when validation fails</span>
+<span class="kw">private void</span> <span class="fn">ValidateInput</span>()
+{
+    <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(txtName.Text))
+        <span class="fn">Shake</span>(txtName);
+    <span class="kw">else</span>
+        <span class="fn">FadeIn</span>(successPanel);
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — THREADING
+══════════════════════════════════ -->
+<div id="tab-threading" class="tab-panel"><div class="section">
+  <h2>🧵 Threading in WPF</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 The Golden Rule of WPF Threading</div>
+    <p>WPF has one rule that you must never break: <strong>only the UI thread can touch UI elements.</strong> If you run a database query or API call on a background thread and then try to update a TextBlock directly from that thread, WPF will throw an exception. You must marshal the UI update back to the UI thread using the <code>Dispatcher</code>.</p>
+  </div>
+
+  <div class="danger">
+    <h4>❌ This Will Crash Your App</h4>
+    <p>Never update a UI element (TextBlock, ListBox, Button, etc.) from a background thread. This includes updating an <code>ObservableCollection</code> that is bound to a UI control — modifications must happen on the UI thread.</p>
+  </div>
+
+  <h3>The Dispatcher — Marshalling to UI Thread</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Dispatcher patterns</span>
+    <pre><span class="cm">// ❌ WRONG — updating UI from background thread</span>
+<span class="tp">Task</span>.<span class="fn">Run</span>(() =>
+{
+    <span class="kw">var</span> data = <span class="fn">LoadFromDatabase</span>();
+    txtResult.Text = data;  <span class="cm">// CRASH: not on UI thread</span>
+});
+
+<span class="cm">// ✅ CORRECT — marshal back to UI thread with Dispatcher</span>
+<span class="tp">Task</span>.<span class="fn">Run</span>(() =>
+{
+    <span class="kw">var</span> data = <span class="fn">LoadFromDatabase</span>();
+
+    <span class="cm">// Dispatcher.Invoke: synchronous (waits for UI to process)</span>
+    <span class="tp">Application</span>.Current.Dispatcher.<span class="fn">Invoke</span>(() =>
+    {
+        txtResult.Text = data;  <span class="cm">// safe on UI thread</span>
+    });
+});
+
+<span class="cm">// ✅ BETTER — async/await handles threading for you</span>
+<span class="kw">private async void</span> <span class="fn">LoadButton_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+{
+    btnLoad.IsEnabled = <span class="kw">false</span>;
+    progressBar.Visibility = <span class="tp">Visibility</span>.Visible;
+
+    <span class="cm">// Task.Run moves work to background thread</span>
+    <span class="kw">var</span> data = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Run</span>(() => <span class="fn">LoadFromDatabase</span>());
+
+    <span class="cm">// After await, we're back on the UI thread automatically</span>
+    txtResult.Text = data;                 <span class="cm">// safe</span>
+    progressBar.Visibility = <span class="tp">Visibility</span>.Collapsed;
+    btnLoad.IsEnabled = <span class="kw">true</span>;
+}</pre>
+  </div>
+
+  <h3>Async/Await — The Modern Way</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Proper async patterns in WPF ViewModels</span>
+    <pre><span class="kw">public class</span> <span class="tp">DataViewModel</span> : <span class="tp">ViewModelBase</span>
+{
+    <span class="kw">private bool</span>   _isBusy;
+    <span class="kw">private string</span> _status = <span class="str">""</span>;
+
+    <span class="kw">public bool</span>   IsBusy  { <span class="kw">get</span> => _isBusy;  <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _isBusy,  value); }
+    <span class="kw">public string</span> Status  { <span class="kw">get</span> => _status; <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _status, value); }
+
+    <span class="kw">public</span> <span class="tp">ObservableCollection</span>&lt;<span class="kw">string</span>&gt; Items { <span class="kw">get</span>; } = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="tp">ICommand</span> LoadCommand { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">DataViewModel</span>()
+        => LoadCommand = <span class="kw">new</span> <span class="tp">AsyncRelayCommand</span>(<span class="fn">LoadDataAsync</span>);
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">LoadDataAsync</span>()
+    {
+        IsBusy = <span class="kw">true</span>;
+        Status = <span class="str">"Loading..."</span>;
+        Items.<span class="fn">Clear</span>();
+
+        <span class="kw">try</span>
+        {
+            <span class="cm">// Run heavy work on background thread</span>
+            <span class="kw">var</span> results = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Run</span>(() =>
+            {
+                <span class="cm">// This runs on a ThreadPool thread</span>
+                <span class="kw">return</span> <span class="fn">FetchDataFromDatabase</span>();
+            });
+
+            <span class="cm">// After await = back on UI thread — safe to update UI</span>
+            <span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> results)
+                Items.<span class="fn">Add</span>(item);
+
+            Status = <span class="str">$"Loaded {results.Count} items"</span>;
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            Status = <span class="str">$"Error: {ex.Message}"</span>;
+        }
+        <span class="kw">finally</span>
+        {
+            IsBusy = <span class="kw">false</span>;
+        }
+    }
+
+    <span class="kw">private</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; <span class="fn">FetchDataFromDatabase</span>()
+    {
+        <span class="tp">Thread</span>.<span class="fn">Sleep</span>(<span class="num">2000</span>);  <span class="cm">// simulate slow query</span>
+        <span class="kw">return</span> [<span class="str">"Item A"</span>, <span class="str">"Item B"</span>, <span class="str">"Item C"</span>];
+    }
+}</pre>
+  </div>
+
+  <h3>BackgroundWorker — Legacy but Still Seen</h3>
+  <div class="code-block">
+    <span class="code-label">C# — BackgroundWorker (older apps)</span>
+    <pre><span class="kw">private readonly</span> <span class="tp">BackgroundWorker</span> _worker = <span class="kw">new</span>();
+
+<span class="kw">public</span> <span class="fn">MainWindow</span>()
+{
+    <span class="fn">InitializeComponent</span>();
+    _worker.WorkerReportsProgress = <span class="kw">true</span>;
+    _worker.DoWork             += <span class="fn">Worker_DoWork</span>;
+    _worker.ProgressChanged    += <span class="fn">Worker_ProgressChanged</span>;  <span class="cm">// safe on UI thread</span>
+    _worker.RunWorkerCompleted += <span class="fn">Worker_Completed</span>;         <span class="cm">// safe on UI thread</span>
+}
+
+<span class="kw">private void</span> <span class="fn">Worker_DoWork</span>(<span class="kw">object</span>? sender, <span class="tp">DoWorkEventArgs</span> e)
+{
+    <span class="cm">// Runs on background thread</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i <= <span class="num">100</span>; i++)
+    {
+        <span class="tp">Thread</span>.<span class="fn">Sleep</span>(<span class="num">50</span>);
+        _worker.<span class="fn">ReportProgress</span>(i);   <span class="cm">// triggers ProgressChanged on UI thread</span>
+    }
+    e.Result = <span class="str">"All done!"</span>;
+}
+
+<span class="kw">private void</span> <span class="fn">Worker_ProgressChanged</span>(<span class="kw">object</span>? sender, <span class="tp">ProgressChangedEventArgs</span> e)
+    => progressBar.Value = e.ProgressPercentage;  <span class="cm">// UI thread — safe</span>
+
+<span class="kw">private void</span> <span class="fn">Worker_Completed</span>(<span class="kw">object</span>? sender, <span class="tp">RunWorkerCompletedEventArgs</span> e)
+    => txtStatus.Text = e.Result?.ToString();     <span class="cm">// UI thread — safe</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 async/await vs BackgroundWorker</h4>
+    <p>For all new code, use <code>async/await</code> with <code>Task.Run()</code> for background work. It is simpler, more readable, handles exceptions better, and is the modern .NET way. <code>BackgroundWorker</code> is only relevant when working on legacy WPF applications.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — NAVIGATION
+══════════════════════════════════ -->
+<div id="tab-navigation" class="tab-panel"><div class="section">
+  <h2>🗺️ Navigation &amp; Multiple Views</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 WPF Navigation Approaches</div>
+    <p>WPF does not have a built-in router like web frameworks. Instead there are several patterns for showing different screens: multiple Windows, Pages with a Frame, or the MVVM approach of swapping ViewModels in a ContentControl. The ContentControl approach is the most flexible and fits MVVM best.</p>
+  </div>
+
+  <h3>Pattern 1 — Multiple Windows</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Opening a second window (dialog pattern)</span>
+    <pre><span class="cm">// Open a window and wait for it to close (modal dialog)</span>
+<span class="kw">private void</span> <span class="fn">OpenAddContactDialog</span>()
+{
+    <span class="kw">var</span> dialog = <span class="kw">new</span> <span class="tp">AddContactWindow</span>();
+    <span class="kw">var</span> result = dialog.<span class="fn">ShowDialog</span>();  <span class="cm">// blocks until closed</span>
+
+    <span class="kw">if</span> (result == <span class="kw">true</span>)  <span class="cm">// user clicked OK</span>
+    {
+        <span class="kw">var</span> newContact = dialog.Contact;
+        Contacts.<span class="fn">Add</span>(newContact);
+    }
+}
+
+<span class="cm">// In AddContactWindow — set DialogResult to close</span>
+<span class="kw">private void</span> <span class="fn">OkButton_Click</span>(<span class="kw">object</span> sender, <span class="tp">RoutedEventArgs</span> e)
+{
+    <span class="cm">// Validate first</span>
+    <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(txtName.Text)) <span class="kw">return</span>;
+    Contact = <span class="kw">new</span> <span class="tp">Contact</span> { Name = txtName.Text };
+    DialogResult = <span class="kw">true</span>;  <span class="cm">// closes window, ShowDialog() returns true</span>
+}</pre>
+  </div>
+
+  <h3>Pattern 2 — ContentControl + DataTemplates (MVVM Best Practice)</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — View switching via DataTemplate mapping</span>
+    <pre><span class="tag">&lt;Window&gt;</span>
+    <span class="tag">&lt;Window.Resources&gt;</span>
+        <span class="cm">&lt;!-- Map ViewModel type → View (DataTemplate) --&gt;</span>
+        <span class="tag">&lt;DataTemplate</span> <span class="prop">DataType</span>=<span class="val">"{x:Type vm:HomeViewModel}"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;views:HomeView</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/DataTemplate&gt;</span>
+
+        <span class="tag">&lt;DataTemplate</span> <span class="prop">DataType</span>=<span class="val">"{x:Type vm:ContactsViewModel}"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;views:ContactsView</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/DataTemplate&gt;</span>
+
+        <span class="tag">&lt;DataTemplate</span> <span class="prop">DataType</span>=<span class="val">"{x:Type vm:SettingsViewModel}"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;views:SettingsView</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/DataTemplate&gt;</span>
+    <span class="tag">&lt;/Window.Resources&gt;</span>
+
+    <span class="tag">&lt;Grid&gt;</span>
+        <span class="cm">&lt;!-- Navigation sidebar --&gt;</span>
+        <span class="tag">&lt;StackPanel</span> <span class="prop">Width</span>=<span class="val">"200"</span> <span class="prop">HorizontalAlignment</span>=<span class="val">"Left"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Home"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding NavigateCommand}"</span>
+                    <span class="prop">CommandParameter</span>=<span class="val">"Home"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Contacts"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding NavigateCommand}"</span>
+                    <span class="prop">CommandParameter</span>=<span class="val">"Contacts"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Settings"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding NavigateCommand}"</span>
+                    <span class="prop">CommandParameter</span>=<span class="val">"Settings"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StackPanel&gt;</span>
+
+        <span class="cm">&lt;!-- Content area: shows whichever ViewModel is CurrentView --&gt;</span>
+        <span class="tag">&lt;ContentControl</span>
+            <span class="prop">Margin</span>=<span class="val">"200,0,0,0"</span>
+            <span class="prop">Content</span>=<span class="val">"{Binding CurrentView}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/Grid&gt;</span>
+<span class="tag">&lt;/Window&gt;</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — MainViewModel with navigation</span>
+    <pre"><span class="kw">public class</span> <span class="tp">MainViewModel</span> : <span class="tp">ViewModelBase</span>
+{
+    <span class="kw">private</span> <span class="tp">ViewModelBase</span>? _currentView;
+
+    <span class="kw">public</span> <span class="tp">ViewModelBase</span>? CurrentView
+    {
+        <span class="kw">get</span> => _currentView;
+        <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _currentView, value);
+    }
+
+    <span class="kw">public</span> <span class="tp">ICommand</span> NavigateCommand { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">MainViewModel</span>()
+    {
+        NavigateCommand = <span class="kw">new</span> <span class="tp">RelayCommand</span>(param =>
+        {
+            CurrentView = param?.ToString() <span class="kw">switch</span>
+            {
+                <span class="str">"Home"</span>     => <span class="kw">new</span> <span class="tp">HomeViewModel</span>(),
+                <span class="str">"Contacts"</span> => <span class="kw">new</span> <span class="tp">ContactsViewModel</span>(),
+                <span class="str">"Settings"</span> => <span class="kw">new</span> <span class="tp">SettingsViewModel</span>(),
+                _          => CurrentView
+            };
+        });
+
+        <span class="cm">// Start on home page</span>
+        CurrentView = <span class="kw">new</span> <span class="tp">HomeViewModel</span>();
+    }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — REAL-WORLD PATTERNS
+══════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel"><div class="section">
+  <h2>🏭 Real-World Patterns</h2>
+
+  <h3>Messenger / Event Aggregator</h3>
+  <div class="beginner">
+    <div class="beginner-tag">👶 Why Messenger?</div>
+    <p>ViewModels should not hold references to each other. But sometimes ContactsViewModel needs to tell DetailsViewModel that a contact was selected. A <strong>Messenger</strong> lets them communicate through a central hub without knowing about each other — like a radio broadcast system.</p>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">C# — Simple Messenger (lightweight pub/sub)</span>
+    <pre"><span class="kw">public static class</span> <span class="tp">Messenger</span>
+{
+    <span class="kw">private static readonly</span> <span class="tp">Dictionary</span>&lt;<span class="tp">Type</span>, <span class="tp">List</span>&lt;<span class="tp">WeakReference</span>&lt;<span class="tp">Action</span>&lt;<span class="kw">object</span>&gt;&gt;&gt;&gt; _handlers = <span class="kw">new</span>();
+
+    <span class="cm">// Subscribe to messages of type T</span>
+    <span class="kw">public static void</span> <span class="fn">Subscribe</span>&lt;<span class="tp">T</span>&gt;(<span class="tp">Action</span>&lt;<span class="tp">T</span>&gt; handler)
+    {
+        <span class="kw">var</span> type = <span class="kw">typeof</span>(<span class="tp">T</span>);
+        <span class="kw">if</span> (!_handlers.<span class="fn">ContainsKey</span>(type))
+            _handlers[type] = <span class="kw">new</span>();
+        _handlers[type].<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">WeakReference</span>&lt;<span class="tp">Action</span>&lt;<span class="kw">object</span>&gt;&gt;(
+            m => handler((<span class="tp">T</span>)m)));
+    }
+
+    <span class="cm">// Publish a message — all subscribers receive it</span>
+    <span class="kw">public static void</span> <span class="fn">Publish</span>&lt;<span class="tp">T</span>&gt;(<span class="tp">T</span> message)
+    {
+        <span class="kw">if</span> (!_handlers.<span class="fn">TryGetValue</span>(<span class="kw">typeof</span>(<span class="tp">T</span>), <span class="kw">out var</span> handlers)) <span class="kw">return</span>;
+        <span class="kw">foreach</span> (<span class="kw">var</span> weakRef <span class="kw">in</span> handlers.<span class="fn">ToList</span>())
+            <span class="kw">if</span> (weakRef.<span class="fn">TryGetTarget</span>(<span class="kw">out var</span> handler))
+                handler(message!);
+    }
+}
+
+<span class="cm">// Message types (plain C# records)</span>
+<span class="kw">public record</span> <span class="tp">ContactSelectedMessage</span>(<span class="tp">Contact</span> Contact);
+<span class="kw">public record</span> <span class="tp">ContactDeletedMessage</span>(<span class="kw">int</span> ContactId);
+<span class="kw">public record</span> <span class="tp">ThemeChangedMessage</span>(<span class="kw">string</span> Theme);
+
+<span class="cm">// In ContactsViewModel — publish when selection changes</span>
+<span class="kw">public</span> <span class="tp">Contact</span>? SelectedContact
+{
+    <span class="kw">get</span> => _selected;
+    <span class="kw">set</span>
+    {
+        <span class="fn">SetProperty</span>(<span class="kw">ref</span> _selected, value);
+        <span class="kw">if</span> (value != <span class="kw">null</span>)
+            <span class="tp">Messenger</span>.<span class="fn">Publish</span>(<span class="kw">new</span> <span class="tp">ContactSelectedMessage</span>(value));
+    }
+}
+
+<span class="cm">// In DetailsViewModel — subscribe to receive the message</span>
+<span class="kw">public</span> <span class="fn">DetailsViewModel</span>()
+{
+    <span class="tp">Messenger</span>.<span class="fn">Subscribe</span>&lt;<span class="tp">ContactSelectedMessage</span>&gt;(msg =>
+    {
+        CurrentContact = msg.Contact;
+    });
+}</pre>
+  </div>
+
+  <h3>Validation with IDataErrorInfo</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Model validation with IDataErrorInfo</span>
+    <pre"><span class="kw">public class</span> <span class="tp">Contact</span> : <span class="tp">INotifyPropertyChanged</span>, <span class="tp">IDataErrorInfo</span>
+{
+    <span class="kw">private string</span> _name  = <span class="str">""</span>;
+    <span class="kw">private string</span> _email = <span class="str">""</span>;
+
+    <span class="kw">public string</span> Name  { <span class="kw">get</span> => _name;  <span class="kw">set</span> { _name  = value; <span class="fn">OnPropertyChanged</span>(); } }
+    <span class="kw">public string</span> Email { <span class="kw">get</span> => _email; <span class="kw">set</span> { _email = value; <span class="fn">OnPropertyChanged</span>(); } }
+
+    <span class="cm">// IDataErrorInfo — WPF asks this for each property</span>
+    <span class="kw">public string this</span>[<span class="kw">string</span> propertyName] => propertyName <span class="kw">switch</span>
+    {
+        <span class="kw">nameof</span>(Name)  when <span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(Name)  => <span class="str">"Name is required"</span>,
+        <span class="kw">nameof</span>(Name)  when Name.Length &lt; <span class="num">2</span>                   => <span class="str">"Name too short"</span>,
+        <span class="kw">nameof</span>(Email) when !Email.<span class="fn">Contains</span>(<span class="str">'@'</span>)             => <span class="str">"Invalid email"</span>,
+        _                                                     => <span class="kw">string</span>.Empty
+    };
+
+    <span class="kw">public string</span> Error => <span class="kw">string</span>.Empty;  <span class="cm">// overall error (rarely used)</span>
+
+    <span class="kw">public bool</span> IsValid =>
+        <span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(<span class="kw">this</span>[<span class="kw">nameof</span>(Name)]) &&
+        <span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(<span class="kw">this</span>[<span class="kw">nameof</span>(Email)]);
+
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? n = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(n));
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">XAML — Show validation errors in UI</span>
+    <pre"><span class="cm">&lt;!-- ValidatesOnDataErrors=True tells WPF to use IDataErrorInfo --&gt;</span>
+<span class="tag">&lt;TextBox</span> <span class="prop">Text</span>=<span class="val">"{Binding Name,
+              ValidatesOnDataErrors=True,
+              UpdateSourceTrigger=PropertyChanged}"</span>
+         <span class="prop">Validation.ErrorTemplate</span>=<span class="val">"{StaticResource ValidationErrorTemplate}"</span><span class="tag">/&gt;</span>
+
+<span class="cm">&lt;!-- Custom error template --&gt;</span>
+<span class="tag">&lt;ControlTemplate</span> <span class="prop">x:Key</span>=<span class="val">"ValidationErrorTemplate"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;StackPanel&gt;</span>
+        <span class="tag">&lt;AdornedElementPlaceholder</span> <span class="prop">x:Name</span>=<span class="val">"placeholder"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;TextBlock</span>
+            <span class="prop">Text</span>=<span class="val">"{Binding ElementName=placeholder,
+                   Path=AdornedElement.(Validation.Errors)[0].ErrorContent}"</span>
+            <span class="prop">Foreground</span>=<span class="val">"Red"</span>
+            <span class="prop">FontSize</span>=<span class="val">"11"</span>
+            <span class="prop">Margin</span>=<span class="val">"2,2,0,0"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;/StackPanel&gt;</span>
+<span class="tag">&lt;/ControlTemplate&gt;</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — FULL MVVM APP
+══════════════════════════════════ -->
+<div id="tab-fullapp" class="tab-panel"><div class="section">
+  <h2>🚀 Full MVVM App — Task Manager</h2>
+  <p>Let's build a complete <strong>Task Manager</strong> using everything from both Part 1 and Part 2 — MVVM, Commands, Async, Validation, Navigation, and proper architecture.</p>
+
+  <h3>Project Structure</h3>
+  <div class="flow">
+    <div class="flow-node n-wpf">
+      <div class="flow-node-title">📁 TaskManager (project root)</div>
+      <ul class="flow-items">
+        <li>App.xaml — global resources, startup</li>
+        <li>📁 Models/ — Task.cs, Priority.cs</li>
+        <li>📁 ViewModels/ — ViewModelBase.cs, MainViewModel.cs, TaskListViewModel.cs, AddTaskViewModel.cs</li>
+        <li>📁 Views/ — MainWindow.xaml, TaskListView.xaml, AddTaskView.xaml</li>
+        <li>📁 Services/ — ITaskService.cs, TaskService.cs</li>
+        <li>📁 Commands/ — RelayCommand.cs, AsyncRelayCommand.cs</li>
+        <li>📁 Themes/ — Colors.xaml, ButtonStyles.xaml, Generic.xaml</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>The Model</h3>
+  <div class="code-block">
+    <span class="code-label">C# — Models/AppTask.cs</span>
+    <pre><span class="kw">public enum</span> <span class="tp">Priority</span> { Low, Medium, High, Critical }
+
+<span class="kw">public class</span> <span class="tp">AppTask</span> : <span class="tp">INotifyPropertyChanged</span>, <span class="tp">IDataErrorInfo</span>
+{
+    <span class="kw">private string</span>   _title       = <span class="str">""</span>;
+    <span class="kw">private bool</span>     _isCompleted;
+    <span class="kw">private</span> <span class="tp">Priority</span> _priority    = <span class="tp">Priority</span>.Medium;
+
+    <span class="kw">public int</span>      Id          { <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public DateTime</span> CreatedAt   { <span class="kw">get</span>; } = <span class="tp">DateTime</span>.Now;
+
+    <span class="kw">public string</span> Title
+    {
+        <span class="kw">get</span> => _title;
+        <span class="kw">set</span> { _title = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+    <span class="kw">public bool</span> IsCompleted
+    {
+        <span class="kw">get</span> => _isCompleted;
+        <span class="kw">set</span> { _isCompleted = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+    <span class="kw">public</span> <span class="tp">Priority</span> Priority
+    {
+        <span class="kw">get</span> => _priority;
+        <span class="kw">set</span> { _priority = value; <span class="fn">OnPropertyChanged</span>(); }
+    }
+
+    <span class="kw">public string this</span>[<span class="kw">string</span> prop] => prop == <span class="kw">nameof</span>(Title) && <span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(Title)
+        ? <span class="str">"Task title cannot be empty"</span> : <span class="kw">string</span>.Empty;
+    <span class="kw">public string</span> Error => <span class="kw">string</span>.Empty;
+    <span class="kw">public bool</span>   IsValid => !<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(Title);
+
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+    <span class="kw">protected void</span> <span class="fn">OnPropertyChanged</span>([<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? n = <span class="kw">null</span>)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(n));
+}</pre>
+  </div>
+
+  <h3>The ViewModel</h3>
+  <div class="code-block">
+    <span class="code-label">C# — ViewModels/TaskListViewModel.cs</span>
+    <pre><span class="kw">public class</span> <span class="tp">TaskListViewModel</span> : <span class="tp">ViewModelBase</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">ITaskService</span> _service;
+    <span class="kw">private string</span>    _filterText = <span class="str">""</span>;
+    <span class="kw">private bool</span>      _showCompleted = <span class="kw">true</span>;
+    <span class="kw">private bool</span>      _isBusy;
+    <span class="kw">private</span> <span class="tp">AppTask</span>?  _selected;
+
+    <span class="kw">public</span> <span class="tp">ObservableCollection</span>&lt;<span class="tp">AppTask</span>&gt; Tasks    { <span class="kw">get</span>; } = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="tp">ICollectionView</span>               TasksView { <span class="kw">get</span>; }
+
+    <span class="kw">public string</span>   FilterText
+    {
+        <span class="kw">get</span> => _filterText;
+        <span class="kw">set</span> { <span class="fn">SetProperty</span>(<span class="kw">ref</span> _filterText, value); TasksView.<span class="fn">Refresh</span>(); }
+    }
+    <span class="kw">public bool</span>     ShowCompleted
+    {
+        <span class="kw">get</span> => _showCompleted;
+        <span class="kw">set</span> { <span class="fn">SetProperty</span>(<span class="kw">ref</span> _showCompleted, value); TasksView.<span class="fn">Refresh</span>(); }
+    }
+    <span class="kw">public bool</span>     IsBusy   { <span class="kw">get</span> => _isBusy;   <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _isBusy,   value); }
+    <span class="kw">public</span> <span class="tp">AppTask</span>? Selected { <span class="kw">get</span> => _selected; <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _selected, value); }
+
+    <span class="kw">public string</span> Summary => <span class="str">$"{Tasks.Count(t => !t.IsCompleted)} pending · {Tasks.Count(t => t.IsCompleted)} done"</span>;
+
+    <span class="kw">public</span> <span class="tp">ICommand</span> LoadCommand       { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> AddCommand        { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> DeleteCommand     { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> CompleteCommand   { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> ClearDoneCommand  { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">TaskListViewModel</span>(<span class="tp">ITaskService</span> service)
+    {
+        _service = service;
+
+        <span class="cm">// ICollectionView wraps ObservableCollection — adds sorting and filtering</span>
+        TasksView = <span class="tp">CollectionViewSource</span>.<span class="fn">GetDefaultView</span>(Tasks);
+        TasksView.Filter = <span class="fn">FilterTask</span>;
+        TasksView.SortDescriptions.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">SortDescription</span>(<span class="kw">nameof</span>(<span class="tp">AppTask</span>.Priority),
+            <span class="tp">ListSortDirection</span>.Descending));
+
+        LoadCommand      = <span class="kw">new</span> <span class="tp">AsyncRelayCommand</span>(<span class="fn">LoadAsync</span>);
+        AddCommand       = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">AddTask</span>());
+        DeleteCommand    = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">Delete</span>(), _ => Selected != <span class="kw">null</span>);
+        CompleteCommand  = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">ToggleComplete</span>(), _ => Selected != <span class="kw">null</span>);
+        ClearDoneCommand = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">ClearCompleted</span>());
+
+        _ = <span class="fn">LoadAsync</span>();
+    }
+
+    <span class="kw">private bool</span> <span class="fn">FilterTask</span>(<span class="kw">object</span> obj)
+    {
+        <span class="kw">if</span> (obj <span class="kw">is not</span> <span class="tp">AppTask</span> task) <span class="kw">return false</span>;
+        <span class="kw">if</span> (!ShowCompleted && task.IsCompleted) <span class="kw">return false</span>;
+        <span class="kw">if</span> (!<span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(FilterText) &&
+            !task.Title.<span class="fn">Contains</span>(FilterText, <span class="tp">StringComparison</span>.OrdinalIgnoreCase))
+            <span class="kw">return false</span>;
+        <span class="kw">return true</span>;
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">LoadAsync</span>()
+    {
+        IsBusy = <span class="kw">true</span>;
+        Tasks.<span class="fn">Clear</span>();
+        <span class="kw">var</span> data = <span class="kw">await</span> _service.<span class="fn">GetAllAsync</span>();
+        <span class="kw">foreach</span> (<span class="kw">var</span> t <span class="kw">in</span> data) Tasks.<span class="fn">Add</span>(t);
+        IsBusy = <span class="kw">false</span>;
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Summary));
+    }
+
+    <span class="kw">private void</span> <span class="fn">AddTask</span>()
+    {
+        <span class="kw">var</span> dlg = <span class="kw">new</span> <span class="tp">AddTaskWindow</span>();
+        <span class="kw">if</span> (dlg.<span class="fn">ShowDialog</span>() == <span class="kw">true</span> && dlg.NewTask != <span class="kw">null</span>)
+        {
+            Tasks.<span class="fn">Add</span>(dlg.NewTask);
+            <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Summary));
+        }
+    }
+    <span class="kw">private void</span> <span class="fn">Delete</span>()
+    {
+        <span class="kw">if</span> (Selected == <span class="kw">null</span>) <span class="kw">return</span>;
+        Tasks.<span class="fn">Remove</span>(Selected);
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Summary));
+    }
+    <span class="kw">private void</span> <span class="fn">ToggleComplete</span>()
+    {
+        <span class="kw">if</span> (Selected == <span class="kw">null</span>) <span class="kw">return</span>;
+        Selected.IsCompleted = !Selected.IsCompleted;
+        TasksView.<span class="fn">Refresh</span>();
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Summary));
+    }
+    <span class="kw">private void</span> <span class="fn">ClearCompleted</span>()
+    {
+        <span class="kw">var</span> done = Tasks.<span class="fn">Where</span>(t => t.IsCompleted).<span class="fn">ToList</span>();
+        <span class="kw">foreach</span> (<span class="kw">var</span> t <span class="kw">in</span> done) Tasks.<span class="fn">Remove</span>(t);
+        <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(Summary));
+    }
+}</pre>
+  </div>
+
+  <h3>The View (XAML)</h3>
+  <div class="code-block">
+    <span class="code-label">XAML — Views/TaskListView.xaml</span>
+    <pre><span class="tag">&lt;UserControl&gt;</span>
+    <span class="tag">&lt;Grid</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+        <span class="tag">&lt;Grid.RowDefinitions&gt;</span>
+            <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Header --&gt;</span>
+            <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Search + Filter --&gt;</span>
+            <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>     <span class="cm">&lt;!-- Task list --&gt;</span>
+            <span class="tag">&lt;RowDefinition</span> <span class="prop">Height</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>  <span class="cm">&lt;!-- Action buttons --&gt;</span>
+        <span class="tag">&lt;/Grid.RowDefinitions&gt;</span>
+
+        <span class="cm">&lt;!-- Header --&gt;</span>
+        <span class="tag">&lt;StackPanel</span> <span class="prop">Grid.Row</span>=<span class="val">"0"</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,0,0,16"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"Tasks"</span>
+                       <span class="prop">FontSize</span>=<span class="val">"24"</span> <span class="prop">FontWeight</span>=<span class="val">"Bold"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;TextBlock</span> <span class="prop">Text</span>=<span class="val">"{Binding Summary}"</span>
+                       <span class="prop">Foreground</span>=<span class="val">"Gray"</span> <span class="prop">Margin</span>=<span class="val">"12,6,0,0"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StackPanel&gt;</span>
+
+        <span class="cm">&lt;!-- Search and filter row --&gt;</span>
+        <span class="tag">&lt;StackPanel</span> <span class="prop">Grid.Row</span>=<span class="val">"1"</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,0,0,10"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;TextBox</span>  <span class="prop">Text</span>=<span class="val">"{Binding FilterText,
+                             UpdateSourceTrigger=PropertyChanged}"</span>
+                      <span class="prop">Width</span>=<span class="val">"220"</span>
+                      <span class="prop">Margin</span>=<span class="val">"0,0,12,0"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;CheckBox</span> <span class="prop">Content</span>=<span class="val">"Show completed"</span>
+                      <span class="prop">IsChecked</span>=<span class="val">"{Binding ShowCompleted}"</span>
+                      <span class="prop">VerticalAlignment</span>=<span class="val">"Center"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StackPanel&gt;</span>
+
+        <span class="cm">&lt;!-- Task list with DataTemplate --&gt;</span>
+        <span class="tag">&lt;ListView</span> <span class="prop">Grid.Row</span>=<span class="val">"2"</span>
+                  <span class="prop">ItemsSource</span>=<span class="val">"{Binding TasksView}"</span>
+                  <span class="prop">SelectedItem</span>=<span class="val">"{Binding Selected}"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;ListView.ItemTemplate&gt;</span>
+                <span class="tag">&lt;DataTemplate&gt;</span>
+                    <span class="tag">&lt;Grid&gt;</span>
+                        <span class="tag">&lt;Grid.ColumnDefinitions&gt;</span>
+                            <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>
+                            <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"*"</span><span class="tag">/&gt;</span>
+                            <span class="tag">&lt;ColumnDefinition</span> <span class="prop">Width</span>=<span class="val">"Auto"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;/Grid.ColumnDefinitions&gt;</span>
+                        <span class="tag">&lt;CheckBox</span>  <span class="prop">Grid.Column</span>=<span class="val">"0"</span>
+                                   <span class="prop">IsChecked</span>=<span class="val">"{Binding IsCompleted}"</span>
+                                   <span class="prop">Margin</span>=<span class="val">"0,0,10,0"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;TextBlock</span> <span class="prop">Grid.Column</span>=<span class="val">"1"</span>
+                                   <span class="prop">Text</span>=<span class="val">"{Binding Title}"</span>
+                                   <span class="prop">VerticalAlignment</span>=<span class="val">"Center"</span><span class="tag">/&gt;</span>
+                        <span class="tag">&lt;TextBlock</span> <span class="prop">Grid.Column</span>=<span class="val">"2"</span>
+                                   <span class="prop">Text</span>=<span class="val">"{Binding Priority}"</span>
+                                   <span class="prop">Foreground</span>=<span class="val">"Gray"</span>
+                                   <span class="prop">VerticalAlignment</span>=<span class="val">"Center"</span><span class="tag">/&gt;</span>
+                    <span class="tag">&lt;/Grid&gt;</span>
+                <span class="tag">&lt;/DataTemplate&gt;</span>
+            <span class="tag">&lt;/ListView.ItemTemplate&gt;</span>
+        <span class="tag">&lt;/ListView&gt;</span>
+
+        <span class="cm">&lt;!-- Action buttons --&gt;</span>
+        <span class="tag">&lt;StackPanel</span> <span class="prop">Grid.Row</span>=<span class="val">"3"</span> <span class="prop">Orientation</span>=<span class="val">"Horizontal"</span>
+                    <span class="prop">HorizontalAlignment</span>=<span class="val">"Right"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,10,0,0"</span><span class="tag">&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Add Task"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding AddCommand}"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,0,8,0"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Complete"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding CompleteCommand}"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,0,8,0"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Delete"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding DeleteCommand}"</span>
+                    <span class="prop">Margin</span>=<span class="val">"0,0,8,0"</span><span class="tag">/&gt;</span>
+            <span class="tag">&lt;Button</span> <span class="prop">Content</span>=<span class="val">"Clear Done"</span>
+                    <span class="prop">Command</span>=<span class="val">"{Binding ClearDoneCommand}"</span><span class="tag">/&gt;</span>
+        <span class="tag">&lt;/StackPanel&gt;</span>
+    <span class="tag">&lt;/Grid&gt;</span>
+<span class="tag">&lt;/UserControl&gt;</span></pre>
+  </div>
+
+  <h3>What This App Demonstrates</h3>
+  <ul class="checklist">
+    <li>ViewModelBase with SetProperty for clean INPC implementation</li>
+    <li>AsyncRelayCommand for the async Load operation with auto button disable</li>
+    <li>ICollectionView for filtering and sorting without modifying the source collection</li>
+    <li>IDataErrorInfo validation on the Task model with immediate per-field feedback</li>
+    <li>Computed properties (Summary) that notify when underlying data changes</li>
+    <li>Clean separation: ViewModel knows nothing about ListView, Button, or any WPF type</li>
+    <li>DataTemplate for custom task row rendering inside ListView</li>
+    <li>RelayCommand with canExecute — Delete/Complete auto-disabled when nothing selected</li>
+  </ul>
+
+  <div class="completion">
+    <h3>WPF Advanced Complete — You Are Now a WPF Developer!</h3>
+    <p>MVVM architecture (Model · View · ViewModel) · ViewModelBase with SetProperty · AsyncRelayCommand for async operations · Dependency Properties (Register, CLR wrapper, callback, validation, attached) · User Controls vs Custom Controls · ControlTemplate for custom appearance · Animations (Storyboard, DoubleAnimation, easing functions, C# programmatic) · WPF threading rules (UI thread only) · Dispatcher and async/await · Navigation with ContentControl and DataTemplate mapping · Messenger for ViewModel-to-ViewModel communication · IDataErrorInfo validation · ICollectionView for filtering and sorting · Full Task Manager app tying everything together</p>
+    <p style="margin-top:12px;font-weight:700;color:#a78bfa;">You now have all the tools to build professional, maintainable WPF applications. Build something amazing! 🎉</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
