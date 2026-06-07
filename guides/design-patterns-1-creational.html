@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns — Part 1: Creational</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8ff;--surface:#edf0ff;--card:#fff;--border:#dce0f5;--border2:#b8bfe8;
+  --cr:#1a5abf;--cr-l:#d6e8f8;--cr-d:#0e3a8a;
+  --sing:#0e8a6a;--sing-l:#d4f0e8;--sing-d:#085c45;
+  --fact:#8a3abf;--fact-l:#f0e4f8;--fact-d:#5c1a8a;
+  --abst:#bf6a0e;--abst-l:#f8f0d6;--abst-d:#8a4a00;
+  --build:#0e6abf;--build-l:#d6ebf8;--build-d:#0a4080;
+  --proto:#bf1a5a;--proto-l:#f8d6e8;--proto-d:#8a0040;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e40 100%);
+  border-bottom:1px solid #0a1830;
+  padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 15% 50%,rgba(26,90,191,.35) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 30%,rgba(14,138,106,.2) 0%,transparent 50%),
+    radial-gradient(ellipse at 50% 80%,rgba(138,58,191,.2) 0%,transparent 50%);
+  pointer-events:none;
+}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#60a5fa,#34d399,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-active{background:rgba(96,165,250,.25);border:1px solid rgba(96,165,250,.4);color:#93c5fd;}
+.pb-inactive{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(246,248,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.tab-btn.t-over.active{background:var(--cr-l);color:var(--cr-d);}
+.tab-btn.t-sing.active{background:var(--sing-l);color:var(--sing-d);}
+.tab-btn.t-fact.active{background:var(--fact-l);color:var(--fact-d);}
+.tab-btn.t-abst.active{background:var(--abst-l);color:var(--abst-d);}
+.tab-btn.t-build.active{background:var(--build-l);color:var(--build-d);}
+.tab-btn.t-proto.active{background:var(--proto-l);color:var(--proto-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+
+/* PATTERN COLORS */
+.ph-over h2{color:var(--cr-d);border-bottom:3px solid var(--cr-l);}
+.ph-over h3{color:var(--cr-d);}
+.ph-sing h2{color:var(--sing-d);border-bottom:3px solid var(--sing-l);}
+.ph-sing h3{color:var(--sing-d);}
+.ph-fact h2{color:var(--fact-d);border-bottom:3px solid var(--fact-l);}
+.ph-fact h3{color:var(--fact-d);}
+.ph-abst h2{color:var(--abst-d);border-bottom:3px solid var(--abst-l);}
+.ph-abst h3{color:var(--abst-d);}
+.ph-build h2{color:var(--build-d);border-bottom:3px solid var(--build-l);}
+.ph-build h3{color:var(--build-d);}
+.ph-proto h2{color:var(--proto-d);border-bottom:3px solid var(--proto-l);}
+.ph-proto h3{color:var(--proto-d);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--cr);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cr-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;border-left:4px solid;}
+.analogy-sing{background:var(--sing-l);border-color:var(--sing);border:1.5px solid rgba(14,138,106,.2);border-left:4px solid var(--sing);}
+.analogy-fact{background:var(--fact-l);border-color:var(--fact);border:1.5px solid rgba(138,58,191,.2);border-left:4px solid var(--fact);}
+.analogy-abst{background:var(--abst-l);border-color:var(--abst);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--abst);}
+.analogy-build{background:var(--build-l);border-color:var(--build);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--build);}
+.analogy-proto{background:var(--proto-l);border-color:var(--proto);border:1.5px solid rgba(191,26,90,.2);border-left:4px solid var(--proto);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy-sing .analogy-tag{color:var(--sing-d);}
+.analogy-fact .analogy-tag{color:var(--fact-d);}
+.analogy-abst .analogy-tag{color:var(--abst-d);}
+.analogy-build .analogy-tag{color:var(--build-d);}
+.analogy-proto .analogy-tag{color:var(--proto-d);}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.neutral{border-left:4px solid var(--cr);}
+.code-block.sing{border-left:4px solid var(--sing);}
+.code-block.fact{border-left:4px solid var(--fact);}
+.code-block.abst{border-left:4px solid var(--abst);}
+.code-block.build{border-left:4px solid var(--build);}
+.code-block.proto{border-left:4px solid var(--proto);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}
+.code-label.good{color:#86efac;}
+.code-label.neutral{color:#93c5fd;}
+.code-label.sing-c{color:#6ee7b7;}
+.code-label.fact-c{color:#d8b4fe;}
+.code-label.abst-c{color:#fde68a;}
+.code-label.build-c{color:#93c5fd;}
+.code-label.proto-c{color:#fca5a5;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--cr-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-sing li{border-left:3px solid var(--sing);}
+.cl-sing li:before{content:"✓ ";color:var(--sing);font-weight:700;}
+.cl-fact li{border-left:3px solid var(--fact);}
+.cl-fact li:before{content:"✓ ";color:var(--fact);font-weight:700;}
+.cl-abst li{border-left:3px solid var(--abst);}
+.cl-abst li:before{content:"✓ ";color:var(--abst);font-weight:700;}
+.cl-build li{border-left:3px solid var(--build);}
+.cl-build li:before{content:"✓ ";color:var(--build);font-weight:700;}
+.cl-proto li{border-left:3px solid var(--proto);}
+.cl-proto li:before{content:"✓ ";color:var(--proto);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}
+.cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);}
+.cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-sing{background:var(--sing-l);border-color:rgba(14,138,106,.25);}
+.pc-fact{background:var(--fact-l);border-color:rgba(138,58,191,.25);}
+.pc-abst{background:var(--abst-l);border-color:rgba(191,106,14,.25);}
+.pc-build{background:var(--build-l);border-color:rgba(14,106,191,.25);}
+.pc-proto{background:var(--proto-l);border-color:rgba(191,26,90,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-sing .pc-name{color:var(--sing-d);}
+.pc-fact .pc-name{color:var(--fact-d);}
+.pc-abst .pc-name{color:var(--abst-d);}
+.pc-build .pc-name{color:var(--build-d);}
+.pc-proto .pc-name{color:var(--proto-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
+.pc-test{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:4px 8px;border-radius:4px;color:var(--text2);}
+.pc-sing .pc-test{background:rgba(14,138,106,.1);}
+.pc-fact .pc-test{background:rgba(138,58,191,.1);}
+.pc-abst .pc-test{background:rgba(191,106,14,.1);}
+.pc-build .pc-test{background:rgba(14,106,191,.1);}
+.pc-proto .pc-test{background:rgba(191,26,90,.1);}
+
+/* SOLID BADGE */
+.solid-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.sb{padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sb-s{background:rgba(26,106,191,.12);color:#0e3a8a;border:1px solid rgba(26,106,191,.2);}
+.sb-o{background:rgba(191,106,14,.12);color:#8a4a00;border:1px solid rgba(191,106,14,.2);}
+.sb-l{background:rgba(26,138,74,.12);color:#0d5c38;border:1px solid rgba(26,138,74,.2);}
+.sb-i{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+.sb-d{background:rgba(176,42,55,.12);color:#8a0010;border:1px solid rgba(176,42,55,.2);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;}
+.np-future{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Design Patterns Series · Part 1 of 3</div>
+    <div class="part-badge">
+      <span class="pb pb-active">① Creational</span>
+      <span class="pb pb-inactive">② Structural</span>
+      <span class="pb pb-inactive">③ Behavioural</span>
+    </div>
+    <h1>Design Patterns — <span>Creational</span></h1>
+    <p>Singleton · Factory Method · Abstract Factory · Builder · Prototype · C# deep dive · beginner to expert</p>
+    <div class="header-chips">
+      <span class="chip">Singleton</span>
+      <span class="chip">Factory Method</span>
+      <span class="chip">Abstract Factory</span>
+      <span class="chip">Builder</span>
+      <span class="chip">Prototype</span>
+      <span class="chip">Real C# Examples</span>
+      <span class="chip">SOLID Connections</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-sing" onclick="T('singleton',this)">② Singleton</button>
+      <button class="tab-btn t-fact" onclick="T('factory',this)">③ Factory Method</button>
+      <button class="tab-btn t-abst" onclick="T('abstract',this)">④ Abstract Factory</button>
+      <button class="tab-btn t-build" onclick="T('builder',this)">⑤ Builder</button>
+      <button class="tab-btn t-proto" onclick="T('prototype',this)">⑥ Prototype</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🏗️ What Are Design Patterns?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — What is a Design Pattern?</div>
+    <p>A design pattern is a <strong>proven solution to a common programming problem</strong>. Think of it like a recipe — you don't invent pasta from scratch every time, you follow a recipe that experts refined over years. Design patterns are recipes that experienced developers discovered work well for specific types of problems. They give us a shared vocabulary and save us from reinventing the wheel.</p>
+  </div>
+
+  <h3>The Three Categories</h3>
+  <div class="grid-3">
+    <div class="icon-item">
+      <span class="emoji">🏗️</span>
+      <h4>Creational (This Guide)</h4>
+      <p>How objects are <strong>created</strong>. Control object creation so your code doesn't depend on specific classes.</p>
+    </div>
+    <div class="icon-item">
+      <span class="emoji">🔩</span>
+      <h4>Structural (Part 2)</h4>
+      <p>How objects are <strong>composed</strong> together. Organise classes and objects into larger structures.</p>
+    </div>
+    <div class="icon-item">
+      <span class="emoji">💬</span>
+      <h4>Behavioural (Part 3)</h4>
+      <p>How objects <strong>communicate</strong>. Define how objects interact and distribute responsibility.</p>
+    </div>
+  </div>
+
+  <h3>The 5 Creational Patterns — At a Glance</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-sing">
+      <span class="pc-emoji">1️⃣</span>
+      <div class="pc-name">Singleton</div>
+      <div class="pc-intent">Ensure a class has only ONE instance ever created, and provide a global point of access to it.</div>
+      <div class="pc-test">"Only one instance should ever exist"</div>
+    </div>
+    <div class="pc pc-fact">
+      <span class="pc-emoji">🏭</span>
+      <div class="pc-name">Factory Method</div>
+      <div class="pc-intent">Define an interface for creating an object, but let subclasses decide which class to instantiate.</div>
+      <div class="pc-test">"Let subclasses decide what to create"</div>
+    </div>
+    <div class="pc pc-abst">
+      <span class="pc-emoji">🏪</span>
+      <div class="pc-name">Abstract Factory</div>
+      <div class="pc-intent">Create families of related objects without specifying their concrete classes.</div>
+      <div class="pc-test">"Create related objects that belong together"</div>
+    </div>
+    <div class="pc pc-build">
+      <span class="pc-emoji">🔨</span>
+      <div class="pc-name">Builder</div>
+      <div class="pc-intent">Construct complex objects step by step. Separate construction from representation.</div>
+      <div class="pc-test">"Build a complex object step by step"</div>
+    </div>
+    <div class="pc pc-proto">
+      <span class="pc-emoji">📋</span>
+      <div class="pc-name">Prototype</div>
+      <div class="pc-intent">Create new objects by copying (cloning) an existing object.</div>
+      <div class="pc-test">"Create by copying an existing object"</div>
+    </div>
+  </div>
+
+  <h3>Why Creational Patterns?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>❌ Without Creational Patterns</h4>
+      <ul>
+        <li>Code is full of <code>new ConcreteClass()</code> everywhere</li>
+        <li>Changing a class means hunting through every file that uses <code>new</code></li>
+        <li>Testing is hard — can't swap real objects for fakes</li>
+        <li>Object creation logic mixed with business logic</li>
+        <li>Tight coupling between caller and the created class</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ With Creational Patterns</h4>
+      <ul>
+        <li>Creation logic is centralised in one place</li>
+        <li>Caller doesn't know or care what concrete class it gets</li>
+        <li>Easy to swap implementations — great for testing</li>
+        <li>Clean separation of creation from use</li>
+        <li>Flexible, extensible object creation</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Quick Decision Guide — Which Pattern to Use?</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>Pattern</th><th>Example</th></tr>
+    <tr><td>Need exactly ONE shared instance</td><td><strong>Singleton</strong></td><td>Logger, Configuration, Cache</td></tr>
+    <tr><td>Need to create objects but don't know exact type at compile time</td><td><strong>Factory Method</strong></td><td>NotificationFactory, ShapeFactory</td></tr>
+    <tr><td>Need to create families of related objects</td><td><strong>Abstract Factory</strong></td><td>UI theme (Dark/Light), DB provider</td></tr>
+    <tr><td>Object has many optional parameters or complex construction</td><td><strong>Builder</strong></td><td>QueryBuilder, EmailBuilder, HttpRequest</td></tr>
+    <tr><td>Need a copy of an existing object</td><td><strong>Prototype</strong></td><td>Clone a document template, copy game character</td></tr>
+  </table></div>
+
+  <h3>How Patterns Connect to SOLID</h3>
+  <div class="card">
+    <h4>🔗 SOLID Connections</h4>
+    <p>Design patterns are SOLID principles in action:</p>
+    <ul style="margin-top:8px;">
+      <li><strong>Factory Method</strong> → Open/Closed (add new types by adding new classes)</li>
+      <li><strong>Abstract Factory</strong> → Dependency Inversion (depend on abstraction, not concrete factory)</li>
+      <li><strong>Builder</strong> → Single Responsibility (separate construction from representation)</li>
+      <li><strong>Singleton</strong> → Used carefully with Dependency Inversion (inject the singleton)</li>
+      <li><strong>Prototype</strong> → Open/Closed (add new cloneable types without changing client)</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — SINGLETON
+══════════════════════════════════ -->
+<div id="tab-singleton" class="tab-panel ph-sing"><div class="section">
+  <h2>1️⃣ Singleton Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Singleton pattern ensures that a class <strong>creates exactly one instance</strong> of itself — ever. No matter how many times you ask for it, you always get back the same object. It also provides a single global point of access to that instance.</p>
+  </div>
+
+  <div class="analogy analogy-sing">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A country has <strong>one government</strong>. No matter who you ask — a citizen, a tourist, a business — they all refer to the same government. You can't create a second government for the same country. The government is a Singleton. Similarly, your application's logger or configuration object should exist only once.</p>
+  </div>
+
+  <h3>The Problem Without Singleton</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Multiple instances cause inconsistency</div>
+    <pre><span class="cm">// ❌ Without Singleton — multiple Logger instances created accidentally</span>
+<span class="kw">public class</span> <span class="tp">Logger</span>
+{
+    <span class="kw">private</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _logs = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Log</span>(<span class="kw">string</span> message) => _logs.<span class="fn">Add</span>(message);
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetLogs</span>() => _logs;
+}
+
+<span class="cm">// In OrderService:</span>
+<span class="kw">var</span> logger1 = <span class="kw">new</span> <span class="tp">Logger</span>();   <span class="cm">// creates instance A</span>
+logger1.<span class="fn">Log</span>(<span class="str">"Order placed"</span>);
+
+<span class="cm">// In PaymentService:</span>
+<span class="kw">var</span> logger2 = <span class="kw">new</span> <span class="tp">Logger</span>();   <span class="cm">// creates instance B — different object!</span>
+logger2.<span class="fn">Log</span>(<span class="str">"Payment processed"</span>);
+
+<span class="cm">// logger1.GetLogs() = ["Order placed"]
+// logger2.GetLogs() = ["Payment processed"]
+// ❌ Logs are split across two separate instances — can't see the full picture</span></pre>
+  </div>
+
+  <h3>Classic Singleton Implementation</h3>
+
+  <div class="code-block sing">
+    <div class="code-label sing-c">C# — Thread-safe Singleton (recommended)</div>
+    <pre><span class="kw">public sealed class</span> <span class="tp">Logger</span>
+{
+    <span class="cm">// Step 1: Private static instance — holds the one and only instance</span>
+    <span class="kw">private static readonly</span> <span class="tp">Lazy</span>&lt;<span class="tp">Logger</span>&gt; _instance =
+        <span class="kw">new</span> <span class="tp">Lazy</span>&lt;<span class="tp">Logger</span>&gt;(() => <span class="kw">new</span> <span class="tp">Logger</span>());
+
+    <span class="cm">// Step 2: Private constructor — prevents anyone calling new Logger()</span>
+    <span class="kw">private</span> <span class="fn">Logger</span>()
+    {
+        _logs = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;();
+    }
+
+    <span class="cm">// Step 3: Public static property — the only way to get the instance</span>
+    <span class="kw">public static</span> <span class="tp">Logger</span> Instance => _instance.Value;
+
+    <span class="cm">// The actual logger functionality</span>
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _logs;
+    <span class="kw">private readonly object</span> _lock = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Log</span>(<span class="kw">string</span> message)
+    {
+        <span class="kw">lock</span> (_lock)
+        {
+            <span class="kw">var</span> entry = <span class="str">$"[{DateTime.Now:HH:mm:ss}] {message}"</span>;
+            _logs.<span class="fn">Add</span>(entry);
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(entry);
+        }
+    }
+
+    <span class="kw">public</span> <span class="tp">IReadOnlyList</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetLogs</span>() => _logs.<span class="fn">AsReadOnly</span>();
+}
+
+<span class="cm">// Usage — always the SAME instance</span>
+<span class="tp">Logger</span>.Instance.<span class="fn">Log</span>(<span class="str">"Order placed"</span>);     <span class="cm">// from OrderService</span>
+<span class="tp">Logger</span>.Instance.<span class="fn">Log</span>(<span class="str">"Payment processed"</span>); <span class="cm">// from PaymentService</span>
+
+<span class="cm">// Both calls go to the SAME list</span>
+<span class="kw">var</span> allLogs = <span class="tp">Logger</span>.Instance.<span class="fn">GetLogs</span>();
+<span class="cm">// ["[10:01:01] Order placed", "[10:01:02] Payment processed"] ✅</span>
+
+<span class="cm">// Proof it's the same instance:</span>
+<span class="kw">bool</span> same = <span class="tp">object</span>.<span class="fn">ReferenceEquals</span>(<span class="tp">Logger</span>.Instance, <span class="tp">Logger</span>.Instance);
+<span class="cm">// same = true ✅</span></pre>
+  </div>
+
+  <h3>Why Lazy&lt;T&gt;? — Thread Safety Explained</h3>
+  <div class="card">
+    <h4>🔒 The Threading Problem</h4>
+    <p>Without thread safety, if two threads both check "does the instance exist?" simultaneously and both see "no", they both create an instance — breaking the Singleton guarantee. <code>Lazy&lt;T&gt;</code> handles this automatically with .NET's built-in thread-safe initialisation. It creates the instance only once, lazily (on first access), and is guaranteed thread-safe.</p>
+  </div>
+
+  <h3>Singleton with Dependency Injection (Modern C#)</h3>
+
+  <div class="code-block sing">
+    <div class="code-label sing-c">C# — Singleton via .NET DI (preferred in modern apps)</div>
+    <pre><span class="cm">// In modern ASP.NET / .NET apps — use the DI container instead of static Singleton
+// This avoids the testability problems of the static pattern</span>
+
+<span class="cm">// Define an interface (for testability)</span>
+<span class="kw">public interface</span> <span class="iface">IAppLogger</span>
+{
+    <span class="kw">void</span> <span class="fn">Log</span>(<span class="kw">string</span> message);
+    <span class="tp">IReadOnlyList</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetLogs</span>();
+}
+
+<span class="kw">public class</span> <span class="tp">AppLogger</span> : <span class="iface">IAppLogger</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _logs = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Log</span>(<span class="kw">string</span> message) => _logs.<span class="fn">Add</span>(<span class="str">$"[{DateTime.Now:T}] {message}"</span>);
+    <span class="kw">public</span> <span class="tp">IReadOnlyList</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetLogs</span>() => _logs.<span class="fn">AsReadOnly</span>();
+}
+
+<span class="cm">// Register as Singleton in Program.cs / Startup.cs</span>
+builder.Services.<span class="fn">AddSingleton</span>&lt;<span class="iface">IAppLogger</span>, <span class="tp">AppLogger</span>&gt;();
+<span class="cm">// .NET DI ensures only ONE AppLogger is ever created — same as Singleton pattern</span>
+<span class="cm">// BUT: now you can inject a fake IAppLogger in tests ✅</span>
+
+<span class="cm">// Any class that needs it — inject via constructor</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IAppLogger</span> _logger;
+    <span class="kw">public</span> <span class="fn">OrderService</span>(<span class="iface">IAppLogger</span> logger) => _logger = logger;
+
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>(<span class="tp">Order</span> order)
+    {
+        _logger.<span class="fn">Log</span>(<span class="str">$"Order {order.Id} placed"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>When to Use / When NOT to Use</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--green);">✅ Use Singleton When</h4>
+      <ul>
+        <li>Logging — one central log store</li>
+        <li>Configuration — app settings loaded once</li>
+        <li>Cache — shared in-memory cache</li>
+        <li>Connection pool — shared database connections</li>
+        <li>Device drivers — one interface to hardware</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--red);">❌ Avoid Singleton When</h4>
+      <ul>
+        <li>The object holds mutable state that differs per user/request</li>
+        <li>You need multiple configurations (multi-tenant apps)</li>
+        <li>It makes unit testing harder (prefer DI instead)</li>
+        <li>The "singleton" just ends up being a disguised global variable</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Singleton is Considered an Anti-Pattern by Some</h4>
+    <p>Classic static Singleton (with <code>Instance</code> property) introduces hidden global state and makes testing difficult. In modern C# apps, prefer registering your class as a singleton via the DI container (<code>AddSingleton</code>). You get the same "one instance" behaviour with full testability and no static coupling.</p>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-d">D — Use DI to inject the singleton instead of static access</span>
+    <span class="sb sb-s">S — Singleton handles one concern only</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — FACTORY METHOD
+══════════════════════════════════ -->
+<div id="tab-factory" class="tab-panel ph-fact"><div class="section">
+  <h2>🏭 Factory Method Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Instead of using <code>new</code> to create objects directly, you call a <strong>factory method</strong> that creates the object for you. The caller doesn't need to know which specific class gets created — it just asks for "a notification" and the factory decides whether to create an EmailNotification, SmsNotification, or PushNotification based on the situation.</p>
+  </div>
+
+  <div class="analogy analogy-fact">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>When you go to a <strong>staffing agency</strong> and say "I need a developer", you don't create the developer yourself. The agency (factory) decides whether to send you a junior, senior, or contractor based on your requirements. You just asked for "a developer" — the factory handled the specific type. Your business doesn't care about the hiring process, only the result.</p>
+  </div>
+
+  <h3>The Problem Without Factory Method</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Hardcoded new() everywhere is inflexible</div>
+    <pre><span class="cm">// ❌ Without Factory Method
+// Adding a new notification type means editing OrderService
+// OrderService knows too much about concrete notification classes</span>
+
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>(<span class="tp">Order</span> order, <span class="kw">string</span> notifyVia)
+    {
+        <span class="cm">// ❌ OrderService must know all notification types</span>
+        <span class="kw">if</span> (notifyVia == <span class="str">"email"</span>)
+        {
+            <span class="kw">var</span> notif = <span class="kw">new</span> <span class="tp">EmailNotification</span>(); <span class="cm">// ❌ hardcoded new</span>
+            notif.<span class="fn">Send</span>(<span class="str">$"Order {order.Id} placed"</span>);
+        }
+        <span class="kw">else if</span> (notifyVia == <span class="str">"sms"</span>)
+        {
+            <span class="kw">var</span> notif = <span class="kw">new</span> <span class="tp">SmsNotification</span>();   <span class="cm">// ❌ hardcoded new</span>
+            notif.<span class="fn">Send</span>(<span class="str">$"Order {order.Id} placed"</span>);
+        }
+        <span class="cm">// ❌ Adding "push" notification? Edit OrderService!</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Factory Method Solution</h3>
+
+  <div class="code-block fact">
+    <div class="code-label fact-c">C# — Factory Method pattern</div>
+    <pre><span class="cm">// ✅ FACTORY METHOD PATTERN</span>
+
+<span class="cm">// Step 1: Define what all notifications must do (abstraction)</span>
+<span class="kw">public interface</span> <span class="iface">INotification</span>
+{
+    <span class="kw">void</span> <span class="fn">Send</span>(<span class="kw">string</span> message);
+}
+
+<span class="cm">// Step 2: Concrete implementations</span>
+<span class="kw">public class</span> <span class="tp">EmailNotification</span> : <span class="iface">INotification</span>
+{
+    <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> message)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📧 EMAIL: {message}"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">SmsNotification</span> : <span class="iface">INotification</span>
+{
+    <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> message)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📱 SMS: {message}"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">PushNotification</span> : <span class="iface">INotification</span>
+{
+    <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> message)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"🔔 PUSH: {message}"</span>);
+}
+
+<span class="cm">// Step 3: The Factory — ONE place that handles creation</span>
+<span class="kw">public class</span> <span class="tp">NotificationFactory</span>
+{
+    <span class="kw">public static</span> <span class="iface">INotification</span> <span class="fn">Create</span>(<span class="kw">string</span> type)
+        => type.<span class="fn">ToLower</span>() <span class="kw">switch</span>
+        {
+            <span class="str">"email"</span> => <span class="kw">new</span> <span class="tp">EmailNotification</span>(),
+            <span class="str">"sms"</span>   => <span class="kw">new</span> <span class="tp">SmsNotification</span>(),
+            <span class="str">"push"</span>  => <span class="kw">new</span> <span class="tp">PushNotification</span>(),
+            _       => <span class="kw">throw new</span> <span class="tp">ArgumentException</span>(<span class="str">$"Unknown type: {type}"</span>)
+        };
+}
+
+<span class="cm">// Step 4: OrderService now depends ONLY on INotification</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>(<span class="tp">Order</span> order, <span class="kw">string</span> notifyVia)
+    {
+        <span class="cm">// ✅ Doesn't know or care what concrete class it gets</span>
+        <span class="iface">INotification</span> notification = <span class="tp">NotificationFactory</span>.<span class="fn">Create</span>(notifyVia);
+        notification.<span class="fn">Send</span>(<span class="str">$"Order {order.Id} confirmed!"</span>);
+    }
+}
+
+<span class="cm">// Usage:</span>
+<span class="kw">var</span> service = <span class="kw">new</span> <span class="tp">OrderService</span>();
+service.<span class="fn">PlaceOrder</span>(order, <span class="str">"email"</span>);  <span class="cm">// 📧 EMAIL: Order 42 confirmed!</span>
+service.<span class="fn">PlaceOrder</span>(order, <span class="str">"sms"</span>);    <span class="cm">// 📱 SMS: Order 42 confirmed!</span>
+
+<span class="cm">// ✅ Adding "WhatsApp" notification?
+// 1. Create WhatsAppNotification : INotification
+// 2. Add "whatsapp" case to factory
+// 3. OrderService — ZERO changes needed</span></pre>
+  </div>
+
+  <h3>Real-World Example — Payment Processor Factory</h3>
+
+  <div class="code-block fact">
+    <div class="code-label fact-c">C# — Payment processor factory (production pattern)</div>
+    <pre><span class="kw">public interface</span> <span class="iface">IPaymentProcessor</span>
+{
+    <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ChargeAsync</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency);
+    <span class="kw">string</span> ProviderName { <span class="kw">get</span>; }
+}
+
+<span class="kw">public class</span> <span class="tp">StripeProcessor</span> : <span class="iface">IPaymentProcessor</span>
+{
+    <span class="kw">public string</span> ProviderName => <span class="str">"Stripe"</span>;
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ChargeAsync</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency)
+    {
+        <span class="cm">// Stripe API call...</span>
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">100</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Stripe charged {amount} {currency}"</span>);
+        <span class="kw">return true</span>;
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">PayPalProcessor</span> : <span class="iface">IPaymentProcessor</span>
+{
+    <span class="kw">public string</span> ProviderName => <span class="str">"PayPal"</span>;
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ChargeAsync</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">150</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"PayPal charged {amount} {currency}"</span>);
+        <span class="kw">return true</span>;
+    }
+}
+
+<span class="cm">// Factory with DI-friendly interface</span>
+<span class="kw">public interface</span> <span class="iface">IPaymentProcessorFactory</span>
+{
+    <span class="iface">IPaymentProcessor</span> <span class="fn">Create</span>(<span class="kw">string</span> provider);
+}
+
+<span class="kw">public class</span> <span class="tp">PaymentProcessorFactory</span> : <span class="iface">IPaymentProcessorFactory</span>
+{
+    <span class="kw">public</span> <span class="iface">IPaymentProcessor</span> <span class="fn">Create</span>(<span class="kw">string</span> provider)
+        => provider.<span class="fn">ToUpper</span>() <span class="kw">switch</span>
+        {
+            <span class="str">"STRIPE"</span> => <span class="kw">new</span> <span class="tp">StripeProcessor</span>(),
+            <span class="str">"PAYPAL"</span> => <span class="kw">new</span> <span class="tp">PayPalProcessor</span>(),
+            _        => <span class="kw">throw new</span> <span class="tp">NotSupportedException</span>(<span class="str">$"Provider '{provider}' not supported"</span>)
+        };
+}
+
+<span class="cm">// Checkout service — only knows about the interface</span>
+<span class="kw">public class</span> <span class="tp">CheckoutService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IPaymentProcessorFactory</span> _factory;
+    <span class="kw">public</span> <span class="fn">CheckoutService</span>(<span class="iface">IPaymentProcessorFactory</span> factory) => _factory = factory;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ProcessPaymentAsync</span>(<span class="kw">string</span> provider, <span class="kw">decimal</span> amount)
+    {
+        <span class="kw">var</span> processor = _factory.<span class="fn">Create</span>(provider);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Using {processor.ProviderName}"</span>);
+        <span class="kw">return</span> <span class="kw">await</span> processor.<span class="fn">ChargeAsync</span>(amount, <span class="str">"GBP"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>When to Use / When NOT to Use</h3>
+  <ul class="checklist cl-fact">
+    <li>When you don't know at compile time which class to instantiate</li>
+    <li>When you want to centralise all object creation in one place</li>
+    <li>When adding new types should not require changing existing code (OCP)</li>
+    <li>When writing tests — inject a factory that returns mock objects</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new types without modifying factory callers</span>
+    <span class="sb sb-d">D — Callers depend on INotification, not EmailNotification</span>
+    <span class="sb sb-s">S — Factory handles creation; service handles business logic</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — ABSTRACT FACTORY
+══════════════════════════════════ -->
+<div id="tab-abstract" class="tab-panel ph-abst"><div class="section">
+  <h2>🏪 Abstract Factory Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Abstract Factory is like a <strong>factory of factories</strong>. It creates families of related objects that work together, without knowing their specific classes. Imagine you need a Dark Theme for your app — you need a dark button, dark textbox, and dark checkbox. The DarkThemeFactory creates all of them as a matching family. Switch to Light Theme? Use LightThemeFactory — same structure, different objects.</p>
+  </div>
+
+  <div class="analogy analogy-abst">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Think of <strong>IKEA furniture collections</strong>. The "KALLAX" collection has a matching shelf, drawer unit, and door insert — they all fit together stylistically. The "BILLY" collection has its own matching bookcase, extension, and door. You pick a collection (Abstract Factory) and get a family of items that work together. You don't mix KALLAX with BILLY — they're separate families.</p>
+  </div>
+
+  <h3>Factory Method vs Abstract Factory</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🏭 Factory Method</h4>
+      <ul>
+        <li>Creates <strong>one product</strong> type</li>
+        <li>Subclasses decide which concrete class</li>
+        <li>Example: NotificationFactory creates one Notification</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏪 Abstract Factory</h4>
+      <ul>
+        <li>Creates <strong>families of related products</strong></li>
+        <li>Entire factory is swapped for a different family</li>
+        <li>Example: ThemeFactory creates Button + TextBox + CheckBox (all matching)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>UI Theme Example — Abstract Factory</h3>
+
+  <div class="code-block abst">
+    <div class="code-label abst-c">C# — UI Theme Abstract Factory</div>
+    <pre><span class="cm">// ── Step 1: Abstract Products — what each UI control must support ──</span>
+<span class="kw">public interface</span> <span class="iface">IButton</span>   { <span class="kw">void</span> <span class="fn">Render</span>(); }
+<span class="kw">public interface</span> <span class="iface">ITextBox</span>  { <span class="kw">void</span> <span class="fn">Render</span>(); }
+<span class="kw">public interface</span> <span class="iface">ICheckBox</span> { <span class="kw">void</span> <span class="fn">Render</span>(); }
+
+<span class="cm">// ── Step 2: Concrete Products — Dark Theme family ──────────────────</span>
+<span class="kw">public class</span> <span class="tp">DarkButton</span>   : <span class="iface">IButton</span>   { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Dark Button]"</span>); }
+<span class="kw">public class</span> <span class="tp">DarkTextBox</span>  : <span class="iface">ITextBox</span>  { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Dark TextBox]"</span>); }
+<span class="kw">public class</span> <span class="tp">DarkCheckBox</span> : <span class="iface">ICheckBox</span> { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Dark CheckBox]"</span>); }
+
+<span class="cm">// ── Concrete Products — Light Theme family ─────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">LightButton</span>   : <span class="iface">IButton</span>   { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Light Button]"</span>); }
+<span class="kw">public class</span> <span class="tp">LightTextBox</span>  : <span class="iface">ITextBox</span>  { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Light TextBox]"</span>); }
+<span class="kw">public class</span> <span class="tp">LightCheckBox</span> : <span class="iface">ICheckBox</span> { <span class="kw">public void</span> <span class="fn">Render</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[Light CheckBox]"</span>); }
+
+<span class="cm">// ── Step 3: Abstract Factory — defines the factory contract ────────</span>
+<span class="kw">public interface</span> <span class="iface">IUIFactory</span>
+{
+    <span class="iface">IButton</span>   <span class="fn">CreateButton</span>();
+    <span class="iface">ITextBox</span>  <span class="fn">CreateTextBox</span>();
+    <span class="iface">ICheckBox</span> <span class="fn">CreateCheckBox</span>();
+}
+
+<span class="cm">// ── Step 4: Concrete Factories — each creates a matching family ────</span>
+<span class="kw">public class</span> <span class="tp">DarkThemeFactory</span> : <span class="iface">IUIFactory</span>
+{
+    <span class="kw">public</span> <span class="iface">IButton</span>   <span class="fn">CreateButton</span>()   => <span class="kw">new</span> <span class="tp">DarkButton</span>();
+    <span class="kw">public</span> <span class="iface">ITextBox</span>  <span class="fn">CreateTextBox</span>()  => <span class="kw">new</span> <span class="tp">DarkTextBox</span>();
+    <span class="kw">public</span> <span class="iface">ICheckBox</span> <span class="fn">CreateCheckBox</span>() => <span class="kw">new</span> <span class="tp">DarkCheckBox</span>();
+}
+
+<span class="kw">public class</span> <span class="tp">LightThemeFactory</span> : <span class="iface">IUIFactory</span>
+{
+    <span class="kw">public</span> <span class="iface">IButton</span>   <span class="fn">CreateButton</span>()   => <span class="kw">new</span> <span class="tp">LightButton</span>();
+    <span class="kw">public</span> <span class="iface">ITextBox</span>  <span class="fn">CreateTextBox</span>()  => <span class="kw">new</span> <span class="tp">LightTextBox</span>();
+    <span class="kw">public</span> <span class="iface">ICheckBox</span> <span class="fn">CreateCheckBox</span>() => <span class="kw">new</span> <span class="tp">LightCheckBox</span>();
+}
+
+<span class="cm">// ── Step 5: Application uses the factory — doesn't know Dark or Light</span>
+<span class="kw">public class</span> <span class="tp">LoginForm</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IButton</span>   _submitBtn;
+    <span class="kw">private readonly</span> <span class="iface">ITextBox</span>  _usernameBox;
+    <span class="kw">private readonly</span> <span class="iface">ICheckBox</span> _rememberMe;
+
+    <span class="cm">// ✅ LoginForm only knows IUIFactory — not Dark or Light</span>
+    <span class="kw">public</span> <span class="fn">LoginForm</span>(<span class="iface">IUIFactory</span> factory)
+    {
+        _submitBtn   = factory.<span class="fn">CreateButton</span>();
+        _usernameBox = factory.<span class="fn">CreateTextBox</span>();
+        _rememberMe  = factory.<span class="fn">CreateCheckBox</span>();
+    }
+
+    <span class="kw">public void</span> <span class="fn">Render</span>()
+    {
+        _usernameBox.<span class="fn">Render</span>();
+        _rememberMe.<span class="fn">Render</span>();
+        _submitBtn.<span class="fn">Render</span>();
+    }
+}
+
+<span class="cm">// Switch entire theme by changing ONE line:</span>
+<span class="iface">IUIFactory</span> factory = <span class="kw">new</span> <span class="tp">DarkThemeFactory</span>();  <span class="cm">// or LightThemeFactory</span>
+<span class="kw">var</span> form = <span class="kw">new</span> <span class="tp">LoginForm</span>(factory);
+form.<span class="fn">Render</span>();
+<span class="cm">// [Dark TextBox]
+// [Dark CheckBox]
+// [Dark Button]</span></pre>
+  </div>
+
+  <h3>Real-World Example — Database Provider Factory</h3>
+
+  <div class="code-block abst">
+    <div class="code-label abst-c">C# — Database provider abstract factory</div>
+    <pre><span class="cm">// Create SQL Server vs SQLite families for production vs testing</span>
+<span class="kw">public interface</span> <span class="iface">IDbConnection</span> { <span class="kw">void</span> <span class="fn">Open</span>(); }
+<span class="kw">public interface</span> <span class="iface">IDbCommand</span>    { <span class="kw">void</span> <span class="fn">Execute</span>(<span class="kw">string</span> sql); }
+
+<span class="cm">// SQL Server family</span>
+<span class="kw">public class</span> <span class="tp">SqlConnection</span>  : <span class="iface">IDbConnection</span> { <span class="kw">public void</span> <span class="fn">Open</span>()                  => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"SQL Server connected"</span>); }
+<span class="kw">public class</span> <span class="tp">SqlCommand</span>     : <span class="iface">IDbCommand</span>    { <span class="kw">public void</span> <span class="fn">Execute</span>(<span class="kw">string</span> sql) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"SQL: {sql}"</span>); }
+
+<span class="cm">// SQLite family (for unit tests)</span>
+<span class="kw">public class</span> <span class="tp">SqliteConnection</span>: <span class="iface">IDbConnection</span> { <span class="kw">public void</span> <span class="fn">Open</span>()                  => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"SQLite connected"</span>); }
+<span class="kw">public class</span> <span class="tp">SqliteCommand</span>   : <span class="iface">IDbCommand</span>    { <span class="kw">public void</span> <span class="fn">Execute</span>(<span class="kw">string</span> sql) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"SQLite: {sql}"</span>); }
+
+<span class="kw">public interface</span> <span class="iface">IDbFactory</span>
+{
+    <span class="iface">IDbConnection</span> <span class="fn">CreateConnection</span>();
+    <span class="iface">IDbCommand</span>    <span class="fn">CreateCommand</span>();
+}
+
+<span class="kw">public class</span> <span class="tp">SqlServerFactory</span> : <span class="iface">IDbFactory</span>
+{
+    <span class="kw">public</span> <span class="iface">IDbConnection</span> <span class="fn">CreateConnection</span>() => <span class="kw">new</span> <span class="tp">SqlConnection</span>();
+    <span class="kw">public</span> <span class="iface">IDbCommand</span>    <span class="fn">CreateCommand</span>()    => <span class="kw">new</span> <span class="tp">SqlCommand</span>();
+}
+
+<span class="kw">public class</span> <span class="tp">SqliteFactory</span> : <span class="iface">IDbFactory</span>
+{
+    <span class="kw">public</span> <span class="iface">IDbConnection</span> <span class="fn">CreateConnection</span>() => <span class="kw">new</span> <span class="tp">SqliteConnection</span>();
+    <span class="kw">public</span> <span class="iface">IDbCommand</span>    <span class="fn">CreateCommand</span>()    => <span class="kw">new</span> <span class="tp">SqliteCommand</span>();
+}
+
+<span class="cm">// DataAccess doesn't care which DB — works with either factory</span>
+<span class="kw">public class</span> <span class="tp">DataAccess</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IDbFactory</span> _factory;
+    <span class="kw">public</span> <span class="fn">DataAccess</span>(<span class="iface">IDbFactory</span> factory) => _factory = factory;
+
+    <span class="kw">public void</span> <span class="fn">RunQuery</span>(<span class="kw">string</span> sql)
+    {
+        <span class="kw">var</span> conn = _factory.<span class="fn">CreateConnection</span>();
+        <span class="kw">var</span> cmd  = _factory.<span class="fn">CreateCommand</span>();
+        conn.<span class="fn">Open</span>();
+        cmd.<span class="fn">Execute</span>(sql);
+    }
+}
+
+<span class="cm">// Production: SQL Server · Tests: SQLite</span>
+<span class="kw">var</span> prod = <span class="kw">new</span> <span class="tp">DataAccess</span>(<span class="kw">new</span> <span class="tp">SqlServerFactory</span>());
+<span class="kw">var</span> test = <span class="kw">new</span> <span class="tp">DataAccess</span>(<span class="kw">new</span> <span class="tp">SqliteFactory</span>());</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new theme/provider by adding new factory class</span>
+    <span class="sb sb-d">D — App depends on IUIFactory, not DarkThemeFactory</span>
+    <span class="sb sb-l">L — Any IUIFactory can substitute for another</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — BUILDER
+══════════════════════════════════ -->
+<div id="tab-builder" class="tab-panel ph-build"><div class="section">
+  <h2>🔨 Builder Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Builder pattern lets you <strong>construct complex objects step by step</strong>. Instead of a constructor with 10 parameters (most of which are optional), you chain method calls to set only what you need. The object is only created when you call <code>Build()</code> at the end. It is especially useful when an object has many optional settings.</p>
+  </div>
+
+  <div class="analogy analogy-build">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Ordering a <strong>custom burger</strong>. You don't say "give me burger #4" (constructor with 4th preset). You say: bread = brioche, protein = double beef, add cheese, add lettuce, no tomato, sauce = bbq. You build it step by step, choosing only what you want. The kitchen (Builder) assembles it and hands you the finished burger (<code>Build()</code>). The result is exactly configured to your needs.</p>
+  </div>
+
+  <h3>The Problem — Constructor Hell</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Too many constructor parameters</div>
+    <pre><span class="cm">// ❌ CONSTRUCTOR HELL — what do all these parameters mean?</span>
+<span class="kw">var</span> email = <span class="kw">new</span> <span class="tp">Email</span>(
+    <span class="str">"noreply@company.com"</span>,
+    <span class="str">"alice@example.com"</span>,
+    <span class="kw">null</span>,
+    <span class="kw">null</span>,
+    <span class="str">"Your order is confirmed"</span>,
+    <span class="str">"&lt;h1&gt;Order #42&lt;/h1&gt;"</span>,
+    <span class="kw">true</span>,
+    <span class="kw">false</span>,
+    <span class="kw">null</span>,
+    <span class="num">3</span>);
+<span class="cm">// What is the 7th parameter? What does false mean? What is 3?
+// Impossible to read without looking at the constructor signature</span>
+
+<span class="cm">// Also problematic — too many optional parameters:</span>
+<span class="kw">public</span> <span class="tp">Email</span>(<span class="kw">string</span> from, <span class="kw">string</span> to,
+             <span class="kw">string</span>? cc = <span class="kw">null</span>, <span class="kw">string</span>? bcc = <span class="kw">null</span>,
+             <span class="kw">string</span> subject = <span class="str">""</span>, <span class="kw">string</span> body = <span class="str">""</span>,
+             <span class="kw">bool</span> isHtml = <span class="kw">false</span>, <span class="kw">bool</span> highPriority = <span class="kw">false</span>,
+             <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;? attachments = <span class="kw">null</span>, <span class="kw">int</span> retryCount = <span class="num">1</span>) { }</pre>
+  </div>
+
+  <h3>Builder Pattern Solution</h3>
+
+  <div class="code-block build">
+    <div class="code-label build-c">C# — Email Builder with fluent interface</div>
+    <pre><span class="cm">// ── Step 1: The object being built ────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">Email</span>
+{
+    <span class="kw">public string</span>       From        { <span class="kw">get</span>; <span class="kw">init</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span>       To          { <span class="kw">get</span>; <span class="kw">init</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span>?      Cc          { <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public string</span>       Subject     { <span class="kw">get</span>; <span class="kw">init</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span>       Body        { <span class="kw">get</span>; <span class="kw">init</span>; } = <span class="str">""</span>;
+    <span class="kw">public bool</span>         IsHtml      { <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public bool</span>         HighPriority{ <span class="kw">get</span>; <span class="kw">init</span>; }
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; Attachments { <span class="kw">get</span>; <span class="kw">init</span>; } = <span class="kw">new</span>();
+}
+
+<span class="cm">// ── Step 2: The Builder ────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">EmailBuilder</span>
+{
+    <span class="kw">private string</span>       _from        = <span class="str">""</span>;
+    <span class="kw">private string</span>       _to          = <span class="str">""</span>;
+    <span class="kw">private string</span>?      _cc;
+    <span class="kw">private string</span>       _subject     = <span class="str">""</span>;
+    <span class="kw">private string</span>       _body        = <span class="str">""</span>;
+    <span class="kw">private bool</span>         _isHtml;
+    <span class="kw">private bool</span>         _highPriority;
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _attachments = <span class="kw">new</span>();
+
+    <span class="cm">// Each method sets one property and returns THIS — enabling chaining</span>
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">From</span>(<span class="kw">string</span> from)        { _from = from; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">To</span>(<span class="kw">string</span> to)            { _to = to; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">Cc</span>(<span class="kw">string</span> cc)            { _cc = cc; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">WithSubject</span>(<span class="kw">string</span> s)    { _subject = s; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">WithBody</span>(<span class="kw">string</span> b)       { _body = b; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">AsHtml</span>()                 { _isHtml = <span class="kw">true</span>; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">HighPriority</span>()           { _highPriority = <span class="kw">true</span>; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">EmailBuilder</span> <span class="fn">Attach</span>(<span class="kw">string</span> path)      { _attachments.<span class="fn">Add</span>(path); <span class="kw">return this</span>; }
+
+    <span class="cm">// Validate and build the final object</span>
+    <span class="kw">public</span> <span class="tp">Email</span> <span class="fn">Build</span>()
+    {
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(_from)) <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"From is required"</span>);
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(_to))   <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"To is required"</span>);
+
+        <span class="kw">return new</span> <span class="tp">Email</span>
+        {
+            From         = _from,
+            To           = _to,
+            Cc           = _cc,
+            Subject      = _subject,
+            Body         = _body,
+            IsHtml       = _isHtml,
+            HighPriority = _highPriority,
+            Attachments  = _attachments
+        };
+    }
+}
+
+<span class="cm">// ✅ Fluent usage — reads like English, crystal clear</span>
+<span class="kw">var</span> email = <span class="kw">new</span> <span class="tp">EmailBuilder</span>()
+    .<span class="fn">From</span>(<span class="str">"noreply@company.com"</span>)
+    .<span class="fn">To</span>(<span class="str">"alice@example.com"</span>)
+    .<span class="fn">WithSubject</span>(<span class="str">"Your order is confirmed"</span>)
+    .<span class="fn">WithBody</span>(<span class="str">"&lt;h1&gt;Order #42 confirmed!&lt;/h1&gt;"</span>)
+    .<span class="fn">AsHtml</span>()
+    .<span class="fn">HighPriority</span>()
+    .<span class="fn">Attach</span>(<span class="str">"invoice.pdf"</span>)
+    .<span class="fn">Build</span>();</pre>
+  </div>
+
+  <h3>Real-World Example — SQL Query Builder</h3>
+
+  <div class="code-block build">
+    <div class="code-label build-c">C# — Query Builder (like EF Core's fluent API)</div>
+    <pre><span class="kw">public class</span> <span class="tp">QueryBuilder</span>
+{
+    <span class="kw">private string</span>  _table   = <span class="str">""</span>;
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _selects    = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; _conditions = <span class="kw">new</span>();
+    <span class="kw">private</span> <span class="kw">string</span>? _orderBy;
+    <span class="kw">private</span> <span class="kw">int</span>?    _limit;
+
+    <span class="kw">public</span> <span class="tp">QueryBuilder</span> <span class="fn">From</span>(<span class="kw">string</span> table)  { _table = table; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">QueryBuilder</span> <span class="fn">Select</span>(<span class="kw">params string</span>[] cols) { _selects.<span class="fn">AddRange</span>(cols); <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">QueryBuilder</span> <span class="fn">Where</span>(<span class="kw">string</span> cond)  { _conditions.<span class="fn">Add</span>(cond); <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">QueryBuilder</span> <span class="fn">OrderBy</span>(<span class="kw">string</span> col) { _orderBy = col; <span class="kw">return this</span>; }
+    <span class="kw">public</span> <span class="tp">QueryBuilder</span> <span class="fn">Limit</span>(<span class="kw">int</span> n)        { _limit = n; <span class="kw">return this</span>; }
+
+    <span class="kw">public string</span> <span class="fn">Build</span>()
+    {
+        <span class="kw">var</span> cols = _selects.Count > <span class="num">0</span> ? <span class="kw">string</span>.<span class="fn">Join</span>(<span class="str">", "</span>, _selects) : <span class="str">"*"</span>;
+        <span class="kw">var</span> sql  = <span class="str">$"SELECT {cols} FROM {_table}"</span>;
+        <span class="kw">if</span> (_conditions.Count > <span class="num">0</span>) sql += <span class="str">$" WHERE {string.Join(" AND ", _conditions)}"</span>;
+        <span class="kw">if</span> (_orderBy != <span class="kw">null</span>)        sql += <span class="str">$" ORDER BY {_orderBy}"</span>;
+        <span class="kw">if</span> (_limit   != <span class="kw">null</span>)        sql += <span class="str">$" LIMIT {_limit}"</span>;
+        <span class="kw">return</span> sql;
+    }
+}
+
+<span class="cm">// Usage — reads like SQL, builds it step by step</span>
+<span class="kw">var</span> query = <span class="kw">new</span> <span class="tp">QueryBuilder</span>()
+    .<span class="fn">From</span>(<span class="str">"Orders"</span>)
+    .<span class="fn">Select</span>(<span class="str">"Id"</span>, <span class="str">"CustomerName"</span>, <span class="str">"Total"</span>)
+    .<span class="fn">Where</span>(<span class="str">"Total > 100"</span>)
+    .<span class="fn">Where</span>(<span class="str">"Status = 'Active'"</span>)
+    .<span class="fn">OrderBy</span>(<span class="str">"Total DESC"</span>)
+    .<span class="fn">Limit</span>(<span class="num">50</span>)
+    .<span class="fn">Build</span>();
+<span class="cm">// "SELECT Id, CustomerName, Total FROM Orders WHERE Total > 100 AND Status = 'Active' ORDER BY Total DESC LIMIT 50"</span></pre>
+  </div>
+
+  <h3>When to Use Builder</h3>
+  <ul class="checklist cl-build">
+    <li>Object has more than 4 constructor parameters — especially optional ones</li>
+    <li>Object construction involves validation that should happen at the end</li>
+    <li>You want to create different representations of the same object (HTML email vs plain text email)</li>
+    <li>Configuration objects — HttpClient settings, database connection options</li>
+    <li>Test data builders — create test objects with only the fields you care about</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Builder handles construction; object handles behaviour</span>
+    <span class="sb sb-o">O — Add new build steps without modifying existing ones</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — PROTOTYPE
+══════════════════════════════════ -->
+<div id="tab-prototype" class="tab-panel ph-proto"><div class="section">
+  <h2>📋 Prototype Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Prototype pattern creates new objects by <strong>copying (cloning) an existing object</strong> instead of creating a brand new one from scratch. When creating a new object is expensive (lots of setup, database calls, calculations), or when you want a new object that starts with the same state as an existing one, cloning is the answer.</p>
+  </div>
+
+  <div class="analogy analogy-proto">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>In biology, a <strong>cell divides by copying itself</strong> — the new cell starts with the same DNA as the original. In a game, when you spawn 100 enemy soldiers they all start with the same configuration — health, weapons, speed — copied from a prototype soldier template. You don't reconfigure each one from scratch; you clone the template and then adjust individual differences.</p>
+  </div>
+
+  <h3>Shallow Clone vs Deep Clone</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔍 Shallow Clone (MemberwiseClone)</h4>
+      <ul>
+        <li>Copies all value types (int, bool, struct) by value</li>
+        <li>Copies reference types by reference — both objects share the same nested objects</li>
+        <li>Fast but dangerous if nested objects are mutable</li>
+        <li>Use when all fields are value types or immutable</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📋 Deep Clone</h4>
+      <ul>
+        <li>Copies everything recursively — all nested objects are also new</li>
+        <li>Changing the clone does NOT affect the original</li>
+        <li>Slower but safe for mutable nested objects</li>
+        <li>Use when the object has mutable reference-type fields</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block proto">
+    <div class="code-label proto-c">C# — Shallow vs Deep clone (ICloneable)</div>
+    <pre><span class="cm">// ── Shallow Clone — fast, but shared references ───────────────────</span>
+<span class="kw">public class</span> <span class="tp">Address</span>
+{
+    <span class="kw">public string</span> Street { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span> City   { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+}
+
+<span class="kw">public class</span> <span class="tp">Person</span> : <span class="iface">ICloneable</span>
+{
+    <span class="kw">public string</span>  Name    { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public int</span>     Age     { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="tp">Address</span> Address { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">new</span>();
+
+    <span class="cm">// Shallow clone — Address is SHARED between original and clone</span>
+    <span class="kw">public object</span> <span class="fn">Clone</span>() => <span class="fn">MemberwiseClone</span>();
+}
+
+<span class="kw">var</span> original = <span class="kw">new</span> <span class="tp">Person</span> { Name = <span class="str">"Alice"</span>, Age = <span class="num">30</span>, Address = <span class="kw">new</span> <span class="tp">Address</span> { City = <span class="str">"London"</span> } };
+<span class="kw">var</span> shallow  = (<span class="tp">Person</span>)original.<span class="fn">Clone</span>();
+
+shallow.Name       = <span class="str">"Bob"</span>;       <span class="cm">// ✅ doesn't affect original</span>
+shallow.Address.City = <span class="str">"Paris"</span>;  <span class="cm">// ❌ ALSO changes original.Address.City!</span>
+<span class="cm">// original.Address.City = "Paris" — both share the same Address object</span></pre>
+  </div>
+
+  <div class="code-block proto">
+    <div class="code-label proto-c">C# — Deep clone (safe, independent copy)</div>
+    <pre><span class="kw">public class</span> <span class="tp">Person</span>
+{
+    <span class="kw">public string</span>  Name    { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public int</span>     Age     { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="tp">Address</span> Address { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">new</span>();
+
+    <span class="cm">// ✅ Deep clone — creates a NEW Address object too</span>
+    <span class="kw">public</span> <span class="tp">Person</span> <span class="fn">DeepClone</span>() => <span class="kw">new</span> <span class="tp">Person</span>
+    {
+        Name    = Name,
+        Age     = Age,
+        Address = <span class="kw">new</span> <span class="tp">Address</span> { Street = Address.Street, City = Address.City }
+    };
+}
+
+<span class="kw">var</span> original = <span class="kw">new</span> <span class="tp">Person</span> { Name = <span class="str">"Alice"</span>, Age = <span class="num">30</span>, Address = <span class="kw">new</span> <span class="tp">Address</span> { City = <span class="str">"London"</span> } };
+<span class="kw">var</span> deep     = original.<span class="fn">DeepClone</span>();
+
+deep.Name        = <span class="str">"Bob"</span>;    <span class="cm">// ✅ doesn't affect original</span>
+deep.Address.City = <span class="str">"Paris"</span>; <span class="cm">// ✅ doesn't affect original.Address.City</span>
+<span class="cm">// original.Name = "Alice", original.Address.City = "London" ✅</span></pre>
+  </div>
+
+  <h3>Real-World Example — Game Character Template</h3>
+
+  <div class="code-block proto">
+    <div class="code-label proto-c">C# — Game enemy spawning with Prototype</div>
+    <pre><span class="kw">public class</span> <span class="tp">Enemy</span>
+{
+    <span class="kw">public string</span>         Name        { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public int</span>            Health      { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span>            Damage      { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public float</span>          Speed       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;  Abilities   { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">new</span>();
+
+    <span class="cm">// Deep clone — new enemy starts with same config as template</span>
+    <span class="kw">public</span> <span class="tp">Enemy</span> <span class="fn">Clone</span>() => <span class="kw">new</span> <span class="tp">Enemy</span>
+    {
+        Name      = Name,
+        Health    = Health,
+        Damage    = Damage,
+        Speed     = Speed,
+        Abilities = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;(Abilities)  <span class="cm">// ✅ new list, same contents</span>
+    };
+}
+
+<span class="cm">// Create prototype templates once</span>
+<span class="kw">var</span> goblinTemplate = <span class="kw">new</span> <span class="tp">Enemy</span>
+{
+    Name      = <span class="str">"Goblin"</span>,
+    Health    = <span class="num">50</span>,
+    Damage    = <span class="num">10</span>,
+    Speed     = <span class="num">1.5f</span>,
+    Abilities = { <span class="str">"Sneak"</span>, <span class="str">"Steal"</span> }
+};
+
+<span class="kw">var</span> trollTemplate = <span class="kw">new</span> <span class="tp">Enemy</span>
+{
+    Name      = <span class="str">"Troll"</span>,
+    Health    = <span class="num">200</span>,
+    Damage    = <span class="num">40</span>,
+    Speed     = <span class="num">0.8f</span>,
+    Abilities = { <span class="str">"Smash"</span>, <span class="str">"Regenerate"</span> }
+};
+
+<span class="cm">// Spawn 100 goblins — each is a fast clone of the template</span>
+<span class="kw">var</span> enemies = <span class="tp">Enumerable</span>.<span class="fn">Range</span>(<span class="num">0</span>, <span class="num">100</span>)
+    .<span class="fn">Select</span>(_ =>
+    {
+        <span class="kw">var</span> e = goblinTemplate.<span class="fn">Clone</span>();
+        e.Health += <span class="tp">Random</span>.Shared.<span class="fn">Next</span>(-<span class="num">10</span>, <span class="num">10</span>);  <span class="cm">// slight variation per enemy</span>
+        <span class="kw">return</span> e;
+    })
+    .<span class="fn">ToList</span>();
+
+<span class="cm">// Each enemy is independent — modifying one doesn't affect others or the template</span></pre>
+  </div>
+
+  <h3>Modern C# Alternative — Record with with</h3>
+
+  <div class="code-block proto">
+    <div class="code-label proto-c">C# — Records make cloning trivial</div>
+    <pre><span class="cm">// C# records have built-in non-destructive mutation with "with"
+// Perfect replacement for Prototype in many modern scenarios</span>
+
+<span class="kw">public record</span> <span class="tp">EnemyConfig</span>(
+    <span class="kw">string</span> Name,
+    <span class="kw">int</span>    Health,
+    <span class="kw">int</span>    Damage,
+    <span class="kw">float</span>  Speed
+);
+
+<span class="kw">var</span> goblinProto = <span class="kw">new</span> <span class="tp">EnemyConfig</span>(<span class="str">"Goblin"</span>, <span class="num">50</span>, <span class="num">10</span>, <span class="num">1.5f</span>);
+
+<span class="cm">// "with" creates a new record with some properties changed — the rest are copied</span>
+<span class="kw">var</span> bossGoblin = goblinProto <span class="kw">with</span> { Name = <span class="str">"Boss Goblin"</span>, Health = <span class="num">200</span>, Damage = <span class="num">30</span> };
+<span class="kw">var</span> fastGoblin = goblinProto <span class="kw">with</span> { Speed = <span class="num">3.0f</span> };
+
+<span class="cm">// goblinProto unchanged ✅
+// bossGoblin: Name=Boss Goblin, Health=200, Damage=30, Speed=1.5f
+// fastGoblin: Name=Goblin, Health=50, Damage=10, Speed=3.0f</span></pre>
+  </div>
+
+  <h3>When to Use Prototype</h3>
+  <ul class="checklist cl-proto">
+    <li>Creating a new object from scratch is expensive (complex setup, DB calls, file loading)</li>
+    <li>You need many similar objects that differ in only a few properties</li>
+    <li>You want to save and restore object states (combined with Memento pattern)</li>
+    <li>Game development — spawning enemies, bullets, particles from templates</li>
+    <li>Document editors — duplicating slides, pages, or templates</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new cloneable types without changing client code</span>
+    <span class="sb sb-d">D — Client uses ICloneable interface, not concrete class</span>
+  </div>
+
+  <div class="completion">
+    <h3>Creational Patterns Complete!</h3>
+    <p>Singleton — one instance guaranteed, prefer DI over static · Factory Method — centralise creation, depend on interfaces · Abstract Factory — create families of related objects, swap entire themes/providers · Builder — construct complex objects step by step with fluent API, validation at Build() · Prototype — clone existing objects instead of creating from scratch, understand shallow vs deep clone · Records with <code>with</code> as a modern C# prototype · SOLID connections for every pattern · Real-world C# examples throughout</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Creational</span>
+      <span class="np np-next">→ Part 2: Structural</span>
+      <span class="np np-future">Part 3: Behavioural</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

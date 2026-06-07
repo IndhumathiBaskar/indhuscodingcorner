@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C# Async Programming — Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#eceffe;--card:#fff;--border:#dce0f5;--border2:#b8bfe8;
+  --async:#0e6abf;--async-l:#d6ebf8;--async-d:#0a4a8a;
+  --task:#1a8a5a;--task-l:#d4f0e4;--task-d:#0d5c38;
+  --await:#7a2abf;--await-l:#eee0f8;--await-d:#4a1580;
+  --warn:#c47a0a;--warn-l:#fef3d8;--warn-d:#8a5200;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --teal:#0e7a8a;--teal-l:#d0eff5;--teal-d:#095a68;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(14,106,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{
+  background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d2040 100%);
+  border-bottom:1px solid #0a1a30;
+  padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);
+  text-align:center;position:relative;overflow:hidden;
+}
+.header::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 50%,rgba(14,106,191,.35) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 30%,rgba(26,138,90,.2) 0%,transparent 50%),
+    radial-gradient(ellipse at 60% 80%,rgba(122,42,191,.15) 0%,transparent 50%);
+  pointer-events:none;
+}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:16px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:10px;letter-spacing:-.03em;position:relative;}
+.header h1 .hl-a{color:#60a5fa;}.header h1 .hl-s{color:#34d399;}.header h1 .hl-y{color:#c084fc;}
+.header p{color:rgba(255,255,255,.6);font-size:.9rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:16px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--async-l);color:var(--async-d);font-weight:700;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--async-d);font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;border-bottom:3px solid var(--async-l);letter-spacing:-.02em;}
+.section h3{color:var(--async-d);font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#eceffe,#e4ecff);border:1.5px solid var(--border);border-left:4px solid var(--async);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--async-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{background:var(--warn-l);border:1.5px solid rgba(196,122,10,.2);border-left:4px solid var(--warn);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--warn-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn-box{background:var(--warn-l);border:1px solid rgba(196,122,10,.2);border-left:4px solid var(--warn);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn-box h4{color:var(--warn-d);margin-bottom:5px;font-size:.87rem;}
+.warn-box p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.success h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.success p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:8px;}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:13px;}
+.step-num{background:var(--async);color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(14,106,191,.3);}
+.step-body{background:var(--surface);padding:13px 15px;border-radius:var(--r);flex:1;border-left:3px solid var(--async);}
+.step-body h4{color:var(--async-d);margin-bottom:5px;font-size:.9rem;}
+.step-body p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--async-d);margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(165px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.neutral{border-left:4px solid var(--async);}
+.code-block.task{border-left:4px solid var(--task-d);}
+.code-block.await-c{border-left:4px solid var(--await);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}.code-label.good{color:#86efac;}.code-label.neutral{color:#93c5fd;}.code-label.task-c{color:#6ee7b7;}.code-label.await-c{color:#c4b5fd;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.cl-warn{background:rgba(251,191,36,.15);color:#fbbf24;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(14,106,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--async-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-left:3px solid var(--async);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.checklist li:before{content:"✓ ";color:var(--async);font-weight:700;}
+.checklist.c-g li{border-left-color:var(--green);}
+.checklist.c-g li:before{color:var(--green);}
+.checklist.c-r li{border-left-color:var(--red);}
+.checklist.c-r li:before{content:"✗ ";color:var(--red);}
+
+/* FLOW NODES */
+.flow{margin:16px 0;}
+.flow-node{border-radius:var(--r);padding:13px 16px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.9rem;margin-bottom:7px;display:flex;align-items:center;gap:8px;}
+.flow-items{list-style:none;font-size:.8rem;color:var(--text2);}
+.flow-items li{padding:3px 0 3px 15px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--async);}
+.flow-arrow{text-align:center;padding:5px 0;color:var(--border2);font-size:1.4rem;line-height:1;}
+.flow-row{display:flex;gap:10px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-async{background:var(--async-l);border:1.5px solid rgba(14,106,191,.25);}
+.n-async .flow-node-title{color:var(--async-d);}
+.n-task{background:var(--task-l);border:1.5px solid rgba(26,138,90,.2);}
+.n-task .flow-node-title{color:var(--task-d);}
+.n-await{background:var(--await-l);border:1.5px solid rgba(122,42,191,.2);}
+.n-await .flow-node-title{color:var(--await-d);}
+.n-warn{background:var(--warn-l);border:1.5px solid rgba(196,122,10,.2);}
+.n-warn .flow-node-title{color:var(--warn-d);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(14,122,138,.2);}
+.n-teal .flow-node-title{color:var(--teal-d);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{background:linear-gradient(90deg,var(--async-l),var(--task-l));padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.63rem;}
+  .step{gap:9px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">C# Deep Dive Series · Beginner to Expert</div>
+    <h1>C# <span class="hl-a">Async</span><span class="hl-s">hronous</span> <span class="hl-y">Programming</span></h1>
+    <p>async · await · Task · Task&lt;T&gt; · Parallel · CancellationToken · WhenAll · WhenAny · Deadlocks · Best Practices</p>
+    <div class="header-chips">
+      <span class="chip">async/await</span>
+      <span class="chip">Task & Task&lt;T&gt;</span>
+      <span class="chip">CancellationToken</span>
+      <span class="chip">WhenAll / WhenAny</span>
+      <span class="chip">Parallel.ForEach</span>
+      <span class="chip">Deadlock prevention</span>
+      <span class="chip">ValueTask</span>
+      <span class="chip">IAsyncEnumerable</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('why',this)">① Why Async?</button>
+      <button class="tab-btn" onclick="T('task',this)">② Task &amp; Task&lt;T&gt;</button>
+      <button class="tab-btn" onclick="T('asyncawait',this)">③ async / await</button>
+      <button class="tab-btn" onclick="T('patterns',this)">④ Async Patterns</button>
+      <button class="tab-btn" onclick="T('cancel',this)">⑤ Cancellation</button>
+      <button class="tab-btn" onclick="T('parallel',this)">⑥ Parallel &amp; PLINQ</button>
+      <button class="tab-btn" onclick="T('advanced',this)">⑦ Advanced Topics</button>
+      <button class="tab-btn" onclick="T('mistakes',this)">⑧ Mistakes &amp; Pitfalls</button>
+      <button class="tab-btn" onclick="T('realworld',this)">⑨ Real-World Patterns</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════
+     TAB 1 — WHY ASYNC?
+══════════════════════════════════════════════════ -->
+<div id="tab-why" class="tab-panel active"><div class="section">
+  <h2>🤔 Why Do We Need Async Programming?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — The Problem Async Solves</div>
+    <p>Imagine you are at a coffee shop. You order a coffee. The barista could stare at the machine doing nothing while it brews (synchronous). Or the barista could take the next customer's order while your coffee brews (asynchronous). Async programming lets your program keep working while waiting for slow operations — database queries, API calls, file reads — instead of freezing and doing nothing.</p>
+  </div>
+
+  <h3>Synchronous vs Asynchronous — The Core Difference</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⏱️ Sync vs Async — Timeline Comparison</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+        </defs>
+
+        <!-- SYNC side -->
+        <text x="170" y="22" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#b02a37" text-anchor="middle">❌ SYNCHRONOUS (Blocking)</text>
+        <text x="170" y="38" font-family="Sora,sans-serif" font-size="10" fill="#606278" text-anchor="middle">Thread is FROZEN while waiting</text>
+
+        <!-- Sync timeline -->
+        <rect x="20" y="50" width="300" height="28" rx="5" fill="#f87171" opacity=".8"/>
+        <text x="170" y="69" font-family="JetBrains Mono,monospace" font-size="10" fill="#fff" text-anchor="middle">Work → DB Query (BLOCKED 2s) → Continue</text>
+
+        <rect x="20" y="88" width="80" height="24" rx="4" fill="#d6ebf8" stroke="#0e6abf" stroke-width="1"/>
+        <text x="60" y="104" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4a8a" text-anchor="middle">Before</text>
+
+        <rect x="100" y="88" width="140" height="24" rx="4" fill="#fee2e2" stroke="#b02a37" stroke-width="1.5"/>
+        <text x="170" y="104" font-family="JetBrains Mono,monospace" font-size="9" fill="#b02a37" text-anchor="middle">⏳ WAITING — doing nothing</text>
+
+        <rect x="240" y="88" width="80" height="24" rx="4" fill="#d4f0e4" stroke="#1f7a52" stroke-width="1"/>
+        <text x="280" y="104" font-family="JetBrains Mono,monospace" font-size="9" fill="#1f7a52" text-anchor="middle">After</text>
+
+        <text x="170" y="130" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Total time: 2.5 seconds · Thread FROZEN during wait</text>
+
+        <!-- Divider -->
+        <line x1="360" y1="20" x2="360" y2="200" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+        <!-- ASYNC side -->
+        <text x="540" y="22" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#1f7a52" text-anchor="middle">✅ ASYNCHRONOUS (Non-Blocking)</text>
+        <text x="540" y="38" font-family="Sora,sans-serif" font-size="10" fill="#606278" text-anchor="middle">Thread is FREE to do other work</text>
+
+        <!-- Async timeline — thread 1 -->
+        <text x="390" y="58" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278">Thread:</text>
+        <rect x="390" y="65" width="60" height="22" rx="4" fill="#d6ebf8" stroke="#0e6abf" stroke-width="1"/>
+        <text x="420" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#0a4a8a" text-anchor="middle">Before</text>
+
+        <rect x="452" y="65" width="10" height="22" rx="2" fill="#c4b5fd"/>
+        <text x="457" y="80" font-family="JetBrains Mono,monospace" font-size="7" fill="#4a1580" text-anchor="middle">→</text>
+
+        <rect x="462" y="65" width="100" height="22" rx="4" fill="#d4f0e4" stroke="#1f7a52" stroke-width="1"/>
+        <text x="512" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">Other work here!</text>
+
+        <rect x="564" y="65" width="10" height="22" rx="2" fill="#c4b5fd"/>
+        <rect x="576" y="65" width="60" height="22" rx="4" fill="#d4f0e4" stroke="#1f7a52" stroke-width="1"/>
+        <text x="606" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">After</text>
+
+        <!-- Async DB wait line (background) -->
+        <text x="390" y="103" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278">I/O:</text>
+        <rect x="450" y="95" width="140" height="18" rx="4" fill="rgba(196,122,10,.15)" stroke="rgba(196,122,10,.4)" stroke-width="1" stroke-dasharray="4,2"/>
+        <text x="520" y="108" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a5200" text-anchor="middle">DB query (2s) — no thread used</text>
+
+        <text x="540" y="130" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Total time: 2.0 seconds · Thread FREE during wait</text>
+
+        <!-- Labels -->
+        <text x="360" y="175" font-family="Sora,sans-serif" font-size="11" fill="#606278" text-anchor="middle">Sync: thread sits idle waiting · Async: thread goes and does useful work while I/O completes</text>
+        <text x="360" y="195" font-family="Sora,sans-serif" font-size="10" fill="#9a9ab0" text-anchor="middle">In a web server: sync = 1 request per thread · async = thousands of requests on same threads</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>The Three Slow Operations That Need Async</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Network / API calls</h4><p>HTTP requests, REST APIs, web services. Can take 10ms to 10 seconds. Thread should not wait.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>Database queries</h4><p>SQL queries, ORMs, NoSQL. Can take milliseconds to minutes. Classic async candidate.</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>File / disk I/O</h4><p>Reading files, writing logs, accessing network drives. Disk speed is much slower than CPU.</p></div>
+  </div>
+
+  <h3>What Happens Without Async</h3>
+  <div class="compare">
+    <div class="bad-box">
+      <div class="box-label">❌ Synchronous Problems</div>
+      <ul style="padding-left:14px;font-size:.82rem;color:var(--muted);">
+        <li style="margin-bottom:5px;">UI apps freeze — window becomes unresponsive while waiting</li>
+        <li style="margin-bottom:5px;">Web servers run out of threads — under load, new requests queue up</li>
+        <li style="margin-bottom:5px;">Thread is 100% blocked — wasting memory (1MB per thread stack)</li>
+        <li style="margin-bottom:5px;">Scalability ceiling hit quickly — maybe 100 concurrent users</li>
+      </ul>
+    </div>
+    <div class="good-box">
+      <div class="box-label">✅ Async Benefits</div>
+      <ul style="padding-left:14px;font-size:.82rem;color:var(--muted);">
+        <li style="margin-bottom:5px;">UI stays responsive — progress bars, cancel buttons work</li>
+        <li style="margin-bottom:5px;">Web server handles thousands of concurrent requests on few threads</li>
+        <li style="margin-bottom:5px;">Thread returns to pool during I/O — serves other requests</li>
+        <li style="margin-bottom:5px;">Massively better scalability — same hardware serves more users</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Async Is NOT About Speed — It's About Efficiency</h3>
+  <div class="tip">
+    <h4>💡 Critical Misconception to Avoid</h4>
+    <p>Async does NOT make a single database query run faster. If a query takes 2 seconds, it still takes 2 seconds. What async does is free the thread during those 2 seconds to do other work. On a web server handling 1000 simultaneous users, this is the difference between needing 1000 threads (crashing) and needing 10 threads (fine). Async is about <strong>resource efficiency and scalability</strong>, not raw speed.</p>
+  </div>
+
+  <h3>Sync vs Async vs Parallel — Know the Difference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>What it means</th><th>Use when</th><th>C# keyword</th></tr>
+    <tr><td><strong>Synchronous</strong></td><td>One thing at a time, waits for each to finish</td><td>Simple scripts, no I/O</td><td>(default)</td></tr>
+    <tr><td><strong>Asynchronous</strong></td><td>Start slow I/O, free thread, resume when done</td><td>Database, network, file I/O</td><td><code>async/await</code></td></tr>
+    <tr><td><strong>Parallel</strong></td><td>Multiple threads working simultaneously on CPU work</td><td>CPU-heavy computation, data processing</td><td><code>Parallel</code>, <code>PLINQ</code></td></tr>
+    <tr><td><strong>Concurrent</strong></td><td>Multiple things making progress, may or may not be parallel</td><td>General term covering both above</td><td>Both</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 2 — TASK & TASK<T>
+══════════════════════════════════════════════════ -->
+<div id="tab-task" class="tab-panel"><div class="section">
+  <h2>📦 Task and Task&lt;T&gt;</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is a Task?</div>
+    <p>A <code>Task</code> is an object that <strong>represents an ongoing operation</strong>. Think of it like a receipt you get when you order food — the food isn't ready yet, but you have a receipt that represents "your food will be ready eventually". You can check on it, wait for it, or cancel it. In C#, when a method does async work it returns a <code>Task</code> instead of making you wait.</p>
+  </div>
+
+  <h3>Task vs Task&lt;T&gt; — The Difference</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📋 Task — operation with no return value</h4>
+      <ul>
+        <li>Like <code>void</code> but for async operations</li>
+        <li>Use when the operation just does something (save, send email, delete)</li>
+        <li>Example: <code>Task SaveAsync()</code></li>
+        <li>Completes, fails, or gets cancelled — no result value</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📦 Task&lt;T&gt; — operation that returns a value</h4>
+      <ul>
+        <li>Like a <code>T</code> return type but for async operations</li>
+        <li>Use when you need a result (query returns data, API returns JSON)</li>
+        <li>Example: <code>Task&lt;User&gt; GetUserAsync(int id)</code></li>
+        <li>When awaited, you get back the <code>T</code> value</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Task States</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-async">
+        <div class="flow-node-title">⏳ Created / WaitingToRun</div>
+        <ul class="flow-items"><li>Task has been created but not started yet</li></ul>
+      </div>
+      <div class="flow-node n-warn">
+        <div class="flow-node-title">🔄 Running / WaitingForActivation</div>
+        <ul class="flow-items"><li>Operation is in progress, I/O is happening</li></ul>
+      </div>
+    </div>
+    <div class="flow-arrow">↓ completes in one of three ways</div>
+    <div class="flow-row">
+      <div class="flow-node n-task">
+        <div class="flow-node-title">✅ RanToCompletion</div>
+        <ul class="flow-items"><li>Finished successfully</li><li>Result available (if Task&lt;T&gt;)</li></ul>
+      </div>
+      <div class="flow-node n-bad">
+        <div class="flow-node-title">❌ Faulted</div>
+        <ul class="flow-items"><li>An exception was thrown</li><li>Exception stored in Task.Exception</li></ul>
+      </div>
+      <div class="flow-node n-warn">
+        <div class="flow-node-title">🚫 Cancelled</div>
+        <ul class="flow-items"><li>CancellationToken was cancelled</li><li>OperationCanceledException thrown</li></ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Creating Tasks</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Ways to create Tasks</div>
+    <pre><span class="cm">// ── Method 1: async method (most common) ─────────────────────────</span>
+<span class="cm">// Just mark the method async — it automatically returns a Task</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SaveDataAsync</span>()
+{
+    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">1000</span>);  <span class="cm">// simulates slow work</span>
+}
+
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetNameAsync</span>()
+{
+    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">500</span>);
+    <span class="kw">return</span> <span class="str">"Alice"</span>;  <span class="cm">// Task&lt;string&gt; automatically wraps this</span>
+}
+
+<span class="cm">// ── Method 2: Task.Run — offload CPU work to background thread ─────</span>
+<span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt; <span class="fn">HeavyComputeAsync</span>()
+    => <span class="tp">Task</span>.<span class="fn">Run</span>(() =>
+    {
+        <span class="cm">// Runs on a ThreadPool thread — doesn't block caller</span>
+        <span class="kw">int</span> sum = <span class="num">0</span>;
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < <span class="num">1_000_000</span>; i++) sum += i;
+        <span class="kw">return</span> sum;
+    });
+
+<span class="cm">// ── Method 3: Task.FromResult — return a completed Task immediately ─</span>
+<span class="cm">// Use when you have the result already (cache hit, test stub)</span>
+<span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetCachedNameAsync</span>()
+    => <span class="tp">Task</span>.<span class="fn">FromResult</span>(<span class="str">"Bob"</span>);  <span class="cm">// instantly completed Task</span>
+
+<span class="cm">// ── Method 4: Task.CompletedTask — return a completed void Task ────</span>
+<span class="kw">public</span> <span class="tp">Task</span> <span class="fn">DoNothingAsync</span>()
+    => <span class="tp">Task</span>.CompletedTask;  <span class="cm">// use in interface implementations</span>
+
+<span class="cm">// ── Method 5: TaskCompletionSource — manual control ───────────────</span>
+<span class="cm">// Use when wrapping non-async APIs (events, callbacks)</span>
+<span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">WaitForUserInputAsync</span>()
+{
+    <span class="kw">var</span> tcs = <span class="kw">new</span> <span class="tp">TaskCompletionSource</span>&lt;<span class="kw">string</span>&gt;();
+    <span class="cm">// Somewhere else: tcs.SetResult("user typed this");</span>
+    <span class="cm">// Or on error:    tcs.SetException(new Exception("..."));</span>
+    <span class="kw">return</span> tcs.Task;
+}</pre>
+  </div>
+
+  <h3>Task Utility Methods</h3>
+
+  <div class="code-block task">
+    <div class="code-label task-c">C# — Essential Task methods</div>
+    <pre><span class="cm">// ── Task.Delay — async version of Thread.Sleep ────────────────────</span>
+<span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">2000</span>);                        <span class="cm">// wait 2 seconds, don't block thread</span>
+<span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">2</span>));   <span class="cm">// same, more readable</span>
+
+<span class="cm">// ── Task.WhenAll — wait for MULTIPLE tasks to ALL finish ──────────</span>
+<span class="kw">var</span> task1 = <span class="fn">GetUserAsync</span>(<span class="num">1</span>);
+<span class="kw">var</span> task2 = <span class="fn">GetUserAsync</span>(<span class="num">2</span>);
+<span class="kw">var</span> task3 = <span class="fn">GetUserAsync</span>(<span class="num">3</span>);
+
+<span class="cm">// All 3 run concurrently — total time = slowest single task</span>
+<span class="tp">User</span>[] users = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(task1, task2, task3);
+
+<span class="cm">// ── Task.WhenAny — wait until FIRST task finishes ─────────────────</span>
+<span class="kw">var</span> winner = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAny</span>(task1, task2, task3);
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"First to finish: {winner.Result.Name}"</span>);
+
+<span class="cm">// ── Timeout pattern using WhenAny ────────────────────────────────</span>
+<span class="kw">var</span> operationTask = <span class="fn">LongRunningOperationAsync</span>();
+<span class="kw">var</span> timeoutTask   = <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>));
+
+<span class="kw">var</span> completed = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAny</span>(operationTask, timeoutTask);
+
+<span class="kw">if</span> (completed == timeoutTask)
+    <span class="kw">throw new</span> <span class="tp">TimeoutException</span>(<span class="str">"Operation took too long!"</span>);
+
+<span class="kw">var</span> result = <span class="kw">await</span> operationTask;  <span class="cm">// safe to await — already completed</span>
+
+<span class="cm">// ── Task.Run — move CPU work to background thread ─────────────────</span>
+<span class="kw">var</span> result2 = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Run</span>(() =>
+{
+    <span class="cm">// Heavy CPU work — won't block UI thread</span>
+    <span class="kw">return</span> <span class="fn">ProcessLargeDataSet</span>(data);
+});</pre>
+  </div>
+
+  <h3>Checking Task Status in Code</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Inspecting Task state</div>
+    <pre><span class="kw">var</span> task = <span class="fn">GetDataAsync</span>();
+
+<span class="cm">// Check if done (don't block — just check)</span>
+<span class="kw">if</span> (task.IsCompleted)         <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Done (success, fault, or cancel)"</span>);
+<span class="kw">if</span> (task.IsCompletedSuccessfully) <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Finished successfully"</span>);
+<span class="kw">if</span> (task.IsFaulted)           <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Error: {task.Exception}"</span>);
+<span class="kw">if</span> (task.IsCanceled)          <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Was cancelled"</span>);
+
+<span class="cm">// Get result synchronously (WARNING: can deadlock — see Tab 8)</span>
+<span class="cm">// Only safe if you KNOW the task is already completed</span>
+<span class="kw">if</span> (task.IsCompletedSuccessfully)
+{
+    <span class="kw">var</span> result = task.Result;  <span class="cm">// safe only when already done</span>
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 3 — ASYNC / AWAIT
+══════════════════════════════════════════════════ -->
+<div id="tab-asyncawait" class="tab-panel"><div class="section">
+  <h2>⚡ async and await Keywords</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 The Two Keywords That Do Everything</div>
+    <p><code>async</code> marks a method as asynchronous. <code>await</code> says "pause here and wait for this task to complete, but <strong>don't block the thread</strong> — let it go do other work and come back when the task is done". They always work together — you can only use <code>await</code> inside an <code>async</code> method.</p>
+  </div>
+
+  <h3>The Simplest Possible Example</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Your first async method</div>
+    <pre><span class="cm">// BEFORE: synchronous — BLOCKS the thread for 2 seconds</span>
+<span class="kw">public void</span> <span class="fn">SlowMethod</span>()
+{
+    <span class="tp">Thread</span>.<span class="fn">Sleep</span>(<span class="num">2000</span>);           <span class="cm">// ❌ blocks thread completely</span>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Done"</span>);
+}
+
+<span class="cm">// AFTER: async — frees the thread during the 2 second wait</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SlowMethodAsync</span>()    <span class="cm">// ← async keyword here</span>
+{
+    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">2000</span>);          <span class="cm">// ← await keyword here, thread is FREE</span>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Done"</span>);        <span class="cm">// ← resumes here after 2 seconds</span>
+}
+
+<span class="cm">// With a return value:</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetMessageAsync</span>()
+{
+    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">500</span>);        <span class="cm">// simulate network call</span>
+    <span class="kw">return</span> <span class="str">"Hello from async!"</span>;  <span class="cm">// C# wraps this in Task&lt;string&gt; automatically</span>
+}
+
+<span class="cm">// Calling it:</span>
+<span class="kw">string</span> message = <span class="kw">await</span> <span class="fn">GetMessageAsync</span>();  <span class="cm">// await unwraps Task&lt;string&gt; to string</span>
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(message);  <span class="cm">// "Hello from async!"</span></pre>
+  </div>
+
+  <h3>What await Actually Does — Step by Step</h3>
+
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>You call an async method</h4><p>The method starts running normally, just like a synchronous method, until it hits an <code>await</code>.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>await hits a Task that isn't completed yet</h4><p>The C# compiler registers a "continuation" — a callback saying "when this task finishes, come back to line X". Then the method returns a Task to the caller.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>The thread is released</h4><p>The thread goes back to the thread pool. In a web server, it picks up another incoming request. In a WPF app, it goes back to processing UI events. Nothing is blocked.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>I/O completes in the background</h4><p>The operating system or network stack signals completion. The .NET runtime picks a thread from the pool to continue your method.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body"><h4>Method resumes from where it left off</h4><p>Execution continues on the line after the <code>await</code>. All local variables are still there exactly as you left them. It feels like the method never paused.</p></div>
+  </div>
+
+  <h3>Async Method Signatures</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — All valid async method signatures</div>
+    <pre><span class="cm">// ── Returns Task (no value, like async void but correct) ──────────</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>() { <span class="kw">await</span> <span class="fn">DoSomethingAsync</span>(); }
+
+<span class="cm">// ── Returns Task&lt;T&gt; (returns a value) ────────────────────────────</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt;  <span class="fn">GetNameAsync</span>()   { <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">1</span>); <span class="kw">return</span> <span class="str">"Alice"</span>; }
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt;     <span class="fn">GetCountAsync</span>()  { <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">1</span>); <span class="kw">return</span> <span class="num">42</span>; }
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">User</span>&gt;&gt; <span class="fn">GetUsersAsync</span>() { <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">1</span>); <span class="kw">return</span> <span class="kw">new</span>(); }
+
+<span class="cm">// ── Returns ValueTask (performance optimisation — see Tab 7) ──────</span>
+<span class="kw">public async</span> <span class="tp">ValueTask</span>&lt;<span class="kw">int</span>&gt; <span class="fn">GetCachedCountAsync</span>()
+{
+    <span class="kw">if</span> (_cache != <span class="kw">null</span>) <span class="kw">return</span> _cache.Value;  <span class="cm">// no allocation if cached</span>
+    <span class="kw">return</span> <span class="kw">await</span> <span class="fn">FetchFromDbAsync</span>();
+}
+
+<span class="cm">// ── async void — ONLY for event handlers (exceptions are unhandled!) ─</span>
+<span class="kw">private async void</span> <span class="fn">Button_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    <span class="kw">await</span> <span class="fn">LoadDataAsync</span>();  <span class="cm">// acceptable here — event handler</span>
+}
+<span class="cm">// ⚠️ Never use async void except for event handlers</span></pre>
+  </div>
+
+  <h3>Exception Handling in Async</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — try/catch works naturally with async/await</div>
+    <pre><span class="cm">// ✅ Exceptions from async methods are caught normally with try/catch</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadDataAsync</span>()
+{
+    <span class="kw">try</span>
+    {
+        <span class="kw">var</span> data = <span class="kw">await</span> _repository.<span class="fn">GetDataAsync</span>();  <span class="cm">// might throw</span>
+        <span class="kw">var</span> result = <span class="kw">await</span> _service.<span class="fn">ProcessAsync</span>(data); <span class="cm">// might throw</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(result);
+    }
+    <span class="kw">catch</span> (<span class="tp">HttpRequestException</span> ex)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Network error: {ex.Message}"</span>);
+    }
+    <span class="kw">catch</span> (<span class="tp">TimeoutException</span> ex)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Timed out: {ex.Message}"</span>);
+    }
+    <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Unexpected error: {ex.Message}"</span>);
+    }
+    <span class="kw">finally</span>
+    {
+        <span class="cm">// finally always runs — async or not</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Cleanup done"</span>);
+    }
+}
+
+<span class="cm">// Handling Task.WhenAll exceptions — multiple exceptions can occur</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RunMultipleAsync</span>()
+{
+    <span class="kw">var</span> task1 = <span class="fn">MightFailAsync</span>();
+    <span class="kw">var</span> task2 = <span class="fn">MightFailAsync</span>();
+
+    <span class="kw">try</span>
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(task1, task2);
+    }
+    <span class="kw">catch</span>
+    {
+        <span class="cm">// Check each task individually for its exception</span>
+        <span class="kw">if</span> (task1.IsFaulted) <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Task1 failed: {task1.Exception?.InnerException?.Message}"</span>);
+        <span class="kw">if</span> (task2.IsFaulted) <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Task2 failed: {task2.Exception?.InnerException?.Message}"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>ConfigureAwait — What It Does</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — ConfigureAwait explained</div>
+    <pre><span class="cm">// By default, await tries to resume on the ORIGINAL context
+// (UI thread for WPF/WinForms, request context for ASP.NET)
+
+// In a WPF button click — resumes on UI thread (needed to update UI)
+<span class="kw">private async void</span> <span class="fn">Button_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    <span class="kw">var</span> data = <span class="kw">await</span> <span class="fn">LoadDataAsync</span>();     <span class="cm">// resumes on UI thread</span>
+    lblResult.Text = data;                  <span class="cm">// safe to update UI</span>
+}
+
+// ConfigureAwait(false) — don't need to resume on original context
+// Use in library code and services — slightly more efficient
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">LibraryMethodAsync</span>()
+{
+    <span class="kw">var</span> data = <span class="kw">await</span> <span class="fn">FetchFromNetworkAsync</span>()
+        .<span class="fn">ConfigureAwait</span>(<span class="kw">false</span>);             <span class="cm">// resumes on any thread pool thread</span>
+    <span class="kw">return</span> data.<span class="fn">Trim</span>();                     <span class="cm">// no UI update here — fine</span>
+}
+
+// Rule of thumb:
+// - Application code (WPF, controller): use default (no ConfigureAwait)
+// - Library/service code:               use ConfigureAwait(false)</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 4 — ASYNC PATTERNS
+══════════════════════════════════════════════════ -->
+<div id="tab-patterns" class="tab-panel"><div class="section">
+  <h2>🔀 Async Patterns — Sequential vs Concurrent</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 The Biggest Performance Decision in Async</div>
+    <p>When you have multiple async operations to run, you have a choice: run them one after another (sequential) or all at the same time (concurrent). Sequential is simpler but slower. Concurrent is faster but slightly more complex. Knowing when to use each is crucial.</p>
+  </div>
+
+  <h3>Sequential Async — One After Another</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Sequential: each waits for the previous to finish</div>
+    <pre><span class="cm">// Sequential — total time = sum of all individual times</span>
+<span class="cm">// GetUser = 1s, GetOrders = 1s, GetAddress = 1s → TOTAL = 3 seconds</span>
+
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadProfileSequentialAsync</span>(<span class="kw">int</span> userId)
+{
+    <span class="kw">var</span> user    = <span class="kw">await</span> <span class="fn">GetUserAsync</span>(userId);       <span class="cm">// wait 1s → then continue</span>
+    <span class="kw">var</span> orders  = <span class="kw">await</span> <span class="fn">GetOrdersAsync</span>(userId);     <span class="cm">// wait 1s → then continue</span>
+    <span class="kw">var</span> address = <span class="kw">await</span> <span class="fn">GetAddressAsync</span>(userId);    <span class="cm">// wait 1s → then continue</span>
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{user.Name}, {orders.Count} orders, {address.City}"</span>);
+    <span class="cm">// Total: ~3 seconds</span>
+}
+
+<span class="cm">// USE sequential when:
+// - Each step DEPENDS on the result of the previous step
+// - Example: get user → use user.Id to get orders</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadDependentDataAsync</span>(<span class="kw">string</span> username)
+{
+    <span class="kw">var</span> user   = <span class="kw">await</span> <span class="fn">GetUserByNameAsync</span>(username);     <span class="cm">// need user first</span>
+    <span class="kw">var</span> orders = <span class="kw">await</span> <span class="fn">GetOrdersAsync</span>(user.Id);           <span class="cm">// need user.Id</span>
+    <span class="kw">var</span> items  = <span class="kw">await</span> <span class="fn">GetItemsAsync</span>(orders[<span class="num">0</span>].OrderId);  <span class="cm">// need order.Id</span>
+    <span class="cm">// Sequential here is CORRECT — each step depends on the previous</span>
+}</pre>
+  </div>
+
+  <h3>Concurrent Async — All at the Same Time</h3>
+
+  <div class="code-block good">
+    <div class="code-label good"><span class="cl-badge cl-good">FASTER</span> C# — Concurrent: all run simultaneously</div>
+    <pre><span class="cm">// Concurrent — total time = slowest individual task
+// GetUser = 1s, GetOrders = 1s, GetAddress = 1s → TOTAL = 1 second !</span>
+
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadProfileConcurrentAsync</span>(<span class="kw">int</span> userId)
+{
+    <span class="cm">// Start ALL tasks first — none is awaited yet</span>
+    <span class="kw">var</span> userTask    = <span class="fn">GetUserAsync</span>(userId);    <span class="cm">// starts immediately</span>
+    <span class="kw">var</span> ordersTask  = <span class="fn">GetOrdersAsync</span>(userId);  <span class="cm">// starts immediately</span>
+    <span class="kw">var</span> addressTask = <span class="fn">GetAddressAsync</span>(userId); <span class="cm">// starts immediately</span>
+
+    <span class="cm">// Now wait for ALL to complete</span>
+    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(userTask, ordersTask, addressTask);
+
+    <span class="cm">// Access results — all complete by now</span>
+    <span class="kw">var</span> user    = userTask.Result;
+    <span class="kw">var</span> orders  = ordersTask.Result;
+    <span class="kw">var</span> address = addressTask.Result;
+
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{user.Name}, {orders.Count} orders, {address.City}"</span>);
+    <span class="cm">// Total: ~1 second (3× faster!)</span>
+}
+
+<span class="cm">// Even cleaner — await and get results in one step:</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadConcurrentCleanAsync</span>(<span class="kw">int</span> userId)
+{
+    (<span class="tp">User</span> user, <span class="tp">List</span>&lt;<span class="tp">Order</span>&gt; orders, <span class="tp">Address</span> address) =
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(
+            <span class="fn">GetUserAsync</span>(userId),
+            <span class="fn">GetOrdersAsync</span>(userId),
+            <span class="fn">GetAddressAsync</span>(userId)
+        );  <span class="cm">// Note: WhenAll with mixed types returns Task[] — use tuples for typed</span>
+}
+
+<span class="cm">// USE concurrent when:
+// - Operations are INDEPENDENT of each other
+// - Example: get user + get orders + get address in parallel</span></pre>
+  </div>
+
+  <h3>The Key Question — Sequential or Concurrent?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>Use Sequential when…</h4>
+      <ul>
+        <li>Step B needs the result of Step A</li>
+        <li>Operations must happen in a specific order</li>
+        <li>You are looping through items and each iteration is independent but you want controlled throughput</li>
+        <li>Processing a pipeline where each stage feeds the next</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>Use Concurrent (WhenAll) when…</h4>
+      <ul>
+        <li>Operations are fully independent of each other</li>
+        <li>Fetching data from multiple sources at once</li>
+        <li>Making multiple API calls simultaneously</li>
+        <li>Loading related but independent data for a dashboard</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Async Loops — Looping Over Collections</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Different ways to async loop</div>
+    <pre><span class="cm">// ── Pattern 1: Sequential loop (process one at a time) ────────────</span>
+<span class="kw">var</span> users = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt; { <span class="num">1</span>, <span class="num">2</span>, <span class="num">3</span>, <span class="num">4</span>, <span class="num">5</span> };
+
+<span class="kw">foreach</span> (<span class="kw">var</span> userId <span class="kw">in</span> users)
+{
+    <span class="kw">var</span> user = <span class="kw">await</span> <span class="fn">GetUserAsync</span>(userId);  <span class="cm">// one at a time</span>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(user.Name);
+}
+<span class="cm">// Total time: sum of all individual calls</span>
+
+<span class="cm">// ── Pattern 2: Concurrent loop (all at same time) ─────────────────</span>
+<span class="kw">var</span> tasks = users.<span class="fn">Select</span>(id => <span class="fn">GetUserAsync</span>(id));
+<span class="kw">var</span> results = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(tasks);
+<span class="cm">// Total time: slowest single call — but ALL run at once</span>
+<span class="cm">// ⚠️ Be careful: too many concurrent requests can overwhelm a DB or API</span>
+
+<span class="cm">// ── Pattern 3: Throttled concurrent (controlled parallelism) ──────</span>
+<span class="cm">// Use SemaphoreSlim to limit to N concurrent requests at a time</span>
+<span class="kw">var</span> semaphore = <span class="kw">new</span> <span class="tp">SemaphoreSlim</span>(<span class="num">3</span>);  <span class="cm">// max 3 at a time</span>
+
+<span class="kw">var</span> throttledTasks = users.<span class="fn">Select</span>(<span class="kw">async</span> id =>
+{
+    <span class="kw">await</span> semaphore.<span class="fn">WaitAsync</span>();          <span class="cm">// wait for a slot</span>
+    <span class="kw">try</span>
+    {
+        <span class="kw">return</span> <span class="kw">await</span> <span class="fn">GetUserAsync</span>(id);   <span class="cm">// do the work</span>
+    }
+    <span class="kw">finally</span>
+    {
+        semaphore.<span class="fn">Release</span>();              <span class="cm">// always release the slot</span>
+    }
+});
+<span class="kw">var</span> throttledResults = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(throttledTasks);
+<span class="cm">// Max 3 concurrent requests — doesn't overwhelm the server</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 5 — CANCELLATION
+══════════════════════════════════════════════════ -->
+<div id="tab-cancel" class="tab-panel"><div class="section">
+  <h2>🚫 Cancellation with CancellationToken</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Why Do We Need Cancellation?</div>
+    <p>Imagine a user clicks "Search", then immediately clicks "Cancel". Without cancellation, your app would keep querying the database and making API calls even though nobody wants the result anymore — wasting server resources. <code>CancellationToken</code> is the C# way to politely say "stop what you're doing". It is a signal that gets passed through your entire call chain.</p>
+  </div>
+
+  <div class="analogy">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <code>CancellationToken</code> is like a manager walking over to say "that project is cancelled — stop working on it". The <code>CancellationTokenSource</code> is the manager who has the authority to cancel. You pass the token through your entire chain so every piece of work can check if it should stop.</p>
+  </div>
+
+  <h3>The Three Pieces</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🎛️</span><h4>CancellationTokenSource</h4><p>The controller. Call <code>.Cancel()</code> on it to signal cancellation. Only the caller creates this.</p></div>
+    <div class="icon-item"><span class="emoji">🎫</span><h4>CancellationToken</h4><p>The signal. Passed into methods. Readonly — can only check the signal, not cancel it.</p></div>
+    <div class="icon-item"><span class="emoji">⏰</span><h4>Timeout + Token</h4><p>CancellationTokenSource can auto-cancel after a timeout — combines timeout and manual cancel.</p></div>
+  </div>
+
+  <h3>Complete Cancellation Example</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Full cancellation pattern</div>
+    <pre><span class="cm">// ── Step 1: Method accepts a CancellationToken ────────────────────</span>
+<span class="cm">// Best practice: always include CancellationToken as last parameter</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">SearchProductsAsync</span>(
+    <span class="kw">string</span>            query,
+    <span class="tp">CancellationToken</span> cancellationToken = <span class="kw">default</span>)  <span class="cm">// default = no cancellation</span>
+{
+    <span class="cm">// Pass token to every async call inside</span>
+    <span class="kw">var</span> results = <span class="kw">await</span> _dbContext.Products
+        .<span class="fn">Where</span>(p => p.Name.<span class="fn">Contains</span>(query))
+        .<span class="fn">ToListAsync</span>(cancellationToken);         <span class="cm">// ← pass token here</span>
+
+    <span class="cm">// Manually check for cancellation between steps</span>
+    cancellationToken.<span class="fn">ThrowIfCancellationRequested</span>();
+
+    <span class="kw">var</span> enriched = <span class="kw">await</span> _enrichmentService
+        .<span class="fn">EnrichAsync</span>(results, cancellationToken);  <span class="cm">// ← pass token here too</span>
+
+    <span class="kw">return</span> enriched;
+}
+
+<span class="cm">// ── Step 2: Caller creates the source and triggers cancellation ───</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DemoAsync</span>()
+{
+    <span class="cm">// Create source — this controls cancellation</span>
+    <span class="kw">using var</span> cts = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>();
+
+    <span class="cm">// Example: auto-cancel after 5 seconds (timeout)</span>
+    cts.<span class="fn">CancelAfter</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>));
+
+    <span class="kw">try</span>
+    {
+        <span class="kw">var</span> results = <span class="kw">await</span> <span class="fn">SearchProductsAsync</span>(<span class="str">"laptop"</span>, cts.Token);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Found {results.Count} products"</span>);
+    }
+    <span class="kw">catch</span> (<span class="tp">OperationCanceledException</span>)
+    {
+        <span class="cm">// This is thrown when cancelled — always catch it</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Search was cancelled or timed out"</span>);
+    }
+}
+
+<span class="cm">// ── Manual cancel (e.g., user clicks Cancel button) ──────────────</span>
+<span class="tp">CancellationTokenSource</span>? _searchCts;
+
+<span class="kw">private async void</span> <span class="fn">SearchButton_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    _searchCts?.<span class="fn">Cancel</span>();   <span class="cm">// cancel previous search if running</span>
+    _searchCts = <span class="kw">new</span> <span class="tp">CancellationTokenSource</span>();
+
+    <span class="kw">try</span>
+    {
+        <span class="kw">var</span> results = <span class="kw">await</span> <span class="fn">SearchProductsAsync</span>(searchBox.Text, _searchCts.Token);
+        listBox.ItemsSource = results;
+    }
+    <span class="kw">catch</span> (<span class="tp">OperationCanceledException</span>) { }  <span class="cm">// ignore — expected</span>
+}
+
+<span class="kw">private void</span> <span class="fn">CancelButton_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    _searchCts?.<span class="fn">Cancel</span>();  <span class="cm">// signal all running searches to stop</span>
+}</pre>
+  </div>
+
+  <h3>Checking Cancellation Inside Your Code</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Three ways to check cancellation</div>
+    <pre><span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ProcessItemsAsync</span>(<span class="tp">List</span>&lt;<span class="tp">Item</span>&gt; items, <span class="tp">CancellationToken</span> ct)
+{
+    <span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> items)
+    {
+        <span class="cm">// Method 1: ThrowIfCancellationRequested — throws OperationCanceledException</span>
+        ct.<span class="fn">ThrowIfCancellationRequested</span>();  <span class="cm">// clean and idiomatic ✅</span>
+
+        <span class="cm">// Method 2: IsCancellationRequested — check without throwing</span>
+        <span class="kw">if</span> (ct.IsCancellationRequested)
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Stopping gracefully..."</span>);
+            <span class="kw">break</span>;  <span class="cm">// or return, or clean up and then throw</span>
+        }
+
+        <span class="kw">await</span> <span class="fn">ProcessOneItemAsync</span>(item, ct);  <span class="cm">// pass token down</span>
+    }
+}
+
+<span class="cm">// Combine with Task.Delay for cancellable waits</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PollAsync</span>(<span class="tp">CancellationToken</span> ct)
+{
+    <span class="kw">while</span> (!ct.IsCancellationRequested)
+    {
+        <span class="kw">await</span> <span class="fn">DoWorkAsync</span>(ct);
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>), ct);  <span class="cm">// cancellable delay</span>
+    }
+}</pre>
+  </div>
+
+  <h3>CancellationToken Best Practices</h3>
+  <ul class="checklist c-g">
+    <li>Every public async method should accept a <code>CancellationToken</code> as its last parameter</li>
+    <li>Always pass the token down to every async call inside your method</li>
+    <li>Always catch <code>OperationCanceledException</code> at the top-level call site</li>
+    <li>Use <code>CancelAfter()</code> to set timeouts — better than writing separate timeout logic</li>
+    <li>Use <code>default</code> as the parameter default — callers who don't care can omit it</li>
+    <li>Dispose <code>CancellationTokenSource</code> with <code>using</code> — it holds unmanaged resources</li>
+  </ul>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 6 — PARALLEL & PLINQ
+══════════════════════════════════════════════════ -->
+<div id="tab-parallel" class="tab-panel"><div class="section">
+  <h2>⚙️ Parallel Programming &amp; PLINQ</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Async vs Parallel — Know the Difference</div>
+    <p>Async is for <strong>waiting on I/O</strong> (database, network, file) without blocking a thread. Parallel is for <strong>CPU-heavy work</strong> where you want multiple CPU cores to literally process data at the same time. They solve different problems. Don't use <code>Parallel.ForEach</code> on database calls — use <code>await</code>. Don't use <code>async/await</code> for heavy computation — use <code>Parallel</code>.</p>
+  </div>
+
+  <h3>Parallel.ForEach — Multiple CPU Cores</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Parallel.ForEach for CPU-bound work</div>
+    <pre><span class="cm">// ✅ USE Parallel.ForEach for CPU-intensive operations</span>
+<span class="kw">var</span> images = <span class="fn">GetAllImages</span>();  <span class="cm">// list of 1000 images to process</span>
+
+<span class="cm">// Process all images using all available CPU cores simultaneously</span>
+<span class="tp">Parallel</span>.<span class="fn">ForEach</span>(images, image =>
+{
+    <span class="cm">// Each image processed on a different thread/core</span>
+    <span class="fn">ResizeImage</span>(image);       <span class="cm">// CPU work — benefits from parallelism</span>
+    <span class="fn">ApplyWatermark</span>(image);
+    <span class="fn">SaveToDisk</span>(image);
+});
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"All images processed"</span>);
+
+<span class="cm">// With options — control degree of parallelism</span>
+<span class="kw">var</span> options = <span class="kw">new</span> <span class="tp">ParallelOptions</span>
+{
+    MaxDegreeOfParallelism = <span class="tp">Environment</span>.ProcessorCount,  <span class="cm">// use all cores</span>
+    CancellationToken      = cancellationToken
+};
+
+<span class="tp">Parallel</span>.<span class="fn">ForEach</span>(images, options, image =>
+{
+    <span class="fn">ProcessImage</span>(image);
+});
+
+<span class="cm">// Parallel.For — numeric ranges</span>
+<span class="tp">Parallel</span>.<span class="fn">For</span>(<span class="num">0</span>, <span class="num">1000</span>, i =>
+{
+    results[i] = <span class="fn">HeavyCalculation</span>(i);
+});</pre>
+  </div>
+
+  <h3>PLINQ — Parallel LINQ</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — PLINQ parallel queries</div>
+    <pre><span class="kw">var</span> numbers = <span class="tp">Enumerable</span>.<span class="fn">Range</span>(<span class="num">1</span>, <span class="num">1_000_000</span>).<span class="fn">ToList</span>();
+
+<span class="cm">// Regular LINQ — sequential, one core</span>
+<span class="kw">var</span> sequential = numbers
+    .<span class="fn">Where</span>(n => <span class="fn">IsPrime</span>(n))   <span class="cm">// CPU work per item</span>
+    .<span class="fn">ToList</span>();
+
+<span class="cm">// PLINQ — parallel, all cores (just add .AsParallel())</span>
+<span class="kw">var</span> parallel = numbers
+    .<span class="fn">AsParallel</span>()                          <span class="cm">// ← magic switch to PLINQ</span>
+    .<span class="fn">Where</span>(n => <span class="fn">IsPrime</span>(n))               <span class="cm">// runs on multiple cores</span>
+    .<span class="fn">ToList</span>();
+
+<span class="cm">// PLINQ with options</span>
+<span class="kw">var</span> controlled = numbers
+    .<span class="fn">AsParallel</span>()
+    .<span class="fn">WithDegreeOfParallelism</span>(<span class="num">4</span>)             <span class="cm">// max 4 threads</span>
+    .<span class="fn">WithCancellation</span>(cancellationToken)    <span class="cm">// cancellable</span>
+    .<span class="fn">Where</span>(n => <span class="fn">IsPrime</span>(n))
+    .<span class="fn">OrderBy</span>(n => n)                        <span class="cm">// preserve order if needed</span>
+    .<span class="fn">ToList</span>();
+
+<span class="cm">// Parallel aggregation
+var sum = numbers
+    .AsParallel()
+    .Where(n => n % 2 == 0)
+    .Sum();</span></pre>
+  </div>
+
+  <h3>When to Use What</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Use This</th><th>Why</th></tr>
+    <tr><td>Querying a database</td><td><code>async/await</code></td><td>I/O bound — don't waste threads waiting</td></tr>
+    <tr><td>Calling a REST API</td><td><code>async/await</code></td><td>I/O bound — network latency</td></tr>
+    <tr><td>Reading a large file</td><td><code>async/await</code></td><td>I/O bound — disk speed</td></tr>
+    <tr><td>Resizing 1000 images</td><td><code>Parallel.ForEach</code></td><td>CPU bound — use all cores</td></tr>
+    <tr><td>Computing prime numbers</td><td><code>PLINQ</code></td><td>CPU bound — parallel computation</td></tr>
+    <tr><td>Processing large data in-memory</td><td><code>PLINQ</code></td><td>CPU bound — data transformation</td></tr>
+    <tr><td>CPU work + I/O</td><td><code>Task.Run</code> + <code>await</code></td><td>Move CPU work to background, await I/O</td></tr>
+  </table></div>
+
+  <div class="warn-box">
+    <h4>⚠️ Don't Mix These Up</h4>
+    <p>Using <code>Parallel.ForEach</code> with async lambdas does NOT work as expected — the parallel loop completes before the async work is done. Use <code>Task.WhenAll</code> for concurrent async operations, and <code>Parallel.ForEach</code> only for synchronous CPU-bound work.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 7 — ADVANCED TOPICS
+══════════════════════════════════════════════════ -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🔬 Advanced Async Topics</h2>
+
+  <h3>ValueTask — When to Use It</h3>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 ValueTask in Simple Terms</div>
+    <p>Every time you return a <code>Task</code>, .NET allocates a new object on the heap — even if the result is immediately available (like a cache hit). <code>ValueTask</code> avoids that allocation when the result is ready synchronously. Use it in high-performance scenarios where you call the method millions of times and often have a cached result.</p>
+  </div>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — ValueTask for hot paths</div>
+    <pre><span class="cm">// Use Task&lt;T&gt; by default — simple and correct</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt; <span class="fn">GetValueAsync</span>(<span class="kw">int</span> key)
+{
+    <span class="kw">return</span> <span class="kw">await</span> _db.<span class="fn">GetIntAsync</span>(key);
+}
+
+<span class="cm">// Use ValueTask&lt;T&gt; when often returns synchronously (cache scenarios)</span>
+<span class="kw">private</span> <span class="tp">Dictionary</span>&lt;<span class="kw">int</span>, <span class="kw">int</span>&gt; _cache = <span class="kw">new</span>();
+
+<span class="kw">public</span> <span class="tp">ValueTask</span>&lt;<span class="kw">int</span>&gt; <span class="fn">GetCachedValueAsync</span>(<span class="kw">int</span> key)
+{
+    <span class="cm">// Cache hit: returns synchronously with NO heap allocation</span>
+    <span class="kw">if</span> (_cache.<span class="fn">TryGetValue</span>(key, <span class="kw">out var</span> cached))
+        <span class="kw">return new</span> <span class="tp">ValueTask</span>&lt;<span class="kw">int</span>&gt;(cached);  <span class="cm">// struct, no allocation</span>
+
+    <span class="cm">// Cache miss: falls back to async (allocates Task normally)</span>
+    <span class="kw">return new</span> <span class="tp">ValueTask</span>&lt;<span class="kw">int</span>&gt;(<span class="fn">FetchFromDbAsync</span>(key));
+}
+
+<span class="cm">// Rules for ValueTask:
+// ✅ Only await once
+// ✅ Don't store and await later
+// ✅ Convert to Task with .AsTask() if you need to store/re-await
+// ❌ Don't use unless profiling shows Task allocation is a bottleneck</span></pre>
+  </div>
+
+  <h3>IAsyncEnumerable — Async Streams</h3>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What is IAsyncEnumerable?</div>
+    <p>Normally when you query a database you wait for ALL results to arrive, then process them. With <code>IAsyncEnumerable</code> you can process results <strong>as they arrive</strong> — one by one, asynchronously. Perfect for large datasets, live feeds, or streaming APIs where you don't want to wait for everything before starting work.</p>
+  </div>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — IAsyncEnumerable streaming</div>
+    <pre"><span class="cm">// ── Producer: yields items one at a time asynchronously ──────────</span>
+<span class="kw">public async</span> <span class="tp">IAsyncEnumerable</span>&lt;<span class="tp">LogEntry</span>&gt; <span class="fn">ReadLogsAsync</span>(
+    [<span class="at">EnumeratorCancellation</span>] <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+{
+    <span class="kw">await using var</span> reader = <span class="kw">await</span> <span class="fn">OpenLogReaderAsync</span>();
+
+    <span class="kw">while</span> (<span class="kw">await</span> reader.<span class="fn">ReadAsync</span>(ct))  <span class="cm">// read one line at a time from DB</span>
+    {
+        <span class="kw">yield return</span> reader.<span class="fn">GetEntry</span>();   <span class="cm">// yield back to caller immediately</span>
+        <span class="cm">// Caller processes this entry while we fetch the next one</span>
+    }
+}
+
+<span class="cm">// ── Consumer: process each item as it arrives ─────────────────────</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ProcessLogsAsync</span>()
+{
+    <span class="cm">// await foreach — the async version of foreach</span>
+    <span class="kw">await foreach</span> (<span class="kw">var</span> entry <span class="kw">in</span> <span class="fn">ReadLogsAsync</span>())
+    {
+        <span class="cm">// Processes each log entry as it comes — no waiting for all</span>
+        <span class="kw">await</span> <span class="fn">ProcessEntryAsync</span>(entry);
+    }
+}
+
+<span class="cm">// With cancellation token</span>
+<span class="kw">await foreach</span> (<span class="kw">var</span> entry <span class="kw">in</span> <span class="fn">ReadLogsAsync</span>().<span class="fn">WithCancellation</span>(ct))
+{
+    <span class="kw">await</span> <span class="fn">ProcessEntryAsync</span>(entry);
+}
+
+<span class="cm">// Benefits vs returning List&lt;T&gt;:
+// ✅ Start processing before all data is loaded
+// ✅ Lower memory: don't hold entire dataset in memory
+// ✅ Better perceived performance: first result appears faster
+// ✅ Works great with large files, large DB result sets, live streams</span></pre>
+  </div>
+
+  <h3>SemaphoreSlim — Async Locking</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — SemaphoreSlim for async mutual exclusion</div>
+    <pre><span class="cm">// ❌ lock{} doesn't work with async — never do this</span>
+<span class="kw">private readonly object</span> _syncRoot = <span class="kw">new</span>();
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">BadAsync</span>()
+{
+    <span class="kw">lock</span> (_syncRoot)                  <span class="cm">// ❌ can't await inside lock</span>
+    {
+        <span class="kw">await</span> <span class="fn">DoWorkAsync</span>();          <span class="cm">// compiler error</span>
+    }
+}
+
+<span class="cm">// ✅ SemaphoreSlim — the async-safe equivalent of lock</span>
+<span class="kw">private readonly</span> <span class="tp">SemaphoreSlim</span> _lock = <span class="kw">new</span> <span class="tp">SemaphoreSlim</span>(<span class="num">1</span>, <span class="num">1</span>);  <span class="cm">// 1 = mutex</span>
+
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SafeAsync</span>()
+{
+    <span class="kw">await</span> _lock.<span class="fn">WaitAsync</span>();          <span class="cm">// async wait for lock</span>
+    <span class="kw">try</span>
+    {
+        <span class="kw">await</span> <span class="fn">DoWorkAsync</span>();          <span class="cm">// ✅ only one caller at a time</span>
+    }
+    <span class="kw">finally</span>
+    {
+        _lock.<span class="fn">Release</span>();              <span class="cm">// always release</span>
+    }
+}
+
+<span class="cm">// SemaphoreSlim(N) — allow N concurrent callers (not just 1)
+// e.g. limit to 5 concurrent DB connections:
+private readonly SemaphoreSlim _dbThrottle = new SemaphoreSlim(5, 5);</span></pre>
+  </div>
+
+  <h3>Async Disposal — IAsyncDisposable</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — IAsyncDisposable and await using</div>
+    <pre><span class="cm">// Resources that do async cleanup implement IAsyncDisposable</span>
+<span class="kw">public class</span> <span class="tp">DatabaseConnection</span> : <span class="tp">IAsyncDisposable</span>
+{
+    <span class="kw">public async</span> <span class="tp">ValueTask</span> <span class="fn">DisposeAsync</span>()
+    {
+        <span class="kw">await</span> <span class="fn">FlushPendingWritesAsync</span>();  <span class="cm">// async cleanup</span>
+        <span class="kw">await</span> _connection.<span class="fn">CloseAsync</span>();   <span class="cm">// async close</span>
+    }
+}
+
+<span class="cm">// Use "await using" instead of "using" for IAsyncDisposable</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">UseConnectionAsync</span>()
+{
+    <span class="kw">await using var</span> conn = <span class="kw">new</span> <span class="tp">DatabaseConnection</span>();
+    <span class="kw">await</span> conn.<span class="fn">QueryAsync</span>(<span class="str">"SELECT * FROM Users"</span>);
+    <span class="cm">// conn.DisposeAsync() called automatically here — awaited properly</span>
+}
+
+<span class="cm">// HttpClient, SqlConnection, Stream — all support async disposal
+await using var stream = File.OpenRead("data.bin");
+await using var reader = new StreamReader(stream);</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 8 — MISTAKES & PITFALLS
+══════════════════════════════════════════════════ -->
+<div id="tab-mistakes" class="tab-panel"><div class="section">
+  <h2>⚠️ Common Mistakes &amp; Pitfalls</h2>
+
+  <h3>Mistake 1 — async void (except event handlers)</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">BAD</span> C# — async void loses exceptions</div>
+    <pre><span class="cm">// ❌ async void — exceptions are UNHANDLED and crash the app</span>
+<span class="kw">public async void</span> <span class="fn">LoadDataAsync</span>()  <span class="cm">// ❌ never do this (except events)</span>
+{
+    <span class="kw">var</span> data = <span class="kw">await</span> _repo.<span class="fn">GetAsync</span>();
+    <span class="cm">// If exception thrown here — it cannot be caught by caller
+    // App will crash with unhandled exception!</span>
+}
+
+<span class="cm">// Caller can't catch it:</span>
+<span class="kw">try</span>
+{
+    <span class="fn">LoadDataAsync</span>();  <span class="cm">// ❌ can't await — returns void</span>
+}
+<span class="kw">catch</span> (<span class="tp">Exception</span>)  <span class="cm">// ❌ never catches anything from async void</span>
+{ }</pre>
+  </div>
+
+  <div class="code-block good">
+    <div class="code-label good"><span class="cl-badge cl-good">GOOD</span> C# — return Task so callers can await and catch</div>
+    <pre><span class="cm">// ✅ Return Task — callers can await and handle exceptions</span>
+<span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LoadDataAsync</span>()
+{
+    <span class="kw">var</span> data = <span class="kw">await</span> _repo.<span class="fn">GetAsync</span>();
+}
+
+<span class="kw">try</span>
+{
+    <span class="kw">await</span> <span class="fn">LoadDataAsync</span>();  <span class="cm">// ✅ exceptions are catchable</span>
+}
+<span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+{
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(ex.Message);  <span class="cm">// ✅ this works</span>
+}</pre>
+  </div>
+
+  <h3>Mistake 2 — Deadlock with .Result and .Wait()</h3>
+
+  <div class="danger">
+    <h4>🔴 The Most Dangerous Async Mistake</h4>
+    <p>Calling <code>.Result</code> or <code>.Wait()</code> on a Task in a synchronisation context (WPF, WinForms, ASP.NET classic) causes a <strong>deadlock</strong>. The thread blocks waiting for the Task, but the Task needs that same thread to complete. Both wait for each other forever.</p>
+  </div>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">BAD</span> C# — Deadlock pattern</div>
+    <pre><span class="cm">// ❌ DEADLOCK — In WPF button click handler:</span>
+<span class="kw">private void</span> <span class="fn">Button_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    <span class="cm">// .Result blocks the UI thread waiting for the task</span>
+    <span class="cm">// The task tries to resume on the UI thread after await</span>
+    <span class="cm">// But the UI thread is BLOCKED waiting for .Result</span>
+    <span class="cm">// DEADLOCK — both wait for each other forever</span>
+    <span class="kw">var</span> data = <span class="fn">GetDataAsync</span>().Result;   <span class="cm">// ❌ DEADLOCK</span>
+    <span class="kw">var</span> more = <span class="fn">GetMoreAsync</span>().GetAwaiter().<span class="fn">GetResult</span>();  <span class="cm">// ❌ ALSO DEADLOCK</span>
+}</pre>
+  </div>
+
+  <div class="code-block good">
+    <div class="code-label good"><span class="cl-badge cl-good">GOOD</span> C# — async all the way down</div>
+    <pre"><span class="cm">// ✅ Make the caller async too — async all the way up the call chain</span>
+<span class="kw">private async void</span> <span class="fn">Button_Click</span>(<span class="kw">object</span> sender, <span class="tp">EventArgs</span> e)
+{
+    <span class="kw">var</span> data = <span class="kw">await</span> <span class="fn">GetDataAsync</span>();   <span class="cm">// ✅ no blocking, no deadlock</span>
+    lblResult.Text = data;
+}
+
+<span class="cm">// The golden rule: never call .Result or .Wait() on a Task
+// unless you are 100% sure there is no SynchronizationContext
+// (console apps are usually safe; WPF/WinForms/ASP.NET classic are not)</span></pre>
+  </div>
+
+  <h3>Mistake 3 — Accidentally Sequential with await in a loop</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">BAD</span> C# — Accidentally sequential</div>
+    <pre"><span class="cm">// ❌ These look concurrent but are actually SEQUENTIAL</span>
+<span class="cm">// The await means "wait before starting the next one"</span>
+<span class="kw">var</span> user1 = <span class="kw">await</span> <span class="fn">GetUserAsync</span>(<span class="num">1</span>);  <span class="cm">// wait 1s, THEN start next</span>
+<span class="kw">var</span> user2 = <span class="kw">await</span> <span class="fn">GetUserAsync</span>(<span class="num">2</span>);  <span class="cm">// wait 1s, THEN start next</span>
+<span class="kw">var</span> user3 = <span class="kw">await</span> <span class="fn">GetUserAsync</span>(<span class="num">3</span>);  <span class="cm">// wait 1s</span>
+<span class="cm">// Total: 3 seconds</span></pre>
+  </div>
+
+  <div class="code-block good">
+    <div class="code-label good"><span class="cl-badge cl-good">GOOD</span> C# — Truly concurrent</div>
+    <pre"><span class="cm">// ✅ Start all tasks FIRST, then await all at once</span>
+<span class="kw">var</span> t1 = <span class="fn">GetUserAsync</span>(<span class="num">1</span>);   <span class="cm">// start immediately</span>
+<span class="kw">var</span> t2 = <span class="fn">GetUserAsync</span>(<span class="num">2</span>);   <span class="cm">// start immediately</span>
+<span class="kw">var</span> t3 = <span class="fn">GetUserAsync</span>(<span class="num">3</span>);   <span class="cm">// start immediately</span>
+<span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(t1, t2, t3);  <span class="cm">// wait for all — total: 1 second</span>
+<span class="kw">var</span> user1 = t1.Result; <span class="kw">var</span> user2 = t2.Result; <span class="kw">var</span> user3 = t3.Result;</pre>
+  </div>
+
+  <h3>Mistake 4 — Ignoring the returned Task (fire and forget wrong)</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">BAD</span> C# — Silently swallowing exceptions</div>
+    <pre"><span class="cm">// ❌ Not awaiting = exceptions are silently swallowed</span>
+<span class="fn">SaveToDbAsync</span>();  <span class="cm">// ❌ exception thrown inside? You'll never know</span>
+<span class="fn">SendEmailAsync</span>(); <span class="cm">// ❌ fails silently</span>
+
+<span class="cm">// ✅ If you genuinely want fire-and-forget, handle exceptions explicitly</span>
+_ = <span class="fn">SaveToDbAsync</span>()
+    .<span class="fn">ContinueWith</span>(t =>
+    {
+        <span class="kw">if</span> (t.IsFaulted)
+            _logger.<span class="fn">LogError</span>(t.Exception, <span class="str">"Save failed"</span>);
+    }, <span class="tp">TaskContinuationOptions</span>.OnlyOnFaulted);
+
+<span class="cm">// Or use Task.Run and log inside:</span>
+_ = <span class="tp">Task</span>.<span class="fn">Run</span>(<span class="kw">async</span> () =>
+{
+    <span class="kw">try</span>   { <span class="kw">await</span> <span class="fn">SaveToDbAsync</span>(); }
+    <span class="kw">catch</span> (<span class="tp">Exception</span> ex) { _logger.<span class="fn">LogError</span>(ex, <span class="str">"Background save failed"</span>); }
+});</pre>
+  </div>
+
+  <h3>Mistake 5 — Task.Run in ASP.NET</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">BAD</span> C# — Unnecessary Task.Run in ASP.NET</div>
+    <pre"><span class="cm">// ❌ WRONG in ASP.NET — wrapping async I/O in Task.Run</span>
+<span class="cm">// This wastes two threads instead of zero</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">GetUsers</span>()
+{
+    <span class="kw">var</span> users = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Run</span>(() =>  <span class="cm">// ❌ unnecessary thread allocation</span>
+        _repo.<span class="fn">GetUsersAsync</span>());       <span class="cm">// GetUsersAsync is already async!</span>
+    <span class="kw">return</span> <span class="fn">Ok</span>(users);
+}</pre>
+  </div>
+
+  <div class="code-block good">
+    <div class="code-label good"><span class="cl-badge cl-good">GOOD</span> C# — Just await the async method directly</div>
+    <pre"><span class="cm">// ✅ CORRECT — just await the async method directly</span>
+<span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">GetUsers</span>()
+{
+    <span class="kw">var</span> users = <span class="kw">await</span> _repo.<span class="fn">GetUsersAsync</span>();  <span class="cm">// ✅ direct await</span>
+    <span class="kw">return</span> <span class="fn">Ok</span>(users);
+}
+
+<span class="cm">// Task.Run is for CPU-bound work in desktop apps to keep UI responsive
+// Not for wrapping async I/O in web apps</span></pre>
+  </div>
+
+  <h3>The Async Mistakes Cheat Sheet</h3>
+  <ul class="checklist c-r">
+    <li>Never use <code>async void</code> except for event handlers</li>
+    <li>Never call <code>.Result</code> or <code>.Wait()</code> in UI or ASP.NET contexts</li>
+    <li>Never await inside a loop when the operations are independent — use WhenAll</li>
+    <li>Never ignore the returned Task from an async method without handling its exceptions</li>
+    <li>Never use <code>Task.Run</code> to wrap already-async I/O methods in ASP.NET</li>
+    <li>Never use <code>lock</code> with async code — use <code>SemaphoreSlim</code> instead</li>
+    <li>Never assume that <code>ConfigureAwait(false)</code> prevents deadlocks — it helps in libraries but is not a fix</li>
+  </ul>
+</div></div>
+
+
+<!-- ══════════════════════════════════════════════════
+     TAB 9 — REAL-WORLD PATTERNS
+══════════════════════════════════════════════════ -->
+<div id="tab-realworld" class="tab-panel"><div class="section">
+  <h2>🏭 Real-World Async Patterns</h2>
+
+  <h3>Pattern 1 — Async Repository (Database)</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Full async repository with EF Core</div>
+    <pre><span class="kw">public interface</span> <span class="iface">IUserRepository</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">User</span>?&gt;          <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">User</span>&gt;&gt;   <span class="fn">GetAllAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>                  <span class="fn">AddAsync</span>(<span class="tp">User</span> user, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>                  <span class="fn">UpdateAsync</span>(<span class="tp">User</span> user, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>                  <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">UserRepository</span> : <span class="iface">IUserRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">AppDbContext</span> _ctx;
+    <span class="kw">public</span> <span class="fn">UserRepository</span>(<span class="tp">AppDbContext</span> ctx) => _ctx = ctx;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">User</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _ctx.Users.<span class="fn">FindAsync</span>(<span class="kw">new object</span>[] { id }, ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">User</span>&gt;&gt; <span class="fn">GetAllAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _ctx.Users.<span class="fn">AsNoTracking</span>().<span class="fn">ToListAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">AddAsync</span>(<span class="tp">User</span> user, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">await</span> _ctx.Users.<span class="fn">AddAsync</span>(user, ct);
+        <span class="kw">await</span> _ctx.<span class="fn">SaveChangesAsync</span>(ct);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">UpdateAsync</span>(<span class="tp">User</span> user, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        _ctx.Users.<span class="fn">Update</span>(user);
+        <span class="kw">await</span> _ctx.<span class="fn">SaveChangesAsync</span>(ct);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">var</span> user = <span class="kw">await</span> <span class="fn">GetByIdAsync</span>(id, ct);
+        <span class="kw">if</span> (user != <span class="kw">null</span>)
+        {
+            _ctx.Users.<span class="fn">Remove</span>(user);
+            <span class="kw">await</span> _ctx.<span class="fn">SaveChangesAsync</span>(ct);
+        }
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 2 — Async HTTP Client</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Async REST API calls with HttpClient</div>
+    <pre><span class="kw">public class</span> <span class="tp">WeatherService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">HttpClient</span>  _http;
+    <span class="kw">private readonly</span> <span class="tp">ILogger</span>     _logger;
+
+    <span class="kw">public</span> <span class="fn">WeatherService</span>(<span class="tp">HttpClient</span> http, <span class="tp">ILogger</span>&lt;<span class="tp">WeatherService</span>&gt; logger)
+    {
+        _http   = http;
+        _logger = logger;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">WeatherData</span>?&gt; <span class="fn">GetWeatherAsync</span>(
+        <span class="kw">string</span>            city,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">try</span>
+        {
+            <span class="cm">// .GetFromJsonAsync deserialises JSON automatically</span>
+            <span class="kw">var</span> weather = <span class="kw">await</span> _http
+                .<span class="fn">GetFromJsonAsync</span>&lt;<span class="tp">WeatherData</span>&gt;(
+                    <span class="str">$"weather?city={city}"</span>, ct);
+
+            <span class="kw">return</span> weather;
+        }
+        <span class="kw">catch</span> (<span class="tp">HttpRequestException</span> ex)
+        {
+            _logger.<span class="fn">LogError</span>(ex, <span class="str">"Failed to get weather for {City}"</span>, city);
+            <span class="kw">return null</span>;
+        }
+        <span class="kw">catch</span> (<span class="tp">TaskCanceledException</span>) <span class="kw">when</span> (!ct.IsCancellationRequested)
+        {
+            <span class="cm">// TaskCanceledException when NOT cancelled = timeout</span>
+            _logger.<span class="fn">LogWarning</span>(<span class="str">"Weather request timed out for {City}"</span>, city);
+            <span class="kw">return null</span>;
+        }
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">WeatherData</span>?&gt;&gt; <span class="fn">GetMultipleCitiesAsync</span>(
+        <span class="kw">string</span>[]          cities,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="cm">// Fetch all cities concurrently</span>
+        <span class="kw">var</span> tasks = cities.<span class="fn">Select</span>(city =>
+            <span class="fn">GetWeatherAsync</span>(city, ct)
+                .<span class="fn">ContinueWith</span>(t => (city, result: t.Result), ct));
+
+        <span class="kw">var</span> results = <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">WhenAll</span>(tasks);
+        <span class="kw">return</span> results.<span class="fn">ToDictionary</span>(r => r.city, r => r.result);
+    }
+}</pre>
+  </div>
+
+  <h3>Pattern 3 — Background Service (.NET Worker)</h3>
+
+  <div class="code-block neutral">
+    <div class="code-label neutral">C# — Async background worker / hosted service</div>
+    <pre><span class="cm">// Runs continuously in the background — processes a queue, polls API, etc.</span>
+<span class="kw">public class</span> <span class="tp">EmailQueueWorker</span> : <span class="tp">BackgroundService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IEmailQueue</span>   _queue;
+    <span class="kw">private readonly</span> <span class="tp">IEmailSender</span>  _sender;
+    <span class="kw">private readonly</span> <span class="tp">ILogger</span>        _logger;
+
+    <span class="kw">public</span> <span class="fn">EmailQueueWorker</span>(<span class="tp">IEmailQueue</span> queue, <span class="tp">IEmailSender</span> sender,
+                            <span class="tp">ILogger</span>&lt;<span class="tp">EmailQueueWorker</span>&gt; logger)
+    { _queue = queue; _sender = sender; _logger = logger; }
+
+    <span class="cm">// This method runs for the lifetime of the application</span>
+    <span class="kw">protected override async</span> <span class="tp">Task</span> <span class="fn">ExecuteAsync</span>(<span class="tp">CancellationToken</span> stoppingToken)
+    {
+        _logger.<span class="fn">LogInformation</span>(<span class="str">"Email worker started"</span>);
+
+        <span class="cm">// Keep running until the app shuts down (stoppingToken cancelled)</span>
+        <span class="kw">while</span> (!stoppingToken.IsCancellationRequested)
+        {
+            <span class="kw">try</span>
+            {
+                <span class="kw">var</span> email = <span class="kw">await</span> _queue.<span class="fn">DequeueAsync</span>(stoppingToken);
+
+                <span class="kw">if</span> (email != <span class="kw">null</span>)
+                    <span class="kw">await</span> _sender.<span class="fn">SendAsync</span>(email, stoppingToken);
+                <span class="kw">else</span>
+                    <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">1</span>), stoppingToken);
+            }
+            <span class="kw">catch</span> (<span class="tp">OperationCanceledException</span>)
+            {
+                <span class="kw">break</span>;  <span class="cm">// graceful shutdown</span>
+            }
+            <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+            {
+                <span class="cm">// Log error but keep running — don't crash the worker</span>
+                _logger.<span class="fn">LogError</span>(ex, <span class="str">"Failed to process email"</span>);
+                <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">5</span>), stoppingToken);
+            }
+        }
+
+        _logger.<span class="fn">LogInformation</span>(<span class="str">"Email worker stopped"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>Async Best Practices Summary</h3>
+  <ul class="checklist c-g">
+    <li>Async all the way — if one method is async, make all its callers async too. Don't mix sync and async.</li>
+    <li>Every async method name ends in <code>Async</code> by convention — <code>GetUserAsync</code>, <code>SaveAsync</code></li>
+    <li>Always pass and respect <code>CancellationToken</code> through your entire call chain</li>
+    <li>Use <code>Task.WhenAll</code> for independent concurrent operations — never sequential await for independent work</li>
+    <li>Use <code>ConfigureAwait(false)</code> in library and service code to avoid context capture overhead</li>
+    <li>Use <code>SemaphoreSlim</code> for async mutual exclusion — never <code>lock</code> with async</li>
+    <li>Always wrap async operations in try/catch — exceptions in Tasks are not automatically surfaced</li>
+    <li>Don't use <code>Task.Run</code> in ASP.NET to wrap already-async methods — wasteful</li>
+    <li>Use <code>IAsyncEnumerable</code> for large data streams — don't buffer everything into a List</li>
+    <li>Use <code>ValueTask</code> only when profiling shows Task allocation is a bottleneck — not by default</li>
+  </ul>
+
+  <div class="completion">
+    <h3>C# Async Programming — Deep Dive Complete!</h3>
+    <p>Why async exists (scalability, not speed) · sync vs async vs parallel · Task and Task&lt;T&gt; states and creation · Task.WhenAll, WhenAny, FromResult, CompletedTask · async/await keyword mechanics (what actually happens at runtime) · sequential vs concurrent patterns · async loops with throttling via SemaphoreSlim · CancellationToken through entire call chains · Parallel.ForEach and PLINQ for CPU-bound work · ValueTask for hot paths · IAsyncEnumerable for streaming · async disposal with IAsyncDisposable · async void dangers · deadlock with .Result/.Wait() · common mistakes with solutions · real-world patterns — repository, HTTP client, background worker</p>
+    <p style="margin-top:14px;font-weight:700;color:rgba(255,255,255,.8);">Write code that scales to thousands of users without adding more servers. That is the power of async. 🚀</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
