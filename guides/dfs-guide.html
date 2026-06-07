@@ -201,10 +201,16 @@ code{background:rgba(42,122,74,.1);padding:1px 5px;border-radius:3px;font-family
 .vis-log{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);background:var(--surface);padding:10px;border-radius:var(--r);min-height:32px;border:1px solid var(--border);}
 .vis-log span{color:var(--pc-d);font-weight:600;}
 
+/* PSEUDOCODE BLOCK — amber accent, distinct from code */
+.pseudo-block{background:#0e1624;border:1px solid #1a2a44;border-left:3px solid var(--amber);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.pseudo-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.85;color:#e2d9c8;white-space:pre;}
+.pseudo-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#c47a10;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.pk{color:#ffd580;}.pp{color:#e2d9c8;}.pc{color:#6ab0f5;font-style:italic;}
+
 @media(max-width:640px){
   .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
   .flow-row{flex-direction:column;}
-  .code-block pre{font-size:.6rem;}
+  .code-block pre,.pseudo-block pre{font-size:.6rem;}
   .step{gap:8px;}
   .stack-pills .pill{width:24px;height:24px;font-size:.65rem;}
 }
@@ -215,7 +221,7 @@ code{background:rgba(42,122,74,.1);padding:1px 5px;border-radius:3px;font-family
 <div class="header">
   <div class="container">
     <h1>🌲 <span>Depth-First Search (DFS)</span> — Complete Guide</h1>
-    <p>Concepts · Real-World Analogies · Tree/Graph Traversal · Recursive &amp; Iterative · C# Examples · Beginner → Expert</p>
+    <p>Concepts · Real-World Analogies · Tree/Graph Traversal · Pseudocode · Recursive &amp; Iterative · C# Examples · Beginner → Expert</p>
   </div>
 </div>
 
@@ -228,9 +234,10 @@ code{background:rgba(42,122,74,.1);padding:1px 5px;border-radius:3px;font-family
       <button class="tab-btn" onclick="T('realworld',this)">④ Real-World</button>
       <button class="tab-btn" onclick="T('howworks',this)">⑤ How It Works</button>
       <button class="tab-btn" onclick="T('traversal',this)">⑥ Tree Traversal</button>
-      <button class="tab-btn" onclick="T('visual',this)">⑦ Interactive</button>
-      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# Code</button>
-      <button class="tab-btn" onclick="T('cheatsheet',this)">⑨ Cheat Sheet</button>
+      <button class="tab-btn" onclick="T('pseudocode',this)">⑦ Pseudocode</button>
+      <button class="tab-btn" onclick="T('visual',this)">⑧ Interactive</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑨ C# Code</button>
+      <button class="tab-btn" onclick="T('cheatsheet',this)">⑩ Cheat Sheet</button>
     </div>
   </div>
 </div>
@@ -788,7 +795,240 @@ code{background:rgba(42,122,74,.1);padding:1px 5px;border-radius:3px;font-family
 </div></div>
 
 
-<!-- ⑦ INTERACTIVE VISUAL -->
+<!-- ⑦ PSEUDOCODE -->
+<div id="tab-pseudocode" class="tab-panel"><div class="section">
+  <h2>📝 Pseudocode — Every DFS Pattern</h2>
+  <p>Pseudocode bridges concept and real code. Master these patterns and any DFS variant becomes recognisable instantly.</p>
+
+  <div class="info">
+    <h4>📌 How to read the pseudocode</h4>
+    <p>Pseudocode uses natural English + common programming constructs — not tied to any language. <code>←</code> means assign. Words in CAPS are operations. Indentation shows nesting. <code>for each</code> = loop. <code>return</code> = stop and give back a value.</p>
+  </div>
+
+  <h3>① Core DFS — The Universal Recursive Template</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — recursive dfs (works on trees and graphs)</span>
+    <pre><span class="pc">DFS</span>(<span class="pp">node</span>, <span class="pp">visited</span>):
+    <span class="pc">// Base case: stop if null or already seen</span>
+    <span class="pk">if</span> node <span class="pk">is</span> null <span class="pk">OR</span> node <span class="pk">in</span> visited:
+        <span class="pk">return</span>
+
+    <span class="pc">// Mark as visited (prevents revisiting in graphs)</span>
+    ADD(visited, node)
+
+    <span class="pc">// ── place PROCESS(node) here for Pre-order ──</span>
+
+    <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(node):
+        <span class="pc">DFS</span>(neighbour, visited)      <span class="pc">// recurse deeper</span>
+
+    <span class="pc">// ── place PROCESS(node) here for Post-order ──</span>
+    <span class="pc">// (implicit backtrack happens when this call returns)</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>🧠 The Three-Position Rule</h4>
+    <p>Every DFS recursive template has three positions where you can "process" the current node — <strong>before</strong> the recursive calls (Pre-order), <strong>between</strong> them (In-order, binary trees only), or <strong>after</strong> them (Post-order). Same skeleton, different placement = completely different output.</p>
+  </div>
+
+  <h3>② Pre-order DFS — Root → Left → Right</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — pre-order traversal</span>
+    <pre><span class="pc">DFS_PREORDER</span>(<span class="pp">node</span>):
+    <span class="pk">if</span> node <span class="pk">is</span> null: <span class="pk">return</span>
+
+    PROCESS(node)                 <span class="pc">// ① node FIRST</span>
+    <span class="pc">DFS_PREORDER</span>(node.left)       <span class="pc">// ② then left subtree</span>
+    <span class="pc">DFS_PREORDER</span>(node.right)      <span class="pc">// ③ then right subtree</span>
+
+<span class="pc">// Tree: 4 → 2 → 1 → 3 → 6 → 5 → 7</span>
+<span class="pc">// Output: [4, 2, 1, 3, 6, 5, 7]</span>
+<span class="pc">// Use case: copy a tree, print folder structure (parent before contents)</span></pre>
+  </div>
+
+  <h3>③ In-order DFS — Left → Root → Right</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — in-order traversal (sorted output for BST)</span>
+    <pre><span class="pc">DFS_INORDER</span>(<span class="pp">node</span>):
+    <span class="pk">if</span> node <span class="pk">is</span> null: <span class="pk">return</span>
+
+    <span class="pc">DFS_INORDER</span>(node.left)        <span class="pc">// ① left subtree first</span>
+    PROCESS(node)                 <span class="pc">// ② node IN the middle</span>
+    <span class="pc">DFS_INORDER</span>(node.right)       <span class="pc">// ③ right subtree last</span>
+
+<span class="pc">// Tree: 4 → 2 → 1 → 3 → 6 → 5 → 7</span>
+<span class="pc">// Output: [1, 2, 3, 4, 5, 6, 7]  ← sorted! BST magic ✨</span>
+<span class="pc">// Use case: BST sorted output, BST validation</span></pre>
+  </div>
+
+  <h3>④ Post-order DFS — Left → Right → Root</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — post-order traversal</span>
+    <pre><span class="pc">DFS_POSTORDER</span>(<span class="pp">node</span>):
+    <span class="pk">if</span> node <span class="pk">is</span> null: <span class="pk">return</span>
+
+    <span class="pc">DFS_POSTORDER</span>(node.left)      <span class="pc">// ① left subtree</span>
+    <span class="pc">DFS_POSTORDER</span>(node.right)     <span class="pc">// ② right subtree</span>
+    PROCESS(node)                 <span class="pc">// ③ node LAST</span>
+
+<span class="pc">// Tree: 4 → 2 → 1 → 3 → 6 → 5 → 7</span>
+<span class="pc">// Output: [1, 3, 2, 5, 7, 6, 4]</span>
+<span class="pc">// Use case: delete tree, calculate folder size, evaluate expressions</span></pre>
+  </div>
+
+  <h3>⑤ Iterative DFS — Using an Explicit Stack</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — iterative dfs (no recursion, no stack overflow risk)</span>
+    <pre><span class="pc">DFS_ITERATIVE</span>(<span class="pp">root</span>):
+    <span class="pk">if</span> root <span class="pk">is</span> null: <span class="pk">return</span>
+
+    stack ← <span class="pk">new</span> Stack
+    PUSH(stack, root)
+
+    <span class="pk">while</span> stack <span class="pk">is not empty</span>:
+        node ← POP(stack)           <span class="pc">// take from TOP (LIFO)</span>
+        PROCESS(node)
+
+        <span class="pc">// Push RIGHT first so LEFT is processed first</span>
+        <span class="pk">if</span> node.right <span class="pk">is not</span> null: PUSH(stack, node.right)
+        <span class="pk">if</span> node.left  <span class="pk">is not</span> null: PUSH(stack, node.left)
+
+<span class="pc">// Same pre-order result as recursive: [4, 2, 1, 3, 6, 5, 7]</span>
+<span class="pc">// Use when: tree depth > 10,000 nodes (stack overflow risk with recursion)</span></pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Why push RIGHT before LEFT?</h4>
+    <p>Because a stack is LIFO — the last item pushed is the first popped. To process the <strong>left child first</strong>, it must be on top — so push right first, then left. This mirrors the recursive call order.</p>
+  </div>
+
+  <h3>⑥ DFS on a Graph — with Visited Set</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — graph dfs (handles cycles with visited set)</span>
+    <pre><span class="pc">DFS_GRAPH</span>(<span class="pp">graph</span>, <span class="pp">start</span>):
+    visited ← <span class="pk">new</span> Set
+    <span class="pc">DFS_VISIT</span>(graph, start, visited)
+
+<span class="pc">DFS_VISIT</span>(<span class="pp">graph</span>, <span class="pp">node</span>, <span class="pp">visited</span>):
+    <span class="pk">if</span> node <span class="pk">in</span> visited: <span class="pk">return</span>   <span class="pc">// already seen — stop</span>
+
+    ADD(visited, node)
+    PROCESS(node)
+
+    <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(graph, node):
+        <span class="pc">DFS_VISIT</span>(graph, neighbour, visited)
+
+<span class="pc">// Without visited set → infinite loop on cycles!</span>
+<span class="pc">// Example graph: A→B→D, A→C→F</span>
+<span class="pc">// Output: A, B, D, C, F  (goes deep into one branch first)</span></pre>
+  </div>
+
+  <h3>⑦ DFS — Check if Path Exists (Reachability)</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — dfs path existence check</span>
+    <pre><span class="pc">DFS_HAS_PATH</span>(<span class="pp">graph</span>, <span class="pp">current</span>, <span class="pp">target</span>, <span class="pp">visited</span>):
+    <span class="pk">if</span> current == target: <span class="pk">return</span> true    <span class="pc">// found it!</span>
+    <span class="pk">if</span> current <span class="pk">in</span> visited: <span class="pk">return</span> false  <span class="pc">// already tried, dead end</span>
+
+    ADD(visited, current)
+
+    <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(graph, current):
+        <span class="pk">if</span> <span class="pc">DFS_HAS_PATH</span>(graph, neighbour, target, visited):
+            <span class="pk">return</span> true                  <span class="pc">// path found via this branch</span>
+
+    <span class="pk">return</span> false                         <span class="pc">// no path from current</span>
+
+<span class="pc">// Usage: DFS_HAS_PATH(graph, "EntryAPI", "Database", new Set)</span></pre>
+  </div>
+
+  <h3>⑧ DFS — Find All Paths (Backtracking)</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — dfs all paths with backtracking</span>
+    <pre><span class="pc">DFS_ALL_PATHS</span>(<span class="pp">graph</span>, <span class="pp">current</span>, <span class="pp">target</span>, <span class="pp">path</span>, <span class="pp">allPaths</span>):
+    ADD(path, current)
+
+    <span class="pk">if</span> current == target:
+        ADD(allPaths, COPY(path))          <span class="pc">// save a copy of this path</span>
+    <span class="pk">else</span>:
+        <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(graph, current):
+            <span class="pk">if</span> neighbour <span class="pk">not in</span> path:       <span class="pc">// avoid revisiting on THIS path</span>
+                <span class="pc">DFS_ALL_PATHS</span>(graph, neighbour, target, path, allPaths)
+
+    REMOVE_LAST(path)                      <span class="pc">// ← backtrack! undo the choice</span>
+
+<span class="pc">// Backtracking = add to path, recurse, REMOVE from path on return</span>
+<span class="pc">// This "undo" is what makes DFS explore all possibilities</span></pre>
+  </div>
+
+  <h3>⑨ Cycle Detection in a Directed Graph</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — cycle detection using dfs recursion stack</span>
+    <pre><span class="pc">DFS_HAS_CYCLE</span>(<span class="pp">graph</span>, <span class="pp">node</span>, <span class="pp">visited</span>, <span class="pp">inStack</span>):
+    ADD(visited, node)
+    ADD(inStack, node)           <span class="pc">// this node is on the current DFS path</span>
+
+    <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(graph, node):
+        <span class="pk">if</span> neighbour <span class="pk">not in</span> visited:
+            <span class="pk">if</span> <span class="pc">DFS_HAS_CYCLE</span>(graph, neighbour, visited, inStack):
+                <span class="pk">return</span> true      <span class="pc">// cycle found deeper</span>
+        <span class="pk">else if</span> neighbour <span class="pk">in</span> inStack:
+            <span class="pk">return</span> true          <span class="pc">// back edge = cycle!</span>
+
+    REMOVE(inStack, node)        <span class="pc">// backtrack — no longer on this path</span>
+    <span class="pk">return</span> false
+
+<span class="pc">// visited  = nodes ever explored (don't re-enter)</span>
+<span class="pc">// inStack  = nodes on the CURRENT recursive path</span>
+<span class="pc">// If we reach a node that's already inStack → we looped back = cycle</span></pre>
+  </div>
+
+  <h3>⑩ Topological Sort — DFS Post-order</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — topological sort using dfs (post-order + result stack)</span>
+    <pre><span class="pc">TOPO_SORT</span>(<span class="pp">graph</span>, <span class="pp">nodes</span>):
+    visited    ← <span class="pk">new</span> Set
+    resultStack ← <span class="pk">new</span> Stack      <span class="pc">// collect in post-order</span>
+
+    <span class="pk">for each</span> node <span class="pk">in</span> nodes:
+        <span class="pk">if</span> node <span class="pk">not in</span> visited:
+            <span class="pc">DFS_TOPO</span>(graph, node, visited, resultStack)
+
+    <span class="pk">return</span> REVERSE(resultStack)  <span class="pc">// or pop all — gives topo order</span>
+
+<span class="pc">DFS_TOPO</span>(<span class="pp">graph</span>, <span class="pp">node</span>, <span class="pp">visited</span>, <span class="pp">resultStack</span>):
+    ADD(visited, node)
+
+    <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(graph, node):
+        <span class="pk">if</span> neighbour <span class="pk">not in</span> visited:
+            <span class="pc">DFS_TOPO</span>(graph, neighbour, visited, resultStack)
+
+    PUSH(resultStack, node)      <span class="pc">// push AFTER all dependencies done</span>
+
+<span class="pc">// Post-order = node added after all its dependencies</span>
+<span class="pc">// Use case: C# build order, NuGet dependency resolution</span></pre>
+  </div>
+
+  <h3>Pattern Cheatsheet — Pseudocode at a Glance</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Pattern</th><th>Key Idea</th><th>Special Data</th></tr>
+    <tr><td>Pre-order</td><td>PROCESS → left → right</td><td>Nothing extra</td></tr>
+    <tr><td>In-order</td><td>left → PROCESS → right</td><td>Nothing extra</td></tr>
+    <tr><td>Post-order</td><td>left → right → PROCESS</td><td>Nothing extra</td></tr>
+    <tr><td>Iterative DFS</td><td>Explicit stack, push right-then-left</td><td>Stack&lt;T&gt;</td></tr>
+    <tr><td>Graph DFS</td><td>visited set prevents cycles</td><td>visited Set</td></tr>
+    <tr><td>Path exists?</td><td>Return true on hit, false after all neighbours</td><td>visited Set</td></tr>
+    <tr><td>All paths</td><td>Add, recurse, REMOVE (backtrack)</td><td>path List + allPaths List</td></tr>
+    <tr><td>Cycle detection</td><td>Two sets: visited + inStack</td><td>visited + inStack Sets</td></tr>
+    <tr><td>Topological sort</td><td>Post-order DFS, push to result stack</td><td>visited Set + result Stack</td></tr>
+  </table></div>
+
+  <div class="success">
+    <h4>✅ Core Insight</h4>
+    <p>Every DFS pseudocode is built from the same skeleton — <strong>base case → mark visited → recurse → (optional: backtrack)</strong>. The only variations are: where you place PROCESS (pre/in/post), what extra data you track (inStack, path, resultStack), and whether you add a backtrack step. Recognise the skeleton and every variant falls into place.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑧ INTERACTIVE VISUAL -->
 <div id="tab-visual" class="tab-panel"><div class="section">
   <h2>🎮 Interactive DFS Visualizer</h2>
   <p>Press <strong>Step</strong> to go through DFS one step at a time, or <strong>Auto Play</strong> to watch it run automatically.</p>

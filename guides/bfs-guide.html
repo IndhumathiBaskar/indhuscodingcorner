@@ -1,0 +1,1484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breadth-First Search (BFS) — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#2a4db0;--pc-l:#dce4f8;--pc-d:#1a3380;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --ocean:#1a3a7a;
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#080c12;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#d4e4f8 0%,#a8c4f0 45%,#6a9ee0 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'🌊';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.09;pointer-events:none;}
+.header::after{content:'🔍';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.07;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+
+/* TAB NAV */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+
+/* FLOW DIAGRAM */
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#eef2fc);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-label{text-align:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--muted);margin:-1px 0 2px;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(42,77,176,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+
+/* GRIDS */
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+
+/* CALLOUTS */
+.tip{background:var(--pc-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:#edf5fb;border:1px solid rgba(26,106,122,.2);border-left:4px solid var(--teal);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--teal);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border:1px solid #0d1520;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#60a8d4;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+
+/* pseudocode gets a lighter, distinct look */
+.pseudo-block{background:#0e1624;border:1px solid #1a2a44;border-left:3px solid var(--amber);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.pseudo-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.85;color:#e2d9c8;white-space:pre;}
+.pseudo-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#c47a10;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.pk{color:#ffd580;}.pp{color:#e2d9c8;}.pc{color:#6ab0f5;font-style:italic;}
+code{background:rgba(42,77,176,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+
+/* LISTS */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* STEPS */
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+
+/* QUEUE TRACE */
+.traversal-vis{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin:14px 0;box-shadow:var(--sh-lg);}
+.traversal-vis-title{font-weight:700;font-size:.84rem;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.queue-trace{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+.queue-row{display:flex;align-items:center;gap:8px;font-size:.75rem;flex-wrap:wrap;}
+.queue-step-num{background:var(--pc-d);color:#fff;width:22px;height:22px;min-width:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;flex-shrink:0;}
+.queue-label{color:var(--muted);min-width:100px;font-size:.72rem;flex-shrink:0;}
+.queue-pills{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.pill{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;font-weight:700;font-size:.73rem;border:1.5px solid;}
+.pill-active{background:var(--pc-l);border-color:var(--pc-d);color:var(--pc-d);}
+.pill-visited{background:var(--surface);border-color:var(--border2);color:var(--muted);}
+.pill-queue{background:var(--amber-l);border-color:var(--amber);color:var(--amber);}
+.pill-result{background:#fff;border-color:var(--border);color:var(--text);}
+.arrow-right{color:var(--border2);font-size:.9rem;}
+
+/* REAL WORLD CARD */
+.rw-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:10px 0;box-shadow:var(--sh);}
+.rw-header{background:linear-gradient(90deg,var(--pc-l),#eef2fc);padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.rw-emoji{font-size:1.3rem;}
+.rw-title{font-weight:700;font-size:.86rem;color:var(--text);}
+.rw-subtitle{font-size:.72rem;color:var(--muted);margin-left:auto;}
+.rw-body{padding:12px 14px;}
+.rw-body p{color:var(--muted);font-size:.82rem;margin:0 0 6px;}
+.rw-body strong{color:var(--text2);}
+
+/* COMPARE */
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+
+/* LEVEL BANDS */
+.level-band{display:flex;align-items:center;gap:10px;margin:6px 0;}
+.level-num{background:var(--pc-d);color:#fff;border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:700;flex-shrink:0;}
+.level-nodes{display:flex;gap:6px;flex-wrap:wrap;}
+.level-pill{background:var(--pc-l);border:1.5px solid rgba(42,77,176,.3);color:var(--pc-d);border-radius:6px;padding:4px 12px;font-size:.75rem;font-weight:700;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--teal-l));border:1px solid rgba(42,77,176,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+
+/* CANVAS */
+#bfs-canvas{display:block;width:100%;max-width:600px;margin:0 auto;border-radius:var(--r);}
+.canvas-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:10px;}
+.ctrl-btn{background:var(--pc-d);color:#fff;border:none;padding:7px 16px;border-radius:6px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:600;transition:background .15s;}
+.ctrl-btn:hover{background:var(--ocean);}
+.ctrl-btn.secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border);}
+.ctrl-btn.secondary:hover{background:var(--border);}
+.vis-log{margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--muted);background:var(--surface);padding:10px;border-radius:var(--r);min-height:32px;border:1px solid var(--border);}
+.vis-log span{color:var(--pc-d);font-weight:600;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre,.pseudo-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .queue-label{min-width:80px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>🌊 <span>Breadth-First Search (BFS)</span> — Complete Guide</h1>
+    <p>Concepts · Real-World Analogies · Level-order Traversal · Queue Logic · Shortest Path · Pseudocode · C# Examples · Beginner → Expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('what',this)">① What is BFS?</button>
+      <button class="tab-btn" onclick="T('concepts',this)">② Core Concepts</button>
+      <button class="tab-btn" onclick="T('why',this)">③ Why &amp; When</button>
+      <button class="tab-btn" onclick="T('realworld',this)">④ Real-World</button>
+      <button class="tab-btn" onclick="T('howworks',this)">⑤ How It Works</button>
+      <button class="tab-btn" onclick="T('pseudocode',this)">⑥ Pseudocode</button>
+      <button class="tab-btn" onclick="T('visual',this)">⑦ Interactive</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# Code</button>
+      <button class="tab-btn" onclick="T('cheatsheet',this)">⑨ Cheat Sheet</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① WHAT IS BFS -->
+<div id="tab-what" class="tab-panel active"><div class="section">
+  <h2>🌊 What is Breadth-First Search?</h2>
+  <p>Starting from zero. No jargon. Just plain understanding — and the analogy that makes it click forever.</p>
+
+  <div class="tip">
+    <h4>💡 BFS in One Sentence</h4>
+    <p>BFS is a way to explore a structure (tree or graph) by visiting <strong>all neighbours at the current level first</strong>, before going deeper. It explores <em>wide</em> before going <em>deep</em>.</p>
+  </div>
+
+  <h3>🌊 The Water Ripple Analogy</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">💧</span><span class="rw-title">Drop a stone in a pond</span></div>
+    <div class="rw-body">
+      <p>When you drop a stone into still water, ripples spread <strong>outward in circles</strong>. All points at distance 1 are touched first, then all points at distance 2, then distance 3. The water doesn't shoot in one direction — it spreads <em>uniformly in all directions at the same time</em>.</p>
+      <p><strong>That is BFS.</strong> Start at a node. Visit all its neighbours (distance 1). Then all their neighbours (distance 2). Then distance 3. Layer by layer, level by level.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🔥</span><span class="rw-title">Wildfire spreading through a forest</span></div>
+    <div class="rw-body">
+      <p>A fire starts at one tree. It immediately spreads to all <strong>adjacent trees</strong> at the same time. Then from all those trees, it spreads one more step outward simultaneously. This "wave expansion" is BFS — every node at the current frontier is processed before moving to the next frontier.</p>
+      <p><em>This is also why BFS naturally finds the <strong>shortest path</strong> — the fire reaches the nearest trees first, then farther ones.</em></p>
+    </div>
+  </div>
+
+  <h3>🆚 BFS vs DFS — The Core Difference</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🌊 BFS — Breadth First (Wide then Deep)</h4>
+      <ul>
+        <li>Explore all nodes at level 1 before going to level 2</li>
+        <li>Uses a <strong>Queue</strong> (First In, First Out — FIFO)</li>
+        <li>Like reading a book page by page, left to right</li>
+        <li>Naturally finds the <strong>shortest path</strong> (unweighted)</li>
+        <li>Good for: nearest neighbour, level-order, shortest path</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌲 DFS — Depth First (Deep then Wide)</h4>
+      <ul>
+        <li>Follow one path all the way to the end, then backtrack</li>
+        <li>Uses a <strong>Stack / Recursion</strong> (Last In, First Out — LIFO)</li>
+        <li>Like diving into a rabbit hole until you hit the bottom</li>
+        <li>Does NOT guarantee shortest path</li>
+        <li>Good for: cycle detection, paths, puzzles, tree traversal</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Key Terms You'll Need</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Term</th><th>What it means</th><th>BFS context</th></tr>
+    <tr><td><strong>Queue</strong></td><td>First In, First Out (FIFO) data structure</td><td>The engine of BFS — nodes wait in line to be visited</td></tr>
+    <tr><td><strong>Level / Layer</strong></td><td>All nodes at the same distance from root</td><td>BFS processes one full level before the next</td></tr>
+    <tr><td><strong>Frontier</strong></td><td>The set of nodes currently being explored</td><td>The "ripple ring" at any given moment</td></tr>
+    <tr><td><strong>Visited</strong></td><td>Nodes already explored — don't revisit</td><td>Required for graphs to prevent infinite loops</td></tr>
+    <tr><td><strong>Dequeue</strong></td><td>Remove from front of queue</td><td>Pick the next node to process</td></tr>
+    <tr><td><strong>Enqueue</strong></td><td>Add to the back of queue</td><td>Schedule a node's neighbours for later</td></tr>
+    <tr><td><strong>Shortest path</strong></td><td>Fewest edges between two nodes</td><td>BFS guarantees this for unweighted graphs</td></tr>
+    <tr><td><strong>Level-order</strong></td><td>Visiting nodes level by level</td><td>BFS on trees = level-order traversal</td></tr>
+  </table></div>
+
+  <div class="info">
+    <h4>📌 The Critical Difference from DFS</h4>
+    <p>DFS uses a <strong>Stack</strong> (go deep, remember where you came from). BFS uses a <strong>Queue</strong> (process in order of arrival, level by level). Swapping stack for queue in the DFS code is literally all you need — and the behaviour completely changes.</p>
+  </div>
+</div></div>
+
+
+<!-- ② CORE CONCEPTS -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🧱 Core Concepts — Queue, Levels, and FIFO</h2>
+
+  <h3>Part 1: The Queue — BFS's Engine</h3>
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🍽️</span><span class="rw-title">Restaurant queue analogy</span></div>
+    <div class="rw-body">
+      <p>Imagine people waiting in a queue to enter a restaurant. The <strong>first person who arrived is the first to enter</strong>. New people join at the back. This is <strong>FIFO — First In, First Out</strong>. BFS uses exactly this: the first node added to the queue is the first one processed. This is what keeps exploration level by level.</p>
+    </div>
+  </div>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📋 Queue vs Stack — The Key Structural Difference</div>
+    <div class="flow-diagram-body">
+      <div class="flow-row">
+        <div class="flow-node n-pc">
+          <div class="flow-node-title">📦 Queue (BFS)</div>
+          <ul class="flow-items">
+            <li>Add to BACK (Enqueue)</li>
+            <li>Remove from FRONT (Dequeue)</li>
+            <li>First In = First Out (FIFO)</li>
+            <li>Processes nodes in arrival order</li>
+            <li>C#: Queue&lt;T&gt; or LinkedList&lt;T&gt;</li>
+          </ul>
+        </div>
+        <div class="flow-node n-amber">
+          <div class="flow-node-title">📚 Stack (DFS)</div>
+          <ul class="flow-items">
+            <li>Add to TOP (Push)</li>
+            <li>Remove from TOP (Pop)</li>
+            <li>Last In = First Out (LIFO)</li>
+            <li>Processes most recent node first</li>
+            <li>C#: Stack&lt;T&gt; or recursion</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Part 2: Level-by-Level Exploration</h3>
+  <p>BFS on a tree naturally visits nodes <strong>level by level</strong>. Level 0 = root. Level 1 = root's children. Level 2 = grandchildren. And so on.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🌊 BFS Level-Order on a Tree</div>
+    <div class="flow-diagram-body">
+      <svg viewBox="0 0 480 220" style="width:100%;max-width:480px;display:block;margin:0 auto;" fill="none">
+        <!-- Root -->
+        <circle cx="240" cy="35" r="22" fill="#dce4f8" stroke="#1a3380" stroke-width="2"/>
+        <text x="240" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#1a3380">A</text>
+        <text x="240" y="10" text-anchor="middle" font-size="9" fill="#2a4db0" font-weight="600">Level 0</text>
+        <!-- Level 1 lines -->
+        <line x1="240" y1="57" x2="130" y2="93" stroke="#6a9ee0" stroke-width="1.5"/>
+        <line x1="240" y1="57" x2="350" y2="93" stroke="#6a9ee0" stroke-width="1.5"/>
+        <circle cx="130" cy="110" r="22" fill="#e8f0fc" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="130" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#2a4db0">B</text>
+        <circle cx="350" cy="110" r="22" fill="#e8f0fc" stroke="#2a4db0" stroke-width="1.5"/>
+        <text x="350" y="115" text-anchor="middle" font-size="14" font-weight="700" fill="#2a4db0">C</text>
+        <text x="490" y="115" text-anchor="start" font-size="9" fill="#2a4db0" font-weight="600">Level 1</text>
+        <!-- Level 2 lines -->
+        <line x1="130" y1="132" x2="70" y2="168" stroke="#6a9ee0" stroke-width="1.5"/>
+        <line x1="130" y1="132" x2="190" y2="168" stroke="#6a9ee0" stroke-width="1.5"/>
+        <line x1="350" y1="132" x2="310" y2="168" stroke="#6a9ee0" stroke-width="1.5"/>
+        <line x1="350" y1="132" x2="420" y2="168" stroke="#6a9ee0" stroke-width="1.5"/>
+        <circle cx="70" cy="185" r="20" fill="#f2f6fe" stroke="#4a6bc0" stroke-width="1.5"/>
+        <text x="70" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6bc0">D</text>
+        <circle cx="190" cy="185" r="20" fill="#f2f6fe" stroke="#4a6bc0" stroke-width="1.5"/>
+        <text x="190" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6bc0">E</text>
+        <circle cx="310" cy="185" r="20" fill="#f2f6fe" stroke="#4a6bc0" stroke-width="1.5"/>
+        <text x="310" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6bc0">F</text>
+        <circle cx="420" cy="185" r="20" fill="#f2f6fe" stroke="#4a6bc0" stroke-width="1.5"/>
+        <text x="420" y="190" text-anchor="middle" font-size="13" font-weight="700" fill="#4a6bc0">G</text>
+        <text x="490" y="190" text-anchor="start" font-size="9" fill="#2a4db0" font-weight="600">Level 2</text>
+        <!-- Wave indicators -->
+        <path d="M 20 57 Q 240 85 460 57" stroke="#dce4f8" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
+        <path d="M 20 132 Q 240 155 460 132" stroke="#c0d4f4" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
+        <path d="M 20 205 Q 240 225 460 205" stroke="#a8c4f0" stroke-width="1.5" stroke-dasharray="4,3" fill="none"/>
+      </svg>
+      <div style="text-align:center;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--pc-d);font-weight:700;background:var(--pc-l);padding:8px;border-radius:6px;">
+        BFS Order: A → B → C → D → E → F → G
+      </div>
+    </div>
+  </div>
+
+  <h3>Part 3: Why Queue = Level Order (the intuition)</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Enqueue root (A)</h4><p>Queue: [A]. A is at level 0.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Dequeue A → enqueue its children (B, C)</h4><p>Queue: [B, C]. B and C are level 1 — added after A.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Dequeue B → enqueue B's children (D, E)</h4><p>Queue: [C, D, E]. C is still there from level 1. D, E join after it.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>Dequeue C → enqueue C's children (F, G)</h4><p>Queue: [D, E, F, G]. All level 1 nodes done. All level 2 queued up.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body"><h4>Process D, E, F, G one by one</h4><p>Queue empties. BFS complete. The FIFO property naturally enforced level order!</p></div>
+  </div>
+
+  <div class="success">
+    <h4>✅ The Insight</h4>
+    <p>Because FIFO processes nodes in the order they were added — and children are always added after their parent's entire level — the queue automatically enforces level-by-level processing. No extra logic needed.</p>
+  </div>
+</div></div>
+
+
+<!-- ③ WHY & WHEN -->
+<div id="tab-why" class="tab-panel"><div class="section">
+  <h2>🤔 Why BFS? When Should You Use It?</h2>
+
+  <div class="tip">
+    <h4>💡 BFS's Superpower</h4>
+    <p>BFS <strong>guarantees the shortest path</strong> (in terms of number of edges) in an unweighted graph. Because it expands outward level by level, the first time it reaches a node, it has taken the fewest steps to get there.</p>
+  </div>
+
+  <h3>When BFS is the RIGHT choice ✅</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📍</span><h4>Shortest path</h4><p>Fewest hops from A to B in unweighted graph.</p></div>
+    <div class="icon-item"><span class="emoji">🏘️</span><h4>Nearest neighbour</h4><p>Closest node with a certain property.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Level-order traversal</h4><p>Process a tree row by row.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>Connected components</h4><p>Find all nodes in the same group.</p></div>
+    <div class="icon-item"><span class="emoji">🌐</span><h4>Web crawling (breadth)</h4><p>Crawl all links before going deeper.</p></div>
+    <div class="icon-item"><span class="emoji">🤝</span><h4>Social networks</h4><p>"Degrees of separation" between people.</p></div>
+    <div class="icon-item"><span class="emoji">🗺️</span><h4>GPS / Maps</h4><p>Find closest gas station / hospital.</p></div>
+    <div class="icon-item"><span class="emoji">🏗️</span><h4>Peer discovery</h4><p>Find all nodes in a network broadcast.</p></div>
+    <div class="icon-item"><span class="emoji">🔥</span><h4>Flood fill</h4><p>Paint bucket tool in image editors.</p></div>
+  </div>
+
+  <h3>When BFS is NOT the best choice ❌</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>Why NOT BFS?</th><th>Use Instead</th></tr>
+    <tr><td>Weighted shortest path (roads with distances)</td><td>BFS ignores edge weights</td><td>Dijkstra / A*</td></tr>
+    <tr><td>Cycle detection in directed graph</td><td>DFS is more natural for this</td><td>DFS with recursion stack</td></tr>
+    <tr><td>Topological sort</td><td>Post-order DFS is more natural</td><td>DFS or Kahn's (BFS variant)</td></tr>
+    <tr><td>Very wide graphs (huge branching factor)</td><td>Queue can grow enormous</td><td>DFS or bidirectional BFS</td></tr>
+    <tr><td>Maze with many dead ends (memory)</td><td>BFS holds all frontier nodes in memory</td><td>DFS uses less memory</td></tr>
+    <tr><td>All paths between two nodes</td><td>BFS only finds shortest; DFS finds all</td><td>DFS backtracking</td></tr>
+  </table></div>
+
+  <h3>BFS vs DFS — Full Comparison</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">🌊 BFS</div>
+      <div class="compare-row"><span class="compare-label">Strategy</span><span class="compare-val val-good">Level by level</span></div>
+      <div class="compare-row"><span class="compare-label">Data structure</span><span class="compare-val">Queue (FIFO)</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val val-warn">O(w) — width</span></div>
+      <div class="compare-row"><span class="compare-label">Shortest path</span><span class="compare-val val-good">✅ Yes</span></div>
+      <div class="compare-row"><span class="compare-label">Cycle detect</span><span class="compare-val val-warn">Works but clunky</span></div>
+      <div class="compare-row"><span class="compare-label">Style</span><span class="compare-val">Iterative</span></div>
+      <div class="compare-row"><span class="compare-label">Stack overflow?</span><span class="compare-val val-good">No</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-green">🌲 DFS</div>
+      <div class="compare-row"><span class="compare-label">Strategy</span><span class="compare-val val-good">Deep, then back</span></div>
+      <div class="compare-row"><span class="compare-label">Data structure</span><span class="compare-val">Stack / Recursion</span></div>
+      <div class="compare-row"><span class="compare-label">Memory</span><span class="compare-val val-good">O(h) — height</span></div>
+      <div class="compare-row"><span class="compare-label">Shortest path</span><span class="compare-val val-bad">❌ No</span></div>
+      <div class="compare-row"><span class="compare-label">Cycle detect</span><span class="compare-val val-good">Natural fit</span></div>
+      <div class="compare-row"><span class="compare-label">Style</span><span class="compare-val">Recursive</span></div>
+      <div class="compare-row"><span class="compare-label">Stack overflow?</span><span class="compare-val val-warn">Deep trees: Yes</span></div>
+    </div>
+  </div>
+
+  <h3>Time & Space Complexity</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Metric</th><th>Value</th><th>Explanation</th></tr>
+    <tr><td>Time Complexity</td><td><strong>O(V + E)</strong></td><td>V = vertices (nodes), E = edges. Every node and edge processed once.</td></tr>
+    <tr><td>Space — Queue</td><td><strong>O(w)</strong></td><td>w = max width of the graph. In worst case (complete binary tree), O(n/2) ≈ O(n).</td></tr>
+    <tr><td>Space — Visited set</td><td><strong>O(V)</strong></td><td>Track all visited nodes to avoid revisiting.</td></tr>
+    <tr><td>Shortest path guarantee</td><td><strong>O(V + E)</strong></td><td>BFS finds shortest path and its length in the same pass.</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Memory Warning for Wide Graphs</h4>
+    <p>In a graph where one node connects to 1,000,000 others (e.g. a popular social media user), BFS will enqueue all 1 million neighbours at once. The queue can explode in size. DFS would only hold the current path. Choose wisely based on graph shape.</p>
+  </div>
+</div></div>
+
+
+<!-- ④ REAL-WORLD -->
+<div id="tab-realworld" class="tab-panel"><div class="section">
+  <h2>🌍 Real-World BFS — Where You See It Daily</h2>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🗺️</span><span class="rw-title">Google Maps — Find Nearest Petrol Station</span><span class="rw-subtitle">Classic BFS use case</span></div>
+    <div class="rw-body">
+      <p>When Maps finds the nearest petrol station, it starts at your current location and expands outward — checking all roads 1 junction away, then 2, then 3. The <strong>first petrol station it encounters is the closest one</strong>. That's BFS shortest path in action.</p>
+      <p><strong>Weighted version (actual road times):</strong> Uses Dijkstra's algorithm — which is essentially BFS extended to handle edge weights.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🤝</span><span class="rw-title">LinkedIn — Degrees of Connection</span><span class="rw-subtitle">"You're 2nd degree connected"</span></div>
+    <div class="rw-body">
+      <p>LinkedIn's "2nd connection" and "3rd+ connection" labels are BFS levels. Start at your profile. Level 1 = your direct connections. Level 2 = their connections (who aren't yours). Level 3 = one more hop out. BFS tells LinkedIn exactly how many hops apart two people are.</p>
+      <p><strong>Also: "People You May Know"</strong> — BFS finds people at distance 2 (friends of friends) and recommends them.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🎨</span><span class="rw-title">Paint Bucket Tool — MS Paint / Photoshop</span><span class="rw-subtitle">Flood fill = BFS</span></div>
+    <div class="rw-body">
+      <p>When you click the paint bucket on a white area in MS Paint, it fills all <strong>connected pixels of the same colour</strong>. It starts at the clicked pixel, enqueues all 4 adjacent same-colour pixels, processes them, enqueues their neighbours — expanding outward until it hits a different colour boundary. Pure BFS on a 2D grid.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">📡</span><span class="rw-title">Network Broadcasting (LAN Discovery)</span><span class="rw-subtitle">AWS VPC / peer discovery</span></div>
+    <div class="rw-body">
+      <p>When a device joins a network and needs to discover all other devices, it broadcasts a message to immediate neighbours. Each device that receives it forwards to its neighbours. This wave-propagation is BFS. In AWS, Service Discovery (ECS, App Mesh) uses similar broadcast-and-discover patterns — finding all healthy instances reachable from a given point.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🎮</span><span class="rw-title">Game AI — Shortest Path for Enemy</span><span class="rw-subtitle">Grid-based pathfinding</span></div>
+    <div class="rw-body">
+      <p>In grid-based games (like Chess, Pac-Man, strategy games), enemy AI uses BFS to find the <strong>shortest route to the player</strong>. The game map is a graph (cells = nodes, walls = no edges). BFS from the enemy's position finds the minimum steps to reach the player.</p>
+      <p><strong>A* algorithm</strong> (used in most modern games) is BFS + a heuristic to make it faster when you know the target direction.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🏗️</span><span class="rw-title">Dependency Level Resolution (Kahn's Algorithm)</span><span class="rw-subtitle">NuGet / npm build order</span></div>
+    <div class="rw-body">
+      <p>Kahn's algorithm for topological sort is BFS-based. It processes all packages with zero dependencies first (level 0), then packages whose dependencies are all resolved (level 1), and so on. <strong>MSBuild and NuGet restore</strong> can use this approach to determine build parallelism — packages at the same BFS level can be built simultaneously.</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🌐</span><span class="rw-title">Web Crawler — Breadth Strategy</span><span class="rw-subtitle">Index nearest pages first</span></div>
+    <div class="rw-body">
+      <p>A BFS crawler visits all links on the current page before following those links deeper. This keeps the crawler close to the starting domain first — useful when you want complete coverage of one site before exploring outbound links. Google's PageRank algorithm benefits from BFS-crawled data to understand link structure at each "hop level".</p>
+    </div>
+  </div>
+
+  <div class="rw-card">
+    <div class="rw-header"><span class="rw-emoji">🏥</span><span class="rw-title">Hospital Contact Tracing</span><span class="rw-subtitle">COVID-19 exposure chains</span></div>
+    <div class="rw-body">
+      <p>During pandemic tracing, health authorities start from one confirmed case. BFS finds all direct contacts (level 1), then contacts of contacts (level 2). The level number tells you the <strong>degree of exposure risk</strong>. Level 1 = quarantine immediately. Level 2 = test and monitor. This is BFS on a contact graph.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑤ HOW IT WORKS -->
+<div id="tab-howworks" class="tab-panel"><div class="section">
+  <h2>⚙️ How BFS Works — Step by Step</h2>
+
+  <h3>BFS Algorithm — Plain English</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📋 BFS Algorithm Flow</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc"><div class="flow-node-title">🟢 Start: Enqueue the root/start node. Mark it visited.</div><ul class="flow-items"><li>Add start to the Queue</li><li>Add start to visited set</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-blue"><div class="flow-node-title">🔁 Loop: While the queue is not empty...</div><ul class="flow-items"><li>Dequeue the front node (current)</li><li>Process it (print, check, store)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">👀 Look at current node's neighbours</div><ul class="flow-items"><li>For each neighbour: if NOT visited → mark visited → enqueue it</li><li>If already visited → skip (prevents cycles)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-teal"><div class="flow-node-title">↩️ Repeat until Queue is empty</div><ul class="flow-items"><li>Empty queue = all reachable nodes have been visited</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-purple"><div class="flow-node-title">✅ Done! All nodes processed level by level.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Manual Trace — Graph BFS Example</h3>
+  <p>Graph: A→B, A→C, B→D, B→E, C→F. Starting from A.</p>
+
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">🔢 BFS Queue Trace — Step by Step</div>
+    <div class="queue-trace">
+
+      <div class="queue-row">
+        <div class="queue-step-num">1</div>
+        <span class="queue-label">Init: Enqueue A</span>
+        <div class="queue-pills">
+          <span style="font-size:.7rem;color:var(--muted)">Queue: [</span>
+          <span class="pill pill-queue">A</span>
+          <span style="font-size:.7rem;color:var(--muted)">] &nbsp; Visited: {A}</span>
+        </div>
+      </div>
+
+      <div class="queue-row">
+        <div class="queue-step-num">2</div>
+        <span class="queue-label">Dequeue A → process</span>
+        <div class="queue-pills">
+          <span class="pill pill-active">A</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Enqueue neighbours B, C &nbsp; Queue: [</span>
+          <span class="pill pill-queue">B</span>
+          <span class="pill pill-queue">C</span>
+          <span style="font-size:.7rem;color:var(--muted)">]</span>
+        </div>
+      </div>
+
+      <div class="queue-row">
+        <div class="queue-step-num">3</div>
+        <span class="queue-label">Dequeue B → process</span>
+        <div class="queue-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-active">B</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Enqueue D, E &nbsp; Queue: [</span>
+          <span class="pill pill-queue">C</span>
+          <span class="pill pill-queue">D</span>
+          <span class="pill pill-queue">E</span>
+          <span style="font-size:.7rem;color:var(--muted)">]</span>
+        </div>
+      </div>
+
+      <div class="queue-row">
+        <div class="queue-step-num">4</div>
+        <span class="queue-label">Dequeue C → process</span>
+        <div class="queue-pills">
+          <span class="pill pill-visited">A</span>
+          <span class="pill pill-visited">B</span>
+          <span class="pill pill-active">C</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">Enqueue F &nbsp; Queue: [</span>
+          <span class="pill pill-queue">D</span>
+          <span class="pill pill-queue">E</span>
+          <span class="pill pill-queue">F</span>
+          <span style="font-size:.7rem;color:var(--muted)">]</span>
+        </div>
+      </div>
+
+      <div class="queue-row">
+        <div class="queue-step-num">5</div>
+        <span class="queue-label">Dequeue D, E, F</span>
+        <div class="queue-pills">
+          <span class="pill pill-active">D</span>
+          <span class="pill pill-active">E</span>
+          <span class="pill pill-active">F</span>
+          <span class="arrow-right">→</span>
+          <span style="font-size:.7rem;color:var(--muted)">All leaves — no more neighbours. Queue empty ✅</span>
+        </div>
+      </div>
+
+      <div style="margin-top:10px;padding:10px;background:var(--pc-l);border-radius:var(--r);font-size:.8rem;color:var(--pc-d);font-weight:600;">
+        ✅ BFS Order: A → B → C → D → E → F &nbsp;|&nbsp; Shortest distances: A=0, B=1, C=1, D=2, E=2, F=2
+      </div>
+    </div>
+  </div>
+
+  <h3>Shortest Path — How BFS tracks it</h3>
+  <p>BFS naturally records distance from the source. The first time you reach a node, that's the shortest distance. Track it with a dictionary:</p>
+
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">📏 Distance tracking during BFS</div>
+    <div class="queue-trace">
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[A] = 0</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">Start node. Distance = 0.</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[B] = 1</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">B is a neighbour of A. dist[A] + 1 = 1.</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[C] = 1</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">C is a neighbour of A. dist[A] + 1 = 1.</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[D] = 2</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">D is a neighbour of B. dist[B] + 1 = 2.</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[E] = 2</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">E is a neighbour of B. dist[B] + 1 = 2.</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">—</div><span class="queue-label">dist[F] = 2</span><div class="queue-pills"><span style="font-size:.72rem;color:var(--muted)">F is a neighbour of C. dist[C] + 1 = 2.</span></div></div>
+    </div>
+  </div>
+
+  <div class="info">
+    <h4>🔑 Key Insight: Why BFS = Shortest Path</h4>
+    <p>Because BFS visits all nodes at distance <em>k</em> before any node at distance <em>k+1</em>, the first time it reaches a node is guaranteed to be via the shortest path. If a shorter path existed, BFS would have found it in an earlier level.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑥ PSEUDOCODE -->
+<div id="tab-pseudocode" class="tab-panel"><div class="section">
+  <h2>📝 Pseudocode — Every BFS Pattern</h2>
+  <p>Pseudocode bridges the gap between concept and real code. Learn these patterns and BFS becomes second nature.</p>
+
+  <div class="info">
+    <h4>📌 How to read the pseudocode</h4>
+    <p>Pseudocode uses natural English + common programming constructs. It's not tied to any language. You'll see: <code>ENQUEUE</code> = add to back of queue, <code>DEQUEUE</code> = remove from front, <code>for each</code> = loop over, <code>←</code> = assign value. Words in CAPS are operations.</p>
+  </div>
+
+  <h3>① Core BFS — The Universal Template</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs core template</span>
+    <pre><span class="pc">BFS</span>(<span class="pp">graph</span>, <span class="pp">start</span>):
+    <span class="pc">// Set up</span>
+    queue    ← <span class="pk">new</span> Queue
+    visited  ← <span class="pk">new</span> Set
+
+    <span class="pc">// Initialise with start node</span>
+    ENQUEUE(queue, start)
+    ADD(visited, start)
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        current ← DEQUEUE(queue)          <span class="pc">// take from front</span>
+        PROCESS(current)                  <span class="pc">// do something with it</span>
+
+        <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(current):
+            <span class="pk">if</span> neighbour <span class="pk">not in</span> visited:
+                ADD(visited, neighbour)   <span class="pc">// mark BEFORE enqueue!</span>
+                ENQUEUE(queue, neighbour)
+
+    <span class="pc">// All reachable nodes have been visited</span></pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Mark visited BEFORE enqueue, not after dequeue</h4>
+    <p>A common bug: marking nodes as visited when you dequeue them instead of when you enqueue them. This lets the same node get enqueued multiple times (once from each neighbour that sees it). Always mark visited at enqueue time.</p>
+  </div>
+
+  <h3>② BFS on a Tree (No visited set needed)</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs level-order traversal on tree</span>
+    <pre><span class="pc">BFS_TREE</span>(<span class="pp">root</span>):
+    <span class="pk">if</span> root is <span class="pk">null</span>: return
+
+    queue ← <span class="pk">new</span> Queue
+    ENQUEUE(queue, root)
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        current ← DEQUEUE(queue)
+        PROCESS(current)                  <span class="pc">// print / store value</span>
+
+        <span class="pk">if</span> current.left  is <span class="pk">not null</span>: ENQUEUE(queue, current.left)
+        <span class="pk">if</span> current.right is <span class="pk">not null</span>: ENQUEUE(queue, current.right)
+
+    <span class="pc">// Trees have no cycles → no visited set needed</span></pre>
+  </div>
+
+  <h3>③ BFS with Level Tracking</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs tracking which level each node is on</span>
+    <pre><span class="pc">BFS_LEVELS</span>(<span class="pp">root</span>):
+    <span class="pk">if</span> root is <span class="pk">null</span>: return
+
+    queue  ← <span class="pk">new</span> Queue
+    result ← <span class="pk">new</span> List of Lists        <span class="pc">// one inner list per level</span>
+
+    ENQUEUE(queue, root)
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        levelSize ← SIZE(queue)          <span class="pc">// nodes at THIS level</span>
+        currentLevel ← <span class="pk">new</span> List
+
+        <span class="pk">repeat</span> levelSize <span class="pk">times</span>:
+            node ← DEQUEUE(queue)
+            ADD(currentLevel, node.value)
+
+            <span class="pk">if</span> node.left  is <span class="pk">not null</span>: ENQUEUE(queue, node.left)
+            <span class="pk">if</span> node.right is <span class="pk">not null</span>: ENQUEUE(queue, node.right)
+
+        ADD(result, currentLevel)        <span class="pc">// save this level's values</span>
+
+    <span class="pk">return</span> result
+    <span class="pc">// result[0] = [A], result[1] = [B, C], result[2] = [D, E, F, G]</span></pre>
+  </div>
+
+  <h3>④ BFS Shortest Path — with Distance Tracking</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs shortest path (unweighted graph)</span>
+    <pre><span class="pc">BFS_SHORTEST_PATH</span>(<span class="pp">graph</span>, <span class="pp">start</span>, <span class="pp">target</span>):
+    queue    ← <span class="pk">new</span> Queue
+    visited  ← <span class="pk">new</span> Set
+    dist     ← <span class="pk">new</span> Map                  <span class="pc">// node → distance from start</span>
+    parent   ← <span class="pk">new</span> Map                  <span class="pc">// node → how we got here</span>
+
+    ENQUEUE(queue, start)
+    ADD(visited, start)
+    dist[start] ← 0
+    parent[start] ← null
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        current ← DEQUEUE(queue)
+
+        <span class="pk">if</span> current == target:
+            <span class="pk">return</span> RECONSTRUCT_PATH(parent, start, target)
+
+        <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(current):
+            <span class="pk">if</span> neighbour <span class="pk">not in</span> visited:
+                ADD(visited, neighbour)
+                dist[neighbour] ← dist[current] + 1
+                parent[neighbour] ← current
+                ENQUEUE(queue, neighbour)
+
+    <span class="pk">return</span> null                          <span class="pc">// no path found</span>
+
+<span class="pc">RECONSTRUCT_PATH</span>(<span class="pp">parent</span>, <span class="pp">start</span>, <span class="pp">target</span>):
+    path ← <span class="pk">new</span> List
+    node ← target
+    <span class="pk">while</span> node is <span class="pk">not null</span>:
+        ADD_FRONT(path, node)
+        node ← parent[node]
+    <span class="pk">return</span> path                          <span class="pc">// [start, ..., target]</span></pre>
+  </div>
+
+  <h3>⑤ BFS on a 2D Grid (Flood Fill / Paint Bucket)</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs flood fill on a 2d grid</span>
+    <pre><span class="pc">BFS_GRID</span>(<span class="pp">grid</span>, <span class="pp">startRow</span>, <span class="pp">startCol</span>):
+    rows    ← HEIGHT(grid)
+    cols    ← WIDTH(grid)
+    queue   ← <span class="pk">new</span> Queue
+    visited ← 2D boolean grid of same size, all false
+
+    directions ← [(0,1), (0,-1), (1,0), (-1,0)]   <span class="pc">// right, left, down, up</span>
+
+    ENQUEUE(queue, (startRow, startCol))
+    visited[startRow][startCol] ← true
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        (row, col) ← DEQUEUE(queue)
+        PROCESS(row, col)              <span class="pc">// fill colour, count, etc.</span>
+
+        <span class="pk">for each</span> (dr, dc) <span class="pk">in</span> directions:
+            newRow ← row + dr
+            newCol ← col + dc
+
+            <span class="pk">if</span> IN_BOUNDS(newRow, newCol, rows, cols)
+               <span class="pk">and</span> <span class="pk">not</span> visited[newRow][newCol]
+               <span class="pk">and</span> SAME_COLOUR(grid, newRow, newCol, startRow, startCol):
+
+                visited[newRow][newCol] ← true
+                ENQUEUE(queue, (newRow, newCol))</pre>
+  </div>
+
+  <h3>⑥ BFS — Check if Path Exists</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — bfs reachability check</span>
+    <pre><span class="pc">BFS_REACHABLE</span>(<span class="pp">graph</span>, <span class="pp">start</span>, <span class="pp">target</span>):
+    queue   ← <span class="pk">new</span> Queue
+    visited ← <span class="pk">new</span> Set
+
+    ENQUEUE(queue, start)
+    ADD(visited, start)
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        current ← DEQUEUE(queue)
+
+        <span class="pk">if</span> current == target:
+            <span class="pk">return true</span>               <span class="pc">// found it!</span>
+
+        <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(current):
+            <span class="pk">if</span> neighbour <span class="pk">not in</span> visited:
+                ADD(visited, neighbour)
+                ENQUEUE(queue, neighbour)
+
+    <span class="pk">return false</span>                      <span class="pc">// target not reachable</span></pre>
+  </div>
+
+  <h3>⑦ Kahn's Algorithm — BFS-based Topological Sort</h3>
+  <div class="pseudo-block">
+    <span class="pseudo-label">pseudocode — kahn's topological sort (bfs variant)</span>
+    <pre><span class="pc">KAHN_TOPO_SORT</span>(<span class="pp">graph</span>, <span class="pp">nodes</span>):
+    inDegree ← Map: node → count of incoming edges
+    queue    ← <span class="pk">new</span> Queue
+    result   ← <span class="pk">new</span> List
+
+    <span class="pc">// Initialise inDegree for all nodes</span>
+    <span class="pk">for each</span> node <span class="pk">in</span> nodes:
+        inDegree[node] ← 0
+    <span class="pk">for each</span> (u, v) <span class="pk">in</span> EDGES(graph):
+        inDegree[v] ← inDegree[v] + 1
+
+    <span class="pc">// Enqueue nodes with no dependencies (inDegree = 0)</span>
+    <span class="pk">for each</span> node <span class="pk">in</span> nodes:
+        <span class="pk">if</span> inDegree[node] == 0:
+            ENQUEUE(queue, node)
+
+    <span class="pk">while</span> queue is <span class="pk">not empty</span>:
+        current ← DEQUEUE(queue)
+        ADD(result, current)
+
+        <span class="pk">for each</span> neighbour <span class="pk">in</span> NEIGHBOURS(current):
+            inDegree[neighbour] ← inDegree[neighbour] - 1
+            <span class="pk">if</span> inDegree[neighbour] == 0:
+                ENQUEUE(queue, neighbour)    <span class="pc">// ready to process</span>
+
+    <span class="pk">if</span> SIZE(result) != SIZE(nodes):
+        <span class="pk">return</span> ERROR("Cycle detected!")     <span class="pc">// can't topologically sort a cycle</span>
+
+    <span class="pk">return</span> result</pre>
+  </div>
+
+  <div class="tip">
+    <h4>🧠 Pattern Recognition</h4>
+    <p>Every BFS pseudocode follows the same skeleton: <strong>init queue → enqueue start → while queue not empty → dequeue → process → enqueue unvisited neighbours</strong>. The only variation is what extra data you track (distance, level, parent, inDegree). Recognise the skeleton and you can write any BFS variant.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑦ INTERACTIVE VISUAL -->
+<div id="tab-visual" class="tab-panel"><div class="section">
+  <h2>🎮 Interactive BFS Visualizer</h2>
+  <p>Watch BFS expand level by level — nodes turn blue as they're visited, one level at a time.</p>
+
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">🌊 Live BFS on a Tree</div>
+    <canvas id="bfs-canvas" width="560" height="260" style="background:#f4f7fd;border-radius:8px;border:1px solid var(--border);"></canvas>
+    <div class="canvas-controls">
+      <button class="ctrl-btn" onclick="stepBFS()">▶ Step</button>
+      <button class="ctrl-btn" onclick="autoPlay()">⚡ Auto Play</button>
+      <button class="ctrl-btn secondary" onclick="resetBFS()">↺ Reset</button>
+    </div>
+    <div class="vis-log" id="vis-log">Press Step or Auto Play to start BFS traversal...</div>
+  </div>
+
+  <h3>Queue State Simulation — What the queue holds at each step</h3>
+  <div class="traversal-vis">
+    <div class="traversal-vis-title">📦 Queue State (FIFO) — BFS on tree A, B, C, D, E, F, G</div>
+    <div class="queue-trace">
+      <div class="queue-row"><div class="queue-step-num">0</div><span class="queue-label">Init</span><div class="queue-pills"><span style="font-size:.7rem;color:var(--muted)">Queue front → [</span><span class="pill pill-queue">A</span><span style="font-size:.7rem;color:var(--muted)">] ← back</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">1</div><span class="queue-label">Dequeue A</span><div class="queue-pills"><span class="pill pill-active">A</span><span class="arrow-right">out</span><span style="font-size:.7rem;color:var(--muted)">&nbsp; Queue: [</span><span class="pill pill-queue">B</span><span class="pill pill-queue">C</span><span style="font-size:.7rem;color:var(--muted)">]</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">2</div><span class="queue-label">Dequeue B</span><div class="queue-pills"><span class="pill pill-active">B</span><span class="arrow-right">out</span><span style="font-size:.7rem;color:var(--muted)">&nbsp; Queue: [</span><span class="pill pill-queue">C</span><span class="pill pill-queue">D</span><span class="pill pill-queue">E</span><span style="font-size:.7rem;color:var(--muted)">]</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">3</div><span class="queue-label">Dequeue C</span><div class="queue-pills"><span class="pill pill-active">C</span><span class="arrow-right">out</span><span style="font-size:.7rem;color:var(--muted)">&nbsp; Queue: [</span><span class="pill pill-queue">D</span><span class="pill pill-queue">E</span><span class="pill pill-queue">F</span><span class="pill pill-queue">G</span><span style="font-size:.7rem;color:var(--muted)">]</span></div></div>
+      <div class="queue-row"><div class="queue-step-num">4</div><span class="queue-label">Dequeue D,E,F,G</span><div class="queue-pills"><span class="pill pill-active">D</span><span class="pill pill-active">E</span><span class="pill pill-active">F</span><span class="pill pill-active">G</span><span class="arrow-right">out</span><span style="font-size:.7rem;color:var(--muted)">&nbsp; Queue: [ ] ← empty. Done! ✅</span></div></div>
+    </div>
+    <div style="margin-top:12px;">
+      <p style="font-size:.8rem;color:var(--muted);margin:0 0 6px;">Level breakdown:</p>
+      <div class="level-band"><span class="level-num">Level 0</span><div class="level-nodes"><span class="level-pill">A</span></div></div>
+      <div class="level-band"><span class="level-num">Level 1</span><div class="level-nodes"><span class="level-pill">B</span><span class="level-pill">C</span></div></div>
+      <div class="level-band"><span class="level-num">Level 2</span><div class="level-nodes"><span class="level-pill">D</span><span class="level-pill">E</span><span class="level-pill">F</span><span class="level-pill">G</span></div></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑧ C# CODE -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# Code Examples</h2>
+  <p>From basic level-order to shortest path, flood fill, and Kahn's sort — all in C#.</p>
+
+  <h3>1. TreeNode Class</h3>
+  <div class="code-block">
+    <span class="code-label">c# — binary tree node</span>
+    <pre><span class="kw">public class</span> <span class="tp">TreeNode</span>
+{
+    <span class="kw">public int</span> Val;
+    <span class="kw">public</span> <span class="tp">TreeNode</span>? Left;
+    <span class="kw">public</span> <span class="tp">TreeNode</span>? Right;
+    <span class="kw">public</span> <span class="fn">TreeNode</span>(<span class="kw">int</span> val) { Val = val; }
+}</pre>
+  </div>
+
+  <h3>2. BFS Level-Order Traversal (Tree)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bfs tree traversal using queue</span>
+    <pre><span class="cm">// Visit tree nodes level by level (BFS = Level-order traversal)</span>
+<span class="kw">public static</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt; <span class="fn">LevelOrder</span>(<span class="tp">TreeNode</span>? root)
+{
+    <span class="kw">var</span> result = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt;();
+    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> result;
+
+    <span class="kw">var</span> queue = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="tp">TreeNode</span>&gt;();
+    queue.<span class="fn">Enqueue</span>(root);
+
+    <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">var</span> node = queue.<span class="fn">Dequeue</span>();     <span class="cm">// take from front (FIFO)</span>
+        result.<span class="fn">Add</span>(node.Val);
+
+        <span class="kw">if</span> (node.Left  != <span class="kw">null</span>) queue.<span class="fn">Enqueue</span>(node.Left);
+        <span class="kw">if</span> (node.Right != <span class="kw">null</span>) queue.<span class="fn">Enqueue</span>(node.Right);
+    }
+
+    <span class="kw">return</span> result;
+    <span class="cm">// For tree: A,B,C,D,E,F,G → returns [A,B,C,D,E,F,G]</span>
+}</pre>
+  </div>
+
+  <h3>3. Level-by-Level Groups (Nested List)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bfs collecting nodes per level</span>
+    <pre><span class="cm">// Returns [[A], [B,C], [D,E,F,G]] — one list per level</span>
+<span class="kw">public static</span> <span class="tp">List</span>&lt;<span class="tp">List</span>&lt;<span class="kw">int</span>&gt;&gt; <span class="fn">LevelOrderGroups</span>(<span class="tp">TreeNode</span>? root)
+{
+    <span class="kw">var</span> result = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">List</span>&lt;<span class="kw">int</span>&gt;&gt;();
+    <span class="kw">if</span> (root == <span class="kw">null</span>) <span class="kw">return</span> result;
+
+    <span class="kw">var</span> queue = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="tp">TreeNode</span>&gt;();
+    queue.<span class="fn">Enqueue</span>(root);
+
+    <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">int</span> levelSize = queue.Count;     <span class="cm">// nodes at THIS level</span>
+        <span class="kw">var</span> level = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt;();
+
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; levelSize; i++)
+        {
+            <span class="kw">var</span> node = queue.<span class="fn">Dequeue</span>();
+            level.<span class="fn">Add</span>(node.Val);
+
+            <span class="kw">if</span> (node.Left  != <span class="kw">null</span>) queue.<span class="fn">Enqueue</span>(node.Left);
+            <span class="kw">if</span> (node.Right != <span class="kw">null</span>) queue.<span class="fn">Enqueue</span>(node.Right);
+        }
+
+        result.<span class="fn">Add</span>(level);             <span class="cm">// save this level</span>
+    }
+
+    <span class="kw">return</span> result;
+}</pre>
+  </div>
+
+  <h3>4. BFS on a Graph (with Visited Set)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — graph bfs using adjacency list</span>
+    <pre><span class="cm">// Graph traversal — must track visited to handle cycles</span>
+<span class="kw">public class</span> <span class="tp">GraphBFS</span>
+{
+    <span class="kw">private</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt; _graph = <span class="kw">new</span>()
+    {
+        { <span class="str">"EntryAPI"</span>,   <span class="kw">new</span>() { <span class="str">"AuthService"</span>, <span class="str">"DataService"</span> } },
+        { <span class="str">"AuthService"</span>, <span class="kw">new</span>() { <span class="str">"TokenStore"</span> } },
+        { <span class="str">"DataService"</span>, <span class="kw">new</span>() { <span class="str">"Database"</span>, <span class="str">"Cache"</span> } },
+        { <span class="str">"TokenStore"</span>,  <span class="kw">new</span>() },
+        { <span class="str">"Database"</span>,   <span class="kw">new</span>() },
+        { <span class="str">"Cache"</span>,      <span class="kw">new</span>() }
+    };
+
+    <span class="kw">public void</span> <span class="fn">BFS</span>(<span class="kw">string</span> start)
+    {
+        <span class="kw">var</span> queue   = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="kw">string</span>&gt;();
+        <span class="kw">var</span> visited = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt;();
+
+        queue.<span class="fn">Enqueue</span>(start);
+        visited.<span class="fn">Add</span>(start);              <span class="cm">// mark at enqueue time!</span>
+
+        <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+        {
+            <span class="kw">var</span> current = queue.<span class="fn">Dequeue</span>();
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Visiting: {current}"</span>);
+
+            <span class="kw">foreach</span> (<span class="kw">var</span> neighbour <span class="kw">in</span> _graph[current])
+            {
+                <span class="kw">if</span> (!visited.<span class="fn">Contains</span>(neighbour))
+                {
+                    visited.<span class="fn">Add</span>(neighbour);
+                    queue.<span class="fn">Enqueue</span>(neighbour);
+                }
+            }
+        }
+    }
+}
+<span class="cm">// Output: EntryAPI → AuthService → DataService → TokenStore → Database → Cache</span></pre>
+  </div>
+
+  <h3>5. Shortest Path — BFS with Distance Map</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bfs shortest path with path reconstruction</span>
+    <pre><span class="kw">public static</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;? <span class="fn">ShortestPath</span>(
+    <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt; graph,
+    <span class="kw">string</span> start,
+    <span class="kw">string</span> target)
+{
+    <span class="kw">var</span> queue   = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="kw">string</span>&gt;();
+    <span class="kw">var</span> visited = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt;();
+    <span class="kw">var</span> parent  = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>?&gt;();  <span class="cm">// track path</span>
+
+    queue.<span class="fn">Enqueue</span>(start);
+    visited.<span class="fn">Add</span>(start);
+    parent[start] = <span class="kw">null</span>;
+
+    <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">var</span> current = queue.<span class="fn">Dequeue</span>();
+
+        <span class="kw">if</span> (current == target)
+            <span class="kw">return</span> <span class="fn">ReconstructPath</span>(parent, start, target);
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> neighbour <span class="kw">in</span> graph[current])
+        {
+            <span class="kw">if</span> (!visited.<span class="fn">Contains</span>(neighbour))
+            {
+                visited.<span class="fn">Add</span>(neighbour);
+                parent[neighbour] = current;       <span class="cm">// remember where we came from</span>
+                queue.<span class="fn">Enqueue</span>(neighbour);
+            }
+        }
+    }
+
+    <span class="kw">return null</span>;  <span class="cm">// no path exists</span>
+}
+
+<span class="kw">private static</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; <span class="fn">ReconstructPath</span>(
+    <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>?&gt; parent,
+    <span class="kw">string</span> start, <span class="kw">string</span> target)
+{
+    <span class="kw">var</span> path = <span class="kw">new</span> <span class="tp">LinkedList</span>&lt;<span class="kw">string</span>&gt;();
+    <span class="kw">var</span> current = (string?)target;
+
+    <span class="kw">while</span> (current != <span class="kw">null</span>)
+    {
+        path.<span class="fn">AddFirst</span>(current);           <span class="cm">// build path backwards</span>
+        current = parent[current];
+    }
+
+    <span class="kw">return</span> path.<span class="fn">ToList</span>();
+}
+<span class="cm">// Returns: ["EntryAPI", "DataService", "Database"]</span></pre>
+  </div>
+
+  <h3>6. Flood Fill on a 2D Grid (Paint Bucket)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bfs flood fill algorithm</span>
+    <pre><span class="cm">// Classic MS Paint bucket fill — BFS on a 2D grid</span>
+<span class="kw">public static void</span> <span class="fn">FloodFill</span>(<span class="kw">int</span>[,] grid, <span class="kw">int</span> row, <span class="kw">int</span> col, <span class="kw">int</span> newColour)
+{
+    <span class="kw">int</span> rows = grid.<span class="fn">GetLength</span>(<span class="num">0</span>);
+    <span class="kw">int</span> cols = grid.<span class="fn">GetLength</span>(<span class="num">1</span>);
+    <span class="kw">int</span> oldColour = grid[row, col];
+
+    <span class="kw">if</span> (oldColour == newColour) <span class="kw">return</span>;
+
+    <span class="kw">var</span> queue   = <span class="kw">new</span> <span class="tp">Queue</span>&lt;(<span class="kw">int</span>, <span class="kw">int</span>)&gt;();
+    <span class="kw">var</span> visited = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;(<span class="kw">int</span>, <span class="kw">int</span>)&gt;();
+    <span class="kw">int</span>[] dr = { <span class="num">0</span>, <span class="num">0</span>, <span class="num">1</span>, -<span class="num">1</span> };  <span class="cm">// right, left, down, up</span>
+    <span class="kw">int</span>[] dc = { <span class="num">1</span>, -<span class="num">1</span>, <span class="num">0</span>, <span class="num">0</span> };
+
+    queue.<span class="fn">Enqueue</span>((row, col));
+    visited.<span class="fn">Add</span>((row, col));
+
+    <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">var</span> (r, c) = queue.<span class="fn">Dequeue</span>();
+        grid[r, c] = newColour;              <span class="cm">// fill this cell</span>
+
+        <span class="kw">for</span> (<span class="kw">int</span> d = <span class="num">0</span>; d &lt; <span class="num">4</span>; d++)
+        {
+            <span class="kw">int</span> nr = r + dr[d], nc = c + dc[d];
+
+            <span class="kw">if</span> (nr &gt;= <span class="num">0</span> && nr &lt; rows &&
+                nc &gt;= <span class="num">0</span> && nc &lt; cols &&
+                !visited.<span class="fn">Contains</span>((nr, nc)) &&
+                grid[nr, nc] == oldColour)
+            {
+                visited.<span class="fn">Add</span>((nr, nc));
+                queue.<span class="fn">Enqueue</span>((nr, nc));
+            }
+        }
+    }
+}</pre>
+  </div>
+
+  <h3>7. Kahn's Algorithm — BFS Topological Sort</h3>
+  <div class="code-block">
+    <span class="code-label">c# — kahn's topological sort (bfs-based)</span>
+    <pre><span class="cm">// Use case: determine C# project build order by dependency</span>
+<span class="kw">public static</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; <span class="fn">TopologicalSort</span>(
+    <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;&gt; graph)
+{
+    <span class="kw">var</span> inDegree = <span class="kw">new</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">int</span>&gt;();
+    <span class="kw">var</span> result   = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt;();
+
+    <span class="cm">// Init in-degrees</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> node <span class="kw">in</span> graph.Keys) inDegree[node] = <span class="num">0</span>;
+    <span class="kw">foreach</span> (<span class="kw">var</span> (_, neighbours) <span class="kw">in</span> graph)
+        <span class="kw">foreach</span> (<span class="kw">var</span> n <span class="kw">in</span> neighbours) inDegree[n]++;
+
+    <span class="cm">// Enqueue nodes with no dependencies</span>
+    <span class="kw">var</span> queue = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="kw">string</span>&gt;(
+        inDegree.<span class="fn">Where</span>(kv => kv.Value == <span class="num">0</span>).<span class="fn">Select</span>(kv => kv.Key));
+
+    <span class="kw">while</span> (queue.Count &gt; <span class="num">0</span>)
+    {
+        <span class="kw">var</span> current = queue.<span class="fn">Dequeue</span>();
+        result.<span class="fn">Add</span>(current);
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> neighbour <span class="kw">in</span> graph[current])
+        {
+            inDegree[neighbour]--;
+            <span class="kw">if</span> (inDegree[neighbour] == <span class="num">0</span>)
+                queue.<span class="fn">Enqueue</span>(neighbour);   <span class="cm">// all deps resolved</span>
+        }
+    }
+
+    <span class="kw">if</span> (result.Count != graph.Count)
+        <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"Cycle detected!"</span>);
+
+    <span class="kw">return</span> result;
+}
+
+<span class="cm">// graph["PackageC"] = [] (no deps)</span>
+<span class="cm">// graph["PackageB"] = ["PackageC"]</span>
+<span class="cm">// graph["PackageA"] = ["PackageB"]</span>
+<span class="cm">// Result: ["PackageC", "PackageB", "PackageA"]</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ⑨ CHEAT SHEET -->
+<div id="tab-cheatsheet" class="tab-panel"><div class="section">
+  <h2>📋 BFS Cheat Sheet — Quick Reference</h2>
+
+  <h3>Algorithm Skeleton — Memorise This</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bfs master template</span>
+    <pre><span class="cm">// ======= TREE BFS (no visited needed) =======</span>
+<span class="kw">var</span> q = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="tp">TreeNode</span>&gt;();
+q.<span class="fn">Enqueue</span>(root);
+<span class="kw">while</span> (q.Count &gt; <span class="num">0</span>) {
+    <span class="kw">var</span> node = q.<span class="fn">Dequeue</span>();
+    <span class="cm">// process node</span>
+    <span class="kw">if</span> (node.Left  != <span class="kw">null</span>) q.<span class="fn">Enqueue</span>(node.Left);
+    <span class="kw">if</span> (node.Right != <span class="kw">null</span>) q.<span class="fn">Enqueue</span>(node.Right);
+}
+
+<span class="cm">// ======= GRAPH BFS (need visited) =======</span>
+<span class="kw">var</span> q = <span class="kw">new</span> <span class="tp">Queue</span>&lt;<span class="kw">string</span>&gt;();
+<span class="kw">var</span> seen = <span class="kw">new</span> <span class="tp">HashSet</span>&lt;<span class="kw">string</span>&gt;();
+q.<span class="fn">Enqueue</span>(start); seen.<span class="fn">Add</span>(start);      <span class="cm">// mark at ENQUEUE time</span>
+<span class="kw">while</span> (q.Count &gt; <span class="num">0</span>) {
+    <span class="kw">var</span> curr = q.<span class="fn">Dequeue</span>();
+    <span class="cm">// process curr</span>
+    <span class="kw">foreach</span> (<span class="kw">var</span> nb <span class="kw">in</span> graph[curr])
+        <span class="kw">if</span> (seen.<span class="fn">Add</span>(nb)) q.<span class="fn">Enqueue</span>(nb);   <span class="cm">// HashSet.Add returns false if exists</span>
+}
+
+<span class="cm">// ======= LEVEL TRACKING =======</span>
+<span class="kw">int</span> level = <span class="num">0</span>;
+<span class="kw">while</span> (q.Count &gt; <span class="num">0</span>) {
+    <span class="kw">int</span> size = q.Count;                  <span class="cm">// snapshot of THIS level</span>
+    <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i &lt; size; i++) {
+        <span class="kw">var</span> node = q.<span class="fn">Dequeue</span>();
+        <span class="cm">// process at level {level}</span>
+        <span class="cm">// enqueue children...</span>
+    }
+    level++;
+}</pre>
+  </div>
+
+  <h3>Pick Your BFS Variant</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>BFS Variant</th><th>Extra Data</th></tr>
+    <tr><td>Traverse a tree</td><td>Basic BFS</td><td>Nothing</td></tr>
+    <tr><td>Group nodes by level</td><td>Level BFS</td><td>levelSize snapshot</td></tr>
+    <tr><td>Shortest path (hops)</td><td>BFS + parent map</td><td>parent Dictionary</td></tr>
+    <tr><td>Shortest distance (count)</td><td>BFS + dist map</td><td>dist Dictionary</td></tr>
+    <tr><td>Reachability A→B?</td><td>BFS + early return</td><td>visited HashSet</td></tr>
+    <tr><td>Flood fill / 2D grid</td><td>BFS with (row,col) queue</td><td>visited 2D array</td></tr>
+    <tr><td>Topological sort</td><td>Kahn's (BFS on inDegree)</td><td>inDegree map</td></tr>
+    <tr><td>Connected components</td><td>BFS in outer loop</td><td>global visited set</td></tr>
+  </table></div>
+
+  <h3>Complexity Summary</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⏱️ Time Complexity</h4>
+      <ul>
+        <li><strong>Tree BFS:</strong> O(n) — every node visited once</li>
+        <li><strong>Graph BFS:</strong> O(V + E) — vertices + edges</li>
+        <li><strong>Grid BFS:</strong> O(rows × cols) — every cell once</li>
+        <li><strong>Kahn's:</strong> O(V + E)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💾 Space Complexity</h4>
+      <ul>
+        <li><strong>Queue:</strong> O(w) — max width of tree/graph</li>
+        <li><strong>Visited set:</strong> O(V)</li>
+        <li><strong>Worst case (complete binary tree):</strong> O(n/2) = O(n)</li>
+        <li><strong>Grid:</strong> O(rows × cols)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common Mistakes</h3>
+  <ul class="badlist">
+    <li>Marking visited at DEQUEUE instead of ENQUEUE → same node enqueued multiple times</li>
+    <li>Not initialising visited set for graphs → infinite loop on cycles</li>
+    <li>Forgetting to check for null root before enqueuing → NullReferenceException</li>
+    <li>Using BFS for weighted shortest path → wrong answers (use Dijkstra)</li>
+    <li>Taking levelSize snapshot AFTER enqueuing children → wrong level count</li>
+    <li>Using a Stack instead of Queue → accidentally doing DFS</li>
+  </ul>
+
+  <h3>Signs You Need BFS</h3>
+  <ul class="checklist">
+    <li>Problem asks for "shortest path" or "minimum steps" (unweighted)</li>
+    <li>Problem asks for "nearest" node with some property</li>
+    <li>You need to process nodes "level by level" or "layer by layer"</li>
+    <li>Problem involves spreading/propagation (fire, infection, flood)</li>
+    <li>You want ALL nodes at distance k before distance k+1</li>
+    <li>You need to check if a path exists (reachability)</li>
+    <li>Grid problems: find minimum steps to reach a cell</li>
+    <li>Social graph: degrees of separation</li>
+  </ul>
+
+  <h3>BFS vs DFS — One-Line Decisions</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Situation</th><th>Pick</th></tr>
+    <tr><td>"Find the <strong>shortest</strong> path"</td><td><strong>BFS ✅</strong></td></tr>
+    <tr><td>"Find <strong>any</strong> path"</td><td>DFS (faster)</td></tr>
+    <tr><td>"Find nodes <strong>closest</strong> to start"</td><td><strong>BFS ✅</strong></td></tr>
+    <tr><td>"Detect a cycle in a graph"</td><td>DFS (more natural)</td></tr>
+    <tr><td>"Level-order / row-by-row traversal"</td><td><strong>BFS ✅</strong></td></tr>
+    <tr><td>"Explore all possibilities / backtrack"</td><td>DFS</td></tr>
+    <tr><td>"Flood fill / paint bucket"</td><td><strong>BFS ✅</strong></td></tr>
+    <tr><td>"Topological sort"</td><td>Both (DFS post-order or Kahn's BFS)</td></tr>
+  </table></div>
+
+  <div class="completion">
+    <h3>🌊 You've mastered BFS!</h3>
+    <p>You went from "what is a queue?" to level-order traversal, shortest path, flood fill, Kahn's topological sort — all with full pseudocode and C# code. The golden rule: <strong>Queue = BFS, Stack = DFS</strong>. That single swap changes everything. Practice these four patterns: <strong>basic BFS → level tracking → shortest path → 2D grid</strong> and you'll handle 95% of BFS interview questions.</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  if (id === 'visual') setTimeout(resetBFS, 100);
+}
+
+/* ---- BFS CANVAS VISUALIZER ---- */
+const TREE = {
+  nodes: [
+    { id: 0, label: 'A', x: 280, y: 40, level: 0 },
+    { id: 1, label: 'B', x: 155, y: 115, level: 1 },
+    { id: 2, label: 'C', x: 405, y: 115, level: 1 },
+    { id: 3, label: 'D', x: 85,  y: 195, level: 2 },
+    { id: 4, label: 'E', x: 225, y: 195, level: 2 },
+    { id: 5, label: 'F', x: 335, y: 195, level: 2 },
+    { id: 6, label: 'G', x: 475, y: 195, level: 2 },
+  ],
+  edges: [[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]],
+};
+
+const BFS_ORDER = [0, 1, 2, 3, 4, 5, 6];
+const MESSAGES = [
+  '① Enqueue A (root). Level 0. Queue: [A]',
+  '② Dequeue A → process. Enqueue children B, C. Level 1. Queue: [B, C]',
+  '③ Dequeue B → process. Enqueue children D, E. Queue: [C, D, E]',
+  '④ Dequeue C → process. Enqueue children F, G. Level 2 now filling. Queue: [D, E, F, G]',
+  '⑤ Dequeue D → leaf. Queue: [E, F, G]',
+  '⑥ Dequeue E → leaf. Queue: [F, G]',
+  '⑦ Dequeue F → leaf. Queue: [G] → then G. Queue empty. ✅ BFS complete!',
+];
+
+const LEVEL_COLOURS = {
+  unvisited: { fill: '#fff', stroke: '#c4c0b8', text: '#7a7a6a' },
+  active:    { fill: '#1a3380', stroke: '#1a3380', text: '#fff' },
+  visited0:  { fill: '#dce4f8', stroke: '#2a4db0', text: '#1a3380' },
+  visited1:  { fill: '#c0d4f4', stroke: '#2a4db0', text: '#1a3380' },
+  visited2:  { fill: '#a8c4f0', stroke: '#2a4db0', text: '#1a3380' },
+};
+
+let bfsStep = 0;
+let bfsVisited = new Set();
+let autoTimer = null;
+
+const canvas = document.getElementById('bfs-canvas');
+if (canvas) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = 560 * dpr;
+  canvas.height = 260 * dpr;
+  canvas.style.width = '100%';
+  canvas.style.maxWidth = '560px';
+  canvas.style.height = 'auto';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  function drawBFSTree() {
+    ctx.clearRect(0, 0, 560, 260);
+
+    // edges
+    ctx.strokeStyle = '#a8c4f0';
+    ctx.lineWidth = 1.8;
+    TREE.edges.forEach(([a, b]) => {
+      ctx.beginPath();
+      ctx.moveTo(TREE.nodes[a].x, TREE.nodes[a].y);
+      ctx.lineTo(TREE.nodes[b].x, TREE.nodes[b].y);
+      ctx.stroke();
+    });
+
+    // level labels
+    const levels = { 0: 'Level 0', 1: 'Level 1', 2: 'Level 2' };
+    const levelY  = { 0: 40, 1: 115, 2: 195 };
+    ctx.font = '600 9px DM Sans, sans-serif';
+    ctx.fillStyle = '#a8c4f0';
+    ctx.textAlign = 'left';
+    [0,1,2].forEach(l => {
+      ctx.fillText(levels[l], 8, levelY[l] + 4);
+    });
+
+    // nodes
+    TREE.nodes.forEach((n, i) => {
+      const isActive  = BFS_ORDER[bfsStep - 1] === i;
+      const isVisited = bfsVisited.has(i);
+      const lvl = n.level;
+
+      let fillC  = '#fff', strokeC = '#c4c0b8', textC = '#7a7a6a';
+      if (isActive) {
+        fillC = '#1a3380'; strokeC = '#1a3380'; textC = '#fff';
+      } else if (isVisited) {
+        const shades = ['#dce4f8','#c0d4f4','#a8c4f0'];
+        fillC = shades[lvl]; strokeC = '#2a4db0'; textC = '#1a3380';
+      }
+
+      ctx.beginPath();
+      ctx.arc(n.x, n.y, 22, 0, Math.PI * 2);
+      ctx.fillStyle = fillC;
+      ctx.strokeStyle = strokeC;
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = textC;
+      ctx.font = 'bold 15px DM Sans, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(n.label, n.x, n.y);
+    });
+
+    // path label
+    if (bfsStep > 0) {
+      const path = BFS_ORDER.slice(0, bfsStep).map(i => TREE.nodes[i].label).join(' → ');
+      ctx.fillStyle = '#1a3380';
+      ctx.font = '600 11px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('BFS: ' + path, 280, 245);
+    }
+  }
+
+  window.stepBFS = function() {
+    if (bfsStep >= BFS_ORDER.length) return;
+    bfsVisited.add(BFS_ORDER[bfsStep]);
+    bfsStep++;
+    drawBFSTree();
+    const log = document.getElementById('vis-log');
+    if (log) log.textContent = MESSAGES[bfsStep - 1];
+  };
+
+  window.resetBFS = function() {
+    clearInterval(autoTimer);
+    bfsStep = 0;
+    bfsVisited.clear();
+    drawBFSTree();
+    const log = document.getElementById('vis-log');
+    if (log) log.textContent = 'Press Step or Auto Play to start BFS traversal...';
+  };
+
+  window.autoPlay = function() {
+    clearInterval(autoTimer);
+    if (bfsStep >= BFS_ORDER.length) resetBFS();
+    autoTimer = setInterval(() => {
+      if (bfsStep >= BFS_ORDER.length) { clearInterval(autoTimer); return; }
+      stepBFS();
+    }, 850);
+  };
+
+  drawBFSTree();
+}
+</script>
+</body>
+</html>

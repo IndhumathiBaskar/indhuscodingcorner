@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns — Part 2: Structural</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f8ff;--surface:#edf1ff;--card:#fff;--border:#dce2f5;--border2:#b8c2e8;
+  --str:#1a7abf;--str-l:#d6eef8;--str-d:#0e4a8a;
+  --adp:#0e8a5a;--adp-l:#d4f0e8;--adp-d:#085c38;
+  --dec:#8a2abf;--dec-l:#f0e0f8;--dec-d:#5c1280;
+  --fac:#bf7a0e;--fac-l:#f8f0d4;--fac-d:#8a5000;
+  --prx:#0e6abf;--prx-l:#d6ebf8;--prx-d:#0a4280;
+  --cmp:#bf2a5a;--cmp-l:#f8d6e4;--cmp-d:#8a003a;
+  --brd:#1a8a7a;--brd-l:#d0f0ec;--brd-d:#0d5c52;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,122,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#081a28 45%,#0d1e30 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(26,122,191,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,90,.2) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(138,42,191,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#34d399,#60a5fa,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(96,165,250,.25);border:1px solid rgba(96,165,250,.4);color:#93c5fd;}
+.pb-inactive{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,248,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 13px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.tab-btn.t-over.active{background:var(--str-l);color:var(--str-d);}
+.tab-btn.t-adp.active{background:var(--adp-l);color:var(--adp-d);}
+.tab-btn.t-dec.active{background:var(--dec-l);color:var(--dec-d);}
+.tab-btn.t-fac.active{background:var(--fac-l);color:var(--fac-d);}
+.tab-btn.t-prx.active{background:var(--prx-l);color:var(--prx-d);}
+.tab-btn.t-cmp.active{background:var(--cmp-l);color:var(--cmp-d);}
+.tab-btn.t-brd.active{background:var(--brd-l);color:var(--brd-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--str-d);}
+.ph-over h2{border-bottom:3px solid var(--str-l);}
+.ph-adp h2,.ph-adp h3{color:var(--adp-d);}
+.ph-adp h2{border-bottom:3px solid var(--adp-l);}
+.ph-dec h2,.ph-dec h3{color:var(--dec-d);}
+.ph-dec h2{border-bottom:3px solid var(--dec-l);}
+.ph-fac h2,.ph-fac h3{color:var(--fac-d);}
+.ph-fac h2{border-bottom:3px solid var(--fac-l);}
+.ph-prx h2,.ph-prx h3{color:var(--prx-d);}
+.ph-prx h2{border-bottom:3px solid var(--prx-l);}
+.ph-cmp h2,.ph-cmp h3{color:var(--cmp-d);}
+.ph-cmp h2{border-bottom:3px solid var(--cmp-l);}
+.ph-brd h2,.ph-brd h3{color:var(--brd-d);}
+.ph-brd h2{border-bottom:3px solid var(--brd-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf1ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--str);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--str-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-adp{background:var(--adp-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--adp);}
+.an-adp .analogy-tag{color:var(--adp-d);}
+.an-dec{background:var(--dec-l);border:1.5px solid rgba(138,42,191,.2);border-left:4px solid var(--dec);}
+.an-dec .analogy-tag{color:var(--dec-d);}
+.an-fac{background:var(--fac-l);border:1.5px solid rgba(191,122,14,.2);border-left:4px solid var(--fac);}
+.an-fac .analogy-tag{color:var(--fac-d);}
+.an-prx{background:var(--prx-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--prx);}
+.an-prx .analogy-tag{color:var(--prx-d);}
+.an-cmp{background:var(--cmp-l);border:1.5px solid rgba(191,42,90,.2);border-left:4px solid var(--cmp);}
+.an-cmp .analogy-tag{color:var(--cmp-d);}
+.an-brd{background:var(--brd-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--brd);}
+.an-brd .analogy-tag{color:var(--brd-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.adp{border-left:4px solid var(--adp);}
+.code-block.dec{border-left:4px solid var(--dec);}
+.code-block.fac{border-left:4px solid var(--fac);}
+.code-block.prx{border-left:4px solid var(--prx);}
+.code-block.cmp{border-left:4px solid var(--cmp);}
+.code-block.brd{border-left:4px solid var(--brd);}
+.code-block.neutral{border-left:4px solid var(--str);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}.code-label.good{color:#86efac;}.code-label.neutral{color:#93c5fd;}
+.code-label.adp-c{color:#6ee7b7;}.code-label.dec-c{color:#d8b4fe;}.code-label.fac-c{color:#fde68a;}
+.code-label.prx-c{color:#93c5fd;}.code-label.cmp-c{color:#fca5a5;}.code-label.brd-c{color:#99f6e4;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,122,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--str-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-adp li{border-left:3px solid var(--adp);}
+.cl-adp li:before{content:"✓ ";color:var(--adp);font-weight:700;}
+.cl-dec li{border-left:3px solid var(--dec);}
+.cl-dec li:before{content:"✓ ";color:var(--dec);font-weight:700;}
+.cl-fac li{border-left:3px solid var(--fac);}
+.cl-fac li:before{content:"✓ ";color:var(--fac);font-weight:700;}
+.cl-prx li{border-left:3px solid var(--prx);}
+.cl-prx li:before{content:"✓ ";color:var(--prx);font-weight:700;}
+.cl-cmp li{border-left:3px solid var(--cmp);}
+.cl-cmp li:before{content:"✓ ";color:var(--cmp);font-weight:700;}
+.cl-brd li{border-left:3px solid var(--brd);}
+.cl-brd li:before{content:"✓ ";color:var(--brd);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}
+.cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-adp{background:var(--adp-l);border-color:rgba(14,138,90,.25);}
+.pc-dec{background:var(--dec-l);border-color:rgba(138,42,191,.25);}
+.pc-fac{background:var(--fac-l);border-color:rgba(191,122,14,.25);}
+.pc-prx{background:var(--prx-l);border-color:rgba(14,106,191,.25);}
+.pc-cmp{background:var(--cmp-l);border-color:rgba(191,42,90,.25);}
+.pc-brd{background:var(--brd-l);border-color:rgba(26,138,122,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-adp .pc-name{color:var(--adp-d);}
+.pc-dec .pc-name{color:var(--dec-d);}
+.pc-fac .pc-name{color:var(--fac-d);}
+.pc-prx .pc-name{color:var(--prx-d);}
+.pc-cmp .pc-name{color:var(--cmp-d);}
+.pc-brd .pc-name{color:var(--brd-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);margin-bottom:8px;}
+.pc-test{font-family:'JetBrains Mono',monospace;font-size:.66rem;padding:4px 8px;border-radius:4px;color:var(--text2);}
+.pc-adp .pc-test{background:rgba(14,138,90,.1);}
+.pc-dec .pc-test{background:rgba(138,42,191,.1);}
+.pc-fac .pc-test{background:rgba(191,122,14,.1);}
+.pc-prx .pc-test{background:rgba(14,106,191,.1);}
+.pc-cmp .pc-test{background:rgba(191,42,90,.1);}
+.pc-brd .pc-test{background:rgba(26,138,122,.1);}
+
+/* SOLID BADGE */
+.solid-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.sb{padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sb-s{background:rgba(26,106,191,.12);color:#0e3a8a;border:1px solid rgba(26,106,191,.2);}
+.sb-o{background:rgba(191,106,14,.12);color:#8a4a00;border:1px solid rgba(191,106,14,.2);}
+.sb-l{background:rgba(26,138,74,.12);color:#0d5c38;border:1px solid rgba(26,138,74,.2);}
+.sb-i{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+.sb-d{background:rgba(176,42,55,.12);color:#8a0010;border:1px solid rgba(176,42,55,.2);}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Design Patterns Series · Part 2 of 3</div>
+    <div class="part-badge">
+      <span class="pb pb-done">✅ Creational</span>
+      <span class="pb pb-active">② Structural</span>
+      <span class="pb pb-inactive">③ Behavioural</span>
+    </div>
+    <h1>Design Patterns — <span>Structural</span></h1>
+    <p>Adapter · Decorator · Facade · Proxy · Composite · Bridge · C# deep dive · beginner to expert</p>
+    <div class="header-chips">
+      <span class="chip">Adapter</span>
+      <span class="chip">Decorator</span>
+      <span class="chip">Facade</span>
+      <span class="chip">Proxy</span>
+      <span class="chip">Composite</span>
+      <span class="chip">Bridge</span>
+      <span class="chip">Real C# Examples</span>
+      <span class="chip">SOLID Connections</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-adp" onclick="T('adapter',this)">② Adapter</button>
+      <button class="tab-btn t-dec" onclick="T('decorator',this)">③ Decorator</button>
+      <button class="tab-btn t-fac" onclick="T('facade',this)">④ Facade</button>
+      <button class="tab-btn t-prx" onclick="T('proxy',this)">⑤ Proxy</button>
+      <button class="tab-btn t-cmp" onclick="T('composite',this)">⑥ Composite</button>
+      <button class="tab-btn t-brd" onclick="T('bridge',this)">⑦ Bridge</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🔩 What Are Structural Patterns?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What Do Structural Patterns Do?</div>
+    <p>Structural patterns deal with <strong>how classes and objects are composed together</strong> to form larger structures. They help you build flexible, clean relationships between objects — making incompatible interfaces work together, adding new behaviour without changing existing code, simplifying complex subsystems, and treating groups of objects as a single object.</p>
+  </div>
+
+  <h3>The 6 Structural Patterns — At a Glance</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-adp">
+      <span class="pc-emoji">🔌</span>
+      <div class="pc-name">Adapter</div>
+      <div class="pc-intent">Make incompatible interfaces work together. Wrap an existing class to match an expected interface.</div>
+      <div class="pc-test">"I need X interface but only have Y class"</div>
+    </div>
+    <div class="pc pc-dec">
+      <span class="pc-emoji">🎁</span>
+      <div class="pc-name">Decorator</div>
+      <div class="pc-intent">Add behaviour to objects dynamically without changing their class. Wrap objects in other objects.</div>
+      <div class="pc-test">"Add features to an object without subclassing"</div>
+    </div>
+    <div class="pc pc-fac">
+      <span class="pc-emoji">🏠</span>
+      <div class="pc-name">Facade</div>
+      <div class="pc-intent">Provide a simple interface to a complex subsystem. Hide complexity behind one easy-to-use class.</div>
+      <div class="pc-test">"This system is too complex — give me one simple entry point"</div>
+    </div>
+    <div class="pc pc-prx">
+      <span class="pc-emoji">🛡️</span>
+      <div class="pc-name">Proxy</div>
+      <div class="pc-intent">Provide a substitute that controls access to another object — for caching, security, or lazy loading.</div>
+      <div class="pc-test">"I need to control access to this object"</div>
+    </div>
+    <div class="pc pc-cmp">
+      <span class="pc-emoji">🌳</span>
+      <div class="pc-name">Composite</div>
+      <div class="pc-intent">Treat individual objects and groups of objects the same way. Build tree structures.</div>
+      <div class="pc-test">"I need to treat single items and collections identically"</div>
+    </div>
+    <div class="pc pc-brd">
+      <span class="pc-emoji">🌉</span>
+      <div class="pc-name">Bridge</div>
+      <div class="pc-intent">Separate abstraction from implementation so both can vary independently.</div>
+      <div class="pc-test">"Abstraction and implementation should evolve separately"</div>
+    </div>
+  </div>
+
+  <h3>Quick Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>Pattern</th><th>Example</th></tr>
+    <tr><td>Two incompatible interfaces need to work together</td><td><strong>Adapter</strong></td><td>Third-party logger wrapped to ILogger</td></tr>
+    <tr><td>Add behaviour to objects without changing their class</td><td><strong>Decorator</strong></td><td>Add logging, caching, validation to a service</td></tr>
+    <tr><td>Complex subsystem needs a simple API</td><td><strong>Facade</strong></td><td>Home cinema — one Start() call instead of 10</td></tr>
+    <tr><td>Control access to an object (lazy load, cache, security)</td><td><strong>Proxy</strong></td><td>Caching proxy, virtual proxy for heavy objects</td></tr>
+    <tr><td>Tree structures where leaf and branch are treated the same</td><td><strong>Composite</strong></td><td>File system, org chart, UI component tree</td></tr>
+    <tr><td>Multiple dimensions of variation (shape + colour, device + renderer)</td><td><strong>Bridge</strong></td><td>Shape rendered by different renderers</td></tr>
+  </table></div>
+
+  <h3>Structural vs Creational vs Behavioural</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🏗️</span><h4>Creational (Part 1)</h4><p>How objects are <strong>created</strong>. Singleton, Factory, Builder, Prototype.</p></div>
+    <div class="icon-item"><span class="emoji">🔩</span><h4>Structural (This Guide)</h4><p>How objects are <strong>composed</strong>. Adapter, Decorator, Facade, Proxy, Composite, Bridge.</p></div>
+    <div class="icon-item"><span class="emoji">💬</span><h4>Behavioural (Part 3)</h4><p>How objects <strong>communicate</strong>. Strategy, Observer, Command, State, Iterator.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — ADAPTER
+══════════════════════════════════ -->
+<div id="tab-adapter" class="tab-panel ph-adp"><div class="section">
+  <h2>🔌 Adapter Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Adapter pattern is exactly like a <strong>power plug adapter</strong>. Your phone charger has a USB-C plug, but the wall socket accepts three-prong plugs. The adapter sits in between and makes them compatible. In code, an Adapter wraps a class with an incompatible interface and makes it look like the interface you expect.</p>
+  </div>
+
+  <div class="analogy an-adp">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>You hire a French-speaking developer. Your team speaks English. The <strong>translator (Adapter)</strong> sits between them — your team talks to the translator in English, the translator talks to the developer in French. Your team doesn't change how they speak; the developer doesn't change how they work. The adapter makes them compatible.</p>
+  </div>
+
+  <h3>The Problem — Incompatible Interfaces</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Third-party class has the wrong interface</div>
+    <pre><span class="cm">// You have an application that uses ILogger for all logging</span>
+<span class="kw">public interface</span> <span class="iface">ILogger</span>
+{
+    <span class="kw">void</span> <span class="fn">Log</span>(<span class="kw">string</span> message);
+    <span class="kw">void</span> <span class="fn">LogError</span>(<span class="kw">string</span> message);
+}
+
+<span class="cm">// But the third-party logging library you want to use has a DIFFERENT interface</span>
+<span class="kw">public class</span> <span class="tp">ThirdPartyLogger</span>  <span class="cm">// you can't modify this — it's external</span>
+{
+    <span class="kw">public void</span> <span class="fn">WriteInfo</span>(<span class="kw">string</span> msg)  => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[INFO] {msg}"</span>);
+    <span class="kw">public void</span> <span class="fn">WriteError</span>(<span class="kw">string</span> msg) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[ERROR] {msg}"</span>);
+}
+
+<span class="cm">// ❌ Can't use ThirdPartyLogger where ILogger is expected — different methods</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILogger</span> _logger;
+    <span class="kw">public</span> <span class="fn">OrderService</span>(<span class="iface">ILogger</span> logger) => _logger = logger;
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>() => _logger.<span class="fn">Log</span>(<span class="str">"Order placed"</span>);
+}
+
+<span class="cm">// ❌ This won't compile — ThirdPartyLogger doesn't implement ILogger</span>
+<span class="kw">var</span> service = <span class="kw">new</span> <span class="tp">OrderService</span>(<span class="kw">new</span> <span class="tp">ThirdPartyLogger</span>());</pre>
+  </div>
+
+  <h3>Adapter Solution</h3>
+
+  <div class="code-block adp">
+    <div class="code-label adp-c">C# — Adapter wraps ThirdPartyLogger to match ILogger</div>
+    <pre><span class="cm">// ✅ ADAPTER — wraps ThirdPartyLogger and translates calls to ILogger</span>
+<span class="kw">public class</span> <span class="tp">ThirdPartyLoggerAdapter</span> : <span class="iface">ILogger</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">ThirdPartyLogger</span> _adaptee;
+
+    <span class="kw">public</span> <span class="fn">ThirdPartyLoggerAdapter</span>(<span class="tp">ThirdPartyLogger</span> adaptee)
+        => _adaptee = adaptee;
+
+    <span class="cm">// Translate ILogger.Log → ThirdPartyLogger.WriteInfo</span>
+    <span class="kw">public void</span> <span class="fn">Log</span>(<span class="kw">string</span> message)
+        => _adaptee.<span class="fn">WriteInfo</span>(message);
+
+    <span class="cm">// Translate ILogger.LogError → ThirdPartyLogger.WriteError</span>
+    <span class="kw">public void</span> <span class="fn">LogError</span>(<span class="kw">string</span> message)
+        => _adaptee.<span class="fn">WriteError</span>(message);
+}
+
+<span class="cm">// ✅ Now ThirdPartyLogger works everywhere ILogger is expected</span>
+<span class="iface">ILogger</span> logger  = <span class="kw">new</span> <span class="tp">ThirdPartyLoggerAdapter</span>(<span class="kw">new</span> <span class="tp">ThirdPartyLogger</span>());
+<span class="kw">var</span>     service = <span class="kw">new</span> <span class="tp">OrderService</span>(logger);
+service.<span class="fn">PlaceOrder</span>();
+<span class="cm">// [INFO] Order placed ✅</span>
+
+<span class="cm">// OrderService didn't change. ThirdPartyLogger didn't change.
+// Adapter bridges the gap.</span></pre>
+  </div>
+
+  <h3>Real-World Example — Payment Gateway Adapter</h3>
+
+  <div class="code-block adp">
+    <div class="code-label adp-c">C# — Adapting old PayPal SDK to new IPaymentGateway interface</div>
+    <pre><span class="cm">// Your application's payment interface</span>
+<span class="kw">public interface</span> <span class="iface">IPaymentGateway</span>
+{
+    <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ProcessPaymentAsync</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency);
+    <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">RefundAsync</span>(<span class="kw">string</span> transactionId, <span class="kw">decimal</span> amount);
+}
+
+<span class="cm">// Old PayPal SDK — different method names and signatures (can't modify)</span>
+<span class="kw">public class</span> <span class="tp">LegacyPayPalSdk</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">MakePaymentAsync</span>(<span class="kw">double</span> usdAmount)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">100</span>);
+        <span class="kw">return</span> <span class="str">"TXN_12345"</span>;  <span class="cm">// returns transaction ID</span>
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">CancelPaymentAsync</span>(<span class="kw">string</span> txnId, <span class="kw">double</span> amount)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">100</span>);
+        <span class="kw">return true</span>;
+    }
+}
+
+<span class="cm">// Adapter bridges old SDK to new interface</span>
+<span class="kw">public class</span> <span class="tp">PayPalAdapter</span> : <span class="iface">IPaymentGateway</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">LegacyPayPalSdk</span> _paypal;
+
+    <span class="kw">public</span> <span class="fn">PayPalAdapter</span>(<span class="tp">LegacyPayPalSdk</span> paypal) => _paypal = paypal;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ProcessPaymentAsync</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency)
+    {
+        <span class="cm">// Translate: convert decimal + currency to double USD</span>
+        <span class="kw">var</span> usdAmount = (<span class="kw">double</span>)<span class="fn">ConvertToUsd</span>(amount, currency);
+        <span class="kw">var</span> txnId     = <span class="kw">await</span> _paypal.<span class="fn">MakePaymentAsync</span>(usdAmount);
+        <span class="kw">return</span> !<span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(txnId);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">RefundAsync</span>(<span class="kw">string</span> transactionId, <span class="kw">decimal</span> amount)
+        => <span class="kw">await</span> _paypal.<span class="fn">CancelPaymentAsync</span>(transactionId, (<span class="kw">double</span>)amount);
+
+    <span class="kw">private decimal</span> <span class="fn">ConvertToUsd</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> currency)
+        => currency == <span class="str">"GBP"</span> ? amount * <span class="num">1.27m</span> : amount;
+}
+
+<span class="cm">// CheckoutService only knows IPaymentGateway — works with ANY adapted gateway</span>
+<span class="kw">public class</span> <span class="tp">CheckoutService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IPaymentGateway</span> _gateway;
+    <span class="kw">public</span> <span class="fn">CheckoutService</span>(<span class="iface">IPaymentGateway</span> gateway) => _gateway = gateway;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">CheckoutAsync</span>(<span class="kw">decimal</span> total)
+    {
+        <span class="kw">var</span> success = <span class="kw">await</span> _gateway.<span class="fn">ProcessPaymentAsync</span>(total, <span class="str">"GBP"</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(success ? <span class="str">"Payment successful!"</span> : <span class="str">"Payment failed!"</span>);
+    }
+}
+
+<span class="cm">// Wire it up:</span>
+<span class="kw">var</span> checkout = <span class="kw">new</span> <span class="tp">CheckoutService</span>(
+    <span class="kw">new</span> <span class="tp">PayPalAdapter</span>(<span class="kw">new</span> <span class="tp">LegacyPayPalSdk</span>()));
+<span class="kw">await</span> checkout.<span class="fn">CheckoutAsync</span>(<span class="num">99.99m</span>);</pre>
+  </div>
+
+  <h3>When to Use Adapter</h3>
+  <ul class="checklist cl-adp">
+    <li>Integrating a third-party library that has a different interface to what your code expects</li>
+    <li>Using legacy code in a new system without modifying the legacy code</li>
+    <li>When you want to reuse existing classes that are not compatible with the rest of your code</li>
+    <li>Making different implementations of the same concept work through a common interface</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new adapters without changing existing code</span>
+    <span class="sb sb-d">D — Client depends on interface, not legacy class</span>
+    <span class="sb sb-s">S — Adapter only handles translation, nothing else</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — DECORATOR
+══════════════════════════════════ -->
+<div id="tab-decorator" class="tab-panel ph-dec"><div class="section">
+  <h2>🎁 Decorator Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Decorator pattern lets you <strong>add new behaviour to an object by wrapping it</strong> in another object that implements the same interface. Each wrapper adds one piece of new behaviour, then delegates to the wrapped object. You can stack multiple decorators like layers, and the original object never changes.</p>
+  </div>
+
+  <div class="analogy an-dec">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Think of <strong>coffee at a café</strong>. You start with a plain espresso (the base object). Add milk — now it's a latte (Decorator 1). Add caramel — now it's a caramel latte (Decorator 2). Add whipped cream (Decorator 3). Each addition wraps the previous drink, adding flavour and cost. The espresso itself never changed. You can add or remove decorators in any combination.</p>
+  </div>
+
+  <h3>Decorator vs Inheritance</h3>
+  <div class="compare">
+    <div class="bad-box">
+      <div class="box-label">❌ Inheritance — Explosion of Subclasses</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>LoggingOrderService</li>
+        <li>CachingOrderService</li>
+        <li>LoggingCachingOrderService</li>
+        <li>ValidationOrderService</li>
+        <li>LoggingValidationOrderService</li>
+        <li>LoggingValidationCachingOrderService</li>
+        <li style="color:var(--red);">2^N subclasses for N features!</li>
+      </ul>
+    </div>
+    <div class="good-box">
+      <div class="box-label">✅ Decorator — Mix and Match at Runtime</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>OrderService (base)</li>
+        <li>LoggingDecorator wraps any IOrderService</li>
+        <li>CachingDecorator wraps any IOrderService</li>
+        <li>ValidationDecorator wraps any IOrderService</li>
+        <li style="color:var(--green);">Combine freely: Log(Cache(Validate(base)))</li>
+        <li style="color:var(--green);">N decorators for N features — not 2^N classes</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Decorator Implementation</h3>
+
+  <div class="code-block dec">
+    <div class="code-label dec-c">C# — Decorating a data service with logging and caching</div>
+    <pre><span class="cm">// ── Base interface ────────────────────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IDataService</span>
+{
+    <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetDataAsync</span>(<span class="kw">string</span> key);
+}
+
+<span class="cm">// ── Concrete implementation ────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">DataService</span> : <span class="iface">IDataService</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetDataAsync</span>(<span class="kw">string</span> key)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">200</span>);  <span class="cm">// simulate slow DB call</span>
+        <span class="kw">return</span> <span class="str">$"Data for {key}"</span>;
+    }
+}
+
+<span class="cm">// ── Decorator 1: Logging ───────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">LoggingDataService</span> : <span class="iface">IDataService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IDataService</span> _inner;   <span class="cm">// the wrapped service</span>
+
+    <span class="kw">public</span> <span class="fn">LoggingDataService</span>(<span class="iface">IDataService</span> inner) => _inner = inner;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetDataAsync</span>(<span class="kw">string</span> key)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[LOG] Calling GetDataAsync({key})"</span>);
+        <span class="kw">var</span> stopwatch = <span class="tp">Stopwatch</span>.<span class="fn">StartNew</span>();
+
+        <span class="kw">var</span> result = <span class="kw">await</span> _inner.<span class="fn">GetDataAsync</span>(key);   <span class="cm">// delegate to wrapped object</span>
+
+        stopwatch.<span class="fn">Stop</span>();
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[LOG] Completed in {stopwatch.ElapsedMilliseconds}ms"</span>);
+        <span class="kw">return</span> result;
+    }
+}
+
+<span class="cm">// ── Decorator 2: Caching ───────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">CachingDataService</span> : <span class="iface">IDataService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IDataService</span>               _inner;
+    <span class="kw">private readonly</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt; _cache = <span class="kw">new</span>();
+
+    <span class="kw">public</span> <span class="fn">CachingDataService</span>(<span class="iface">IDataService</span> inner) => _inner = inner;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">GetDataAsync</span>(<span class="kw">string</span> key)
+    {
+        <span class="kw">if</span> (_cache.<span class="fn">TryGetValue</span>(key, <span class="kw">out var</span> cached))
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[CACHE] Hit for {key}"</span>);
+            <span class="kw">return</span> cached;
+        }
+
+        <span class="kw">var</span> result  = <span class="kw">await</span> _inner.<span class="fn">GetDataAsync</span>(key);  <span class="cm">// delegate to wrapped</span>
+        _cache[key] = result;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[CACHE] Stored {key}"</span>);
+        <span class="kw">return</span> result;
+    }
+}
+
+<span class="cm">// ── Stack decorators — order matters! ─────────────────────────────</span>
+<span class="iface">IDataService</span> service =
+    <span class="kw">new</span> <span class="tp">LoggingDataService</span>(       <span class="cm">// outer: logs every call</span>
+        <span class="kw">new</span> <span class="tp">CachingDataService</span>(    <span class="cm">// middle: caches results</span>
+            <span class="kw">new</span> <span class="tp">DataService</span>()));    <span class="cm">// inner: actually fetches data</span>
+
+<span class="kw">await</span> service.<span class="fn">GetDataAsync</span>(<span class="str">"user:1"</span>);
+<span class="cm">// [LOG] Calling GetDataAsync(user:1)
+// [CACHE] Miss — fetching...
+// [LOG] Completed in 203ms</span>
+
+<span class="kw">await</span> service.<span class="fn">GetDataAsync</span>(<span class="str">"user:1"</span>);
+<span class="cm">// [LOG] Calling GetDataAsync(user:1)
+// [CACHE] Hit for user:1
+// [LOG] Completed in 0ms ← cache works!</span></pre>
+  </div>
+
+  <h3>Real-World Example — HTTP Request Pipeline</h3>
+
+  <div class="code-block dec">
+    <div class="code-label dec-c">C# — Decorator chain for HTTP middleware-style pipeline</div>
+    <pre><span class="kw">public interface</span> <span class="iface">IRequestHandler</span>
+{
+    <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">HandleAsync</span>(<span class="kw">string</span> request);
+}
+
+<span class="cm">// Base handler</span>
+<span class="kw">public class</span> <span class="tp">HttpRequestHandler</span> : <span class="iface">IRequestHandler</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">HandleAsync</span>(<span class="kw">string</span> request)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">100</span>);
+        <span class="kw">return</span> <span class="str">$"Response for: {request}"</span>;
+    }
+}
+
+<span class="cm">// Auth decorator</span>
+<span class="kw">public class</span> <span class="tp">AuthDecorator</span> : <span class="iface">IRequestHandler</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IRequestHandler</span> _inner;
+    <span class="kw">public</span> <span class="fn">AuthDecorator</span>(<span class="iface">IRequestHandler</span> inner) => _inner = inner;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">HandleAsync</span>(<span class="kw">string</span> request)
+    {
+        <span class="kw">if</span> (!request.<span class="fn">Contains</span>(<span class="str">"token"</span>))
+            <span class="kw">throw new</span> <span class="tp">UnauthorizedAccessException</span>(<span class="str">"No token provided"</span>);
+        <span class="kw">return</span> <span class="kw">await</span> _inner.<span class="fn">HandleAsync</span>(request);
+    }
+}
+
+<span class="cm">// Rate limiting decorator</span>
+<span class="kw">public class</span> <span class="tp">RateLimitDecorator</span> : <span class="iface">IRequestHandler</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IRequestHandler</span> _inner;
+    <span class="kw">private</span> <span class="kw">int</span> _requestCount;
+    <span class="kw">public</span> <span class="fn">RateLimitDecorator</span>(<span class="iface">IRequestHandler</span> inner) => _inner = inner;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">HandleAsync</span>(<span class="kw">string</span> request)
+    {
+        <span class="kw">if</span> (++_requestCount > <span class="num">100</span>)
+            <span class="kw">throw new</span> <span class="tp">Exception</span>(<span class="str">"Rate limit exceeded"</span>);
+        <span class="kw">return</span> <span class="kw">await</span> _inner.<span class="fn">HandleAsync</span>(request);
+    }
+}
+
+<span class="cm">// Stack: RateLimit → Auth → HttpHandler</span>
+<span class="iface">IRequestHandler</span> pipeline =
+    <span class="kw">new</span> <span class="tp">RateLimitDecorator</span>(
+        <span class="kw">new</span> <span class="tp">AuthDecorator</span>(
+            <span class="kw">new</span> <span class="tp">HttpRequestHandler</span>()));
+
+<span class="kw">var</span> response = <span class="kw">await</span> pipeline.<span class="fn">HandleAsync</span>(<span class="str">"GET /api/users?token=abc"</span>);</pre>
+  </div>
+
+  <h3>Decorator in .NET — Real Examples You Use Every Day</h3>
+  <div class="card">
+    <h4>🔍 Decorator is Everywhere in .NET</h4>
+    <ul>
+      <li><code>StreamReader(new BufferedStream(new FileStream(...)))</code> — streams are Decorators stacked on each other</li>
+      <li>ASP.NET Core Middleware pipeline — each middleware decorates the next</li>
+      <li><code>IMemoryCache</code> wrapping database calls — caching decorator pattern</li>
+      <li>Polly retry policies — wrap HTTP calls with retry/circuit breaker behaviour</li>
+    </ul>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add behaviour by writing new decorators, not modifying existing</span>
+    <span class="sb sb-s">S — Each decorator has one responsibility (log, cache, validate)</span>
+    <span class="sb sb-d">D — All decorators depend on the interface, not concrete class</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — FACADE
+══════════════════════════════════ -->
+<div id="tab-facade" class="tab-panel ph-fac"><div class="section">
+  <h2>🏠 Facade Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Facade pattern provides a <strong>simple interface to a complex system</strong>. Instead of making callers interact with many subsystems, a Facade puts one friendly front-facing class in between. The complexity doesn't go away — it's just hidden behind a cleaner, simpler API.</p>
+  </div>
+
+  <div class="analogy an-fac">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>To watch a movie at home you need to: turn on the TV, switch to HDMI, turn on the Blu-ray player, turn on the sound system, set surround sound mode, dim the lights, close the blinds. A <strong>smart home controller (Facade)</strong> does all of this with one button: "Watch Movie". You don't care about the complexity — you just press one button.</p>
+  </div>
+
+  <h3>The Problem — Dealing with Subsystem Complexity</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Caller must know every subsystem</div>
+    <pre><span class="cm">// ❌ Without Facade — caller must orchestrate all subsystems manually</span>
+<span class="kw">var</span> inventory  = <span class="kw">new</span> <span class="tp">InventoryService</span>();
+<span class="kw">var</span> payment    = <span class="kw">new</span> <span class="tp">PaymentService</span>();
+<span class="kw">var</span> shipping   = <span class="kw">new</span> <span class="tp">ShippingService</span>();
+<span class="kw">var</span> email      = <span class="kw">new</span> <span class="tp">EmailService</span>();
+<span class="kw">var</span> loyalty    = <span class="kw">new</span> <span class="tp">LoyaltyPointsService</span>();
+
+<span class="cm">// Every place that places an order must repeat this orchestration!</span>
+<span class="kw">if</span> (!inventory.<span class="fn">CheckStock</span>(order.Items))
+    <span class="kw">throw new</span> <span class="tp">Exception</span>(<span class="str">"Out of stock"</span>);
+
+inventory.<span class="fn">ReserveItems</span>(order.Items);
+<span class="kw">var</span> txn = payment.<span class="fn">Charge</span>(order.Total, order.PaymentDetails);
+<span class="kw">var</span> trackingNum = shipping.<span class="fn">CreateShipment</span>(order);
+email.<span class="fn">SendConfirmation</span>(order.CustomerEmail, trackingNum);
+loyalty.<span class="fn">AwardPoints</span>(order.CustomerId, order.Total);
+<span class="cm">// ❌ Caller knows too much. Change any subsystem → update every caller.</span></pre>
+  </div>
+
+  <h3>Facade Solution</h3>
+
+  <div class="code-block fac">
+    <div class="code-label fac-c">C# — OrderFacade hides all subsystem complexity</div>
+    <pre><span class="cm">// The individual subsystems stay unchanged</span>
+<span class="kw">public class</span> <span class="tp">InventoryService</span>
+{
+    <span class="kw">public bool</span> <span class="fn">CheckStock</span>(<span class="tp">List</span>&lt;<span class="tp">OrderItem</span>&gt; items)  => <span class="kw">true</span>;
+    <span class="kw">public void</span> <span class="fn">ReserveItems</span>(<span class="tp">List</span>&lt;<span class="tp">OrderItem</span>&gt; items) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Items reserved"</span>);
+}
+<span class="kw">public class</span> <span class="tp">PaymentService</span>
+{
+    <span class="kw">public string</span> <span class="fn">Charge</span>(<span class="kw">decimal</span> amount, <span class="kw">string</span> card) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Charged £{amount}"</span>); <span class="kw">return</span> <span class="str">"TXN001"</span>; }
+}
+<span class="kw">public class</span> <span class="tp">ShippingService</span>
+{
+    <span class="kw">public string</span> <span class="fn">CreateShipment</span>(<span class="tp">Order</span> order) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Shipment created"</span>); <span class="kw">return</span> <span class="str">"TRACK123"</span>; }
+}
+<span class="kw">public class</span> <span class="tp">EmailService</span>
+{
+    <span class="kw">public void</span> <span class="fn">SendConfirmation</span>(<span class="kw">string</span> email, <span class="kw">string</span> tracking) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Email sent to {email}"</span>);
+}
+<span class="kw">public class</span> <span class="tp">LoyaltyPointsService</span>
+{
+    <span class="kw">public void</span> <span class="fn">AwardPoints</span>(<span class="kw">int</span> customerId, <span class="kw">decimal</span> total) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Awarded {total * 10} points"</span>);
+}
+
+<span class="cm">// ✅ FACADE — one simple entry point that orchestrates everything</span>
+<span class="kw">public class</span> <span class="tp">OrderFacade</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">InventoryService</span>    _inventory;
+    <span class="kw">private readonly</span> <span class="tp">PaymentService</span>      _payment;
+    <span class="kw">private readonly</span> <span class="tp">ShippingService</span>      _shipping;
+    <span class="kw">private readonly</span> <span class="tp">EmailService</span>         _email;
+    <span class="kw">private readonly</span> <span class="tp">LoyaltyPointsService</span> _loyalty;
+
+    <span class="kw">public</span> <span class="fn">OrderFacade</span>()
+    {
+        _inventory = <span class="kw">new</span> <span class="tp">InventoryService</span>();
+        _payment   = <span class="kw">new</span> <span class="tp">PaymentService</span>();
+        _shipping  = <span class="kw">new</span> <span class="tp">ShippingService</span>();
+        _email     = <span class="kw">new</span> <span class="tp">EmailService</span>();
+        _loyalty   = <span class="kw">new</span> <span class="tp">LoyaltyPointsService</span>();
+    }
+
+    <span class="cm">// One method replaces all the complexity above</span>
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>(<span class="tp">Order</span> order)
+    {
+        <span class="kw">if</span> (!_inventory.<span class="fn">CheckStock</span>(order.Items))
+            <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"Items out of stock"</span>);
+
+        _inventory.<span class="fn">ReserveItems</span>(order.Items);
+        <span class="kw">var</span> txnId    = _payment.<span class="fn">Charge</span>(order.Total, order.CardDetails);
+        <span class="kw">var</span> tracking = _shipping.<span class="fn">CreateShipment</span>(order);
+        _email.<span class="fn">SendConfirmation</span>(order.CustomerEmail, tracking);
+        _loyalty.<span class="fn">AwardPoints</span>(order.CustomerId, order.Total);
+    }
+}
+
+<span class="cm">// ✅ Caller only needs to know one simple method</span>
+<span class="kw">var</span> facade = <span class="kw">new</span> <span class="tp">OrderFacade</span>();
+facade.<span class="fn">PlaceOrder</span>(order);
+<span class="cm">// That's it! One line. All subsystems handled internally.</span></pre>
+  </div>
+
+  <h3>Facade vs Adapter — What's the Difference?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔌 Adapter</h4>
+      <ul>
+        <li>Makes ONE incompatible interface compatible with another</li>
+        <li>Does NOT simplify — just translates</li>
+        <li>Usually wraps a single class</li>
+        <li>Required when interfaces don't match</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏠 Facade</h4>
+      <ul>
+        <li>Simplifies access to MULTIPLE classes/subsystems</li>
+        <li>Does NOT change interfaces — just hides complexity</li>
+        <li>Wraps an entire subsystem of classes</li>
+        <li>Optional — subsystems still usable directly if needed</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Facade orchestrates; each subsystem has its own responsibility</span>
+    <span class="sb sb-d">D — Callers depend on the Facade, not on each subsystem directly</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — PROXY
+══════════════════════════════════ -->
+<div id="tab-proxy" class="tab-panel ph-prx"><div class="section">
+  <h2>🛡️ Proxy Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>A Proxy is a <strong>stand-in that controls access to another object</strong>. The proxy implements the same interface as the real object so the caller doesn't know or care whether they're talking to the real thing or the proxy. The proxy can do things before/after forwarding to the real object — like caching results, checking permissions, or delaying expensive creation.</p>
+  </div>
+
+  <div class="analogy an-prx">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>credit card</strong> is a proxy for your bank account. When you pay at a shop, you hand over your card — the shop doesn't directly access your bank. The card (proxy) mediates access, adds security (PIN), keeps a record (statement), and handles the transaction on your behalf. Your money is in the bank, but the proxy controls access to it.</p>
+  </div>
+
+  <h3>Three Types of Proxy</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💾</span><h4>Caching Proxy</h4><p>Cache results from the real service. Return cached data for repeated calls. Avoid hitting the real object unnecessarily.</p></div>
+    <div class="icon-item"><span class="emoji">🔒</span><h4>Protection Proxy</h4><p>Check permissions before forwarding. Block unauthorised access to the real object.</p></div>
+    <div class="icon-item"><span class="emoji">😴</span><h4>Virtual Proxy</h4><p>Delay creating the expensive real object until it's actually needed (lazy loading).</p></div>
+  </div>
+
+  <h3>Caching Proxy Example</h3>
+
+  <div class="code-block prx">
+    <div class="code-label prx-c">C# — Caching Proxy for expensive database calls</div>
+    <pre><span class="kw">public interface</span> <span class="iface">IProductService</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetAllProductsAsync</span>();
+    <span class="tp">Task</span>&lt;<span class="tp">Product</span>?&gt;      <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id);
+}
+
+<span class="cm">// Real service — hits the database</span>
+<span class="kw">public class</span> <span class="tp">ProductService</span> : <span class="iface">IProductService</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetAllProductsAsync</span>()
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">500</span>);  <span class="cm">// slow DB query</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[DB] Fetching all products..."</span>);
+        <span class="kw">return</span> [ <span class="kw">new</span> <span class="tp">Product</span>(<span class="num">1</span>, <span class="str">"Laptop"</span>), <span class="kw">new</span> <span class="tp">Product</span>(<span class="num">2</span>, <span class="str">"Mouse"</span>) ];
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Product</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">100</span>);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[DB] Fetching product {id}..."</span>);
+        <span class="kw">return new</span> <span class="tp">Product</span>(id, <span class="str">$"Product {id}"</span>);
+    }
+}
+
+<span class="cm">// ✅ Caching Proxy — same interface, adds caching transparently</span>
+<span class="kw">public class</span> <span class="tp">CachedProductService</span> : <span class="iface">IProductService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IProductService</span>                   _real;
+    <span class="kw">private readonly</span> <span class="tp">Dictionary</span>&lt;<span class="kw">int</span>, <span class="tp">Product</span>&gt;          _byIdCache   = <span class="kw">new</span>();
+    <span class="kw">private</span>          <span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;?                      _allCache;
+    <span class="kw">private</span>          <span class="tp">DateTime</span>                             _cacheExpiry = <span class="tp">DateTime</span>.MinValue;
+
+    <span class="kw">public</span> <span class="fn">CachedProductService</span>(<span class="iface">IProductService</span> real) => _real = real;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetAllProductsAsync</span>()
+    {
+        <span class="kw">if</span> (_allCache != <span class="kw">null</span> && <span class="tp">DateTime</span>.UtcNow < _cacheExpiry)
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"[CACHE] Returning cached products"</span>);
+            <span class="kw">return</span> _allCache;
+        }
+
+        _allCache    = <span class="kw">await</span> _real.<span class="fn">GetAllProductsAsync</span>();
+        _cacheExpiry = <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddMinutes</span>(<span class="num">5</span>);
+        <span class="kw">return</span> _allCache;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Product</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">if</span> (_byIdCache.<span class="fn">TryGetValue</span>(id, <span class="kw">out var</span> cached))
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[CACHE] Hit for product {id}"</span>);
+            <span class="kw">return</span> cached;
+        }
+
+        <span class="kw">var</span> product   = <span class="kw">await</span> _real.<span class="fn">GetByIdAsync</span>(id);
+        <span class="kw">if</span> (product != <span class="kw">null</span>) _byIdCache[id] = product;
+        <span class="kw">return</span> product;
+    }
+}
+
+<span class="cm">// Registration — swap real service for cached proxy transparently</span>
+<span class="iface">IProductService</span> service = <span class="kw">new</span> <span class="tp">CachedProductService</span>(<span class="kw">new</span> <span class="tp">ProductService</span>());
+
+<span class="kw">await</span> service.<span class="fn">GetAllProductsAsync</span>();  <span class="cm">// [DB] Fetching all products...</span>
+<span class="kw">await</span> service.<span class="fn">GetAllProductsAsync</span>();  <span class="cm">// [CACHE] Returning cached products ✅</span></pre>
+  </div>
+
+  <h3>Protection Proxy Example</h3>
+
+  <div class="code-block prx">
+    <div class="code-label prx-c">C# — Protection Proxy for authorisation</div>
+    <pre"><span class="kw">public class</span> <span class="tp">SecureAdminService</span> : <span class="iface">IAdminService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IAdminService</span>  _real;
+    <span class="kw">private readonly</span> <span class="iface">ICurrentUser</span>   _user;
+
+    <span class="kw">public</span> <span class="fn">SecureAdminService</span>(<span class="iface">IAdminService</span> real, <span class="iface">ICurrentUser</span> user)
+    { _real = real; _user = user; }
+
+    <span class="kw">public void</span> <span class="fn">DeleteUser</span>(<span class="kw">int</span> userId)
+    {
+        <span class="cm">// Check permission BEFORE delegating to real service</span>
+        <span class="kw">if</span> (!_user.HasRole(<span class="str">"Admin"</span>))
+            <span class="kw">throw new</span> <span class="tp">UnauthorizedAccessException</span>(<span class="str">"Admin role required"</span>);
+
+        _real.<span class="fn">DeleteUser</span>(userId);  <span class="cm">// delegate to real service</span>
+    }
+
+    <span class="kw">public void</span> <span class="fn">UpdateSettings</span>(<span class="tp">AppSettings</span> settings)
+    {
+        <span class="kw">if</span> (!_user.HasRole(<span class="str">"SuperAdmin"</span>))
+            <span class="kw">throw new</span> <span class="tp">UnauthorizedAccessException</span>(<span class="str">"SuperAdmin role required"</span>);
+
+        _real.<span class="fn">UpdateSettings</span>(settings);
+    }
+}</pre>
+  </div>
+
+  <h3>Proxy vs Decorator — What's the Difference?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🎁 Decorator</h4>
+      <ul>
+        <li>Adds new <strong>behaviour/features</strong> to the object</li>
+        <li>The client knows it's using a decorator chain</li>
+        <li>Decorators are often stacked by the client</li>
+        <li>Focus: enhancement</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🛡️ Proxy</h4>
+      <ul>
+        <li><strong>Controls access</strong> to the real object</li>
+        <li>Client believes it talks to the real thing</li>
+        <li>Usually manages the real object's lifecycle</li>
+        <li>Focus: access control (security, caching, lazy load)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add caching/security via proxy without modifying real class</span>
+    <span class="sb sb-s">S — Proxy handles access control; real service handles business logic</span>
+    <span class="sb sb-d">D — Callers depend on interface; proxy or real injected transparently</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — COMPOSITE
+══════════════════════════════════ -->
+<div id="tab-composite" class="tab-panel ph-cmp"><div class="section">
+  <h2>🌳 Composite Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Composite pattern lets you <strong>treat single objects and groups of objects the same way</strong>. It builds tree structures where individual items (leaves) and containers of items (composites) both implement the same interface. This means you can call the same method on a single file or an entire folder — and it works correctly in both cases.</p>
+  </div>
+
+  <div class="analogy an-cmp">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>company org chart</strong>. An individual employee has a salary. A department has a salary — which is the sum of all its employees' and sub-departments' salaries. You can ask "what is the salary cost?" to a single person OR to the entire company and the question makes sense in both cases. Individual employees and containers of employees are treated identically.</p>
+  </div>
+
+  <h3>File System Example</h3>
+
+  <div class="code-block cmp">
+    <div class="code-label cmp-c">C# — File system tree with Composite</div>
+    <pre><span class="cm">// ── Component — common interface for both files and folders ───────</span>
+<span class="kw">public abstract class</span> <span class="tp">FileSystemItem</span>
+{
+    <span class="kw">public string</span> Name { <span class="kw">get</span>; }
+    <span class="kw">protected</span> <span class="fn">FileSystemItem</span>(<span class="kw">string</span> name) => Name = name;
+
+    <span class="kw">public abstract long</span>   <span class="fn">GetSize</span>();
+    <span class="kw">public abstract void</span>   <span class="fn">Display</span>(<span class="kw">int</span> indent = <span class="num">0</span>);
+}
+
+<span class="cm">// ── Leaf — a single file (no children) ────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">File</span> : <span class="tp">FileSystemItem</span>
+{
+    <span class="kw">private readonly long</span> _sizeBytes;
+
+    <span class="kw">public</span> <span class="fn">File</span>(<span class="kw">string</span> name, <span class="kw">long</span> sizeBytes) : <span class="kw">base</span>(name)
+        => _sizeBytes = sizeBytes;
+
+    <span class="kw">public override long</span> <span class="fn">GetSize</span>() => _sizeBytes;
+
+    <span class="kw">public override void</span> <span class="fn">Display</span>(<span class="kw">int</span> indent = <span class="num">0</span>)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{new string(' ', indent)}📄 {Name} ({_sizeBytes:N0} bytes)"</span>);
+}
+
+<span class="cm">// ── Composite — a folder that contains other items ─────────────────</span>
+<span class="kw">public class</span> <span class="tp">Folder</span> : <span class="tp">FileSystemItem</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="tp">FileSystemItem</span>&gt; _children = <span class="kw">new</span>();
+
+    <span class="kw">public</span> <span class="fn">Folder</span>(<span class="kw">string</span> name) : <span class="kw">base</span>(name) { }
+
+    <span class="kw">public void</span> <span class="fn">Add</span>(<span class="tp">FileSystemItem</span> item) => _children.<span class="fn">Add</span>(item);
+    <span class="kw">public void</span> <span class="fn">Remove</span>(<span class="tp">FileSystemItem</span> item) => _children.<span class="fn">Remove</span>(item);
+
+    <span class="cm">// Composite: size = sum of all children's sizes (recursively)</span>
+    <span class="kw">public override long</span> <span class="fn">GetSize</span>()
+        => _children.<span class="fn">Sum</span>(c => c.<span class="fn">GetSize</span>());
+
+    <span class="kw">public override void</span> <span class="fn">Display</span>(<span class="kw">int</span> indent = <span class="num">0</span>)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{new string(' ', indent)}📁 {Name}/ ({GetSize():N0} bytes)"</span>);
+        <span class="kw">foreach</span> (<span class="kw">var</span> child <span class="kw">in</span> _children)
+            child.<span class="fn">Display</span>(indent + <span class="num">4</span>);  <span class="cm">// recursion — works for any depth</span>
+    }
+}
+
+<span class="cm">// ── Build the tree ────────────────────────────────────────────────</span>
+<span class="kw">var</span> root = <span class="kw">new</span> <span class="tp">Folder</span>(<span class="str">"Documents"</span>);
+
+<span class="kw">var</span> projects = <span class="kw">new</span> <span class="tp">Folder</span>(<span class="str">"Projects"</span>);
+projects.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">File</span>(<span class="str">"app.cs"</span>,   <span class="num">45_000</span>));
+projects.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">File</span>(<span class="str">"tests.cs"</span>, <span class="num">12_000</span>));
+
+<span class="kw">var</span> images = <span class="kw">new</span> <span class="tp">Folder</span>(<span class="str">"Images"</span>);
+images.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">File</span>(<span class="str">"logo.png"</span>,    <span class="num">500_000</span>));
+images.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">File</span>(<span class="str">"banner.jpg"</span>,  <span class="num">1_200_000</span>));
+
+root.<span class="fn">Add</span>(projects);
+root.<span class="fn">Add</span>(images);
+root.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">File</span>(<span class="str">"readme.md"</span>, <span class="num">3_000</span>));
+
+<span class="cm">// ✅ Same method works on file, folder, or entire tree</span>
+root.<span class="fn">Display</span>();
+<span class="cm">// 📁 Documents/ (1,760,000 bytes)
+//     📁 Projects/ (57,000 bytes)
+//         📄 app.cs (45,000 bytes)
+//         📄 tests.cs (12,000 bytes)
+//     📁 Images/ (1,700,000 bytes)
+//         📄 logo.png (500,000 bytes)
+//         📄 banner.jpg (1,200,000 bytes)
+//     📄 readme.md (3,000 bytes)</span>
+
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Total: {root.GetSize():N0} bytes"</span>);
+<span class="cm">// Works the same on root, projects folder, or a single file</span></pre>
+  </div>
+
+  <h3>Real-World Example — UI Component Tree</h3>
+
+  <div class="code-block cmp">
+    <div class="code-label cmp-c">C# — UI rendering with Composite</div>
+    <pre><span class="kw">public abstract class</span> <span class="tp">UIComponent</span>
+{
+    <span class="kw">public abstract void</span> <span class="fn">Render</span>(<span class="kw">int</span> depth = <span class="num">0</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">Button</span> : <span class="tp">UIComponent</span>
+{
+    <span class="kw">private readonly string</span> _label;
+    <span class="kw">public</span> <span class="fn">Button</span>(<span class="kw">string</span> label) => _label = label;
+    <span class="kw">public override void</span> <span class="fn">Render</span>(<span class="kw">int</span> d = <span class="num">0</span>) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{new string(' ', d * 2)}[Button: {_label}]"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">TextBox</span> : <span class="tp">UIComponent</span>
+{
+    <span class="kw">private readonly string</span> _placeholder;
+    <span class="kw">public</span> <span class="fn">TextBox</span>(<span class="kw">string</span> ph) => _placeholder = ph;
+    <span class="kw">public override void</span> <span class="fn">Render</span>(<span class="kw">int</span> d = <span class="num">0</span>) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{new string(' ', d * 2)}[TextBox: {_placeholder}]"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">Panel</span> : <span class="tp">UIComponent</span>
+{
+    <span class="kw">private readonly string</span>             _name;
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="tp">UIComponent</span>&gt; _children = <span class="kw">new</span>();
+
+    <span class="kw">public</span> <span class="fn">Panel</span>(<span class="kw">string</span> name) => _name = name;
+    <span class="kw">public void</span> <span class="fn">Add</span>(<span class="tp">UIComponent</span> c) => _children.<span class="fn">Add</span>(c);
+
+    <span class="kw">public override void</span> <span class="fn">Render</span>(<span class="kw">int</span> d = <span class="num">0</span>)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{new string(' ', d * 2)}[Panel: {_name}]"</span>);
+        _children.<span class="fn">ForEach</span>(c => c.<span class="fn">Render</span>(d + <span class="num">1</span>));
+    }
+}
+
+<span class="kw">var</span> form = <span class="kw">new</span> <span class="tp">Panel</span>(<span class="str">"LoginForm"</span>);
+form.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">TextBox</span>(<span class="str">"Username"</span>));
+form.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">TextBox</span>(<span class="str">"Password"</span>));
+
+<span class="kw">var</span> buttonRow = <span class="kw">new</span> <span class="tp">Panel</span>(<span class="str">"ButtonRow"</span>);
+buttonRow.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Button</span>(<span class="str">"Login"</span>));
+buttonRow.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">Button</span>(<span class="str">"Cancel"</span>));
+form.<span class="fn">Add</span>(buttonRow);
+
+form.<span class="fn">Render</span>();
+<span class="cm">// [Panel: LoginForm]
+//   [TextBox: Username]
+//   [TextBox: Password]
+//   [Panel: ButtonRow]
+//     [Button: Login]
+//     [Button: Cancel]</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new leaf or composite types without changing existing ones</span>
+    <span class="sb sb-l">L — Leaf and Composite are interchangeable wherever component is expected</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — BRIDGE
+══════════════════════════════════ -->
+<div id="tab-bridge" class="tab-panel ph-brd"><div class="section">
+  <h2>🌉 Bridge Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The Bridge pattern <strong>separates an abstraction from its implementation</strong> so that both can change independently. Instead of having one giant inheritance hierarchy that mixes two dimensions of variation (e.g., Shape × Colour), you split them into two separate hierarchies connected by a "bridge" (a reference/interface). Change the shape without affecting the colour, or change the rendering without affecting the shape logic.</p>
+  </div>
+
+  <div class="analogy an-brd">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>TV remote control (abstraction)</strong> and a <strong>TV (implementation)</strong> are connected by a standard interface (the IR signal). You can buy a different remote (universal remote) without getting a new TV. You can replace the TV with a newer model without getting a new remote. Both can vary independently because they're connected by a standard bridge, not welded together.</p>
+  </div>
+
+  <h3>The Problem — Inheritance Explosion</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Two dimensions = class explosion</div>
+    <pre><span class="cm">// ❌ Without Bridge: every combination needs its own class
+// Shapes: Circle, Square
+// Renderers: Vector, Raster
+// Result: 2 × 2 = 4 classes — and grows as N × M</span>
+
+<span class="kw">public class</span> <span class="tp">VectorCircle</span>  { <span class="kw">public void</span> <span class="fn">Draw</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Vector Circle"</span>); }
+<span class="kw">public class</span> <span class="tp">RasterCircle</span>  { <span class="kw">public void</span> <span class="fn">Draw</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Raster Circle"</span>); }
+<span class="kw">public class</span> <span class="tp">VectorSquare</span>  { <span class="kw">public void</span> <span class="fn">Draw</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Vector Square"</span>); }
+<span class="kw">public class</span> <span class="tp">RasterSquare</span>  { <span class="kw">public void</span> <span class="fn">Draw</span>() => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Raster Square"</span>); }
+<span class="cm">// Adding Triangle + PDF renderer = 6 more classes!
+// N shapes × M renderers = N×M classes</span></pre>
+  </div>
+
+  <h3>Bridge Solution — Separate the Two Dimensions</h3>
+
+  <div class="code-block brd">
+    <div class="code-label brd-c">C# — Bridge separates Shape and Renderer</div>
+    <pre><span class="cm">// ── Implementation side: Renderer hierarchy ───────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IRenderer</span>
+{
+    <span class="kw">void</span> <span class="fn">RenderCircle</span>(<span class="kw">float</span> radius);
+    <span class="kw">void</span> <span class="fn">RenderSquare</span>(<span class="kw">float</span> side);
+}
+
+<span class="kw">public class</span> <span class="tp">VectorRenderer</span> : <span class="iface">IRenderer</span>
+{
+    <span class="kw">public void</span> <span class="fn">RenderCircle</span>(<span class="kw">float</span> r) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Vector: drawing circle r={r}"</span>);
+    <span class="kw">public void</span> <span class="fn">RenderSquare</span>(<span class="kw">float</span> s) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Vector: drawing square s={s}"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">RasterRenderer</span> : <span class="iface">IRenderer</span>
+{
+    <span class="kw">public void</span> <span class="fn">RenderCircle</span>(<span class="kw">float</span> r) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Raster: pixels for circle r={r}"</span>);
+    <span class="kw">public void</span> <span class="fn">RenderSquare</span>(<span class="kw">float</span> s) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Raster: pixels for square s={s}"</span>);
+}
+
+<span class="cm">// ── Abstraction side: Shape hierarchy (holds bridge to renderer) ───</span>
+<span class="kw">public abstract class</span> <span class="tp">Shape</span>
+{
+    <span class="kw">protected readonly</span> <span class="iface">IRenderer</span> _renderer;  <span class="cm">// THE BRIDGE</span>
+
+    <span class="kw">protected</span> <span class="fn">Shape</span>(<span class="iface">IRenderer</span> renderer) => _renderer = renderer;
+
+    <span class="kw">public abstract void</span> <span class="fn">Draw</span>();
+    <span class="kw">public abstract void</span> <span class="fn">Resize</span>(<span class="kw">float</span> factor);
+}
+
+<span class="kw">public class</span> <span class="tp">Circle</span> : <span class="tp">Shape</span>
+{
+    <span class="kw">private float</span> _radius;
+    <span class="kw">public</span> <span class="fn">Circle</span>(<span class="iface">IRenderer</span> renderer, <span class="kw">float</span> radius)
+        : <span class="kw">base</span>(renderer) => _radius = radius;
+
+    <span class="kw">public override void</span> <span class="fn">Draw</span>()                    => _renderer.<span class="fn">RenderCircle</span>(_radius);
+    <span class="kw">public override void</span> <span class="fn">Resize</span>(<span class="kw">float</span> factor)     => _radius *= factor;
+}
+
+<span class="kw">public class</span> <span class="tp">Square</span> : <span class="tp">Shape</span>
+{
+    <span class="kw">private float</span> _side;
+    <span class="kw">public</span> <span class="fn">Square</span>(<span class="iface">IRenderer</span> renderer, <span class="kw">float</span> side)
+        : <span class="kw">base</span>(renderer) => _side = side;
+
+    <span class="kw">public override void</span> <span class="fn">Draw</span>()                    => _renderer.<span class="fn">RenderSquare</span>(_side);
+    <span class="kw">public override void</span> <span class="fn">Resize</span>(<span class="kw">float</span> factor)     => _side *= factor;
+}
+
+<span class="cm">// ✅ Any shape with any renderer — N+M classes instead of N×M</span>
+<span class="iface">IRenderer</span> vector = <span class="kw">new</span> <span class="tp">VectorRenderer</span>();
+<span class="iface">IRenderer</span> raster = <span class="kw">new</span> <span class="tp">RasterRenderer</span>();
+
+<span class="kw">var</span> shapes = <span class="kw">new</span> <span class="tp">Shape</span>[]
+{
+    <span class="kw">new</span> <span class="tp">Circle</span>(<span class="num">5f</span>, vector),   <span class="kw">new</span> <span class="tp">Circle</span>(<span class="num">3f</span>, raster),
+    <span class="kw">new</span> <span class="tp">Square</span>(<span class="num">4f</span>, vector),   <span class="kw">new</span> <span class="tp">Square</span>(<span class="num">2f</span>, raster),
+};
+
+<span class="kw">foreach</span> (<span class="kw">var</span> shape <span class="kw">in</span> shapes) shape.<span class="fn">Draw</span>();
+<span class="cm">// Vector: drawing circle r=5
+// Raster: pixels for circle r=3
+// Vector: drawing square s=4
+// Raster: pixels for square s=2
+
+// ✅ Add Triangle? One new class — works with all existing renderers.
+// ✅ Add PDF renderer? One new class — works with all existing shapes.</span></pre>
+  </div>
+
+  <h3>Real-World Example — Notification Bridge</h3>
+
+  <div class="code-block brd">
+    <div class="code-label brd-c">C# — Notification type × delivery channel bridge</div>
+    <pre><span class="cm">// Implementation: delivery channels</span>
+<span class="kw">public interface</span> <span class="iface">IDeliveryChannel</span>
+{
+    <span class="kw">void</span> <span class="fn">Send</span>(<span class="kw">string</span> recipient, <span class="kw">string</span> subject, <span class="kw">string</span> body);
+}
+
+<span class="kw">public class</span> <span class="tp">EmailChannel</span> : <span class="iface">IDeliveryChannel</span>
+{ <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> r, <span class="kw">string</span> s, <span class="kw">string</span> b) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📧 Email → {r}: {s}"</span>); }
+
+<span class="kw">public class</span> <span class="tp">SmsChannel</span> : <span class="iface">IDeliveryChannel</span>
+{ <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> r, <span class="kw">string</span> s, <span class="kw">string</span> b) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📱 SMS → {r}: {b}"</span>); }
+
+<span class="cm">// Abstraction: notification types</span>
+<span class="kw">public abstract class</span> <span class="tp">Notification</span>
+{
+    <span class="kw">protected readonly</span> <span class="iface">IDeliveryChannel</span> _channel;
+    <span class="kw">protected</span> <span class="fn">Notification</span>(<span class="iface">IDeliveryChannel</span> channel) => _channel = channel;
+    <span class="kw">public abstract void</span> <span class="fn">Notify</span>(<span class="kw">string</span> recipient);
+}
+
+<span class="kw">public class</span> <span class="tp">OrderNotification</span> : <span class="tp">Notification</span>
+{
+    <span class="kw">public</span> <span class="fn">OrderNotification</span>(<span class="iface">IDeliveryChannel</span> c) : <span class="kw">base</span>(c) {}
+    <span class="kw">public override void</span> <span class="fn">Notify</span>(<span class="kw">string</span> r) =>
+        _channel.<span class="fn">Send</span>(r, <span class="str">"Order Confirmed"</span>, <span class="str">"Your order has been placed."</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">ShippingNotification</span> : <span class="tp">Notification</span>
+{
+    <span class="kw">public</span> <span class="fn">ShippingNotification</span>(<span class="iface">IDeliveryChannel</span> c) : <span class="kw">base</span>(c) {}
+    <span class="kw">public override void</span> <span class="fn">Notify</span>(<span class="kw">string</span> r) =>
+        _channel.<span class="fn">Send</span>(r, <span class="str">"Your order shipped!"</span>, <span class="str">"Tracking: TRACK123"</span>);
+}
+
+<span class="cm">// Mix and match freely:</span>
+<span class="kw">new</span> <span class="tp">OrderNotification</span>(<span class="kw">new</span> <span class="tp">EmailChannel</span>()).<span class="fn">Notify</span>(<span class="str">"alice@example.com"</span>);
+<span class="kw">new</span> <span class="tp">OrderNotification</span>(<span class="kw">new</span> <span class="tp">SmsChannel</span>()).<span class="fn">Notify</span>(<span class="str">"+447700000001"</span>);
+<span class="kw">new</span> <span class="tp">ShippingNotification</span>(<span class="kw">new</span> <span class="tp">EmailChannel</span>()).<span class="fn">Notify</span>(<span class="str">"alice@example.com"</span>);</pre>
+  </div>
+
+  <h3>When to Use Bridge</h3>
+  <ul class="checklist cl-brd">
+    <li>When you see a class explosion from combining two independent hierarchies</li>
+    <li>When abstraction and implementation should vary independently</li>
+    <li>When you want to switch implementations at runtime</li>
+    <li>Device drivers — device type (abstract) × operating system (implementation)</li>
+    <li>Reporting — report type × export format (PDF, Excel, HTML)</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new shapes or renderers independently</span>
+    <span class="sb sb-s">S — Shape handles shape logic; renderer handles rendering</span>
+    <span class="sb sb-d">D — Shape depends on IRenderer interface, not concrete class</span>
+  </div>
+
+  <div class="completion">
+    <h3>Structural Patterns Complete!</h3>
+    <p>Adapter — bridge incompatible interfaces, wrap legacy/third-party code · Decorator — add behaviour by wrapping objects in layers, avoid class explosion, replaces inheritance for feature combinations · Facade — hide complex subsystems behind a simple API, one entry point for orchestration · Proxy — control access to objects for caching, security, or lazy loading, transparent to callers · Composite — treat individual objects and collections identically, build tree structures · Bridge — separate abstraction from implementation so both can vary independently, N+M classes instead of N×M</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Creational</span>
+      <span class="np np-done">✅ Part 2: Structural</span>
+      <span class="np np-next">→ Part 3: Behavioural</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
