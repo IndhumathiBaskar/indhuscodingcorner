@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Patterns — Part 2: System Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --sys:#1a5abf;--sys-l:#d6e8f8;--sys-d:#0e3a8a;
+  --evt:#bf2a5a;--evt-l:#f8d6e4;--evt-d:#8a003a;
+  --micro:#0e8a5a;--micro-l:#d4f0e8;--micro-d:#085c38;
+  --pub:#8a2abf;--pub-l:#ede0f8;--pub-d:#4a1580;
+  --repo:#bf6a0e;--repo-l:#f8f0d4;--repo-d:#8a4500;
+  --di:#0e6abf;--di-l:#d6ebf8;--di-d:#0a4280;
+  --api:#1a8a7a;--api-l:#d0f0ec;--api-d:#0d5c52;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(191,42,90,.3) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,90,.2) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(26,122,191,.25) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#f472b6,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.4);color:#f9a8d4;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-over.active{background:var(--sys-l);color:var(--sys-d);}
+.t-evt.active{background:var(--evt-l);color:var(--evt-d);}
+.t-micro.active{background:var(--micro-l);color:var(--micro-d);}
+.t-pub.active{background:var(--pub-l);color:var(--pub-d);}
+.t-repo.active{background:var(--repo-l);color:var(--repo-d);}
+.t-di.active{background:var(--di-l);color:var(--di-d);}
+.t-api.active{background:var(--api-l);color:var(--api-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--sys-d);}    .ph-over h2{border-bottom:3px solid var(--sys-l);}
+.ph-evt h2,.ph-evt h3{color:var(--evt-d);}       .ph-evt h2{border-bottom:3px solid var(--evt-l);}
+.ph-micro h2,.ph-micro h3{color:var(--micro-d);} .ph-micro h2{border-bottom:3px solid var(--micro-l);}
+.ph-pub h2,.ph-pub h3{color:var(--pub-d);}       .ph-pub h2{border-bottom:3px solid var(--pub-l);}
+.ph-repo h2,.ph-repo h3{color:var(--repo-d);}    .ph-repo h2{border-bottom:3px solid var(--repo-l);}
+.ph-di h2,.ph-di h3{color:var(--di-d);}          .ph-di h2{border-bottom:3px solid var(--di-l);}
+.ph-api h2,.ph-api h3{color:var(--api-d);}       .ph-api h2{border-bottom:3px solid var(--api-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--sys);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sys-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-evt{background:var(--evt-l);border:1.5px solid rgba(191,42,90,.2);border-left:4px solid var(--evt);}     .an-evt .analogy-tag{color:var(--evt-d);}
+.an-micro{background:var(--micro-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--micro);}.an-micro .analogy-tag{color:var(--micro-d);}
+.an-pub{background:var(--pub-l);border:1.5px solid rgba(138,42,191,.2);border-left:4px solid var(--pub);}    .an-pub .analogy-tag{color:var(--pub-d);}
+.an-repo{background:var(--repo-l);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--repo);} .an-repo .analogy-tag{color:var(--repo-d);}
+.an-di{background:var(--di-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--di);}      .an-di .analogy-tag{color:var(--di-d);}
+.an-api{background:var(--api-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--api);}   .an-api .analogy-tag{color:var(--api-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.evt-c{border-left:4px solid var(--evt);}
+.code-block.micro-c{border-left:4px solid var(--micro);}
+.code-block.pub-c{border-left:4px solid var(--pub);}
+.code-block.repo-c{border-left:4px solid var(--repo);}
+.code-block.di-c{border-left:4px solid var(--di);}
+.code-block.api-c{border-left:4px solid var(--api);}
+.code-block.neutral{border-left:4px solid var(--sys);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}.code-label.good{color:#86efac;}.code-label.neutral{color:#93c5fd;}
+.code-label.evt-l{color:#fca5a5;}.code-label.micro-l{color:#6ee7b7;}.code-label.pub-l{color:#d8b4fe;}
+.code-label.repo-l{color:#fde68a;}.code-label.di-l{color:#93c5fd;}.code-label.api-l{color:#99f6e4;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--sys-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-evt li{border-left:3px solid var(--evt);}    .cl-evt li:before{content:"✓ ";color:var(--evt);font-weight:700;}
+.cl-micro li{border-left:3px solid var(--micro);}.cl-micro li:before{content:"✓ ";color:var(--micro);font-weight:700;}
+.cl-pub li{border-left:3px solid var(--pub);}    .cl-pub li:before{content:"✓ ";color:var(--pub);font-weight:700;}
+.cl-repo li{border-left:3px solid var(--repo);}  .cl-repo li:before{content:"✓ ";color:var(--repo);font-weight:700;}
+.cl-di li{border-left:3px solid var(--di);}      .cl-di li:before{content:"✓ ";color:var(--di);font-weight:700;}
+.cl-api li{border-left:3px solid var(--api);}    .cl-api li:before{content:"✓ ";color:var(--api);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}    .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);}      .cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-evt{background:var(--evt-l);border-color:rgba(191,42,90,.25);}
+.pc-micro{background:var(--micro-l);border-color:rgba(14,138,90,.25);}
+.pc-pub{background:var(--pub-l);border-color:rgba(138,42,191,.25);}
+.pc-repo{background:var(--repo-l);border-color:rgba(191,106,14,.25);}
+.pc-di{background:var(--di-l);border-color:rgba(14,106,191,.25);}
+.pc-api{background:var(--api-l);border-color:rgba(26,138,122,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-evt .pc-name{color:var(--evt-d);}   .pc-micro .pc-name{color:var(--micro-d);}
+.pc-pub .pc-name{color:var(--pub-d);}   .pc-repo .pc-name{color:var(--repo-d);}
+.pc-di .pc-name{color:var(--di-d);}     .pc-api .pc-name{color:var(--api-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);line-height:1.5;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* SERVICE BOXES */
+.service-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr));gap:10px;margin:14px 0;}
+.svc{border-radius:var(--r);padding:13px;border:1.5px solid;text-align:center;}
+.svc-name{font-weight:700;font-size:.85rem;margin-bottom:4px;}
+.svc-resp{font-size:.72rem;color:var(--muted);margin-bottom:6px;}
+.svc-tech{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:3px 7px;border-radius:4px;}
+.svc-order{background:var(--evt-l);border-color:rgba(191,42,90,.2);}    .svc-order .svc-name{color:var(--evt-d);}    .svc-order .svc-tech{background:rgba(191,42,90,.1);}
+.svc-payment{background:var(--micro-l);border-color:rgba(14,138,90,.2);} .svc-payment .svc-name{color:var(--micro-d);}.svc-payment .svc-tech{background:rgba(14,138,90,.1);}
+.svc-notif{background:var(--pub-l);border-color:rgba(138,42,191,.2);}    .svc-notif .svc-name{color:var(--pub-d);}    .svc-notif .svc-tech{background:rgba(138,42,191,.1);}
+.svc-user{background:var(--repo-l);border-color:rgba(191,106,14,.2);}    .svc-user .svc-name{color:var(--repo-d);}    .svc-user .svc-tech{background:rgba(191,106,14,.1);}
+.svc-inv{background:var(--di-l);border-color:rgba(14,106,191,.2);}       .svc-inv .svc-name{color:var(--di-d);}       .svc-inv .svc-tech{background:rgba(14,106,191,.1);}
+.svc-ship{background:var(--api-l);border-color:rgba(26,138,122,.2);}     .svc-ship .svc-name{color:var(--api-d);}     .svc-ship .svc-tech{background:rgba(26,138,122,.1);}
+
+/* SOLID BADGE */
+.solid-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.sb{padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sb-s{background:rgba(26,106,191,.12);color:#0e3a8a;border:1px solid rgba(26,106,191,.2);}
+.sb-o{background:rgba(191,106,14,.12);color:#8a4a00;border:1px solid rgba(191,106,14,.2);}
+.sb-l{background:rgba(26,138,74,.12);color:#0d5c38;border:1px solid rgba(26,138,74,.2);}
+.sb-i{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+.sb-d{background:rgba(176,42,55,.12);color:#8a0010;border:1px solid rgba(176,42,55,.2);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.all-done{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards,.service-grid{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Architecture Patterns Series · Part 2 of 2 · Final</div>
+    <div class="part-badge">
+      <span class="pb pb-done">✅ Application Architecture</span>
+      <span class="pb pb-active">② System Architecture</span>
+    </div>
+    <h1>System <span>Architecture Patterns</span></h1>
+    <p>Event-Driven · Microservices · Pub/Sub · Repository &amp; Unit of Work · Dependency Injection · API Gateway</p>
+    <div class="header-chips">
+      <span class="chip">Event-Driven</span>
+      <span class="chip">Microservices vs Monolith</span>
+      <span class="chip">Pub/Sub</span>
+      <span class="chip">Repository + Unit of Work</span>
+      <span class="chip">Dependency Injection</span>
+      <span class="chip">API Gateway</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-evt"   onclick="T('event',this)">② Event-Driven</button>
+      <button class="tab-btn t-micro" onclick="T('micro',this)">③ Microservices</button>
+      <button class="tab-btn t-pub"   onclick="T('pubsub',this)">④ Pub/Sub</button>
+      <button class="tab-btn t-repo"  onclick="T('repo',this)">⑤ Repository &amp; UoW</button>
+      <button class="tab-btn t-di"    onclick="T('di',this)">⑥ Dependency Injection</button>
+      <button class="tab-btn t-api"   onclick="T('gateway',this)">⑦ API Gateway</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🌐 System Architecture Patterns</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Part 1 vs Part 2 — What's the Difference?</div>
+    <p>Part 1 covered how you structure code <strong>inside a single application</strong> — MVC, MVVM, Clean Architecture. Part 2 covers how <strong>systems talk to each other</strong> and how infrastructure is organised across multiple services, databases, and communication channels. These patterns answer: "How do my services communicate? How do I scale? How do I keep things decoupled at the system level?"</p>
+  </div>
+
+  <h3>The 6 System Architecture Patterns</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-evt">
+      <span class="pc-emoji">⚡</span>
+      <div class="pc-name">Event-Driven</div>
+      <div class="pc-intent">Services communicate by producing and consuming events. Loose coupling — producers don't know who consumes.</div>
+    </div>
+    <div class="pc pc-micro">
+      <span class="pc-emoji">🔬</span>
+      <div class="pc-name">Microservices</div>
+      <div class="pc-intent">Application split into small, independent services. Each owns its data, deploys independently, scales independently.</div>
+    </div>
+    <div class="pc pc-pub">
+      <span class="pc-emoji">📡</span>
+      <div class="pc-name">Pub/Sub</div>
+      <div class="pc-intent">Publishers send messages to topics. Subscribers receive messages from topics. Neither knows about the other.</div>
+    </div>
+    <div class="pc pc-repo">
+      <span class="pc-emoji">🗄️</span>
+      <div class="pc-name">Repository + UoW</div>
+      <div class="pc-intent">Abstract database access behind interfaces. Unit of Work groups multiple operations into one transaction.</div>
+    </div>
+    <div class="pc pc-di">
+      <span class="pc-emoji">💉</span>
+      <div class="pc-name">Dependency Injection</div>
+      <div class="pc-intent">Provide dependencies from outside, not created inside. The DI container wires everything together.</div>
+    </div>
+    <div class="pc pc-api">
+      <span class="pc-emoji">🚪</span>
+      <div class="pc-name">API Gateway</div>
+      <div class="pc-intent">Single entry point for all client requests. Routes to the right service, handles auth, rate limiting, logging.</div>
+    </div>
+  </div>
+
+  <h3>How System Patterns Relate to Application Patterns</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Application Patterns (Part 1)</th><th>System Patterns (Part 2)</th><th>Relationship</th></tr>
+    <tr><td>Clean Architecture</td><td>Repository + Unit of Work</td><td>Repository implements the data interface Clean Architecture defines</td></tr>
+    <tr><td>CQRS</td><td>Event-Driven + Pub/Sub</td><td>CQRS commands often raise events; events flow via Pub/Sub</td></tr>
+    <tr><td>MVC / MVVM</td><td>API Gateway</td><td>Gateway sits in front of MVC controllers, routing and protecting</td></tr>
+    <tr><td>Layered Architecture</td><td>Microservices</td><td>Each microservice may use a layered architecture internally</td></tr>
+    <tr><td>All patterns</td><td>Dependency Injection</td><td>DI wires together all the layers and services</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — EVENT-DRIVEN
+══════════════════════════════════ -->
+<div id="tab-event" class="tab-panel ph-evt"><div class="section">
+  <h2>⚡ Event-Driven Architecture</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>In Event-Driven Architecture, services <strong>communicate by publishing and reacting to events</strong>. When something happens ("OrderPlaced", "PaymentProcessed", "UserRegistered"), a service publishes that event. Other services that care about it subscribe and react — independently, asynchronously. The publisher doesn't know who reacts. This creates extremely loose coupling between services.</p>
+  </div>
+
+  <div class="analogy an-evt">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>radio station</strong>. The station (producer) broadcasts a show (event) without knowing who is listening. Every radio tuned to that frequency (consumer) receives and reacts to it. Add a new listener? The station doesn't need to change. Remove a listener? The station doesn't notice. Listeners are completely independent of each other and of the station's internal workings.</p>
+  </div>
+
+  <h3>Synchronous vs Event-Driven Communication</h3>
+  <div class="compare">
+    <div class="bad-box">
+      <div class="box-label">❌ Synchronous (Tight Coupling)</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>OrderService directly calls EmailService, InventoryService, LoyaltyService</li>
+        <li>OrderService must know about all dependent services</li>
+        <li>If EmailService is down, the order fails</li>
+        <li>Adding a new reaction (SMS) means editing OrderService</li>
+        <li>OrderService waits for all downstream calls to complete</li>
+      </ul>
+    </div>
+    <div class="good-box">
+      <div class="box-label">✅ Event-Driven (Loose Coupling)</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>OrderService publishes "OrderPlaced" event and moves on</li>
+        <li>EmailService, InventoryService, LoyaltyService subscribe independently</li>
+        <li>If EmailService is down, it retries later — order is still placed</li>
+        <li>Add SMS notifications? New subscriber — zero changes to OrderService</li>
+        <li>OrderService doesn't wait — fast and non-blocking</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Domain Events — Events Within One Application</h3>
+
+  <div class="code-block evt-c">
+    <div class="code-label evt-l">C# — Domain Events with MediatR</div>
+    <pre><span class="cm">// ── Step 1: Define domain events ──────────────────────────────────</span>
+<span class="cm">// Events are immutable records of something that happened</span>
+<span class="kw">public record</span> <span class="tp">OrderPlacedEvent</span>(
+    <span class="tp">Guid</span>     OrderId,
+    <span class="kw">int</span>      CustomerId,
+    <span class="kw">decimal</span>  Total,
+    <span class="tp">DateTime</span> PlacedAt
+) : <span class="iface">INotification</span>;  <span class="cm">// MediatR INotification = publish to many handlers</span>
+
+<span class="kw">public record</span> <span class="tp">PaymentProcessedEvent</span>(
+    <span class="tp">Guid</span>   OrderId,
+    <span class="kw">string</span> TransactionId,
+    <span class="kw">bool</span>   Success
+) : <span class="iface">INotification</span>;
+
+<span class="cm">// ── Step 2: Publish from domain entity / service ───────────────────</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IOrderRepository</span> _repo;
+    <span class="kw">private readonly</span> <span class="tp">IMediator</span>         _mediator;
+
+    <span class="kw">public</span> <span class="fn">OrderService</span>(<span class="iface">IOrderRepository</span> repo, <span class="tp">IMediator</span> mediator)
+    { _repo = repo; _mediator = mediator; }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="tp">PlaceOrderRequest</span> req)
+    {
+        <span class="kw">var</span> order = <span class="tp">Order</span>.<span class="fn">Create</span>(req.CustomerId, req.Lines);
+        <span class="kw">await</span> _repo.<span class="fn">SaveAsync</span>(order);
+
+        <span class="cm">// ✅ Publish event — OrderService doesn't know or care who handles it</span>
+        <span class="kw">await</span> _mediator.<span class="fn">Publish</span>(<span class="kw">new</span> <span class="tp">OrderPlacedEvent</span>(
+            order.Id, req.CustomerId, order.Total, <span class="tp">DateTime</span>.UtcNow));
+
+        <span class="kw">return</span> order.Id;
+    }
+}
+
+<span class="cm">// ── Step 3: Independent event handlers ────────────────────────────</span>
+<span class="cm">// Each handler reacts independently — OrderService knows NONE of these</span>
+
+<span class="kw">public class</span> <span class="tp">SendOrderConfirmationEmailHandler</span>
+    : <span class="iface">INotificationHandler</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;
+{
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span> _email;
+    <span class="kw">public</span> <span class="fn">SendOrderConfirmationEmailHandler</span>(<span class="iface">IEmailService</span> email) => _email = email;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">Handle</span>(<span class="tp">OrderPlacedEvent</span> evt, <span class="tp">CancellationToken</span> ct)
+    {
+        <span class="cm">// Sends confirmation email</span>
+        <span class="kw">await</span> _email.<span class="fn">SendAsync</span>(evt.CustomerId,
+            <span class="str">$"Order #{evt.OrderId} confirmed! Total: £{evt.Total}"</span>);
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">ReserveInventoryHandler</span>
+    : <span class="iface">INotificationHandler</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;
+{
+    <span class="kw">private readonly</span> <span class="iface">IInventoryService</span> _inventory;
+    <span class="kw">public</span> <span class="fn">ReserveInventoryHandler</span>(<span class="iface">IInventoryService</span> inv) => _inventory = inv;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">Handle</span>(<span class="tp">OrderPlacedEvent</span> evt, <span class="tp">CancellationToken</span> ct)
+        => <span class="kw">await</span> _inventory.<span class="fn">ReserveAsync</span>(evt.OrderId, ct);
+}
+
+<span class="kw">public class</span> <span class="tp">AwardLoyaltyPointsHandler</span>
+    : <span class="iface">INotificationHandler</span>&lt;<span class="tp">OrderPlacedEvent</span>&gt;
+{
+    <span class="kw">private readonly</span> <span class="iface">ILoyaltyService</span> _loyalty;
+    <span class="kw">public</span> <span class="fn">AwardLoyaltyPointsHandler</span>(<span class="iface">ILoyaltyService</span> loyalty) => _loyalty = loyalty;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">Handle</span>(<span class="tp">OrderPlacedEvent</span> evt, <span class="tp">CancellationToken</span> ct)
+        => <span class="kw">await</span> _loyalty.<span class="fn">AwardAsync</span>(evt.CustomerId, evt.Total, ct);
+}
+
+<span class="cm">// ✅ Add SMS notifications? New handler. Zero changes to OrderService.
+// ✅ Remove loyalty points? Delete handler. Zero changes to OrderService.</span></pre>
+  </div>
+
+  <h3>Integration Events — Events Between Microservices</h3>
+
+  <div class="code-block evt-c">
+    <div class="code-label evt-l">C# — Publishing to Azure Service Bus / RabbitMQ</div>
+    <pre><span class="cm">// Integration events cross service boundaries via a message broker</span>
+<span class="kw">public interface</span> <span class="iface">IEventBus</span>
+{
+    <span class="tp">Task</span> <span class="fn">PublishAsync</span>&lt;<span class="tp">T</span>&gt;(<span class="tp">T</span> integrationEvent) <span class="kw">where</span> <span class="tp">T</span> : <span class="tp">IntegrationEvent</span>;
+    <span class="kw">void</span> <span class="fn">Subscribe</span>&lt;<span class="tp">T</span>, <span class="tp">TH</span>&gt;()
+        <span class="kw">where</span> <span class="tp">T</span>  : <span class="tp">IntegrationEvent</span>
+        <span class="kw">where</span> <span class="tp">TH</span> : <span class="iface">IIntegrationEventHandler</span>&lt;<span class="tp">T</span>&gt;;
+}
+
+<span class="kw">public abstract record</span> <span class="tp">IntegrationEvent</span>(
+    <span class="tp">Guid</span>     Id       = <span class="kw">default</span>,
+    <span class="tp">DateTime</span> OccurredOn = <span class="kw">default</span>
+);
+
+<span class="cm">// Event published by OrderService to the message bus</span>
+<span class="kw">public record</span> <span class="tp">OrderPlacedIntegrationEvent</span>(
+    <span class="tp">Guid</span>     OrderId,
+    <span class="kw">int</span>      CustomerId,
+    <span class="kw">decimal</span>  Total,
+    <span class="tp">List</span>&lt;<span class="tp">OrderLineDto</span>&gt; Lines
+) : <span class="tp">IntegrationEvent</span>;
+
+<span class="cm">// In OrderService — after saving, publish to the bus</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IEventBus</span>         _bus;
+    <span class="kw">private readonly</span> <span class="iface">IOrderRepository</span>  _repo;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="tp">PlaceOrderRequest</span> req)
+    {
+        <span class="kw">var</span> order = <span class="tp">Order</span>.<span class="fn">Create</span>(req.CustomerId, req.Lines);
+        <span class="kw">await</span> _repo.<span class="fn">SaveAsync</span>(order);
+
+        <span class="cm">// Publish to message broker — NotificationService, ShippingService pick it up</span>
+        <span class="kw">await</span> _bus.<span class="fn">PublishAsync</span>(<span class="kw">new</span> <span class="tp">OrderPlacedIntegrationEvent</span>(
+            order.Id, req.CustomerId, order.Total, req.Lines));
+
+        <span class="kw">return</span> order.Id;
+    }
+}
+
+<span class="cm">// In NotificationService — subscribes and reacts asynchronously</span>
+<span class="kw">public class</span> <span class="tp">OrderPlacedNotificationHandler</span>
+    : <span class="iface">IIntegrationEventHandler</span>&lt;<span class="tp">OrderPlacedIntegrationEvent</span>&gt;
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(<span class="tp">OrderPlacedIntegrationEvent</span> evt)
+    {
+        <span class="cm">// Runs in the NotificationService process — completely independent</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[NotificationSvc] Sending confirmation for order {evt.OrderId}"</span>);
+        <span class="kw">await</span> _emailSender.<span class="fn">SendAsync</span>(evt.CustomerId, <span class="str">"Order confirmed!"</span>);
+    }
+}</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new event handlers without changing publishers</span>
+    <span class="sb sb-s">S — Each handler has one responsibility</span>
+    <span class="sb sb-d">D — Services depend on IEventBus interface, not concrete broker</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — MICROSERVICES
+══════════════════════════════════ -->
+<div id="tab-micro" class="tab-panel ph-micro"><div class="section">
+  <h2>🔬 Microservices vs Monolith</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>A <strong>Monolith</strong> is one big application where everything is together — all code, all features, all in one deployable unit. A <strong>Microservices</strong> architecture splits the application into many small, independent services — each runs its own process, owns its own database, deploys independently, and communicates over HTTP/messaging. Both have real tradeoffs — neither is always right.</p>
+  </div>
+
+  <div class="analogy an-micro">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>Swiss Army knife (Monolith)</strong> has everything in one tool — convenient, always together, easy to carry. But if one blade breaks, you can't replace just that blade. A <strong>toolbox (Microservices)</strong> has separate tools — you can upgrade, replace, or add individual tools without affecting others. But you need a toolbox to carry them, and coordination between tools is more effort.</p>
+  </div>
+
+  <h3>Monolith vs Microservices — The Real Tradeoffs</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>Monolith</th><th>Microservices</th></tr>
+    <tr><td>Deployment</td><td>One deployable unit</td><td>Each service deploys independently</td></tr>
+    <tr><td>Scaling</td><td>Scale the whole app together</td><td>Scale only the service that needs it</td></tr>
+    <tr><td>Development</td><td>Simple — one codebase, one debug session</td><td>Complex — distributed system, many repos</td></tr>
+    <tr><td>Team size</td><td>Small to medium teams</td><td>Large teams (one team per service)</td></tr>
+    <tr><td>Database</td><td>One shared database</td><td>Each service owns its own database</td></tr>
+    <tr><td>Communication</td><td>In-process method calls (fast)</td><td>HTTP / messaging (network latency)</td></tr>
+    <tr><td>Failure isolation</td><td>One failure can bring down everything</td><td>One service fails, others keep running</td></tr>
+    <tr><td>Operational complexity</td><td>Low</td><td>High (Docker, Kubernetes, service mesh)</td></tr>
+    <tr><td>Best for</td><td>Startups, small apps, early stage</td><td>Large scale, large teams, complex domains</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Start with a Monolith — Evolve to Microservices</h4>
+    <p>Most successful microservice architectures started as monoliths. Build a well-structured monolith first (Clean Architecture internally). When you hit real scaling or team boundary pain points, extract services. "Microservices first" is one of the most common architecture mistakes — the coordination overhead crushes small teams.</p>
+  </div>
+
+  <h3>Microservices in Practice — E-Commerce Example</h3>
+
+  <div class="service-grid">
+    <div class="svc svc-order">
+      <div class="svc-name">🛒 Order Service</div>
+      <div class="svc-resp">Place, track, cancel orders</div>
+      <div class="svc-tech">ASP.NET Core + SQL Server</div>
+    </div>
+    <div class="svc svc-payment">
+      <div class="svc-name">💳 Payment Service</div>
+      <div class="svc-resp">Process payments, refunds</div>
+      <div class="svc-tech">ASP.NET Core + PostgreSQL</div>
+    </div>
+    <div class="svc svc-notif">
+      <div class="svc-name">📧 Notification Service</div>
+      <div class="svc-resp">Email, SMS, push</div>
+      <div class="svc-tech">Worker Service + Redis</div>
+    </div>
+    <div class="svc svc-user">
+      <div class="svc-name">👤 User Service</div>
+      <div class="svc-resp">Auth, profiles, preferences</div>
+      <div class="svc-tech">ASP.NET Core + MongoDB</div>
+    </div>
+    <div class="svc svc-inv">
+      <div class="svc-name">📦 Inventory Service</div>
+      <div class="svc-resp">Stock levels, reservations</div>
+      <div class="svc-tech">ASP.NET Core + SQL Server</div>
+    </div>
+    <div class="svc svc-ship">
+      <div class="svc-name">🚚 Shipping Service</div>
+      <div class="svc-resp">Shipments, tracking</div>
+      <div class="svc-tech">ASP.NET Core + PostgreSQL</div>
+    </div>
+  </div>
+
+  <div class="code-block micro-c">
+    <div class="code-label micro-l">C# — HttpClient communication between microservices</div>
+    <pre><span class="cm">// Each service is its own ASP.NET Core application
+// Services communicate via HTTP or message broker</span>
+
+<span class="cm">// ── Order Service calling Payment Service via HTTP ─────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IPaymentServiceClient</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">PaymentResult</span>&gt; <span class="fn">ProcessPaymentAsync</span>(<span class="tp">PaymentRequest</span> request);
+}
+
+<span class="kw">public class</span> <span class="tp">PaymentServiceClient</span> : <span class="iface">IPaymentServiceClient</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">HttpClient</span> _http;
+    <span class="kw">public</span> <span class="fn">PaymentServiceClient</span>(<span class="tp">HttpClient</span> http) => _http = http;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">PaymentResult</span>&gt; <span class="fn">ProcessPaymentAsync</span>(<span class="tp">PaymentRequest</span> request)
+    {
+        <span class="kw">var</span> response = <span class="kw">await</span> _http.<span class="fn">PostAsJsonAsync</span>(<span class="str">"/api/payments"</span>, request);
+        response.<span class="fn">EnsureSuccessStatusCode</span>();
+        <span class="kw">return</span> <span class="kw">await</span> response.Content.<span class="fn">ReadFromJsonAsync</span>&lt;<span class="tp">PaymentResult</span>&gt;()
+               ?? <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"Empty response"</span>);
+    }
+}
+
+<span class="cm">// Register typed HttpClient in Program.cs</span>
+builder.Services.<span class="fn">AddHttpClient</span>&lt;<span class="iface">IPaymentServiceClient</span>, <span class="tp">PaymentServiceClient</span>&gt;(client =>
+{
+    client.BaseAddress = <span class="kw">new</span> <span class="tp">Uri</span>(<span class="str">"https://payment-service"</span>);
+    client.Timeout = <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">30</span>);
+})
+.<span class="fn">AddResilienceHandler</span>(<span class="str">"retry"</span>, builder =>   <span class="cm">// Polly resilience</span>
+{
+    builder.<span class="fn">AddRetry</span>(<span class="kw">new</span> <span class="tp">HttpRetryStrategyOptions</span>
+    {
+        MaxRetryAttempts = <span class="num">3</span>,
+        Delay            = <span class="tp">TimeSpan</span>.<span class="fn">FromMilliseconds</span>(<span class="num">500</span>)
+    });
+    builder.<span class="fn">AddCircuitBreaker</span>(<span class="kw">new</span> <span class="tp">HttpCircuitBreakerStrategyOptions</span>
+    {
+        FailureRatio    = <span class="num">0.5</span>,
+        MinimumThroughput = <span class="num">10</span>
+    });
+});
+
+<span class="cm">// Service Discovery — using environment variables or config</span>
+builder.Services.<span class="fn">Configure</span>&lt;<span class="tp">ServiceEndpoints</span>&gt;(config =>
+{
+    config.PaymentService   = Environment.<span class="fn">GetEnvironmentVariable</span>(<span class="str">"PAYMENT_SERVICE_URL"</span>) ?? <span class="str">"http://localhost:5002"</span>;
+    config.InventoryService = Environment.<span class="fn">GetEnvironmentVariable</span>(<span class="str">"INVENTORY_SERVICE_URL"</span>) ?? <span class="str">"http://localhost:5003"</span>;
+});</pre>
+  </div>
+
+  <h3>Key Microservices Patterns</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Circuit Breaker</h4><p>Stop calling a failing service. Let it recover. Prevents cascade failures across services.</p></div>
+    <div class="icon-item"><span class="emoji">🏥</span><h4>Health Checks</h4><p>Each service exposes /health endpoint. Kubernetes and load balancers route away from unhealthy instances.</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Distributed Tracing</h4><p>Trace a request across multiple services. OpenTelemetry + Jaeger/Zipkin show the full journey.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Saga Pattern</h4><p>Distributed transactions across services. Each step publishes events; compensating actions undo on failure.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Service Registry</h4><p>Services register themselves. Clients discover addresses. No hardcoded URLs in code.</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>JWT Auth</h4><p>Each service validates JWT tokens independently. No central session store needed.</p></div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — PUB/SUB
+══════════════════════════════════ -->
+<div id="tab-pubsub" class="tab-panel ph-pub"><div class="section">
+  <h2>📡 Publish/Subscribe Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Pub/Sub is a messaging pattern where <strong>Publishers send messages to a topic/channel without knowing who receives them</strong>, and <strong>Subscribers listen to topics they care about without knowing who sends them</strong>. A message broker (Azure Service Bus, RabbitMQ, AWS SQS) sits in the middle. This is how loosely coupled, scalable, asynchronous communication works between services.</p>
+  </div>
+
+  <div class="analogy an-pub">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>YouTube channel</strong>. The creator (Publisher) uploads a video to their channel (Topic). All subscribers receive a notification. The creator doesn't know or care who is subscribed. Subscribers don't know or care who else is subscribed. New subscriber? The creator doesn't need to do anything. Unsubscribe? Same. The platform (Broker) handles all the routing.</p>
+  </div>
+
+  <h3>Pub/Sub vs Direct HTTP</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>Direct HTTP Call</th><th>Pub/Sub Messaging</th></tr>
+    <tr><td>Coupling</td><td>Tight — caller must know address of callee</td><td>Loose — publisher just knows topic name</td></tr>
+    <tr><td>Availability</td><td>Both services must be up at same time</td><td>Broker stores message, consumer processes later</td></tr>
+    <tr><td>Speed</td><td>Synchronous — waits for response</td><td>Asynchronous — fire and forget</td></tr>
+    <tr><td>Retries</td><td>You must implement retry logic</td><td>Broker retries automatically</td></tr>
+    <tr><td>Scaling</td><td>Consumer must keep up with producers</td><td>Messages queue up, consumers scale independently</td></tr>
+    <tr><td>Best for</td><td>Queries, data needed in response</td><td>Commands, notifications, workflows</td></tr>
+  </table></div>
+
+  <h3>Pub/Sub with Azure Service Bus</h3>
+
+  <div class="code-block pub-c">
+    <div class="code-label pub-l">C# — Publisher sending messages to Azure Service Bus</div>
+    <pre><span class="cm">// Install: dotnet add package Azure.Messaging.ServiceBus</span>
+
+<span class="kw">public interface</span> <span class="iface">IMessagePublisher</span>
+{
+    <span class="tp">Task</span> <span class="fn">PublishAsync</span>&lt;<span class="tp">T</span>&gt;(<span class="tp">T</span> message, <span class="kw">string</span> topicOrQueue,
+                          <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">ServiceBusPublisher</span> : <span class="iface">IMessagePublisher</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">ServiceBusClient</span> _client;
+
+    <span class="kw">public</span> <span class="fn">ServiceBusPublisher</span>(<span class="tp">ServiceBusClient</span> client) => _client = client;
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">PublishAsync</span>&lt;<span class="tp">T</span>&gt;(<span class="tp">T</span> message, <span class="kw">string</span> topicOrQueue,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+    {
+        <span class="kw">await using var</span> sender = _client.<span class="fn">CreateSender</span>(topicOrQueue);
+
+        <span class="kw">var</span> json = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(message);
+        <span class="kw">var</span> msg  = <span class="kw">new</span> <span class="tp">ServiceBusMessage</span>(<span class="tp">Encoding</span>.UTF8.<span class="fn">GetBytes</span>(json))
+        {
+            MessageId    = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>(),
+            ContentType  = <span class="str">"application/json"</span>,
+            Subject      = <span class="kw">typeof</span>(<span class="tp">T</span>).Name    <span class="cm">// message type for routing</span>
+        };
+
+        <span class="kw">await</span> sender.<span class="fn">SendMessageAsync</span>(msg, ct);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Published {typeof(T).Name} to {topicOrQueue}"</span>);
+    }
+}
+
+<span class="cm">// Publisher usage — OrderService publishes to "orders" topic</span>
+<span class="kw">await</span> _publisher.<span class="fn">PublishAsync</span>(
+    <span class="kw">new</span> <span class="tp">OrderPlacedIntegrationEvent</span>(order.Id, customerId, total),
+    topicOrQueue: <span class="str">"orders"</span>);</pre>
+  </div>
+
+  <div class="code-block pub-c">
+    <div class="code-label pub-l">C# — Subscriber consuming messages (Background Worker)</div>
+    <pre><span class="cm">// NotificationService subscribes to "orders" topic</span>
+<span class="kw">public class</span> <span class="tp">OrderEventConsumer</span> : <span class="tp">BackgroundService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">ServiceBusClient</span>    _client;
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span>       _email;
+    <span class="kw">private readonly</span> <span class="tp">ILogger</span>&lt;<span class="tp">OrderEventConsumer</span>&gt; _logger;
+
+    <span class="kw">public</span> <span class="fn">OrderEventConsumer</span>(
+        <span class="tp">ServiceBusClient</span> client,
+        <span class="iface">IEmailService</span> email,
+        <span class="tp">ILogger</span>&lt;<span class="tp">OrderEventConsumer</span>&gt; logger)
+    { _client = client; _email = email; _logger = logger; }
+
+    <span class="kw">protected override async</span> <span class="tp">Task</span> <span class="fn">ExecuteAsync</span>(<span class="tp">CancellationToken</span> stoppingToken)
+    {
+        <span class="cm">// Subscribe to "orders" topic, "notification-service" subscription</span>
+        <span class="kw">await using var</span> processor = _client.<span class="fn">CreateProcessor</span>(
+            topicName:         <span class="str">"orders"</span>,
+            subscriptionName:  <span class="str">"notification-service"</span>,
+            options:           <span class="kw">new</span> <span class="tp">ServiceBusProcessorOptions</span>
+            {
+                MaxConcurrentCalls  = <span class="num">5</span>,
+                AutoCompleteMessages = <span class="kw">false</span>   <span class="cm">// we manually complete/abandon</span>
+            });
+
+        processor.ProcessMessageAsync += <span class="fn">HandleMessageAsync</span>;
+        processor.ProcessErrorAsync   += <span class="fn">HandleErrorAsync</span>;
+
+        <span class="kw">await</span> processor.<span class="fn">StartProcessingAsync</span>(stoppingToken);
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="tp">Timeout</span>.Infinite, stoppingToken);
+        <span class="kw">await</span> processor.<span class="fn">StopProcessingAsync</span>();
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">HandleMessageAsync</span>(<span class="tp">ProcessMessageEventArgs</span> args)
+    {
+        <span class="kw">try</span>
+        {
+            <span class="kw">var</span> json  = args.Message.<span class="fn">Body</span>.<span class="fn">ToString</span>();
+            <span class="kw">var</span> evt   = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">OrderPlacedIntegrationEvent</span>&gt;(json)!;
+
+            _logger.<span class="fn">LogInformation</span>(<span class="str">"Processing order {OrderId}"</span>, evt.OrderId);
+
+            <span class="kw">await</span> _email.<span class="fn">SendOrderConfirmationAsync</span>(evt.CustomerId, evt.OrderId);
+
+            <span class="cm">// ✅ Manually complete — removes from queue</span>
+            <span class="kw">await</span> args.<span class="fn">CompleteMessageAsync</span>(args.Message);
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            _logger.<span class="fn">LogError</span>(ex, <span class="str">"Failed processing message"</span>);
+            <span class="cm">// ❌ Abandon — message returns to queue for retry</span>
+            <span class="kw">await</span> args.<span class="fn">AbandonMessageAsync</span>(args.Message);
+        }
+    }
+
+    <span class="kw">private</span> <span class="tp">Task</span> <span class="fn">HandleErrorAsync</span>(<span class="tp">ProcessErrorEventArgs</span> args)
+    {
+        _logger.<span class="fn">LogError</span>(args.Exception, <span class="str">"Service Bus error"</span>);
+        <span class="kw">return</span> <span class="tp">Task</span>.CompletedTask;
+    }
+}
+
+<span class="cm">// Register in Program.cs:
+builder.Services.AddSingleton(new ServiceBusClient(connectionString));
+builder.Services.AddHostedService&lt;OrderEventConsumer&gt;();</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new subscribers without changing publishers</span>
+    <span class="sb sb-s">S — Publisher publishes; consumer handles one message type</span>
+    <span class="sb sb-d">D — Both depend on IMessagePublisher interface</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — REPOSITORY + UNIT OF WORK
+══════════════════════════════════ -->
+<div id="tab-repo" class="tab-panel ph-repo"><div class="section">
+  <h2>🗄️ Repository &amp; Unit of Work Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The <strong>Repository</strong> pattern wraps your database access behind an interface — your business logic talks to <code>IOrderRepository</code>, not directly to EF Core or SQL. The <strong>Unit of Work</strong> groups multiple repository operations into a single transaction — either all succeed together or all roll back together. Together they make your data access testable and transactional.</p>
+  </div>
+
+  <div class="analogy an-repo">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>librarian (Repository)</strong> is your interface to the library's books. You ask the librarian for a book by title — you don't walk the stacks yourself. The librarian knows where everything is and handles the physical storage. A <strong>shopping basket (Unit of Work)</strong> — you add multiple items to your basket, and only when you check out do all items get purchased together as one transaction. Put one back = none are purchased.</p>
+  </div>
+
+  <h3>Repository Pattern — Full Implementation</h3>
+
+  <div class="code-block repo-c">
+    <div class="code-label repo-l">C# — Generic Repository with EF Core</div>
+    <pre><span class="cm">// ── Generic Repository interface ───────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IRepository</span>&lt;<span class="tp">T</span>&gt; <span class="kw">where</span> <span class="tp">T</span> : <span class="kw">class</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">T</span>?&gt;         <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">T</span>&gt;&gt;    <span class="fn">GetAllAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">T</span>&gt;&gt;    <span class="fn">FindAsync</span>(<span class="tp">Expression</span>&lt;<span class="tp">Func</span>&lt;<span class="tp">T</span>, <span class="kw">bool</span>&gt;&gt; predicate, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>              <span class="fn">AddAsync</span>(<span class="tp">T</span> entity, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="kw">void</span>              <span class="fn">Update</span>(<span class="tp">T</span> entity);
+    <span class="kw">void</span>              <span class="fn">Remove</span>(<span class="tp">T</span> entity);
+    <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt;        <span class="fn">ExistsAsync</span>(<span class="tp">Expression</span>&lt;<span class="tp">Func</span>&lt;<span class="tp">T</span>, <span class="kw">bool</span>&gt;&gt; predicate, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+}
+
+<span class="cm">// ── Generic EF Core implementation ────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">EfRepository</span>&lt;<span class="tp">T</span>&gt; : <span class="iface">IRepository</span>&lt;<span class="tp">T</span>&gt; <span class="kw">where</span> <span class="tp">T</span> : <span class="kw">class</span>
+{
+    <span class="kw">protected readonly</span> <span class="tp">AppDbContext</span>  _ctx;
+    <span class="kw">protected readonly</span> <span class="tp">DbSet</span>&lt;<span class="tp">T</span>&gt;     _set;
+
+    <span class="kw">public</span> <span class="fn">EfRepository</span>(<span class="tp">AppDbContext</span> ctx) { _ctx = ctx; _set = ctx.<span class="fn">Set</span>&lt;<span class="tp">T</span>&gt;(); }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">T</span>?&gt;       <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set.<span class="fn">FindAsync</span>(<span class="kw">new object</span>[] { id }, ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">T</span>&gt;&gt; <span class="fn">GetAllAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set.<span class="fn">AsNoTracking</span>().<span class="fn">ToListAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">T</span>&gt;&gt; <span class="fn">FindAsync</span>(<span class="tp">Expression</span>&lt;<span class="tp">Func</span>&lt;<span class="tp">T</span>, <span class="kw">bool</span>&gt;&gt; pred,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set.<span class="fn">Where</span>(pred).<span class="fn">ToListAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>       <span class="fn">AddAsync</span>(<span class="tp">T</span> entity, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set.<span class="fn">AddAsync</span>(entity, ct);
+
+    <span class="kw">public void</span>             <span class="fn">Update</span>(<span class="tp">T</span> entity) => _set.<span class="fn">Update</span>(entity);
+    <span class="kw">public void</span>             <span class="fn">Remove</span>(<span class="tp">T</span> entity) => _set.<span class="fn">Remove</span>(entity);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">ExistsAsync</span>(<span class="tp">Expression</span>&lt;<span class="tp">Func</span>&lt;<span class="tp">T</span>, <span class="kw">bool</span>&gt;&gt; pred,
+        <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set.<span class="fn">AnyAsync</span>(pred, ct);
+}
+
+<span class="cm">// ── Specific repository with custom queries ────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IOrderRepository</span> : <span class="iface">IRepository</span>&lt;<span class="tp">Order</span>&gt;
+{
+    <span class="cm">// Custom queries beyond the generic ones</span>
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetByCustomerIdAsync</span>(<span class="kw">int</span> customerId, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetPendingOrdersAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+    <span class="tp">Task</span>&lt;<span class="kw">decimal</span>&gt;      <span class="fn">GetTotalRevenueAsync</span>(<span class="tp">DateTime</span> from, <span class="tp">DateTime</span> to);
+}
+
+<span class="kw">public class</span> <span class="tp">OrderRepository</span> : <span class="tp">EfRepository</span>&lt;<span class="tp">Order</span>&gt;, <span class="iface">IOrderRepository</span>
+{
+    <span class="kw">public</span> <span class="fn">OrderRepository</span>(<span class="tp">AppDbContext</span> ctx) : <span class="kw">base</span>(ctx) { }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetByCustomerIdAsync</span>(<span class="kw">int</span> customerId, <span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set
+            .<span class="fn">Where</span>(o => o.CustomerId == customerId)
+            .<span class="fn">Include</span>(o => o.Lines)
+            .<span class="fn">OrderByDescending</span>(o => o.CreatedAt)
+            .<span class="fn">ToListAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetPendingOrdersAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => <span class="kw">await</span> _set
+            .<span class="fn">Where</span>(o => o.Status == <span class="tp">OrderStatus</span>.Pending)
+            .<span class="fn">ToListAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">decimal</span>&gt; <span class="fn">GetTotalRevenueAsync</span>(<span class="tp">DateTime</span> from, <span class="tp">DateTime</span> to)
+        => <span class="kw">await</span> _set
+            .<span class="fn">Where</span>(o => o.CreatedAt >= from && o.CreatedAt <= to && o.Status == <span class="tp">OrderStatus</span>.Confirmed)
+            .<span class="fn">SumAsync</span>(o => o.Total);
+}</pre>
+  </div>
+
+  <h3>Unit of Work Pattern</h3>
+
+  <div class="code-block repo-c">
+    <div class="code-label repo-l">C# — Unit of Work groups operations into one transaction</div>
+    <pre><span class="cm">// ── Unit of Work interface ─────────────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IUnitOfWork</span> : <span class="tp">IAsyncDisposable</span>
+{
+    <span class="iface">IOrderRepository</span>    Orders    { <span class="kw">get</span>; }
+    <span class="iface">IRepository</span>&lt;<span class="tp">Customer</span>&gt; Customers { <span class="kw">get</span>; }
+    <span class="iface">IRepository</span>&lt;<span class="tp">Product</span>&gt;  Products  { <span class="kw">get</span>; }
+
+    <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt; <span class="fn">SaveChangesAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>);
+}
+
+<span class="cm">// ── EF Core implementation ─────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">EfUnitOfWork</span> : <span class="iface">IUnitOfWork</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">AppDbContext</span> _ctx;
+
+    <span class="cm">// Repositories share the same DbContext — same transaction</span>
+    <span class="kw">public</span> <span class="iface">IOrderRepository</span>     Orders    { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="iface">IRepository</span>&lt;<span class="tp">Customer</span>&gt; Customers { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="iface">IRepository</span>&lt;<span class="tp">Product</span>&gt;  Products  { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">EfUnitOfWork</span>(<span class="tp">AppDbContext</span> ctx)
+    {
+        _ctx      = ctx;
+        Orders    = <span class="kw">new</span> <span class="tp">OrderRepository</span>(ctx);
+        Customers = <span class="kw">new</span> <span class="tp">EfRepository</span>&lt;<span class="tp">Customer</span>&gt;(ctx);
+        Products  = <span class="kw">new</span> <span class="tp">EfRepository</span>&lt;<span class="tp">Product</span>&gt;(ctx);
+    }
+
+    <span class="cm">// ONE call saves ALL changes from ALL repositories</span>
+    <span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="kw">int</span>&gt; <span class="fn">SaveChangesAsync</span>(<span class="tp">CancellationToken</span> ct = <span class="kw">default</span>)
+        => _ctx.<span class="fn">SaveChangesAsync</span>(ct);
+
+    <span class="kw">public async</span> <span class="tp">ValueTask</span> <span class="fn">DisposeAsync</span>() => <span class="kw">await</span> _ctx.<span class="fn">DisposeAsync</span>();
+}
+
+<span class="cm">// ── Service using Unit of Work ─────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IUnitOfWork</span> _uow;
+    <span class="kw">public</span> <span class="fn">OrderService</span>(<span class="iface">IUnitOfWork</span> uow) => _uow = uow;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="kw">int</span> customerId, <span class="tp">List</span>&lt;<span class="tp">OrderLine</span>&gt; lines)
+    {
+        <span class="cm">// All operations on the same DbContext = same transaction</span>
+        <span class="kw">var</span> customer = <span class="kw">await</span> _uow.Customers.<span class="fn">GetByIdAsync</span>(customerId)
+            ?? <span class="kw">throw new</span> <span class="tp">NotFoundException</span>(<span class="str">$"Customer {customerId} not found"</span>);
+
+        <span class="cm">// Check and reserve products</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> line <span class="kw">in</span> lines)
+        {
+            <span class="kw">var</span> product = <span class="kw">await</span> _uow.Products.<span class="fn">GetByIdAsync</span>(line.ProductId)
+                ?? <span class="kw">throw new</span> <span class="tp">NotFoundException</span>(<span class="str">$"Product {line.ProductId} not found"</span>);
+
+            <span class="kw">if</span> (product.Stock < line.Quantity)
+                <span class="kw">throw new</span> <span class="tp">InsufficientStockException</span>(product.Name);
+
+            product.Stock -= line.Quantity;   <span class="cm">// deduct stock</span>
+            _uow.Products.<span class="fn">Update</span>(product);
+        }
+
+        <span class="kw">var</span> order = <span class="tp">Order</span>.<span class="fn">Create</span>(customerId, lines);
+        <span class="kw">await</span> _uow.Orders.<span class="fn">AddAsync</span>(order);
+
+        <span class="cm">// ✅ ONE SaveChanges = order saved + stock deducted in ONE transaction</span>
+        <span class="cm">// If ANYTHING above throws, NOTHING is saved — atomic operation</span>
+        <span class="kw">await</span> _uow.<span class="fn">SaveChangesAsync</span>();
+
+        <span class="kw">return</span> order.Id;
+    }
+}</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-d">D — Services depend on IRepository/IUnitOfWork interfaces</span>
+    <span class="sb sb-s">S — Repository handles data access; service handles business logic</span>
+    <span class="sb sb-o">O — Swap EF Core for Dapper by replacing EfRepository implementation</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — DEPENDENCY INJECTION
+══════════════════════════════════ -->
+<div id="tab-di" class="tab-panel ph-di"><div class="section">
+  <h2>💉 Dependency Injection Architecture</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Dependency Injection (DI) means: instead of a class creating its own dependencies with <code>new</code>, they are <strong>provided from outside</strong> (injected). A DI Container is a framework that automatically creates and injects all dependencies based on registrations you define at startup. In .NET, this is built-in via <code>IServiceCollection</code>.</p>
+  </div>
+
+  <div class="analogy an-di">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A new employee (class) doesn't build their own desk, computer, and tools — the company (DI container) provides them. The employee just says "I need a computer and a desk" (constructor parameters), and facilities (the container) provides them. The employee doesn't know or care who made the computer or where the desk came from. This makes it easy to give a different computer (mock in tests) without changing the employee.</p>
+  </div>
+
+  <h3>The Three Lifetimes</h3>
+  <div class="grid-3">
+    <div class="icon-item">
+      <span class="emoji">🔁</span>
+      <h4>Transient</h4>
+      <p>New instance every time it's requested. Lightweight, stateless services. Default for most services.</p>
+    </div>
+    <div class="icon-item">
+      <span class="emoji">🌐</span>
+      <h4>Scoped</h4>
+      <p>One instance per HTTP request (web) or per scope. DbContext, repositories. Shared within a request.</p>
+    </div>
+    <div class="icon-item">
+      <span class="emoji">1️⃣</span>
+      <h4>Singleton</h4>
+      <p>One instance for the entire app lifetime. Caches, configuration, loggers, HttpClient factories.</p>
+    </div>
+  </div>
+
+  <div class="code-block di-c">
+    <div class="code-label di-l">C# — Registering services in Program.cs (.NET 6+)</div>
+    <pre><span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+<span class="cm">// ── SINGLETON — one instance for entire app lifetime ─────────────</span>
+builder.Services.<span class="fn">AddSingleton</span>&lt;<span class="iface">IConfiguration</span>&gt;(builder.Configuration);
+builder.Services.<span class="fn">AddSingleton</span>&lt;<span class="iface">IMemoryCache</span>, <span class="tp">MemoryCache</span>&gt;();
+builder.Services.<span class="fn">AddSingleton</span>&lt;<span class="iface">IEventBus</span>, <span class="tp">ServiceBusEventBus</span>&gt;();
+
+<span class="cm">// ── SCOPED — one instance per HTTP request ────────────────────────</span>
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="tp">AppDbContext</span>&gt;();          <span class="cm">// EF Core DbContext</span>
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="iface">IUnitOfWork</span>,          <span class="tp">EfUnitOfWork</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="iface">IOrderRepository</span>,    <span class="tp">OrderRepository</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="iface">IOrderService</span>,       <span class="tp">OrderService</span>&gt;();
+builder.Services.<span class="fn">AddScoped</span>&lt;<span class="iface">IPaymentService</span>,     <span class="tp">PaymentService</span>&gt;();
+
+<span class="cm">// ── TRANSIENT — new instance every time ──────────────────────────</span>
+builder.Services.<span class="fn">AddTransient</span>&lt;<span class="iface">IEmailService</span>,      <span class="tp">SmtpEmailService</span>&gt;();
+builder.Services.<span class="fn">AddTransient</span>&lt;<span class="iface">IValidator</span>&lt;<span class="tp">Order</span>&gt;, <span class="tp">OrderValidator</span>&gt;();
+
+<span class="cm">// ── HttpClient with named/typed clients ───────────────────────────</span>
+builder.Services
+    .<span class="fn">AddHttpClient</span>&lt;<span class="iface">IPaymentServiceClient</span>, <span class="tp">PaymentServiceClient</span>&gt;(client =>
+        client.BaseAddress = <span class="kw">new</span> <span class="tp">Uri</span>(builder.Configuration[<span class="str">"Services:Payment"</span>]!));
+
+<span class="cm">// ── Options pattern — strongly-typed configuration ────────────────</span>
+builder.Services.<span class="fn">Configure</span>&lt;<span class="tp">EmailSettings</span>&gt;(
+    builder.Configuration.<span class="fn">GetSection</span>(<span class="str">"Email"</span>));
+
+<span class="cm">// ── Keyed services (.NET 8) — multiple implementations of same interface</span>
+builder.Services.<span class="fn">AddKeyedScoped</span>&lt;<span class="iface">IPaymentProcessor</span>, <span class="tp">StripeProcessor</span>&gt;(<span class="str">"stripe"</span>);
+builder.Services.<span class="fn">AddKeyedScoped</span>&lt;<span class="iface">IPaymentProcessor</span>, <span class="tp">PayPalProcessor</span>&gt;(<span class="str">"paypal"</span>);
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+app.<span class="fn">MapControllers</span>();
+app.<span class="fn">Run</span>();</pre>
+  </div>
+
+  <div class="code-block di-c">
+    <div class="code-label di-l">C# — Constructor injection (the correct way)</div>
+    <pre><span class="cm">// ✅ Constructor injection — dependencies declared, container provides them</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span> : <span class="iface">IOrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IUnitOfWork</span>         _uow;
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span>       _email;
+    <span class="kw">private readonly</span> <span class="iface">IEventBus</span>           _bus;
+    <span class="kw">private readonly</span> <span class="tp">ILogger</span>&lt;<span class="tp">OrderService</span>&gt; _logger;
+    <span class="kw">private readonly</span> <span class="iface">IOptions</span>&lt;<span class="tp">OrderSettings</span>&gt; _settings;
+
+    <span class="cm">// DI container injects all of these automatically</span>
+    <span class="kw">public</span> <span class="fn">OrderService</span>(
+        <span class="iface">IUnitOfWork</span>         uow,
+        <span class="iface">IEmailService</span>       email,
+        <span class="iface">IEventBus</span>           bus,
+        <span class="tp">ILogger</span>&lt;<span class="tp">OrderService</span>&gt; logger,
+        <span class="iface">IOptions</span>&lt;<span class="tp">OrderSettings</span>&gt; settings)
+    {
+        _uow      = uow;
+        _email    = email;
+        _bus      = bus;
+        _logger   = logger;
+        _settings = settings;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="tp">PlaceOrderRequest</span> req)
+    {
+        _logger.<span class="fn">LogInformation</span>(<span class="str">"Placing order for customer {Id}"</span>, req.CustomerId);
+        <span class="cm">// ... business logic using injected dependencies</span>
+        <span class="kw">return</span> <span class="tp">Guid</span>.<span class="fn">NewGuid</span>();
+    }
+}
+
+<span class="cm">// ── Using Keyed services (.NET 8) ─────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">CheckoutController</span> : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IPaymentProcessor</span> _stripe;
+    <span class="kw">private readonly</span> <span class="iface">IPaymentProcessor</span> _paypal;
+
+    <span class="kw">public</span> <span class="fn">CheckoutController</span>(
+        [<span class="at">FromKeyedServices</span>(<span class="str">"stripe"</span>)] <span class="iface">IPaymentProcessor</span> stripe,
+        [<span class="at">FromKeyedServices</span>(<span class="str">"paypal"</span>)] <span class="iface">IPaymentProcessor</span> paypal)
+    { _stripe = stripe; _paypal = paypal; }
+}
+
+<span class="cm">// ── Extension methods for clean registration (recommended) ────────</span>
+<span class="kw">public static class</span> <span class="tp">ServiceCollectionExtensions</span>
+{
+    <span class="kw">public static</span> <span class="tp">IServiceCollection</span> <span class="fn">AddApplicationServices</span>(<span class="kw">this</span> <span class="tp">IServiceCollection</span> services)
+    {
+        services.<span class="fn">AddScoped</span>&lt;<span class="iface">IOrderService</span>,    <span class="tp">OrderService</span>&gt;();
+        services.<span class="fn">AddScoped</span>&lt;<span class="iface">IPaymentService</span>,  <span class="tp">PaymentService</span>&gt;();
+        services.<span class="fn">AddTransient</span>&lt;<span class="iface">IEmailService</span>, <span class="tp">SmtpEmailService</span>&gt;();
+        <span class="kw">return</span> services;
+    }
+
+    <span class="kw">public static</span> <span class="tp">IServiceCollection</span> <span class="fn">AddInfrastructure</span>(<span class="kw">this</span> <span class="tp">IServiceCollection</span> services,
+        <span class="tp">IConfiguration</span> config)
+    {
+        services.<span class="fn">AddDbContext</span>&lt;<span class="tp">AppDbContext</span>&gt;(o =>
+            o.<span class="fn">UseSqlServer</span>(config.<span class="fn">GetConnectionString</span>(<span class="str">"Default"</span>)));
+        services.<span class="fn">AddScoped</span>&lt;<span class="iface">IUnitOfWork</span>,       <span class="tp">EfUnitOfWork</span>&gt;();
+        services.<span class="fn">AddScoped</span>&lt;<span class="iface">IOrderRepository</span>,  <span class="tp">OrderRepository</span>&gt;();
+        <span class="kw">return</span> services;
+    }
+}
+
+<span class="cm">// Program.cs becomes clean:
+builder.Services.AddApplicationServices();
+builder.Services.AddInfrastructure(builder.Configuration);</span></pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Captive Dependency — The Most Common DI Mistake</h4>
+    <p>Never inject a <strong>Scoped</strong> service into a <strong>Singleton</strong>. The singleton lives forever but the scoped service was only meant to live for one request — now it's stuck ("captive") inside the singleton forever, causing stale data and memory leaks. Rule: a longer-lived service should never depend on a shorter-lived service.</p>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-d">D — Classes depend on interfaces injected from outside</span>
+    <span class="sb sb-s">S — Composition Root (Program.cs) handles wiring; classes handle logic</span>
+    <span class="sb sb-o">O — Swap implementations by changing one registration line</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — API GATEWAY
+══════════════════════════════════ -->
+<div id="tab-gateway" class="tab-panel ph-api"><div class="section">
+  <h2>🚪 API Gateway Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>An API Gateway is a <strong>single entry point</strong> that sits in front of all your services. Every client request goes through it first. The gateway handles cross-cutting concerns — authentication, rate limiting, SSL termination, request routing, logging, response caching — so your individual services don't have to. Without a gateway, every client would need to know the address of every service.</p>
+  </div>
+
+  <div class="analogy an-api">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>hotel reception desk</strong>. Every guest (client) goes to reception first — they don't wander directly to the kitchen, housekeeping, or the spa. Reception (Gateway) authenticates you (checks your booking), routes you ("Room 302 is on the third floor"), applies rules ("spa closes at 10pm"), and coordinates services. The individual departments don't deal with guest authentication — reception handles it.</p>
+  </div>
+
+  <h3>What a Gateway Does</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Authentication</h4><p>Validate JWT tokens once at the gateway. Services trust the gateway and don't re-validate.</p></div>
+    <div class="icon-item"><span class="emoji">🗺️</span><h4>Request Routing</h4><p>Route /api/orders → OrderService, /api/users → UserService. Clients use one URL.</p></div>
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Rate Limiting</h4><p>Limit requests per client/IP. Prevent abuse without every service implementing it.</p></div>
+    <div class="icon-item"><span class="emoji">📋</span><h4>Logging &amp; Tracing</h4><p>Log every request centrally. Attach correlation IDs for distributed tracing.</p></div>
+    <div class="icon-item"><span class="emoji">💾</span><h4>Response Caching</h4><p>Cache frequent responses. Reduce load on downstream services for popular endpoints.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Load Balancing</h4><p>Distribute requests across multiple instances of the same service.</p></div>
+  </div>
+
+  <h3>API Gateway with YARP in ASP.NET Core</h3>
+
+  <div class="code-block api-c">
+    <div class="code-label api-l">C# — YARP (Yet Another Reverse Proxy) Gateway</div>
+    <pre><span class="cm">// Install: dotnet add package Yarp.ReverseProxy</span>
+
+<span class="cm">// ── Program.cs — Gateway setup ─────────────────────────────────────</span>
+<span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+builder.Services
+    .<span class="fn">AddReverseProxy</span>()
+    .<span class="fn">LoadFromConfig</span>(builder.Configuration.<span class="fn">GetSection</span>(<span class="str">"ReverseProxy"</span>));
+
+builder.Services.<span class="fn">AddAuthentication</span>().<span class="fn">AddJwtBearer</span>();
+builder.Services.<span class="fn">AddRateLimiter</span>(opts =>
+{
+    opts.<span class="fn">AddFixedWindowLimiter</span>(<span class="str">"api"</span>, o =>
+    {
+        o.Window             = <span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">1</span>);
+        o.PermitLimit        = <span class="num">100</span>;
+        o.QueueProcessingOrder = <span class="tp">QueueProcessingOrder</span>.OldestFirst;
+        o.QueueLimit         = <span class="num">10</span>;
+    });
+});
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+app.<span class="fn">UseAuthentication</span>();
+app.<span class="fn">UseAuthorization</span>();
+app.<span class="fn">UseRateLimiter</span>();
+
+<span class="cm">// Middleware: attach correlation ID to every proxied request</span>
+app.<span class="fn">Use</span>(<span class="kw">async</span> (context, next) =>
+{
+    <span class="kw">var</span> correlationId = context.Request.Headers[<span class="str">"X-Correlation-ID"</span>]
+        .FirstOrDefault() ?? <span class="tp">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>();
+
+    context.Response.Headers[<span class="str">"X-Correlation-ID"</span>] = correlationId;
+    <span class="kw">await</span> <span class="fn">next</span>();
+});
+
+app.<span class="fn">MapReverseProxy</span>();
+app.<span class="fn">Run</span>();</pre>
+  </div>
+
+  <div class="code-block api-c">
+    <div class="code-label api-l">JSON — appsettings.json YARP routing configuration</div>
+    <pre">{
+  <span class="at">"ReverseProxy"</span>: {
+    <span class="at">"Routes"</span>: {
+      <span class="at">"orders-route"</span>: {
+        <span class="at">"ClusterId"</span>: <span class="str">"orders-cluster"</span>,
+        <span class="at">"Match"</span>: { <span class="at">"Path"</span>: <span class="str">"/api/orders/{**catch-all}"</span> },
+        <span class="at">"AuthorizationPolicy"</span>: <span class="str">"RequireAuthenticatedUser"</span>,
+        <span class="at">"RateLimiterPolicy"</span>: <span class="str">"api"</span>
+      },
+      <span class="at">"payments-route"</span>: {
+        <span class="at">"ClusterId"</span>: <span class="str">"payments-cluster"</span>,
+        <span class="at">"Match"</span>: { <span class="at">"Path"</span>: <span class="str">"/api/payments/{**catch-all}"</span> },
+        <span class="at">"AuthorizationPolicy"</span>: <span class="str">"RequireAuthenticatedUser"</span>
+      },
+      <span class="at">"users-route"</span>: {
+        <span class="at">"ClusterId"</span>: <span class="str">"users-cluster"</span>,
+        <span class="at">"Match"</span>: { <span class="at">"Path"</span>: <span class="str">"/api/users/{**catch-all}"</span> }
+      }
+    },
+    <span class="at">"Clusters"</span>: {
+      <span class="at">"orders-cluster"</span>: {
+        <span class="at">"LoadBalancingPolicy"</span>: <span class="str">"RoundRobin"</span>,
+        <span class="at">"Destinations"</span>: {
+          <span class="at">"dest1"</span>: { <span class="at">"Address"</span>: <span class="str">"http://order-service:8080"</span> },
+          <span class="at">"dest2"</span>: { <span class="at">"Address"</span>: <span class="str">"http://order-service-2:8080"</span> }
+        }
+      },
+      <span class="at">"payments-cluster"</span>: {
+        <span class="at">"Destinations"</span>: {
+          <span class="at">"dest1"</span>: { <span class="at">"Address"</span>: <span class="str">"http://payment-service:8080"</span> }
+        }
+      },
+      <span class="at">"users-cluster"</span>: {
+        <span class="at">"Destinations"</span>: {
+          <span class="at">"dest1"</span>: { <span class="at">"Address"</span>: <span class="str">"http://user-service:8080"</span> }
+        }
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>Custom Middleware in the Gateway</h3>
+
+  <div class="code-block api-c">
+    <div class="code-label api-l">C# — Gateway middleware for auth, logging, transformation</div>
+    <pre><span class="cm">// Add custom headers to proxied requests (e.g. authenticated user info)</span>
+app.<span class="fn">MapReverseProxy</span>(proxyPipeline =>
+{
+    proxyPipeline.<span class="fn">Use</span>(<span class="kw">async</span> (context, next) =>
+    {
+        <span class="cm">// Forward the authenticated user's ID to downstream services</span>
+        <span class="kw">if</span> (context.User.Identity?.IsAuthenticated == <span class="kw">true</span>)
+        {
+            <span class="kw">var</span> userId = context.User.<span class="fn">FindFirst</span>(<span class="str">"sub"</span>)?.Value;
+            context.Request.Headers[<span class="str">"X-User-ID"</span>] = userId;
+        }
+
+        <span class="kw">var</span> sw = <span class="tp">Stopwatch</span>.<span class="fn">StartNew</span>();
+        <span class="kw">await</span> <span class="fn">next</span>();
+        sw.<span class="fn">Stop</span>();
+
+        <span class="cm">// Log request duration</span>
+        app.Logger.<span class="fn">LogInformation</span>(
+            <span class="str">"Gateway: {Method} {Path} → {StatusCode} in {Ms}ms"</span>,
+            context.Request.Method,
+            context.Request.Path,
+            context.Response.StatusCode,
+            sw.ElapsedMilliseconds);
+    });
+});</pre>
+  </div>
+
+  <h3>When to Use API Gateway</h3>
+  <ul class="checklist cl-api">
+    <li>Microservices architecture — clients need a single address, not one per service</li>
+    <li>Cross-cutting concerns (auth, logging, rate limiting) need to apply to all services</li>
+    <li>Different clients need different API shapes (mobile vs web vs third-party)</li>
+    <li>SSL termination — only the gateway handles HTTPS, services use HTTP internally</li>
+    <li>You need load balancing and failover across multiple service instances</li>
+  </ul>
+  <ul class="checklist cl-r">
+    <li>Monolithic apps — unnecessary overhead for a single deployable</li>
+    <li>Very simple internal services with no external clients</li>
+    <li>When the gateway becomes a bottleneck — must be highly available</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Gateway handles routing/auth; services handle business logic</span>
+    <span class="sb sb-o">O — Add new routes/services without changing gateway middleware</span>
+    <span class="sb sb-d">D — Services don't depend on the gateway; it sits in front</span>
+  </div>
+
+  <div class="completion">
+    <h3>🎉 Architecture Patterns — Both Parts Complete!</h3>
+    <p>Event-Driven Architecture — domain events with MediatR, integration events with Azure Service Bus, loose coupling via publish/subscribe · Microservices vs Monolith — real tradeoffs table, service-to-service HTTP with Polly resilience, circuit breaker, health checks · Pub/Sub Pattern — Azure Service Bus publisher and consumer worker, message acknowledgement and retry · Repository + Unit of Work — generic IRepository, EF Core implementation, custom query methods, atomic transactions with one SaveChanges · Dependency Injection — all three lifetimes explained, Program.cs registration, extension methods for clean startup, captive dependency warning · API Gateway — YARP reverse proxy, JSON routing config, middleware for auth forwarding and request logging</p>
+    <div class="all-done">
+      <span class="np np-done">✅ Part 1: Application Architecture — MVC · MVVM · MVP · Layered · Clean · CQRS</span>
+      <span class="np np-done">✅ Part 2: System Architecture — Events · Microservices · Pub/Sub · Repository · DI · Gateway</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
