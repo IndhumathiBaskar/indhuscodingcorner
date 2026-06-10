@@ -1,0 +1,1317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CLI — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#1f6b3a;--pc-l:#d4f0e2;--pc-d:#0d4022;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#080c12;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#d4f0e2 0%,#a8dfc0 45%,#6cc498 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'⌨️';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.08;pointer-events:none;}
+.header::after{content:'🖥️';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#eaf7f0);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:820px;display:block;margin:0 auto;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(31,107,58,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+.tip{background:var(--pc-l);border:1px solid rgba(31,107,58,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #0d1520;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#6ac891;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}.flag{color:#94e2d5;}.out{color:#cdd6f4;opacity:.7;}
+code{background:rgba(31,107,58,.12);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:9px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--pc-d);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:11px 13px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:9px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 9px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--muted);padding:7px 9px;background:var(--pc-l);border-radius:5px;margin-top:7px;}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.cc-teal{background:var(--teal-l);color:var(--teal);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--teal-l));border:1px solid rgba(31,107,58,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>⌨️ AWS <span>CLI</span> — Complete Guide</h1>
+    <p>Installation · Configuration · Profiles · Core Commands · S3 · EC2 · IAM · Lambda · Scripting · Output Filtering · Tips &amp; Tricks · beginner→expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('install',this)">② Install &amp; Setup</button>
+      <button class="tab-btn" onclick="T('config',this)">③ Config &amp; Profiles</button>
+      <button class="tab-btn" onclick="T('anatomy',this)">④ Command Anatomy</button>
+      <button class="tab-btn" onclick="T('services',this)">⑤ Core Services</button>
+      <button class="tab-btn" onclick="T('output',this)">⑥ Output &amp; Filtering</button>
+      <button class="tab-btn" onclick="T('scripting',this)">⑦ Scripting &amp; Automation</button>
+      <button class="tab-btn" onclick="T('advanced',this)">⑧ Advanced Features</button>
+      <button class="tab-btn" onclick="T('cheatsheet',this)">⑨ Cheat Sheet</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① OVERVIEW -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>⌨️ What is the AWS CLI?</h2>
+  <p>The AWS Command Line Interface (CLI) is an open-source tool that lets you interact with AWS services directly from your terminal. Instead of clicking through the AWS Console, you type commands — making it fast, scriptable, and automatable.</p>
+
+  <div class="tip">
+    <h4>💡 AWS CLI in One Sentence</h4>
+    <p>AWS CLI = a unified terminal tool to <strong>manage every AWS service</strong> using commands — the same API calls the Console makes, but scriptable, repeatable, and CI/CD-friendly.</p>
+  </div>
+
+  <h3>CLI vs Console vs SDK</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">⌨️ AWS CLI</div>
+      <div class="compare-row"><span class="compare-label">Interface</span><span class="compare-val">Terminal / Shell</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Scripts, automation</span></div>
+      <div class="compare-row"><span class="compare-label">Learning curve</span><span class="compare-val val-warn">Medium</span></div>
+      <div class="compare-row"><span class="compare-label">Repeatability</span><span class="compare-val val-good">High</span></div>
+      <div class="compare-row"><span class="compare-label">CI/CD use</span><span class="compare-val val-good">Yes</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">🖥️ AWS Console</div>
+      <div class="compare-row"><span class="compare-label">Interface</span><span class="compare-val">Web browser</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Exploration, learning</span></div>
+      <div class="compare-row"><span class="compare-label">Learning curve</span><span class="compare-val val-good">Low</span></div>
+      <div class="compare-row"><span class="compare-label">Repeatability</span><span class="compare-val val-bad">Manual clicks</span></div>
+      <div class="compare-row"><span class="compare-label">CI/CD use</span><span class="compare-val val-bad">No</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-amber">🔧 AWS SDK (C#)</div>
+      <div class="compare-row"><span class="compare-label">Interface</span><span class="compare-val">Code / Library</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">App integration</span></div>
+      <div class="compare-row"><span class="compare-label">Learning curve</span><span class="compare-val val-warn">High</span></div>
+      <div class="compare-row"><span class="compare-label">Repeatability</span><span class="compare-val val-good">High</span></div>
+      <div class="compare-row"><span class="compare-label">CI/CD use</span><span class="compare-val val-good">Yes</span></div>
+    </div>
+  </div>
+
+  <h3>CLI v2 vs v1</h3>
+  <div class="info">
+    <h4>📌 Always use AWS CLI v2</h4>
+    <p>CLI v2 is the current major version. It ships as a standalone binary (no Python dependency), has better SSO support, improved auto-complete, <code>--no-cli-pager</code> flag, and streaming binary output. CLI v1 is in maintenance mode. This guide covers <strong>CLI v2</strong>.</p>
+  </div>
+
+  <h3>What you can do with AWS CLI</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🪣</span><h4>S3</h4><p>Upload, download, sync, list, copy buckets and objects.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>EC2</h4><p>Start, stop, describe instances, manage key pairs, security groups.</p></div>
+    <div class="icon-item"><span class="emoji">👤</span><h4>IAM</h4><p>Create users, roles, policies, attach permissions.</p></div>
+    <div class="icon-item"><span class="emoji">⚡</span><h4>Lambda</h4><p>Deploy, invoke, update, list functions and logs.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>CloudFormation</h4><p>Deploy stacks, check status, get outputs.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>RDS / DynamoDB</h4><p>Create tables, query, manage snapshots.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>CloudWatch</h4><p>Get metrics, tail log groups in real time.</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Secrets Manager</h4><p>Get, create, rotate secrets from scripts.</p></div>
+    <div class="icon-item"><span class="emoji">🚀</span><h4>ECS / EKS</h4><p>Deploy services, update task definitions.</p></div>
+  </div>
+
+  <h3>How the CLI works under the hood</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔄 AWS CLI — Request Flow</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc"><div class="flow-node-title">⌨️ You type a command</div><ul class="flow-items"><li><code>aws s3 ls s3://my-bucket</code></li><li>CLI parses service, operation, parameters</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-blue"><div class="flow-node-title">🔑 CLI resolves credentials</div><ul class="flow-items"><li>Checks environment vars → ~/.aws/credentials → IAM role → SSO</li><li>Signs the request with AWS Signature V4 (SigV4)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-teal"><div class="flow-node-title">🌐 HTTPS request to AWS API</div><ul class="flow-items"><li>e.g. GET https://s3.eu-west-1.amazonaws.com/my-bucket</li><li>With Authorization header (SigV4 signature)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">📄 Response returned as JSON</div><ul class="flow-items"><li>CLI formats JSON output to your terminal</li><li>You can filter with --query, pipe to jq, or redirect to file</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ② INSTALL & SETUP -->
+<div id="tab-install" class="tab-panel"><div class="section">
+  <h2>📥 Install &amp; Setup</h2>
+
+  <h3>Install AWS CLI v2</h3>
+  <div class="code-block">
+    <span class="code-label">windows — install via msi (recommended)</span>
+    <pre><span class="cm"># Download and run the installer:</span>
+<span class="cm"># https://awscli.amazonaws.com/AWSCLIV2.msi</span>
+<span class="cm"># Double-click → Next → Install → Finish</span>
+
+<span class="cm"># Verify installation</span>
+aws <span class="flag">--version</span>
+<span class="out"># aws-cli/2.x.x Python/3.x.x Windows/10 exe/AMD64</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">windows — install via winget (alternative)</span>
+    <pre>winget install <span class="flag">--id</span> Amazon.AWSCLI <span class="flag">-e</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">macos — install via homebrew</span>
+    <pre>brew install awscli
+aws <span class="flag">--version</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">linux — install via curl</span>
+    <pre>curl <span class="str">"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"</span> <span class="flag">-o</span> <span class="str">"awscliv2.zip"</span>
+unzip awscliv2.zip
+sudo ./aws/install
+
+aws <span class="flag">--version</span></pre>
+  </div>
+
+  <h3>Update CLI v2</h3>
+  <div class="code-block">
+    <span class="code-label">update existing cli v2 installation</span>
+    <pre><span class="cm"># Linux / macOS</span>
+sudo ./aws/install <span class="flag">--update</span>
+
+<span class="cm"># Windows — re-run MSI or:</span>
+winget upgrade <span class="flag">--id</span> Amazon.AWSCLI</pre>
+  </div>
+
+  <h3>Enable Auto-complete (Highly Recommended)</h3>
+  <div class="code-block">
+    <span class="code-label">bash — enable aws cli tab completion</span>
+    <pre><span class="cm"># Add to ~/.bashrc or ~/.bash_profile</span>
+complete <span class="flag">-C</span> <span class="str">'/usr/local/bin/aws_completer'</span> aws
+source ~/.bashrc
+
+<span class="cm"># Now type: aws s3 [TAB] and see all subcommands</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">powershell — enable completion on windows</span>
+    <pre><span class="cm"># Add to $PROFILE</span>
+Register-ArgumentCompleter <span class="flag">-Native</span> <span class="flag">-CommandName</span> aws <span class="flag">-ScriptBlock</span> {
+    param($commandName, $wordToComplete, $cursorPosition)
+    <span class="tp">$env:COMP_LINE</span> = $wordToComplete
+    <span class="tp">$env:COMP_POINT</span> = $cursorPosition
+    aws_completer | ForEach-Object { [System.Management.Automation.CompletionResult]::new($_, $_, <span class="str">'ParameterValue'</span>, $_) }
+    Remove-Item Env:\COMP_LINE
+    Remove-Item Env:\COMP_POINT
+}</pre>
+  </div>
+
+  <h3>Useful Global Flags</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Flag</th><th>What it does</th><th>Example</th></tr>
+    <tr><td><code>--region</code></td><td>Override region for this command only</td><td><code>aws s3 ls --region us-east-1</code></td></tr>
+    <tr><td><code>--profile</code></td><td>Use a specific named profile</td><td><code>aws s3 ls --profile prod</code></td></tr>
+    <tr><td><code>--output</code></td><td>Override output format (json/yaml/text/table)</td><td><code>aws ec2 describe-instances --output table</code></td></tr>
+    <tr><td><code>--query</code></td><td>JMESPath filter on response JSON</td><td><code>--query 'Buckets[].Name'</code></td></tr>
+    <tr><td><code>--dry-run</code></td><td>Check permissions without executing (EC2)</td><td><code>aws ec2 run-instances --dry-run ...</code></td></tr>
+    <tr><td><code>--no-cli-pager</code></td><td>Disable pager (no 'press q to quit')</td><td><code>aws s3 ls --no-cli-pager</code></td></tr>
+    <tr><td><code>--debug</code></td><td>Show full HTTP request/response for debugging</td><td><code>aws s3 ls --debug</code></td></tr>
+    <tr><td><code>--cli-input-json</code></td><td>Pass parameters as JSON file</td><td><code>--cli-input-json file://params.json</code></td></tr>
+    <tr><td><code>--generate-cli-skeleton</code></td><td>Generate input JSON template</td><td><code>aws ec2 run-instances --generate-cli-skeleton</code></td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ③ CONFIG & PROFILES -->
+<div id="tab-config" class="tab-panel"><div class="section">
+  <h2>⚙️ Configuration &amp; Profiles</h2>
+
+  <h3>Quick Configure — Single Account</h3>
+  <div class="code-block">
+    <span class="code-label">terminal — aws configure (interactive setup)</span>
+    <pre>aws configure
+
+<span class="out">AWS Access Key ID [None]:</span>     AKIAIOSFODNN7EXAMPLE
+<span class="out">AWS Secret Access Key [None]:</span> wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+<span class="out">Default region name [None]:</span>   eu-west-1
+<span class="out">Default output format [None]:</span> json</pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Never use long-term access keys if avoidable</h4>
+    <p>Access keys stored in <code>~/.aws/credentials</code> are a security risk if your machine is compromised. Prefer <strong>AWS SSO</strong> (IAM Identity Center), <strong>IAM roles</strong> on EC2/ECS/Lambda, or short-term credentials from <code>aws sts assume-role</code>.</p>
+  </div>
+
+  <h3>Multiple Profiles — The Right Way to Work</h3>
+  <div class="code-block">
+    <span class="code-label">terminal — create named profiles for each account/environment</span>
+    <pre><span class="cm"># Create a named profile (prompts same questions)</span>
+aws configure <span class="flag">--profile</span> dev
+aws configure <span class="flag">--profile</span> staging
+aws configure <span class="flag">--profile</span> prod
+
+<span class="cm"># Use a specific profile</span>
+aws s3 ls <span class="flag">--profile</span> prod
+
+<span class="cm"># Set default profile for entire session</span>
+export <span class="tp">AWS_PROFILE</span>=prod          <span class="cm"># Linux/macOS</span>
+<span class="tp">$env:AWS_PROFILE</span> = <span class="str">"prod"</span>         <span class="cm"># PowerShell</span></pre>
+  </div>
+
+  <h3>Config Files — What Gets Created</h3>
+  <div class="code-block">
+    <span class="code-label">~/.aws/credentials — stores access keys</span>
+    <pre>[default]
+aws_access_key_id     = AKIAIOSFODNN7EXAMPLE
+aws_secret_access_key = wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+
+[prod]
+aws_access_key_id     = AKIAI44QH8DHBEXAMPLE
+aws_secret_access_key = je7MtGbClwBF/2Zp9Utk/h3yCo8nvbEXAMPLEKEY</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">~/.aws/config — stores region, output, sso settings</span>
+    <pre>[default]
+region = eu-west-1
+output = json
+
+[profile dev]
+region = eu-west-1
+output = json
+
+[profile prod]
+region = eu-west-2
+output = yaml
+
+[profile assume-role-example]
+role_arn          = arn:aws:iam::999999999999:role/DeployRole
+source_profile    = default
+role_session_name = my-deploy-session</pre>
+  </div>
+
+  <h3>AWS SSO / IAM Identity Center (Recommended)</h3>
+  <div class="code-block">
+    <span class="code-label">terminal — configure sso profile (cli v2 only)</span>
+    <pre>aws configure sso
+
+<span class="out">SSO session name (Recommended): my-sso</span>
+<span class="out">SSO start URL [None]:</span> https://my-company.awsapps.com/start
+<span class="out">SSO region [None]:</span> eu-west-1
+<span class="out">SSO registration scopes [sso:account:access]:</span> sso:account:access
+
+<span class="cm"># After config, login interactively:</span>
+aws sso login <span class="flag">--profile</span> dev
+
+<span class="cm"># Use the SSO profile:</span>
+aws s3 ls <span class="flag">--profile</span> dev</pre>
+  </div>
+
+  <h3>Assume Role — Cross-Account Access</h3>
+  <div class="code-block">
+    <span class="code-label">terminal — assume a role and export temp credentials</span>
+    <pre><span class="cm"># Get temporary credentials for a role</span>
+aws sts assume-role \
+  <span class="flag">--role-arn</span> <span class="str">"arn:aws:iam::123456789012:role/DeployRole"</span> \
+  <span class="flag">--role-session-name</span> <span class="str">"deploy-session"</span> \
+  <span class="flag">--duration-seconds</span> <span class="num">3600</span>
+
+<span class="cm"># Export the returned credentials:</span>
+export <span class="tp">AWS_ACCESS_KEY_ID</span>=ASIAxxxxxxxx
+export <span class="tp">AWS_SECRET_ACCESS_KEY</span>=xxxxxxxx
+export <span class="tp">AWS_SESSION_TOKEN</span>=xxxxxxxx
+
+<span class="cm"># Now all commands use the assumed role</span>
+aws sts get-caller-identity</pre>
+  </div>
+
+  <h3>Environment Variables — Highest Priority</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Variable</th><th>Overrides</th><th>Use case</th></tr>
+    <tr><td><code>AWS_PROFILE</code></td><td>Default profile</td><td>Switch profile for entire shell session</td></tr>
+    <tr><td><code>AWS_DEFAULT_REGION</code></td><td>Config region</td><td>Set region for a script</td></tr>
+    <tr><td><code>AWS_ACCESS_KEY_ID</code></td><td>Credentials file</td><td>CI/CD pipeline secrets</td></tr>
+    <tr><td><code>AWS_SECRET_ACCESS_KEY</code></td><td>Credentials file</td><td>CI/CD pipeline secrets</td></tr>
+    <tr><td><code>AWS_SESSION_TOKEN</code></td><td>—</td><td>Assumed role / temporary credentials</td></tr>
+    <tr><td><code>AWS_OUTPUT</code></td><td>Config output format</td><td>Force JSON in scripts</td></tr>
+  </table></div>
+
+  <h3>Credential Resolution Order</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔑 How CLI resolves credentials — priority order</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">1️⃣ Command-line options <code>--profile</code></div></div>
+        <div class="flow-arrow">↓ if not set</div>
+        <div class="flow-node n-blue" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">2️⃣ Environment variables <code>AWS_ACCESS_KEY_ID</code> etc.</div></div>
+        <div class="flow-arrow">↓ if not set</div>
+        <div class="flow-node n-teal" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">3️⃣ AWS CLI credentials file <code>~/.aws/credentials</code></div></div>
+        <div class="flow-arrow">↓ if not set</div>
+        <div class="flow-node n-green" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">4️⃣ AWS CLI config file <code>~/.aws/config</code></div></div>
+        <div class="flow-arrow">↓ if not set</div>
+        <div class="flow-node n-amber" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">5️⃣ Container credentials (ECS task role)</div></div>
+        <div class="flow-arrow">↓ if not set</div>
+        <div class="flow-node n-purple" style="font-size:.8rem;padding:8px 14px;"><div class="flow-node-title">6️⃣ Instance profile (EC2 / Lambda role) — IMDS</div></div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ④ COMMAND ANATOMY -->
+<div id="tab-anatomy" class="tab-panel"><div class="section">
+  <h2>🔬 Command Anatomy — Understanding Every Part</h2>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📋 AWS CLI Command Structure</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 700 120" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10"  y="30" width="50"  height="44" rx="6" fill="#d4f0e2" stroke="rgba(31,107,58,.4)" stroke-width="1.5"/>
+        <text x="35"  y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#0d4022">aws</text>
+        <text x="35"  y="88" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#1f6b3a" font-weight="600">base command</text>
+
+        <rect x="75"  y="30" width="80"  height="44" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.5"/>
+        <text x="115" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#1a3380">s3</text>
+        <text x="115" y="88" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#2a4db0" font-weight="600">service</text>
+
+        <rect x="170" y="30" width="80"  height="44" rx="6" fill="#fef0d0" stroke="rgba(196,122,16,.35)" stroke-width="1.5"/>
+        <text x="210" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="13" font-weight="700" fill="#7a4a00">cp</text>
+        <text x="210" y="88" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#c47a10" font-weight="600">operation</text>
+
+        <rect x="265" y="30" width="170" height="44" rx="6" fill="#ede8fc" stroke="rgba(108,71,212,.25)" stroke-width="1.5"/>
+        <text x="350" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11" font-weight="600" fill="#4a2fa0">./report.csv</text>
+        <text x="350" y="88" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#6c47d4" font-weight="600">argument (source)</text>
+
+        <rect x="450" y="30" width="200" height="44" rx="6" fill="#ede8fc" stroke="rgba(108,71,212,.25)" stroke-width="1.5"/>
+        <text x="550" y="56" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600" fill="#4a2fa0">s3://my-bucket/</text>
+        <text x="550" y="88" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="9" fill="#6c47d4" font-weight="600">argument (dest)</text>
+
+        <!-- Plus signs between boxes -->
+        <text x="65"  y="56" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="14" fill="#c4c0b8">·</text>
+        <text x="162" y="56" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="14" fill="#c4c0b8">·</text>
+        <text x="257" y="56" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="14" fill="#c4c0b8">·</text>
+        <text x="442" y="56" text-anchor="middle" font-family="DM Sans,sans-serif" font-size="14" fill="#c4c0b8">·</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Full Command Anatomy with Flags</h3>
+  <div class="code-block">
+    <span class="code-label">anatomy — every part labelled</span>
+    <pre>aws            <span class="cm"># base command — always first</span>
+  s3api        <span class="cm"># service (ec2, s3, iam, lambda, sts...)</span>
+  get-object   <span class="cm"># operation (list-buckets, describe-instances...)</span>
+  <span class="flag">--bucket</span>     <span class="cm"># parameter name (prefixed with --)</span>
+  my-bucket    <span class="cm"># parameter value</span>
+  <span class="flag">--key</span> <span class="str">"data/report.csv"</span>         <span class="cm"># another param</span>
+  <span class="flag">--output-file</span> <span class="str">"/tmp/report.csv"</span>  <span class="cm"># local destination</span>
+  <span class="flag">--region</span> eu-west-1               <span class="cm"># global flag (override region)</span>
+  <span class="flag">--profile</span> prod                   <span class="cm"># global flag (use named profile)</span>
+  <span class="flag">--query</span> <span class="str">'Body'</span>                    <span class="cm"># JMESPath filter on JSON response</span>
+  <span class="flag">--output</span> json                    <span class="cm"># response format</span>
+  <span class="flag">--no-cli-pager</span>                   <span class="cm"># don't use a pager (useful in scripts)</span></pre>
+  </div>
+
+  <h3>Getting Help — Built-in Documentation</h3>
+  <div class="code-block">
+    <span class="code-label">help commands — always available offline</span>
+    <pre><span class="cm"># Help for a service</span>
+aws s3 help
+aws ec2 help
+
+<span class="cm"># Help for a specific operation</span>
+aws s3 cp help
+aws ec2 describe-instances help
+
+<span class="cm"># List all available services</span>
+aws help
+
+<span class="cm"># Search for a specific operation</span>
+aws s3 help | grep <span class="str">"sync"</span></pre>
+  </div>
+
+  <h3>s3 vs s3api — What's the difference?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🪣 aws s3 — High-level commands</h4>
+      <ul>
+        <li>Human-friendly: <code>cp</code>, <code>mv</code>, <code>sync</code>, <code>ls</code>, <code>rm</code></li>
+        <li>Handles multipart uploads automatically</li>
+        <li>Recursive operations with <code>--recursive</code></li>
+        <li>Best for: day-to-day file operations</li>
+        <li>Example: <code>aws s3 sync ./dist s3://my-site/</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔧 aws s3api — Low-level API</h4>
+      <ul>
+        <li>Maps directly to S3 REST API operations</li>
+        <li>Full control: ACLs, metadata, versioning, lifecycle</li>
+        <li>Returns full JSON response</li>
+        <li>Best for: scripts needing fine-grained control</li>
+        <li>Example: <code>aws s3api put-bucket-versioning</code></li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ⑤ CORE SERVICES -->
+<div id="tab-services" class="tab-panel"><div class="section">
+  <h2>🛠️ Core Service Commands</h2>
+
+  <h3>S3 — Storage</h3>
+  <div class="code-block">
+    <span class="code-label">aws s3 — everyday file operations</span>
+    <pre><span class="cm"># List all buckets</span>
+aws s3 ls
+
+<span class="cm"># List objects in a bucket</span>
+aws s3 ls s3://my-bucket/
+aws s3 ls s3://my-bucket/logs/ <span class="flag">--recursive</span>
+
+<span class="cm"># Upload a file</span>
+aws s3 cp ./report.csv s3://my-bucket/reports/report.csv
+
+<span class="cm"># Upload with metadata and ACL</span>
+aws s3 cp ./index.html s3://my-site/ \
+  <span class="flag">--content-type</span> <span class="str">"text/html"</span> \
+  <span class="flag">--cache-control</span> <span class="str">"max-age=86400"</span>
+
+<span class="cm"># Download a file</span>
+aws s3 cp s3://my-bucket/reports/report.csv ./report.csv
+
+<span class="cm"># Sync local folder to S3 (only uploads changed files)</span>
+aws s3 sync ./dist s3://my-site/ <span class="flag">--delete</span>
+
+<span class="cm"># Sync S3 to local</span>
+aws s3 sync s3://my-bucket/backups/ ./backups/
+
+<span class="cm"># Delete a file</span>
+aws s3 rm s3://my-bucket/old-report.csv
+
+<span class="cm"># Delete all objects with a prefix</span>
+aws s3 rm s3://my-bucket/logs/ <span class="flag">--recursive</span>
+
+<span class="cm"># Create a bucket</span>
+aws s3 mb s3://my-new-bucket <span class="flag">--region</span> eu-west-1
+
+<span class="cm"># Generate a pre-signed URL (valid 1 hour)</span>
+aws s3 presign s3://my-bucket/private/file.pdf <span class="flag">--expires-in</span> <span class="num">3600</span></pre>
+  </div>
+
+  <h3>EC2 — Compute</h3>
+  <div class="code-block">
+    <span class="code-label">aws ec2 — instance management</span>
+    <pre><span class="cm"># List all instances (with state and name)</span>
+aws ec2 describe-instances \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].[InstanceId,State.Name,Tags[?Key==`Name`].Value|[0]]'</span> \
+  <span class="flag">--output</span> table
+
+<span class="cm"># Start / Stop / Reboot instances</span>
+aws ec2 start-instances   <span class="flag">--instance-ids</span> i-0abcdef1234567890
+aws ec2 stop-instances    <span class="flag">--instance-ids</span> i-0abcdef1234567890
+aws ec2 reboot-instances  <span class="flag">--instance-ids</span> i-0abcdef1234567890
+
+<span class="cm"># Terminate an instance</span>
+aws ec2 terminate-instances <span class="flag">--instance-ids</span> i-0abcdef1234567890
+
+<span class="cm"># Describe security groups</span>
+aws ec2 describe-security-groups \
+  <span class="flag">--query</span> <span class="str">'SecurityGroups[].[GroupId,GroupName,Description]'</span> \
+  <span class="flag">--output</span> table
+
+<span class="cm"># Get console output (useful for stuck instances)</span>
+aws ec2 get-console-output <span class="flag">--instance-id</span> i-0abcdef1234567890
+
+<span class="cm"># Describe AMIs you own</span>
+aws ec2 describe-images <span class="flag">--owners</span> self \
+  <span class="flag">--query</span> <span class="str">'Images[].[ImageId,Name,CreationDate]'</span> \
+  <span class="flag">--output</span> table</pre>
+  </div>
+
+  <h3>IAM — Identity &amp; Access</h3>
+  <div class="code-block">
+    <span class="code-label">aws iam — users, roles, policies</span>
+    <pre><span class="cm"># List users</span>
+aws iam list-users <span class="flag">--query</span> <span class="str">'Users[].[UserName,CreateDate]'</span> <span class="flag">--output</span> table
+
+<span class="cm"># Create a user</span>
+aws iam create-user <span class="flag">--user-name</span> indhu-dev
+
+<span class="cm"># Attach a managed policy to a user</span>
+aws iam attach-user-policy \
+  <span class="flag">--user-name</span> indhu-dev \
+  <span class="flag">--policy-arn</span> arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
+
+<span class="cm"># List roles</span>
+aws iam list-roles <span class="flag">--query</span> <span class="str">'Roles[].[RoleName,Arn]'</span> <span class="flag">--output</span> table
+
+<span class="cm"># Get current caller identity (who am I?)</span>
+aws sts get-caller-identity
+
+<span class="cm"># Create an access key for a user</span>
+aws iam create-access-key <span class="flag">--user-name</span> indhu-dev
+
+<span class="cm"># List attached policies on a role</span>
+aws iam list-attached-role-policies <span class="flag">--role-name</span> MyLambdaRole</pre>
+  </div>
+
+  <h3>Lambda</h3>
+  <div class="code-block">
+    <span class="code-label">aws lambda — deploy, invoke, manage</span>
+    <pre><span class="cm"># List all functions</span>
+aws lambda list-functions \
+  <span class="flag">--query</span> <span class="str">'Functions[].[FunctionName,Runtime,LastModified]'</span> \
+  <span class="flag">--output</span> table
+
+<span class="cm"># Invoke a function synchronously</span>
+aws lambda invoke \
+  <span class="flag">--function-name</span> MyFunction \
+  <span class="flag">--payload</span> <span class="str">'{"key":"value"}'</span> \
+  <span class="flag">--cli-binary-format</span> raw-in-base64-out \
+  response.json
+cat response.json
+
+<span class="cm"># Deploy/update function code from zip</span>
+aws lambda update-function-code \
+  <span class="flag">--function-name</span> MyFunction \
+  <span class="flag">--zip-file</span> fileb://function.zip
+
+<span class="cm"># Update environment variables</span>
+aws lambda update-function-configuration \
+  <span class="flag">--function-name</span> MyFunction \
+  <span class="flag">--environment</span> <span class="str">'Variables={ENV=production,LOG_LEVEL=info}'</span>
+
+<span class="cm"># Get function logs (last 10 minutes)</span>
+aws logs tail /aws/lambda/MyFunction <span class="flag">--since</span> 10m <span class="flag">--follow</span></pre>
+  </div>
+
+  <h3>CloudFormation</h3>
+  <div class="code-block">
+    <span class="code-label">aws cloudformation — stack management</span>
+    <pre><span class="cm"># Deploy / create-or-update a stack</span>
+aws cloudformation deploy \
+  <span class="flag">--stack-name</span> my-app-stack \
+  <span class="flag">--template-file</span> template.yaml \
+  <span class="flag">--parameter-overrides</span> Env=prod AppVersion=1.2.0 \
+  <span class="flag">--capabilities</span> CAPABILITY_IAM \
+  <span class="flag">--region</span> eu-west-1
+
+<span class="cm"># Describe a stack and its status</span>
+aws cloudformation describe-stacks \
+  <span class="flag">--stack-name</span> my-app-stack \
+  <span class="flag">--query</span> <span class="str">'Stacks[0].StackStatus'</span>
+
+<span class="cm"># Get stack outputs (useful for getting endpoint URLs)</span>
+aws cloudformation describe-stacks \
+  <span class="flag">--stack-name</span> my-app-stack \
+  <span class="flag">--query</span> <span class="str">'Stacks[0].Outputs'</span> \
+  <span class="flag">--output</span> table
+
+<span class="cm"># Get stack events (great for debugging failures)</span>
+aws cloudformation describe-stack-events \
+  <span class="flag">--stack-name</span> my-app-stack \
+  <span class="flag">--query</span> <span class="str">'StackEvents[?ResourceStatus==`CREATE_FAILED`]'</span>
+
+<span class="cm"># Delete a stack</span>
+aws cloudformation delete-stack <span class="flag">--stack-name</span> my-app-stack</pre>
+  </div>
+
+  <h3>CloudWatch Logs</h3>
+  <div class="code-block">
+    <span class="code-label">aws logs — real-time log tailing</span>
+    <pre><span class="cm"># List log groups</span>
+aws logs describe-log-groups \
+  <span class="flag">--query</span> <span class="str">'logGroups[].[logGroupName,retentionInDays]'</span> \
+  <span class="flag">--output</span> table
+
+<span class="cm"># Tail logs in real time (v2 only — very useful!)</span>
+aws logs tail /aws/lambda/MyFunction <span class="flag">--follow</span>
+
+<span class="cm"># Tail with time filter</span>
+aws logs tail /aws/lambda/MyFunction <span class="flag">--since</span> 30m
+
+<span class="cm"># Filter logs for ERROR messages</span>
+aws logs filter-log-events \
+  <span class="flag">--log-group-name</span> /aws/lambda/MyFunction \
+  <span class="flag">--filter-pattern</span> <span class="str">"ERROR"</span> \
+  <span class="flag">--start-time</span> <span class="num">1700000000000</span></pre>
+  </div>
+
+  <h3>Secrets Manager</h3>
+  <div class="code-block">
+    <span class="code-label">aws secretsmanager — get and manage secrets</span>
+    <pre><span class="cm"># Get a secret value</span>
+aws secretsmanager get-secret-value \
+  <span class="flag">--secret-id</span> prod/MyApp/DbPassword \
+  <span class="flag">--query</span> <span class="str">'SecretString'</span> \
+  <span class="flag">--output</span> text
+
+<span class="cm"># Create a new secret</span>
+aws secretsmanager create-secret \
+  <span class="flag">--name</span> prod/MyApp/ApiKey \
+  <span class="flag">--secret-string</span> <span class="str">"my-super-secret-key"</span>
+
+<span class="cm"># Update a secret value</span>
+aws secretsmanager put-secret-value \
+  <span class="flag">--secret-id</span> prod/MyApp/ApiKey \
+  <span class="flag">--secret-string</span> <span class="str">"new-secret-value"</span>
+
+<span class="cm"># List all secrets</span>
+aws secretsmanager list-secrets \
+  <span class="flag">--query</span> <span class="str">'SecretList[].[Name,LastChangedDate]'</span> \
+  <span class="flag">--output</span> table</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑥ OUTPUT & FILTERING -->
+<div id="tab-output" class="tab-panel"><div class="section">
+  <h2>📤 Output Formats &amp; Filtering</h2>
+  <p>Mastering output formatting and <code>--query</code> is what separates CLI beginners from power users.</p>
+
+  <h3>Output Formats</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">json (default)</div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Scripting, jq piping</span></div>
+      <div class="compare-row"><span class="compare-label">Human readable</span><span class="compare-val val-warn">Moderate</span></div>
+      <div class="compare-row"><span class="compare-label">Machine readable</span><span class="compare-val val-good">Yes</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">yaml</div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Config inspection</span></div>
+      <div class="compare-row"><span class="compare-label">Human readable</span><span class="compare-val val-good">High</span></div>
+      <div class="compare-row"><span class="compare-label">Machine readable</span><span class="compare-val val-warn">Less common</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-amber">table</div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Quick visual scan</span></div>
+      <div class="compare-row"><span class="compare-label">Human readable</span><span class="compare-val val-good">Best</span></div>
+      <div class="compare-row"><span class="compare-label">Machine readable</span><span class="compare-val val-bad">No</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-teal">text</div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Shell scripting, grep</span></div>
+      <div class="compare-row"><span class="compare-label">Human readable</span><span class="compare-val val-warn">Moderate</span></div>
+      <div class="compare-row"><span class="compare-label">Machine readable</span><span class="compare-val val-good">Tab-delimited</span></div>
+    </div>
+  </div>
+
+  <h3>--query — JMESPath Filtering</h3>
+  <p><code>--query</code> uses JMESPath syntax to extract specific parts of the JSON response. This is the most important CLI skill to master.</p>
+
+  <div class="code-block">
+    <span class="code-label">--query examples — jmespath patterns</span>
+    <pre><span class="cm"># Get a top-level field</span>
+aws s3api list-buckets <span class="flag">--query</span> <span class="str">'Owner.DisplayName'</span>
+
+<span class="cm"># Get an array element field</span>
+aws s3api list-buckets <span class="flag">--query</span> <span class="str">'Buckets[].Name'</span>
+
+<span class="cm"># Filter array by condition</span>
+aws ec2 describe-instances \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[?State.Name==`running`].InstanceId'</span>
+
+<span class="cm"># Multiple fields as array (inner brackets)</span>
+aws ec2 describe-instances \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].[InstanceId,InstanceType,State.Name]'</span>
+
+<span class="cm"># Sort by a field</span>
+aws ec2 describe-instances \
+  <span class="flag">--query</span> <span class="str">'sort_by(Reservations[].Instances[], &LaunchTime)[].InstanceId'</span>
+
+<span class="cm"># Get first item only</span>
+aws s3api list-buckets <span class="flag">--query</span> <span class="str">'Buckets[0].Name'</span>
+
+<span class="cm"># Alias fields with different names</span>
+aws ec2 describe-instances \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].{ID:InstanceId,Type:InstanceType,Status:State.Name}'</span> \
+  <span class="flag">--output</span> table</pre>
+  </div>
+
+  <h3>Practical --query Patterns</h3>
+  <div class="code-block">
+    <span class="code-label">common patterns you'll use daily</span>
+    <pre><span class="cm"># Get just instance IDs of running instances</span>
+aws ec2 describe-instances \
+  <span class="flag">--filters</span> <span class="str">"Name=instance-state-name,Values=running"</span> \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].InstanceId'</span> \
+  <span class="flag">--output</span> text
+
+<span class="cm"># Get S3 bucket names as plain text (useful in loops)</span>
+aws s3api list-buckets \
+  <span class="flag">--query</span> <span class="str">'Buckets[].Name'</span> \
+  <span class="flag">--output</span> text
+
+<span class="cm"># Get all Lambda function names</span>
+aws lambda list-functions \
+  <span class="flag">--query</span> <span class="str">'Functions[].FunctionName'</span> \
+  <span class="flag">--output</span> text
+
+<span class="cm"># Check if a stack exists and get its status</span>
+aws cloudformation describe-stacks \
+  <span class="flag">--stack-name</span> my-stack \
+  <span class="flag">--query</span> <span class="str">'Stacks[0].StackStatus'</span> \
+  <span class="flag">--output</span> text</pre>
+  </div>
+
+  <h3>Piping to jq — More Powerful Filtering</h3>
+  <div class="code-block">
+    <span class="code-label">jq — json processor (install separately)</span>
+    <pre><span class="cm"># Install jq (Windows via winget)</span>
+winget install jqlang.jq
+
+<span class="cm"># Pretty-print the full response</span>
+aws s3api list-buckets | jq <span class="str">'.'</span>
+
+<span class="cm"># Extract just bucket names</span>
+aws s3api list-buckets | jq <span class="str">'.Buckets[].Name'</span>
+
+<span class="cm"># Filter running instances and get IDs + IPs</span>
+aws ec2 describe-instances | jq \
+  <span class="str">'.Reservations[].Instances[] | select(.State.Name == "running") | {id: .InstanceId, ip: .PrivateIpAddress}'</span>
+
+<span class="cm"># Extract and export a secret value</span>
+SECRET=$(aws secretsmanager get-secret-value \
+  <span class="flag">--secret-id</span> prod/db-password | jq <span class="flag">-r</span> <span class="str">'.SecretString'</span>)</pre>
+  </div>
+
+  <h3>Pagination — Handling Large Result Sets</h3>
+  <div class="code-block">
+    <span class="code-label">pagination — get all results automatically</span>
+    <pre><span class="cm"># CLI auto-paginates most list commands by default (CLI v2)</span>
+<span class="cm"># But some commands need --no-paginate to get everything at once:</span>
+aws s3api list-objects-v2 \
+  <span class="flag">--bucket</span> my-large-bucket \
+  <span class="flag">--no-paginate \</span>
+  <span class="flag">--query</span> <span class="str">'Contents[].Key'</span>
+
+<span class="cm"># Or use --page-size to control how many items per API call</span>
+aws ec2 describe-instances <span class="flag">--page-size</span> <span class="num">50</span>
+
+<span class="cm"># Manual pagination with NextToken (when needed)</span>
+aws dynamodb scan \
+  <span class="flag">--table-name</span> MyTable \
+  <span class="flag">--max-items</span> <span class="num">100</span>
+<span class="cm"># Response includes NextToken if more items exist</span></pre>
+  </div>
+</div></div>
+
+
+<!-- ⑦ SCRIPTING & AUTOMATION -->
+<div id="tab-scripting" class="tab-panel"><div class="section">
+  <h2>🤖 Scripting &amp; Automation</h2>
+
+  <h3>Bash — Practical Automation Scripts</h3>
+  <div class="code-block">
+    <span class="code-label">bash — stop all running ec2 instances in a region</span>
+    <pre>#!/bin/bash
+REGION=<span class="str">"eu-west-1"</span>
+
+<span class="cm"># Get all running instance IDs</span>
+INSTANCE_IDS=$(aws ec2 describe-instances \
+  <span class="flag">--region</span> $REGION \
+  <span class="flag">--filters</span> <span class="str">"Name=instance-state-name,Values=running"</span> \
+  <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].InstanceId'</span> \
+  <span class="flag">--output</span> text)
+
+if [ -z <span class="str">"$INSTANCE_IDS"</span> ]; then
+  echo <span class="str">"No running instances found."</span>
+  exit <span class="num">0</span>
+fi
+
+echo <span class="str">"Stopping: $INSTANCE_IDS"</span>
+aws ec2 stop-instances \
+  <span class="flag">--instance-ids</span> $INSTANCE_IDS \
+  <span class="flag">--region</span> $REGION
+
+echo <span class="str">"Done."</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash — wait for cloudformation stack to complete</span>
+    <pre>#!/bin/bash
+STACK_NAME=<span class="str">"my-app-stack"</span>
+
+<span class="cm"># Deploy the stack</span>
+aws cloudformation deploy \
+  <span class="flag">--stack-name</span> $STACK_NAME \
+  <span class="flag">--template-file</span> template.yaml \
+  <span class="flag">--capabilities</span> CAPABILITY_IAM
+
+<span class="cm"># Wait until deploy is complete (built-in waiter)</span>
+aws cloudformation wait stack-create-complete \
+  <span class="flag">--stack-name</span> $STACK_NAME
+
+<span class="cm"># Get the output URL</span>
+URL=$(aws cloudformation describe-stacks \
+  <span class="flag">--stack-name</span> $STACK_NAME \
+  <span class="flag">--query</span> <span class="str">'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue'</span> \
+  <span class="flag">--output</span> text)
+
+echo <span class="str">"Deployed! API URL: $URL"</span></pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">bash — sync s3 website and invalidate cloudfront</span>
+    <pre>#!/bin/bash
+BUCKET=<span class="str">"my-site-bucket"</span>
+DISTRIBUTION_ID=<span class="str">"EXXXXXXXXXXXXX"</span>
+BUILD_DIR=<span class="str">"./dist"</span>
+
+echo <span class="str">"📦 Syncing to S3..."</span>
+aws s3 sync $BUILD_DIR s3://$BUCKET \
+  <span class="flag">--delete</span> \
+  <span class="flag">--cache-control</span> <span class="str">"max-age=86400"</span>
+
+echo <span class="str">"🔄 Invalidating CloudFront cache..."</span>
+INVALIDATION_ID=$(aws cloudfront create-invalidation \
+  <span class="flag">--distribution-id</span> $DISTRIBUTION_ID \
+  <span class="flag">--paths</span> <span class="str">"/*"</span> \
+  <span class="flag">--query</span> <span class="str">'Invalidation.Id'</span> \
+  <span class="flag">--output</span> text)
+
+echo <span class="str">"✅ Done! Invalidation: $INVALIDATION_ID"</span></pre>
+  </div>
+
+  <h3>PowerShell — Windows Automation</h3>
+  <div class="code-block">
+    <span class="code-label">powershell — deploy lambda and tail logs</span>
+    <pre><span class="cm"># Build and package the Lambda function</span>
+dotnet publish <span class="flag">-c</span> Release <span class="flag">-r</span> linux-x64 <span class="flag">--self-contained</span> false
+Compress-Archive <span class="flag">-Path</span> <span class="str">".\publish\*"</span> <span class="flag">-DestinationPath</span> <span class="str">"function.zip"</span> <span class="flag">-Force</span>
+
+<span class="cm"># Deploy to Lambda</span>
+aws lambda update-function-code `
+  <span class="flag">--function-name</span> <span class="str">"MyDotNetFunction"</span> `
+  <span class="flag">--zip-file</span> fileb://function.zip
+
+<span class="cm"># Wait for update to complete</span>
+aws lambda wait function-updated `
+  <span class="flag">--function-name</span> <span class="str">"MyDotNetFunction"</span>
+
+Write-Host <span class="str">"✅ Deployed!"</span>
+
+<span class="cm"># Tail the logs</span>
+aws logs tail /aws/lambda/MyDotNetFunction <span class="flag">--follow</span></pre>
+  </div>
+
+  <h3>Waiters — Built-in Polling</h3>
+  <div class="code-block">
+    <span class="code-label">aws wait — block until a condition is met</span>
+    <pre><span class="cm"># Wait for EC2 instance to be running</span>
+aws ec2 wait instance-running <span class="flag">--instance-ids</span> i-0abc123
+
+<span class="cm"># Wait for EC2 instance to be stopped</span>
+aws ec2 wait instance-stopped <span class="flag">--instance-ids</span> i-0abc123
+
+<span class="cm"># Wait for CloudFormation stack creation</span>
+aws cloudformation wait stack-create-complete <span class="flag">--stack-name</span> my-stack
+
+<span class="cm"># Wait for CloudFormation update</span>
+aws cloudformation wait stack-update-complete <span class="flag">--stack-name</span> my-stack
+
+<span class="cm"># Wait for S3 object to exist</span>
+aws s3api wait object-exists \
+  <span class="flag">--bucket</span> my-bucket \
+  <span class="flag">--key</span> output/result.json
+
+<span class="cm"># Wait for Lambda update to complete</span>
+aws lambda wait function-updated <span class="flag">--function-name</span> MyFunction</pre>
+  </div>
+
+  <h3>Using --cli-input-json for Complex Commands</h3>
+  <div class="code-block">
+    <span class="code-label">generate skeleton + fill in + run from file</span>
+    <pre><span class="cm"># Step 1: Generate a template skeleton JSON</span>
+aws ec2 run-instances <span class="flag">--generate-cli-skeleton</span> > ec2-params.json
+
+<span class="cm"># Step 2: Fill in only what you need in ec2-params.json:</span>
+<span class="cm"># {</span>
+<span class="cm">#   "ImageId": "ami-0abcdef1234567890",</span>
+<span class="cm">#   "InstanceType": "t3.micro",</span>
+<span class="cm">#   "KeyName": "my-keypair",</span>
+<span class="cm">#   "MinCount": 1,</span>
+<span class="cm">#   "MaxCount": 1</span>
+<span class="cm"># }</span>
+
+<span class="cm"># Step 3: Run using the JSON file</span>
+aws ec2 run-instances <span class="flag">--cli-input-json</span> file://ec2-params.json</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑧ ADVANCED FEATURES -->
+<div id="tab-advanced" class="tab-panel"><div class="section">
+  <h2>🚀 Advanced Features</h2>
+
+  <h3>AWS CLI Wizards (v2)</h3>
+  <div class="code-block">
+    <span class="code-label">aws configure wizard — interactive guided setup</span>
+    <pre><span class="cm"># Launch the interactive wizard for complex commands</span>
+aws dynamodb wizard new-table
+
+<span class="cm"># The wizard walks you through each option interactively</span>
+<span class="cm"># and shows you the final CLI command at the end</span></pre>
+  </div>
+
+  <h3>AWS CLI Aliases — Custom Shortcuts</h3>
+  <div class="code-block">
+    <span class="code-label">~/.aws/cli/alias — define custom shortcuts</span>
+    <pre>[toplevel]
+
+<span class="cm"># Usage: aws whoami</span>
+whoami = sts get-caller-identity
+
+<span class="cm"># Usage: aws running-instances</span>
+running-instances = ec2 describe-instances \
+  --filters Name=instance-state-name,Values=running \
+  --query 'Reservations[].Instances[].[InstanceId,InstanceType,Tags[?Key==`Name`].Value|[0]]' \
+  --output table
+
+<span class="cm"># Usage: aws myip</span>
+myip = ec2 describe-instances \
+  --query 'Reservations[].Instances[].PublicIpAddress' \
+  --output text</pre>
+  </div>
+
+  <h3>AWS SSM Session Manager — SSH without SSH keys</h3>
+  <div class="code-block">
+    <span class="code-label">aws ssm — connect to ec2 without ssh/bastion</span>
+    <pre><span class="cm"># Start a shell session on an EC2 instance (no SSH key needed!)</span>
+aws ssm start-session <span class="flag">--target</span> i-0abcdef1234567890
+
+<span class="cm"># Port forwarding to RDS via SSM (no bastion host needed)</span>
+aws ssm start-session \
+  <span class="flag">--target</span> i-0abcdef1234567890 \
+  <span class="flag">--document-name</span> AWS-StartPortForwardingSession \
+  <span class="flag">--parameters</span> <span class="str">'{"portNumber":["5432"],"localPortNumber":["5432"]}'</span>
+
+<span class="cm"># Now connect to localhost:5432 from your machine!</span>
+<span class="cm"># Requires: Session Manager Plugin + SSM Agent on instance + ssm:StartSession IAM permission</span></pre>
+  </div>
+
+  <h3>DynamoDB CLI Operations</h3>
+  <div class="code-block">
+    <span class="code-label">aws dynamodb — table operations from cli</span>
+    <pre><span class="cm"># List tables</span>
+aws dynamodb list-tables <span class="flag">--output</span> table
+
+<span class="cm"># Put an item</span>
+aws dynamodb put-item \
+  <span class="flag">--table-name</span> Users \
+  <span class="flag">--item</span> <span class="str">'{"UserId":{"S":"u001"},"Name":{"S":"Indhu"},"Age":{"N":"30"}}'</span>
+
+<span class="cm"># Get an item</span>
+aws dynamodb get-item \
+  <span class="flag">--table-name</span> Users \
+  <span class="flag">--key</span> <span class="str">'{"UserId":{"S":"u001"}}'</span>
+
+<span class="cm"># Scan entire table (small tables only!)</span>
+aws dynamodb scan <span class="flag">--table-name</span> Users
+
+<span class="cm"># Query by partition key</span>
+aws dynamodb query \
+  <span class="flag">--table-name</span> Orders \
+  <span class="flag">--key-condition-expression</span> <span class="str">"UserId = :uid"</span> \
+  <span class="flag">--expression-attribute-values</span> <span class="str">'{":uid":{"S":"u001"}}'</span></pre>
+  </div>
+
+  <h3>ECR — Push Docker Images</h3>
+  <div class="code-block">
+    <span class="code-label">aws ecr — login, build, push docker image</span>
+    <pre><span class="tp">ACCOUNT</span>=<span class="num">123456789012</span>
+<span class="tp">REGION</span>=eu-west-1
+<span class="tp">REPO</span>=my-app
+
+<span class="cm"># Authenticate Docker to ECR</span>
+aws ecr get-login-password <span class="flag">--region</span> $REGION \
+  | docker login <span class="flag">--username</span> AWS <span class="flag">--password-stdin</span> \
+    $ACCOUNT.dkr.ecr.$REGION.amazonaws.com
+
+<span class="cm"># Build image</span>
+docker build <span class="flag">-t</span> $REPO .
+
+<span class="cm"># Tag for ECR</span>
+docker tag $REPO:latest \
+  $ACCOUNT.dkr.ecr.$REGION.amazonaws.com/$REPO:latest
+
+<span class="cm"># Push to ECR</span>
+docker push $ACCOUNT.dkr.ecr.$REGION.amazonaws.com/$REPO:latest</pre>
+  </div>
+
+  <h3>Multi-Region Commands</h3>
+  <div class="code-block">
+    <span class="code-label">bash — run a command across multiple regions</span>
+    <pre>#!/bin/bash
+<span class="cm"># List all S3 buckets and their regions</span>
+for REGION in eu-west-1 eu-west-2 us-east-1 ap-southeast-1; do
+  echo <span class="str">"=== $REGION ==="</span>
+  aws ec2 describe-instances \
+    <span class="flag">--region</span> $REGION \
+    <span class="flag">--query</span> <span class="str">'Reservations[].Instances[].[InstanceId,State.Name]'</span> \
+    <span class="flag">--output</span> table
+done</pre>
+  </div>
+
+  <h3>Cost Saving — Query AWS Cost Explorer</h3>
+  <div class="code-block">
+    <span class="code-label">aws ce — check your monthly costs from cli</span>
+    <pre><span class="cm"># Get current month costs grouped by service</span>
+aws ce get-cost-and-usage \
+  <span class="flag">--time-period</span> Start=2025-03-01,End=2025-04-01 \
+  <span class="flag">--granularity</span> MONTHLY \
+  <span class="flag">--metrics</span> BlendedCost \
+  <span class="flag">--group-by</span> Type=DIMENSION,Key=SERVICE \
+  <span class="flag">--query</span> <span class="str">'ResultsByTime[0].Groups[].{Service:Keys[0],Cost:Metrics.BlendedCost.Amount}'</span> \
+  <span class="flag">--output</span> table</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑨ CHEAT SHEET -->
+<div id="tab-cheatsheet" class="tab-panel"><div class="section">
+  <h2>📋 AWS CLI Cheat Sheet</h2>
+
+  <h3>Identity &amp; Configuration</h3>
+  <div class="code-block">
+    <span class="code-label">identity, config, profiles</span>
+    <pre>aws sts get-caller-identity                          <span class="cm"># Who am I?</span>
+aws configure                                        <span class="cm"># Setup default profile</span>
+aws configure <span class="flag">--profile</span> prod                        <span class="cm"># Setup named profile</span>
+aws configure list                                   <span class="cm"># Show active config</span>
+aws configure list-profiles                          <span class="cm"># Show all profiles</span>
+aws sso login <span class="flag">--profile</span> dev                         <span class="cm"># SSO login</span></pre>
+  </div>
+
+  <h3>S3</h3>
+  <div class="code-block">
+    <span class="code-label">s3 most-used commands</span>
+    <pre>aws s3 ls                                            <span class="cm"># List buckets</span>
+aws s3 ls s3://bucket/prefix/                        <span class="cm"># List objects</span>
+aws s3 cp file.txt s3://bucket/file.txt              <span class="cm"># Upload</span>
+aws s3 cp s3://bucket/file.txt ./file.txt            <span class="cm"># Download</span>
+aws s3 sync ./dist s3://bucket/ <span class="flag">--delete</span>            <span class="cm"># Sync folder</span>
+aws s3 rm s3://bucket/file.txt                       <span class="cm"># Delete file</span>
+aws s3 mb s3://new-bucket <span class="flag">--region</span> eu-west-1        <span class="cm"># Create bucket</span>
+aws s3 presign s3://bucket/key <span class="flag">--expires-in</span> <span class="num">3600</span>    <span class="cm"># Pre-signed URL</span></pre>
+  </div>
+
+  <h3>EC2</h3>
+  <div class="code-block">
+    <span class="code-label">ec2 most-used commands</span>
+    <pre>aws ec2 describe-instances <span class="flag">--output</span> table            <span class="cm"># List instances</span>
+aws ec2 start-instances   <span class="flag">--instance-ids</span> i-xxxx      <span class="cm"># Start</span>
+aws ec2 stop-instances    <span class="flag">--instance-ids</span> i-xxxx      <span class="cm"># Stop</span>
+aws ec2 terminate-instances <span class="flag">--instance-ids</span> i-xxxx   <span class="cm"># Terminate</span>
+aws ec2 wait instance-running <span class="flag">--instance-ids</span> i-xxxx <span class="cm"># Wait for running</span>
+aws ec2 describe-security-groups <span class="flag">--output</span> table     <span class="cm"># List SGs</span></pre>
+  </div>
+
+  <h3>Lambda</h3>
+  <div class="code-block">
+    <span class="code-label">lambda most-used commands</span>
+    <pre>aws lambda list-functions <span class="flag">--output</span> table             <span class="cm"># List functions</span>
+aws lambda invoke <span class="flag">--function-name</span> Fn <span class="flag">--payload</span> <span class="str">'{}'</span> out.json  <span class="cm"># Invoke</span>
+aws lambda update-function-code <span class="flag">--function-name</span> Fn <span class="flag">--zip-file</span> fileb://fn.zip
+aws lambda wait function-updated <span class="flag">--function-name</span> Fn  <span class="cm"># Wait for deploy</span>
+aws logs tail /aws/lambda/Fn <span class="flag">--follow</span>               <span class="cm"># Tail logs</span></pre>
+  </div>
+
+  <h3>CloudFormation</h3>
+  <div class="code-block">
+    <span class="code-label">cloudformation most-used commands</span>
+    <pre>aws cloudformation deploy <span class="flag">--stack-name</span> s <span class="flag">--template-file</span> t.yaml <span class="flag">--capabilities</span> CAPABILITY_IAM
+aws cloudformation describe-stacks <span class="flag">--stack-name</span> s <span class="flag">--query</span> <span class="str">'Stacks[0].StackStatus'</span>
+aws cloudformation describe-stacks <span class="flag">--stack-name</span> s <span class="flag">--query</span> <span class="str">'Stacks[0].Outputs'</span>
+aws cloudformation wait stack-create-complete <span class="flag">--stack-name</span> s
+aws cloudformation delete-stack <span class="flag">--stack-name</span> s</pre>
+  </div>
+
+  <h3>IAM / STS</h3>
+  <div class="code-block">
+    <span class="code-label">iam and sts most-used commands</span>
+    <pre>aws sts get-caller-identity                          <span class="cm"># Who am I?</span>
+aws iam list-users <span class="flag">--output</span> table                    <span class="cm"># List users</span>
+aws iam list-roles <span class="flag">--output</span> table                    <span class="cm"># List roles</span>
+aws iam get-role <span class="flag">--role-name</span> MyRole                  <span class="cm"># Inspect a role</span>
+aws sts assume-role <span class="flag">--role-arn</span> arn:... <span class="flag">--role-session-name</span> session</pre>
+  </div>
+
+  <h3>Logs</h3>
+  <div class="code-block">
+    <span class="code-label">cloudwatch logs</span>
+    <pre>aws logs describe-log-groups <span class="flag">--output</span> table          <span class="cm"># List log groups</span>
+aws logs tail /aws/lambda/Fn <span class="flag">--follow</span>               <span class="cm"># Live tail</span>
+aws logs tail /aws/lambda/Fn <span class="flag">--since</span> 1h             <span class="cm"># Last 1 hour</span>
+aws logs filter-log-events <span class="flag">--log-group-name</span> /my/group <span class="flag">--filter-pattern</span> ERROR</pre>
+  </div>
+
+  <h3>Essential Tips</h3>
+  <ul class="checklist">
+    <li>Add <code>--output table</code> for any list command — much easier to read than JSON</li>
+    <li>Use <code>--query</code> to extract exactly what you need — avoid parsing JSON with grep/sed</li>
+    <li>Use <code>--no-cli-pager</code> in scripts — prevents hanging on interactive prompts</li>
+    <li>Use <code>aws logs tail --follow</code> instead of CloudWatch console for live debugging</li>
+    <li><code>aws sts get-caller-identity</code> first — always verify you're in the right account</li>
+    <li>Use <code>--dry-run</code> on EC2 commands to test permissions before running for real</li>
+    <li>Store secrets in environment variables for CI/CD, never in scripts or config files</li>
+    <li>Use named profiles (<code>--profile</code>) — never mix dev/prod in the same session</li>
+  </ul>
+
+  <h3>Common Mistakes</h3>
+  <ul class="badlist">
+    <li>Running destructive commands without <code>--profile</code> — could affect wrong account</li>
+    <li>Using long-term access keys in <code>~/.aws/credentials</code> for production</li>
+    <li>Forgetting <code>--cli-binary-format raw-in-base64-out</code> when passing Lambda payloads</li>
+    <li>Using <code>--output text</code> in scripts — whitespace handling is fragile, use JSON</li>
+    <li>Not using <code>aws ... wait</code> in scripts — race conditions on resource creation</li>
+    <li>Storing credentials in shell scripts or committing <code>~/.aws/credentials</code> to Git</li>
+  </ul>
+
+  <div class="completion">
+    <h3>⌨️ AWS CLI — You're equipped!</h3>
+    <p>You've covered installation, profile management, credential chain, command anatomy, S3/EC2/IAM/Lambda/CloudFormation commands, output filtering with <code>--query</code> and <code>jq</code>, bash and PowerShell automation scripts, waiters, SSM session manager, ECR, DynamoDB, and a full cheat sheet. The CLI is the fastest way to interact with AWS — master it and you'll never want to click through the Console again.</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+</script>
+</body>
+</html>

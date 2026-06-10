@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Patterns — Part 3: Behavioural</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f7ff;--surface:#eef0ff;--card:#fff;--border:#dce0f5;--border2:#b8bfe8;
+  --beh:#1a5abf;--beh-l:#d6e8f8;--beh-d:#0e3a8a;
+  --str:#0e8a5a;--str-l:#d4f0e8;--str-d:#085c38;
+  --obs:#8a2abf;--obs-l:#f0e0f8;--obs-d:#5c1280;
+  --cmd:#bf6a0e;--cmd-l:#f8f0d4;--cmd-d:#8a4500;
+  --tmp:#0e6abf;--tmp-l:#d6ebf8;--tmp-d:#0a4280;
+  --itr:#bf2a5a;--itr-l:#f8d6e4;--itr-d:#8a003a;
+  --chn:#1a8a7a;--chn-l:#d0f0ec;--chn-d:#0d5c52;
+  --med:#6a3abf;--med-l:#ede0f8;--med-d:#3a1880;
+  --stt:#bf3a1a;--stt-l:#f8e0d4;--stt-d:#8a2000;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(26,90,191,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(138,42,191,.25) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(14,138,90,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#f472b6,#c084fc,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(244,114,182,.2);border:1px solid rgba(244,114,182,.4);color:#f9a8d4;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(246,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.tab-btn.t-over.active{background:var(--beh-l);color:var(--beh-d);}
+.tab-btn.t-str.active{background:var(--str-l);color:var(--str-d);}
+.tab-btn.t-obs.active{background:var(--obs-l);color:var(--obs-d);}
+.tab-btn.t-cmd.active{background:var(--cmd-l);color:var(--cmd-d);}
+.tab-btn.t-tmp.active{background:var(--tmp-l);color:var(--tmp-d);}
+.tab-btn.t-itr.active{background:var(--itr-l);color:var(--itr-d);}
+.tab-btn.t-chn.active{background:var(--chn-l);color:var(--chn-d);}
+.tab-btn.t-med.active{background:var(--med-l);color:var(--med-d);}
+.tab-btn.t-stt.active{background:var(--stt-l);color:var(--stt-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--beh-d);}  .ph-over h2{border-bottom:3px solid var(--beh-l);}
+.ph-str h2,.ph-str h3{color:var(--str-d);}    .ph-str h2{border-bottom:3px solid var(--str-l);}
+.ph-obs h2,.ph-obs h3{color:var(--obs-d);}    .ph-obs h2{border-bottom:3px solid var(--obs-l);}
+.ph-cmd h2,.ph-cmd h3{color:var(--cmd-d);}    .ph-cmd h2{border-bottom:3px solid var(--cmd-l);}
+.ph-tmp h2,.ph-tmp h3{color:var(--tmp-d);}    .ph-tmp h2{border-bottom:3px solid var(--tmp-l);}
+.ph-itr h2,.ph-itr h3{color:var(--itr-d);}    .ph-itr h2{border-bottom:3px solid var(--itr-l);}
+.ph-chn h2,.ph-chn h3{color:var(--chn-d);}    .ph-chn h2{border-bottom:3px solid var(--chn-l);}
+.ph-med h2,.ph-med h3{color:var(--med-d);}    .ph-med h2{border-bottom:3px solid var(--med-l);}
+.ph-stt h2,.ph-stt h3{color:var(--stt-d);}    .ph-stt h2{border-bottom:3px solid var(--stt-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#eef0ff,#e8ecff);border:1.5px solid var(--border);border-left:4px solid var(--beh);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--beh-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-str{background:var(--str-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--str);}  .an-str .analogy-tag{color:var(--str-d);}
+.an-obs{background:var(--obs-l);border:1.5px solid rgba(138,42,191,.2);border-left:4px solid var(--obs);} .an-obs .analogy-tag{color:var(--obs-d);}
+.an-cmd{background:var(--cmd-l);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--cmd);} .an-cmd .analogy-tag{color:var(--cmd-d);}
+.an-tmp{background:var(--tmp-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--tmp);} .an-tmp .analogy-tag{color:var(--tmp-d);}
+.an-itr{background:var(--itr-l);border:1.5px solid rgba(191,42,90,.2);border-left:4px solid var(--itr);}  .an-itr .analogy-tag{color:var(--itr-d);}
+.an-chn{background:var(--chn-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--chn);} .an-chn .analogy-tag{color:var(--chn-d);}
+.an-med{background:var(--med-l);border:1.5px solid rgba(106,58,191,.2);border-left:4px solid var(--med);} .an-med .analogy-tag{color:var(--med-d);}
+.an-stt{background:var(--stt-l);border:1.5px solid rgba(191,58,26,.2);border-left:4px solid var(--stt);} .an-stt .analogy-tag{color:var(--stt-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(170px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.str-c{border-left:4px solid var(--str);}
+.code-block.obs-c{border-left:4px solid var(--obs);}
+.code-block.cmd-c{border-left:4px solid var(--cmd);}
+.code-block.tmp-c{border-left:4px solid var(--tmp);}
+.code-block.itr-c{border-left:4px solid var(--itr);}
+.code-block.chn-c{border-left:4px solid var(--chn);}
+.code-block.med-c{border-left:4px solid var(--med);}
+.code-block.stt-c{border-left:4px solid var(--stt);}
+.code-block.neutral{border-left:4px solid var(--beh);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}.code-label.good{color:#86efac;}.code-label.neutral{color:#93c5fd;}
+.code-label.str-l{color:#6ee7b7;}.code-label.obs-l{color:#d8b4fe;}.code-label.cmd-l{color:#fde68a;}
+.code-label.tmp-l{color:#93c5fd;}.code-label.itr-l{color:#fca5a5;}.code-label.chn-l{color:#99f6e4;}
+.code-label.med-l{color:#c4b5fd;}.code-label.stt-l{color:#fdba74;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--beh-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-str li{border-left:3px solid var(--str);}  .cl-str li:before{content:"✓ ";color:var(--str);font-weight:700;}
+.cl-obs li{border-left:3px solid var(--obs);}  .cl-obs li:before{content:"✓ ";color:var(--obs);font-weight:700;}
+.cl-cmd li{border-left:3px solid var(--cmd);}  .cl-cmd li:before{content:"✓ ";color:var(--cmd);font-weight:700;}
+.cl-tmp li{border-left:3px solid var(--tmp);}  .cl-tmp li:before{content:"✓ ";color:var(--tmp);font-weight:700;}
+.cl-itr li{border-left:3px solid var(--itr);}  .cl-itr li:before{content:"✓ ";color:var(--itr);font-weight:700;}
+.cl-chn li{border-left:3px solid var(--chn);}  .cl-chn li:before{content:"✓ ";color:var(--chn);font-weight:700;}
+.cl-med li{border-left:3px solid var(--med);}  .cl-med li:before{content:"✓ ";color:var(--med);font-weight:700;}
+.cl-stt li{border-left:3px solid var(--stt);}  .cl-stt li:before{content:"✓ ";color:var(--stt);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}  .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:14px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-str{background:var(--str-l);border-color:rgba(14,138,90,.25);}
+.pc-obs{background:var(--obs-l);border-color:rgba(138,42,191,.25);}
+.pc-cmd{background:var(--cmd-l);border-color:rgba(191,106,14,.25);}
+.pc-tmp{background:var(--tmp-l);border-color:rgba(14,106,191,.25);}
+.pc-itr{background:var(--itr-l);border-color:rgba(191,42,90,.25);}
+.pc-chn{background:var(--chn-l);border-color:rgba(26,138,122,.25);}
+.pc-med{background:var(--med-l);border-color:rgba(106,58,191,.25);}
+.pc-stt{background:var(--stt-l);border-color:rgba(191,58,26,.25);}
+.pc-emoji{font-size:1.6rem;margin-bottom:6px;display:block;}
+.pc-name{font-weight:800;font-size:.9rem;margin-bottom:3px;}
+.pc-str .pc-name{color:var(--str-d);}  .pc-obs .pc-name{color:var(--obs-d);}
+.pc-cmd .pc-name{color:var(--cmd-d);}  .pc-tmp .pc-name{color:var(--tmp-d);}
+.pc-itr .pc-name{color:var(--itr-d);}  .pc-chn .pc-name{color:var(--chn-d);}
+.pc-med .pc-name{color:var(--med-d);}  .pc-stt .pc-name{color:var(--stt-d);}
+.pc-intent{font-size:.74rem;color:var(--muted);}
+
+/* SOLID BADGE */
+.solid-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.sb{padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sb-s{background:rgba(26,106,191,.12);color:#0e3a8a;border:1px solid rgba(26,106,191,.2);}
+.sb-o{background:rgba(191,106,14,.12);color:#8a4a00;border:1px solid rgba(191,106,14,.2);}
+.sb-l{background:rgba(26,138,74,.12);color:#0d5c38;border:1px solid rgba(26,138,74,.2);}
+.sb-i{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+.sb-d{background:rgba(176,42,55,.12);color:#8a0010;border:1px solid rgba(176,42,55,.2);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.all-done{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Design Patterns Series · Part 3 of 3 · Final</div>
+    <div class="part-badge">
+      <span class="pb pb-done">✅ Creational</span>
+      <span class="pb pb-done">✅ Structural</span>
+      <span class="pb pb-active">③ Behavioural</span>
+    </div>
+    <h1>Design Patterns — <span>Behavioural</span></h1>
+    <p>Strategy · Observer · Command · Template Method · Iterator · Chain of Responsibility · Mediator · State</p>
+    <div class="header-chips">
+      <span class="chip">Strategy</span>
+      <span class="chip">Observer</span>
+      <span class="chip">Command</span>
+      <span class="chip">Template Method</span>
+      <span class="chip">Iterator</span>
+      <span class="chip">Chain of Responsibility</span>
+      <span class="chip">Mediator</span>
+      <span class="chip">State</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-str"  onclick="T('strategy',this)">② Strategy</button>
+      <button class="tab-btn t-obs"  onclick="T('observer',this)">③ Observer</button>
+      <button class="tab-btn t-cmd"  onclick="T('command',this)">④ Command</button>
+      <button class="tab-btn t-tmp"  onclick="T('template',this)">⑤ Template Method</button>
+      <button class="tab-btn t-itr"  onclick="T('iterator',this)">⑥ Iterator</button>
+      <button class="tab-btn t-chn"  onclick="T('chain',this)">⑦ Chain of Responsibility</button>
+      <button class="tab-btn t-med"  onclick="T('mediator',this)">⑧ Mediator</button>
+      <button class="tab-btn t-stt"  onclick="T('state',this)">⑨ State</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>💬 What Are Behavioural Patterns?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 What Do Behavioural Patterns Do?</div>
+    <p>Behavioural patterns deal with <strong>how objects talk to each other and how responsibilities are distributed</strong>. They define clear communication between objects, so your code is loosely coupled and each class only knows what it needs to know. They answer the question: "Who does what, and how do they tell each other about it?"</p>
+  </div>
+
+  <h3>The 8 Behavioural Patterns</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-str">
+      <span class="pc-emoji">🔀</span>
+      <div class="pc-name">Strategy</div>
+      <div class="pc-intent">Define a family of algorithms, encapsulate each one, and make them interchangeable at runtime.</div>
+    </div>
+    <div class="pc pc-obs">
+      <span class="pc-emoji">👁️</span>
+      <div class="pc-name">Observer</div>
+      <div class="pc-intent">When one object changes, automatically notify all objects that depend on it.</div>
+    </div>
+    <div class="pc pc-cmd">
+      <span class="pc-emoji">📦</span>
+      <div class="pc-name">Command</div>
+      <div class="pc-intent">Encapsulate a request as an object — queue it, undo it, log it.</div>
+    </div>
+    <div class="pc pc-tmp">
+      <span class="pc-emoji">📋</span>
+      <div class="pc-name">Template Method</div>
+      <div class="pc-intent">Define the skeleton of an algorithm, letting subclasses override specific steps.</div>
+    </div>
+    <div class="pc pc-itr">
+      <span class="pc-emoji">🔁</span>
+      <div class="pc-name">Iterator</div>
+      <div class="pc-intent">Traverse a collection without exposing its internal structure.</div>
+    </div>
+    <div class="pc pc-chn">
+      <span class="pc-emoji">🔗</span>
+      <div class="pc-name">Chain of Responsibility</div>
+      <div class="pc-intent">Pass a request along a chain of handlers until one handles it.</div>
+    </div>
+    <div class="pc pc-med">
+      <span class="pc-emoji">📡</span>
+      <div class="pc-name">Mediator</div>
+      <div class="pc-intent">Objects communicate through a central mediator instead of directly with each other.</div>
+    </div>
+    <div class="pc pc-stt">
+      <span class="pc-emoji">🚦</span>
+      <div class="pc-name">State</div>
+      <div class="pc-intent">Allow an object to change its behaviour when its internal state changes.</div>
+    </div>
+  </div>
+
+  <h3>Quick Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Problem</th><th>Pattern</th><th>Example</th></tr>
+    <tr><td>Need to swap algorithms at runtime</td><td><strong>Strategy</strong></td><td>Sorting, discount calculation, payment processing</td></tr>
+    <tr><td>Changes in one object need to notify others</td><td><strong>Observer</strong></td><td>Event system, UI data binding, pub/sub</td></tr>
+    <tr><td>Undo/redo, queuing requests, logging actions</td><td><strong>Command</strong></td><td>Text editor undo, job queue, macro recording</td></tr>
+    <tr><td>Algorithm skeleton shared, steps vary per subclass</td><td><strong>Template Method</strong></td><td>Data import pipeline, report generation</td></tr>
+    <tr><td>Traverse a collection without knowing its structure</td><td><strong>Iterator</strong></td><td>Custom collection, tree traversal, paging</td></tr>
+    <tr><td>Multiple handlers, each may or may not handle a request</td><td><strong>Chain of Responsibility</strong></td><td>Middleware, approval workflow, validation</td></tr>
+    <tr><td>Many objects communicate but shouldn't know about each other</td><td><strong>Mediator</strong></td><td>Chat room, air traffic control, UI event bus</td></tr>
+    <tr><td>Object behaviour changes depending on its current state</td><td><strong>State</strong></td><td>Order lifecycle, traffic light, vending machine</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — STRATEGY
+══════════════════════════════════ -->
+<div id="tab-strategy" class="tab-panel ph-str"><div class="section">
+  <h2>🔀 Strategy Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Strategy lets you <strong>swap algorithms at runtime</strong> without changing the code that uses them. You define a family of algorithms (strategies), put each in its own class, and pass the one you need to the object that uses it. The object doesn't care which algorithm it uses — it just calls the interface.</p>
+  </div>
+
+  <div class="analogy an-str">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>You need to travel from London to Paris. You have strategies: fly (fast, expensive), take Eurostar (medium, comfortable), drive (slow, flexible). You pick a strategy based on your situation. The destination doesn't change — only the how. Tomorrow you might pick a different strategy. Your travel planner just says "execute the travel strategy" without caring which one it is.</p>
+  </div>
+
+  <h3>The Problem — If/Else Algorithm Switching</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — Hardcoded algorithm selection</div>
+    <pre><span class="cm">// ❌ Adding a new sort algorithm means editing this class</span>
+<span class="kw">public class</span> <span class="tp">DataProcessor</span>
+{
+    <span class="kw">public void</span> <span class="fn">Sort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; data, <span class="kw">string</span> algorithm)
+    {
+        <span class="kw">if</span>      (algorithm == <span class="str">"bubble"</span>) <span class="fn">BubbleSort</span>(data);
+        <span class="kw">else if</span> (algorithm == <span class="str">"quick"</span>)  <span class="fn">QuickSort</span>(data);
+        <span class="kw">else if</span> (algorithm == <span class="str">"merge"</span>)  <span class="fn">MergeSort</span>(data);
+        <span class="cm">// ❌ New algorithm = edit this method + risk breaking others</span>
+    }
+    <span class="kw">private void</span> <span class="fn">BubbleSort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; d) { <span class="cm">/* ... */</span> }
+    <span class="kw">private void</span> <span class="fn">QuickSort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; d)  { <span class="cm">/* ... */</span> }
+    <span class="kw">private void</span> <span class="fn">MergeSort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; d)  { <span class="cm">/* ... */</span> }
+}</pre>
+  </div>
+
+  <div class="code-block str-c">
+    <div class="code-label str-l">C# — Strategy pattern: each algorithm in its own class</div>
+    <pre><span class="cm">// ── Strategy interface ────────────────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">ISortStrategy</span>
+{
+    <span class="kw">void</span> <span class="fn">Sort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; data);
+}
+
+<span class="cm">// ── Concrete strategies ───────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">BubbleSortStrategy</span> : <span class="iface">ISortStrategy</span>
+{
+    <span class="kw">public void</span> <span class="fn">Sort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; data)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Bubble sorting..."</span>);
+        <span class="cm">// bubble sort implementation</span>
+        <span class="kw">for</span> (<span class="kw">int</span> i = <span class="num">0</span>; i < data.Count - <span class="num">1</span>; i++)
+            <span class="kw">for</span> (<span class="kw">int</span> j = <span class="num">0</span>; j < data.Count - i - <span class="num">1</span>; j++)
+                <span class="kw">if</span> (data[j] > data[j + <span class="num">1</span>]) (data[j], data[j + <span class="num">1</span>]) = (data[j + <span class="num">1</span>], data[j]);
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">LinqSortStrategy</span> : <span class="iface">ISortStrategy</span>
+{
+    <span class="kw">public void</span> <span class="fn">Sort</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; data)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"LINQ sorting..."</span>);
+        <span class="kw">var</span> sorted = data.<span class="fn">OrderBy</span>(x => x).<span class="fn">ToList</span>();
+        data.<span class="fn">Clear</span>(); data.<span class="fn">AddRange</span>(sorted);
+    }
+}
+
+<span class="cm">// ── Context — uses whichever strategy is injected ─────────────────</span>
+<span class="kw">public class</span> <span class="tp">DataProcessor</span>
+{
+    <span class="kw">private</span> <span class="iface">ISortStrategy</span> _strategy;
+
+    <span class="kw">public</span> <span class="fn">DataProcessor</span>(<span class="iface">ISortStrategy</span> strategy) => _strategy = strategy;
+
+    <span class="cm">// ✅ Change strategy at runtime</span>
+    <span class="kw">public void</span> <span class="fn">SetStrategy</span>(<span class="iface">ISortStrategy</span> strategy) => _strategy = strategy;
+
+    <span class="kw">public void</span> <span class="fn">ProcessData</span>(<span class="tp">List</span>&lt;<span class="kw">int</span>&gt; data)
+    {
+        _strategy.<span class="fn">Sort</span>(data);   <span class="cm">// delegates — doesn't care which algorithm</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Result: {string.Join(", ", data)}"</span>);
+    }
+}
+
+<span class="cm">// Usage — swap strategies freely</span>
+<span class="kw">var</span> data      = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="kw">int</span>&gt; { <span class="num">5</span>, <span class="num">2</span>, <span class="num">8</span>, <span class="num">1</span>, <span class="num">9</span>, <span class="num">3</span> };
+<span class="kw">var</span> processor = <span class="kw">new</span> <span class="tp">DataProcessor</span>(<span class="kw">new</span> <span class="tp">BubbleSortStrategy</span>());
+processor.<span class="fn">ProcessData</span>(data);
+
+processor.<span class="fn">SetStrategy</span>(<span class="kw">new</span> <span class="tp">LinqSortStrategy</span>());  <span class="cm">// swap at runtime</span>
+processor.<span class="fn">ProcessData</span>(data);</pre>
+  </div>
+
+  <h3>Real-World Example — Discount Strategy</h3>
+
+  <div class="code-block str-c">
+    <div class="code-label str-l">C# — Discount calculation strategies</div>
+    <pre><span class="kw">public interface</span> <span class="iface">IDiscountStrategy</span>
+{
+    <span class="kw">decimal</span> <span class="fn">Calculate</span>(<span class="kw">decimal</span> originalPrice);
+    <span class="kw">string</span>  Description { <span class="kw">get</span>; }
+}
+
+<span class="kw">public class</span> <span class="tp">NoDiscount</span>         : <span class="iface">IDiscountStrategy</span>
+{ <span class="kw">public string</span>  Description => <span class="str">"No discount"</span>;
+  <span class="kw">public decimal</span> <span class="fn">Calculate</span>(<span class="kw">decimal</span> p) => p; }
+
+<span class="kw">public class</span> <span class="tp">PercentageDiscount</span>  : <span class="iface">IDiscountStrategy</span>
+{
+    <span class="kw">private readonly decimal</span> _pct;
+    <span class="kw">public</span> <span class="fn">PercentageDiscount</span>(<span class="kw">decimal</span> pct) => _pct = pct;
+    <span class="kw">public string</span>  Description => <span class="str">$"{_pct}% off"</span>;
+    <span class="kw">public decimal</span> <span class="fn">Calculate</span>(<span class="kw">decimal</span> p) => p * (<span class="num">1</span> - _pct / <span class="num">100</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">BuyOneGetOneFree</span>   : <span class="iface">IDiscountStrategy</span>
+{ <span class="kw">public string</span>  Description => <span class="str">"BOGOF"</span>;
+  <span class="kw">public decimal</span> <span class="fn">Calculate</span>(<span class="kw">decimal</span> p) => p / <span class="num">2</span>; }
+
+<span class="kw">public class</span> <span class="tp">FlatAmountDiscount</span> : <span class="iface">IDiscountStrategy</span>
+{
+    <span class="kw">private readonly decimal</span> _amount;
+    <span class="kw">public</span> <span class="fn">FlatAmountDiscount</span>(<span class="kw">decimal</span> amount) => _amount = amount;
+    <span class="kw">public string</span>  Description => <span class="str">$"£{_amount} off"</span>;
+    <span class="kw">public decimal</span> <span class="fn">Calculate</span>(<span class="kw">decimal</span> p) => <span class="tp">Math</span>.<span class="fn">Max</span>(<span class="num">0</span>, p - _amount);
+}
+
+<span class="kw">public class</span> <span class="tp">ShoppingCart</span>
+{
+    <span class="kw">private</span> <span class="iface">IDiscountStrategy</span> _discount = <span class="kw">new</span> <span class="tp">NoDiscount</span>();
+
+    <span class="kw">public void</span> <span class="fn">ApplyDiscount</span>(<span class="iface">IDiscountStrategy</span> strategy) => _discount = strategy;
+
+    <span class="kw">public decimal</span> <span class="fn">Checkout</span>(<span class="kw">decimal</span> subtotal)
+    {
+        <span class="kw">var</span> final = _discount.<span class="fn">Calculate</span>(subtotal);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{_discount.Description}: £{subtotal} → £{final:F2}"</span>);
+        <span class="kw">return</span> final;
+    }
+}
+
+<span class="cm">// Usage — strategy set based on customer type or promo code</span>
+<span class="kw">var</span> cart = <span class="kw">new</span> <span class="tp">ShoppingCart</span>();
+cart.<span class="fn">ApplyDiscount</span>(<span class="kw">new</span> <span class="tp">PercentageDiscount</span>(<span class="num">20</span>));
+cart.<span class="fn">Checkout</span>(<span class="num">100m</span>);  <span class="cm">// 20% off: £100 → £80.00</span>
+
+cart.<span class="fn">ApplyDiscount</span>(<span class="kw">new</span> <span class="tp">BuyOneGetOneFree</span>());
+cart.<span class="fn">Checkout</span>(<span class="num">100m</span>);  <span class="cm">// BOGOF: £100 → £50.00</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new strategies without touching existing code</span>
+    <span class="sb sb-s">S — Each strategy class has one algorithm</span>
+    <span class="sb sb-d">D — Context depends on IDiscountStrategy, not concrete class</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — OBSERVER
+══════════════════════════════════ -->
+<div id="tab-observer" class="tab-panel ph-obs"><div class="section">
+  <h2>👁️ Observer Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Observer is a <strong>subscription mechanism</strong>. When an object (the Subject/Publisher) changes state, all subscribed objects (Observers/Subscribers) are notified automatically. The subject doesn't need to know who is listening — it just announces changes. Observers sign up to receive those announcements.</p>
+  </div>
+
+  <div class="analogy an-obs">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>newspaper subscription</strong>. The newspaper (subject) publishes new editions. Thousands of subscribers (observers) receive the paper. The newspaper doesn't know who specifically reads it — it just sends to all subscribers. You subscribe and unsubscribe freely. When a new edition is published, every subscriber gets it automatically without the newspaper knowing anything about them.</p>
+  </div>
+
+  <h3>Observer Implementation</h3>
+
+  <div class="code-block obs-c">
+    <div class="code-label obs-l">C# — Stock price observer</div>
+    <pre><span class="cm">// ── Observer interface — anything that can receive notifications ───</span>
+<span class="kw">public interface</span> <span class="iface">IStockObserver</span>
+{
+    <span class="kw">void</span> <span class="fn">OnPriceChanged</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> newPrice);
+}
+
+<span class="cm">// ── Subject — maintains observers, notifies on change ─────────────</span>
+<span class="kw">public class</span> <span class="tp">StockMarket</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="iface">IStockObserver</span>&gt;          _observers = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">decimal</span>&gt;    _prices    = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Subscribe</span>(<span class="iface">IStockObserver</span> observer)   => _observers.<span class="fn">Add</span>(observer);
+    <span class="kw">public void</span> <span class="fn">Unsubscribe</span>(<span class="iface">IStockObserver</span> observer) => _observers.<span class="fn">Remove</span>(observer);
+
+    <span class="kw">public void</span> <span class="fn">UpdatePrice</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> newPrice)
+    {
+        _prices[symbol] = newPrice;
+        <span class="fn">NotifyAll</span>(symbol, newPrice);   <span class="cm">// tell everyone</span>
+    }
+
+    <span class="kw">private void</span> <span class="fn">NotifyAll</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> price)
+    {
+        <span class="kw">foreach</span> (<span class="kw">var</span> observer <span class="kw">in</span> _observers)
+            observer.<span class="fn">OnPriceChanged</span>(symbol, price);
+    }
+}
+
+<span class="cm">// ── Concrete observers ────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">TradingBot</span> : <span class="iface">IStockObserver</span>
+{
+    <span class="kw">private readonly</span> <span class="kw">decimal</span> _buyThreshold;
+    <span class="kw">public</span> <span class="fn">TradingBot</span>(<span class="kw">decimal</span> buyAt) => _buyThreshold = buyAt;
+
+    <span class="kw">public void</span> <span class="fn">OnPriceChanged</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> price)
+    {
+        <span class="kw">if</span> (price <= _buyThreshold)
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"🤖 Bot: BUY {symbol} at £{price}"</span>);
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">PriceAlertService</span> : <span class="iface">IStockObserver</span>
+{
+    <span class="kw">public void</span> <span class="fn">OnPriceChanged</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> price)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"🔔 Alert: {symbol} is now £{price}"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">PortfolioDashboard</span> : <span class="iface">IStockObserver</span>
+{
+    <span class="kw">public void</span> <span class="fn">OnPriceChanged</span>(<span class="kw">string</span> symbol, <span class="kw">decimal</span> price)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📊 Dashboard updated: {symbol} = £{price}"</span>);
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">var</span> market    = <span class="kw">new</span> <span class="tp">StockMarket</span>();
+<span class="kw">var</span> bot       = <span class="kw">new</span> <span class="tp">TradingBot</span>(<span class="num">150m</span>);
+<span class="kw">var</span> alerts    = <span class="kw">new</span> <span class="tp">PriceAlertService</span>();
+<span class="kw">var</span> dashboard = <span class="kw">new</span> <span class="tp">PortfolioDashboard</span>();
+
+market.<span class="fn">Subscribe</span>(bot);
+market.<span class="fn">Subscribe</span>(alerts);
+market.<span class="fn">Subscribe</span>(dashboard);
+
+market.<span class="fn">UpdatePrice</span>(<span class="str">"AAPL"</span>, <span class="num">148m</span>);
+<span class="cm">// 🤖 Bot: BUY AAPL at £148
+// 🔔 Alert: AAPL is now £148
+// 📊 Dashboard updated: AAPL = £148
+
+// Unsubscribe bot — still notifies others</span>
+market.<span class="fn">Unsubscribe</span>(bot);
+market.<span class="fn">UpdatePrice</span>(<span class="str">"AAPL"</span>, <span class="num">155m</span>);
+<span class="cm">// 🔔 Alert: AAPL is now £155
+// 📊 Dashboard updated: AAPL = £155</span></pre>
+  </div>
+
+  <h3>Observer with C# Events (Built-in Pattern)</h3>
+
+  <div class="code-block obs-c">
+    <div class="code-label obs-l">C# — Using built-in events and delegates</div>
+    <pre><span class="cm">// C# has Observer built-in via events — this is the idiomatic approach</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span>
+{
+    <span class="cm">// Declare the event — any subscriber can listen</span>
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>&lt;<span class="tp">OrderPlacedEventArgs</span>&gt;? OrderPlaced;
+
+    <span class="kw">public void</span> <span class="fn">PlaceOrder</span>(<span class="tp">Order</span> order)
+    {
+        <span class="cm">// Business logic...</span>
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Order {order.Id} placed"</span>);
+
+        <span class="cm">// Notify all subscribers</span>
+        OrderPlaced?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">OrderPlacedEventArgs</span>(order));
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">OrderPlacedEventArgs</span> : <span class="tp">EventArgs</span>
+{
+    <span class="kw">public</span> <span class="tp">Order</span> Order { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="fn">OrderPlacedEventArgs</span>(<span class="tp">Order</span> order) => Order = order;
+}
+
+<span class="cm">// Subscribers — attach with +=, detach with -=</span>
+<span class="kw">var</span> orders = <span class="kw">new</span> <span class="tp">OrderService</span>();
+
+orders.OrderPlaced += (sender, e) =>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📧 Email sent for order {e.Order.Id}"</span>);
+
+orders.OrderPlaced += (sender, e) =>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📦 Inventory reserved for order {e.Order.Id}"</span>);
+
+orders.OrderPlaced += (sender, e) =>
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"🏷️ Loyalty points awarded for order {e.Order.Id}"</span>);
+
+orders.<span class="fn">PlaceOrder</span>(<span class="kw">new</span> <span class="tp">Order</span> { Id = <span class="num">42</span> });
+<span class="cm">// All three handlers fire automatically</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new observers without touching the subject</span>
+    <span class="sb sb-s">S — Subject manages subscriptions; each observer handles its own response</span>
+    <span class="sb sb-d">D — Subject depends on IObserver interface, not concrete observers</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — COMMAND
+══════════════════════════════════ -->
+<div id="tab-command" class="tab-panel ph-cmd"><div class="section">
+  <h2>📦 Command Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Command turns a <strong>request into a standalone object</strong>. Instead of calling a method directly, you wrap the call in a Command object and pass it around. This lets you queue commands, log them, undo them, or replay them. The sender doesn't know how the command is executed — it just calls <code>Execute()</code>.</p>
+  </div>
+
+  <div class="analogy an-cmd">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>restaurant order slip</strong>. The waiter doesn't cook — they write your order on a slip (Command object) and give it to the kitchen. The kitchen (Receiver) executes it. The slip can be queued, cancelled, or reordered. The waiter doesn't know how to cook anything — they just hand the slip and the kitchen does the work.</p>
+  </div>
+
+  <h3>Command with Undo/Redo</h3>
+
+  <div class="code-block cmd-c">
+    <div class="code-label cmd-l">C# — Text editor with undo/redo using Command</div>
+    <pre><span class="cm">// ── Command interface ─────────────────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">ICommand</span>
+{
+    <span class="kw">void</span> <span class="fn">Execute</span>();
+    <span class="kw">void</span> <span class="fn">Undo</span>();
+}
+
+<span class="cm">// ── Receiver — the text document ──────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">TextDocument</span>
+{
+    <span class="kw">private string</span> _content = <span class="str">""</span>;
+
+    <span class="kw">public void</span> <span class="fn">InsertText</span>(<span class="kw">int</span> pos, <span class="kw">string</span> text)
+    {
+        _content = _content.<span class="fn">Insert</span>(pos, text);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Doc: \"{_content}\""</span>);
+    }
+
+    <span class="kw">public void</span> <span class="fn">DeleteText</span>(<span class="kw">int</span> pos, <span class="kw">int</span> length)
+    {
+        _content = _content.<span class="fn">Remove</span>(pos, length);
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Doc: \"{_content}\""</span>);
+    }
+
+    <span class="kw">public string</span> Content => _content;
+}
+
+<span class="cm">// ── Concrete commands ─────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">InsertCommand</span> : <span class="iface">ICommand</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">TextDocument</span> _doc;
+    <span class="kw">private readonly</span> <span class="kw">int</span>          _position;
+    <span class="kw">private readonly</span> <span class="kw">string</span>       _text;
+
+    <span class="kw">public</span> <span class="fn">InsertCommand</span>(<span class="tp">TextDocument</span> doc, <span class="kw">int</span> pos, <span class="kw">string</span> text)
+    { _doc = doc; _position = pos; _text = text; }
+
+    <span class="kw">public void</span> <span class="fn">Execute</span>() => _doc.<span class="fn">InsertText</span>(_position, _text);
+    <span class="kw">public void</span> <span class="fn">Undo</span>()    => _doc.<span class="fn">DeleteText</span>(_position, _text.Length);
+}
+
+<span class="kw">public class</span> <span class="tp">DeleteCommand</span> : <span class="iface">ICommand</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">TextDocument</span> _doc;
+    <span class="kw">private readonly</span> <span class="kw">int</span>          _position;
+    <span class="kw">private readonly</span> <span class="kw">int</span>          _length;
+    <span class="kw">private</span>          <span class="kw">string</span>       _deletedText = <span class="str">""</span>;  <span class="cm">// saved for undo</span>
+
+    <span class="kw">public</span> <span class="fn">DeleteCommand</span>(<span class="tp">TextDocument</span> doc, <span class="kw">int</span> pos, <span class="kw">int</span> len)
+    { _doc = doc; _position = pos; _length = len; }
+
+    <span class="kw">public void</span> <span class="fn">Execute</span>()
+    {
+        _deletedText = _doc.Content.<span class="fn">Substring</span>(_position, _length); <span class="cm">// save for undo</span>
+        _doc.<span class="fn">DeleteText</span>(_position, _length);
+    }
+    <span class="kw">public void</span> <span class="fn">Undo</span>() => _doc.<span class="fn">InsertText</span>(_position, _deletedText);
+}
+
+<span class="cm">// ── Invoker — manages command history ─────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">TextEditor</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">Stack</span>&lt;<span class="iface">ICommand</span>&gt; _history = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">Stack</span>&lt;<span class="iface">ICommand</span>&gt; _redoStack = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Execute</span>(<span class="iface">ICommand</span> cmd)
+    {
+        cmd.<span class="fn">Execute</span>();
+        _history.<span class="fn">Push</span>(cmd);
+        _redoStack.<span class="fn">Clear</span>();    <span class="cm">// new action clears redo history</span>
+    }
+
+    <span class="kw">public void</span> <span class="fn">Undo</span>()
+    {
+        <span class="kw">if</span> (_history.Count == <span class="num">0</span>) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Nothing to undo"</span>); <span class="kw">return</span>; }
+        <span class="kw">var</span> cmd = _history.<span class="fn">Pop</span>();
+        cmd.<span class="fn">Undo</span>();
+        _redoStack.<span class="fn">Push</span>(cmd);
+    }
+
+    <span class="kw">public void</span> <span class="fn">Redo</span>()
+    {
+        <span class="kw">if</span> (_redoStack.Count == <span class="num">0</span>) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Nothing to redo"</span>); <span class="kw">return</span>; }
+        <span class="kw">var</span> cmd = _redoStack.<span class="fn">Pop</span>();
+        cmd.<span class="fn">Execute</span>();
+        _history.<span class="fn">Push</span>(cmd);
+    }
+}
+
+<span class="cm">// Usage</span>
+<span class="kw">var</span> doc    = <span class="kw">new</span> <span class="tp">TextDocument</span>();
+<span class="kw">var</span> editor = <span class="kw">new</span> <span class="tp">TextEditor</span>();
+
+editor.<span class="fn">Execute</span>(<span class="kw">new</span> <span class="tp">InsertCommand</span>(doc, <span class="num">0</span>, <span class="str">"Hello"</span>));   <span class="cm">// Doc: "Hello"</span>
+editor.<span class="fn">Execute</span>(<span class="kw">new</span> <span class="tp">InsertCommand</span>(doc, <span class="num">5</span>, <span class="str">" World"</span>));  <span class="cm">// Doc: "Hello World"</span>
+editor.<span class="fn">Undo</span>();                                          <span class="cm">// Doc: "Hello"</span>
+editor.<span class="fn">Redo</span>();                                          <span class="cm">// Doc: "Hello World"</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new commands without changing the editor/invoker</span>
+    <span class="sb sb-s">S — Editor manages history; each command manages one action</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — TEMPLATE METHOD
+══════════════════════════════════ -->
+<div id="tab-template" class="tab-panel ph-tmp"><div class="section">
+  <h2>📋 Template Method Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Template Method defines the <strong>skeleton of an algorithm in a base class</strong>, and lets subclasses override specific steps without changing the overall structure. The base class says "here is the sequence of steps" — subclasses fill in the details of individual steps.</p>
+  </div>
+
+  <div class="analogy an-tmp">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Making tea and making coffee follow the same template: boil water → brew → pour into cup → add extras. The template (algorithm skeleton) is the same. The brewing step is different (tea bag vs coffee grounds), and the extras are different (milk/sugar vs cream/sugar). Template Method says: define the sequence once, let subclasses fill in their specific steps.</p>
+  </div>
+
+  <div class="code-block tmp-c">
+    <div class="code-label tmp-l">C# — Data import pipeline with Template Method</div>
+    <pre><span class="cm">// Base class defines the TEMPLATE — the fixed sequence of steps</span>
+<span class="kw">public abstract class</span> <span class="tp">DataImporter</span>
+{
+    <span class="cm">// Template Method — the algorithm skeleton (sealed = can't override)</span>
+    <span class="kw">public sealed void</span> <span class="fn">Import</span>(<span class="kw">string</span> source)
+    {
+        <span class="cm">// Fixed sequence — always the same order</span>
+        <span class="kw">var</span> rawData  = <span class="fn">ReadData</span>(source);      <span class="cm">// Step 1: read</span>
+        <span class="kw">var</span> parsed   = <span class="fn">ParseData</span>(rawData);    <span class="cm">// Step 2: parse</span>
+        <span class="kw">var</span> valid    = <span class="fn">ValidateData</span>(parsed);  <span class="cm">// Step 3: validate</span>
+        <span class="fn">SaveData</span>(valid);                      <span class="cm">// Step 4: save</span>
+        <span class="fn">SendReport</span>(valid.Count);             <span class="cm">// Step 5: report (optional hook)</span>
+    }
+
+    <span class="cm">// Abstract steps — subclasses MUST implement these</span>
+    <span class="kw">protected abstract string</span>       <span class="fn">ReadData</span>(<span class="kw">string</span> source);
+    <span class="kw">protected abstract</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ParseData</span>(<span class="kw">string</span> raw);
+    <span class="kw">protected abstract</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ValidateData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data);
+    <span class="kw">protected abstract void</span>         <span class="fn">SaveData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data);
+
+    <span class="cm">// Hook — optional override (has default behaviour)</span>
+    <span class="kw">protected virtual void</span> <span class="fn">SendReport</span>(<span class="kw">int</span> count)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Imported {count} records"</span>);
+}
+
+<span class="cm">// ── CSV Importer — implements CSV-specific steps ───────────────────</span>
+<span class="kw">public class</span> <span class="tp">CsvImporter</span> : <span class="tp">DataImporter</span>
+{
+    <span class="kw">protected override string</span> <span class="fn">ReadData</span>(<span class="kw">string</span> path)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Reading CSV: {path}"</span>);
+        <span class="kw">return</span> <span class="tp">File</span>.<span class="fn">ReadAllText</span>(path);
+    }
+    <span class="kw">protected override</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ParseData</span>(<span class="kw">string</span> raw)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Parsing CSV rows..."</span>);
+        <span class="kw">return</span> raw.<span class="fn">Split</span>(<span class="str">'\n'</span>).<span class="fn">Select</span>(r => (<span class="kw">object</span>)r).<span class="fn">ToList</span>();
+    }
+    <span class="kw">protected override</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ValidateData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Validating CSV data..."</span>);
+        <span class="kw">return</span> data.<span class="fn">Where</span>(r => !<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(r.ToString())).<span class="fn">ToList</span>();
+    }
+    <span class="kw">protected override void</span> <span class="fn">SaveData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Saving {data.Count} CSV rows to DB"</span>);
+}
+
+<span class="cm">// ── JSON Importer — same template, different steps ────────────────</span>
+<span class="kw">public class</span> <span class="tp">JsonImporter</span> : <span class="tp">DataImporter</span>
+{
+    <span class="kw">protected override string</span> <span class="fn">ReadData</span>(<span class="kw">string</span> url)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Fetching JSON from: {url}"</span>);
+        <span class="kw">return</span> <span class="str">"[{\"id\":1},{\"id\":2}]"</span>;  <span class="cm">// simplified</span>
+    }
+    <span class="kw">protected override</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ParseData</span>(<span class="kw">string</span> raw)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Parsing JSON array..."</span>);
+        <span class="kw">return</span> [ <span class="str">"record1"</span>, <span class="str">"record2"</span> ]; <span class="cm">// simplified</span>
+    }
+    <span class="kw">protected override</span> <span class="tp">List</span>&lt;<span class="kw">object</span>&gt; <span class="fn">ValidateData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Validating JSON schema..."</span>); <span class="kw">return</span> data;
+    }
+    <span class="kw">protected override void</span> <span class="fn">SaveData</span>(<span class="tp">List</span>&lt;<span class="kw">object</span>&gt; data)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Saving {data.Count} JSON records"</span>);
+
+    <span class="cm">// Override the hook — send email report instead of console</span>
+    <span class="kw">protected override void</span> <span class="fn">SendReport</span>(<span class="kw">int</span> count)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📧 Email: JSON import complete — {count} records"</span>);
+}
+
+<span class="cm">// Usage — same Import() call, different behaviour</span>
+<span class="tp">DataImporter</span> csv  = <span class="kw">new</span> <span class="tp">CsvImporter</span>();
+<span class="tp">DataImporter</span> json = <span class="kw">new</span> <span class="tp">JsonImporter</span>();
+
+csv.<span class="fn">Import</span>(<span class="str">"data.csv"</span>);
+json.<span class="fn">Import</span>(<span class="str">"https://api.example.com/data"</span>);</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new importers without touching the template</span>
+    <span class="sb sb-s">S — Base class defines structure; each subclass handles its format</span>
+    <span class="sb sb-l">L — Any DataImporter subtype works wherever DataImporter is expected</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ITERATOR
+══════════════════════════════════ -->
+<div id="tab-iterator" class="tab-panel ph-itr"><div class="section">
+  <h2>🔁 Iterator Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Iterator provides a way to <strong>access elements of a collection one by one without knowing how the collection is stored internally</strong>. Whether the data is in an array, a linked list, a tree, or a database — the iterator gives you a consistent way to go through it: has next? → get next.</p>
+  </div>
+
+  <div class="analogy an-itr">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>TV remote's channel button</strong> is an iterator. You don't care how the TV stores its channel list (array? linked list? sorted?). You just press Next and get the next channel. Press it again, get the one after. The remote gives you a consistent way to traverse the channels without knowing the internal storage.</p>
+  </div>
+
+  <div class="code-block itr-c">
+    <div class="code-label itr-l">C# — Custom iterator with IEnumerable</div>
+    <pre><span class="cm">// ── Custom collection with iteration ──────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">PagedResult</span>&lt;<span class="tp">T</span>&gt; : <span class="tp">IEnumerable</span>&lt;<span class="tp">T</span>&gt;
+{
+    <span class="kw">private readonly</span> <span class="tp">List</span>&lt;<span class="tp">T</span>&gt; _items;
+    <span class="kw">private readonly</span> <span class="kw">int</span>    _pageSize;
+
+    <span class="kw">public int</span> TotalCount  => _items.Count;
+    <span class="kw">public int</span> TotalPages  => (<span class="kw">int</span>)<span class="tp">Math</span>.<span class="fn">Ceiling</span>(_items.Count / (<span class="kw">double</span>)_pageSize);
+
+    <span class="kw">public</span> <span class="fn">PagedResult</span>(<span class="tp">List</span>&lt;<span class="tp">T</span>&gt; items, <span class="kw">int</span> pageSize)
+    { _items = items; _pageSize = pageSize; }
+
+    <span class="cm">// Implementing IEnumerable makes this work with foreach</span>
+    <span class="kw">public</span> <span class="tp">IEnumerator</span>&lt;<span class="tp">T</span>&gt; <span class="fn">GetEnumerator</span>()
+        => _items.<span class="fn">GetEnumerator</span>();
+
+    <span class="tp">System</span>.<span class="tp">Collections</span>.<span class="tp">IEnumerator</span> <span class="tp">System</span>.<span class="tp">Collections</span>.<span class="iface">IEnumerable</span>.<span class="fn">GetEnumerator</span>()
+        => <span class="fn">GetEnumerator</span>();
+
+    <span class="cm">// Get items for a specific page</span>
+    <span class="kw">public</span> <span class="tp">IEnumerable</span>&lt;<span class="tp">T</span>&gt; <span class="fn">GetPage</span>(<span class="kw">int</span> pageNumber)
+        => _items.<span class="fn">Skip</span>((pageNumber - <span class="num">1</span>) * _pageSize).<span class="fn">Take</span>(_pageSize);
+}
+
+<span class="cm">// ── Iterator using yield return (C# generator) ────────────────────</span>
+<span class="kw">public class</span> <span class="tp">TreeNode</span>&lt;<span class="tp">T</span>&gt;
+{
+    <span class="kw">public</span> <span class="tp">T</span>               Value    { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="tp">TreeNode</span>&lt;<span class="tp">T</span>&gt;&gt; Children { <span class="kw">get</span>; } = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="fn">TreeNode</span>(<span class="tp">T</span> value) => Value = value;
+
+    <span class="cm">// Depth-first traversal using yield return</span>
+    <span class="kw">public</span> <span class="tp">IEnumerable</span>&lt;<span class="tp">T</span>&gt; <span class="fn">Traverse</span>()
+    {
+        <span class="kw">yield return</span> Value;                          <span class="cm">// yield this node</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> child <span class="kw">in</span> Children)
+            <span class="kw">foreach</span> (<span class="kw">var</span> value <span class="kw">in</span> child.<span class="fn">Traverse</span>())  <span class="cm">// recurse into children</span>
+                <span class="kw">yield return</span> value;
+    }
+}
+
+<span class="cm">// ── Async Iterator with yield return (C# 8+) ─────────────────────</span>
+<span class="kw">public async</span> <span class="tp">IAsyncEnumerable</span>&lt;<span class="tp">Product</span>&gt; <span class="fn">GetProductsPagedAsync</span>(<span class="kw">int</span> pageSize)
+{
+    <span class="kw">int</span> page = <span class="num">1</span>;
+    <span class="kw">while</span> (<span class="kw">true</span>)
+    {
+        <span class="kw">var</span> products = <span class="kw">await</span> _db.<span class="fn">GetProductsAsync</span>(page, pageSize);
+        <span class="kw">if</span> (!products.Any()) <span class="kw">yield break</span>;
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> p <span class="kw">in</span> products)
+            <span class="kw">yield return</span> p;         <span class="cm">// process as they arrive</span>
+
+        page++;
+    }
+}
+
+<span class="cm">// Usage — foreach works on ALL of the above</span>
+<span class="kw">var</span> root = <span class="kw">new</span> <span class="tp">TreeNode</span>&lt;<span class="kw">string</span>&gt;(<span class="str">"root"</span>);
+root.Children.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">TreeNode</span>&lt;<span class="kw">string</span>&gt;(<span class="str">"child1"</span>));
+root.Children.<span class="fn">Add</span>(<span class="kw">new</span> <span class="tp">TreeNode</span>&lt;<span class="kw">string</span>&gt;(<span class="str">"child2"</span>));
+
+<span class="kw">foreach</span> (<span class="kw">var</span> node <span class="kw">in</span> root.<span class="fn">Traverse</span>())
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(node);  <span class="cm">// root, child1, child2</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Iterator is Built Into C#</h4>
+    <p><code>IEnumerable&lt;T&gt;</code> and <code>IEnumerator&lt;T&gt;</code> are the Iterator pattern built into .NET. Every <code>foreach</code> loop uses an iterator. The <code>yield return</code> keyword makes writing custom iterators trivial — the compiler generates the state machine for you.</p>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Collection manages data; iterator manages traversal</span>
+    <span class="sb sb-i">I — IEnumerable is a small focused interface</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CHAIN OF RESPONSIBILITY
+══════════════════════════════════ -->
+<div id="tab-chain" class="tab-panel ph-chn"><div class="section">
+  <h2>🔗 Chain of Responsibility Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Chain of Responsibility passes a request along a <strong>chain of handlers</strong>. Each handler decides: can I handle this? If yes, handle it. If no, pass it to the next handler. The sender doesn't know which handler will process the request — it just sends it to the first one in the chain.</p>
+  </div>
+
+  <div class="analogy an-chn">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>customer support escalation</strong>. Your complaint goes to Level 1 support. They can't solve it → escalates to Level 2. They can't solve it → escalates to a Manager. The Manager resolves it. You didn't choose who handles it — it flows up the chain until someone can deal with it. Each level has authority to handle certain types of problems.</p>
+  </div>
+
+  <div class="code-block chn-c">
+    <div class="code-label chn-l">C# — HTTP request validation pipeline</div>
+    <pre><span class="cm">// ── Handler interface ─────────────────────────────────────────────</span>
+<span class="kw">public abstract class</span> <span class="tp">RequestHandler</span>
+{
+    <span class="kw">private</span> <span class="tp">RequestHandler</span>? _next;
+
+    <span class="cm">// Fluent: handler.SetNext(auth).SetNext(rateLimit).SetNext(logger)</span>
+    <span class="kw">public</span> <span class="tp">RequestHandler</span> <span class="fn">SetNext</span>(<span class="tp">RequestHandler</span> next)
+    {
+        _next = next;
+        <span class="kw">return</span> next;  <span class="cm">// return next for fluent chaining</span>
+    }
+
+    <span class="cm">// Each handler calls this to pass to the next handler</span>
+    <span class="kw">protected void</span> <span class="fn">PassToNext</span>(<span class="tp">HttpRequest</span> request)
+        => _next?.Handle(request) ?? <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"✅ Request processed!"</span>);
+
+    <span class="kw">public abstract void</span> <span class="fn">Handle</span>(<span class="tp">HttpRequest</span> request);
+}
+
+<span class="cm">// ── Concrete handlers ─────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">AuthenticationHandler</span> : <span class="tp">RequestHandler</span>
+{
+    <span class="kw">public override void</span> <span class="fn">Handle</span>(<span class="tp">HttpRequest</span> request)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"🔐 Auth: checking token..."</span>);
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrEmpty</span>(request.Token))
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Auth FAILED: No token"</span>);
+            <span class="kw">return</span>;  <span class="cm">// stop the chain</span>
+        }
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"✅ Auth passed"</span>);
+        <span class="fn">PassToNext</span>(request);  <span class="cm">// continue to next handler</span>
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">RateLimitHandler</span> : <span class="tp">RequestHandler</span>
+{
+    <span class="kw">private int</span> _requestCount;
+
+    <span class="kw">public override void</span> <span class="fn">Handle</span>(<span class="tp">HttpRequest</span> request)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"⏱️ Rate limit: request #{++_requestCount}"</span>);
+        <span class="kw">if</span> (_requestCount > <span class="num">100</span>)
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Rate limit exceeded"</span>);
+            <span class="kw">return</span>;
+        }
+        <span class="fn">PassToNext</span>(request);
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">ValidationHandler</span> : <span class="tp">RequestHandler</span>
+{
+    <span class="kw">public override void</span> <span class="fn">Handle</span>(<span class="tp">HttpRequest</span> request)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"📋 Validating request body..."</span>);
+        <span class="kw">if</span> (request.Body?.<span class="fn">Length</span> > <span class="num">10_000</span>)
+        {
+            <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Body too large"</span>);
+            <span class="kw">return</span>;
+        }
+        <span class="fn">PassToNext</span>(request);
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">LoggingHandler</span> : <span class="tp">RequestHandler</span>
+{
+    <span class="kw">public override void</span> <span class="fn">Handle</span>(<span class="tp">HttpRequest</span> request)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"📝 Logging: {request.Path}"</span>);
+        <span class="fn">PassToNext</span>(request);  <span class="cm">// always continues</span>
+    }
+}
+
+<span class="cm">// ── Build the chain ───────────────────────────────────────────────</span>
+<span class="kw">var</span> auth      = <span class="kw">new</span> <span class="tp">AuthenticationHandler</span>();
+<span class="kw">var</span> rateLimit = <span class="kw">new</span> <span class="tp">RateLimitHandler</span>();
+<span class="kw">var</span> validate  = <span class="kw">new</span> <span class="tp">ValidationHandler</span>();
+<span class="kw">var</span> logging   = <span class="kw">new</span> <span class="tp">LoggingHandler</span>();
+
+<span class="cm">// Chain: auth → rateLimit → validate → logging → execute</span>
+auth.<span class="fn">SetNext</span>(rateLimit).<span class="fn">SetNext</span>(validate).<span class="fn">SetNext</span>(logging);
+
+<span class="kw">var</span> req = <span class="kw">new</span> <span class="tp">HttpRequest</span> { Token = <span class="str">"abc123"</span>, Path = <span class="str">"/api/users"</span>, Body = <span class="str">"data"</span> };
+auth.<span class="fn">Handle</span>(req);
+<span class="cm">// 🔐 Auth: checking token... ✅ Auth passed
+// ⏱️ Rate limit: request #1
+// 📋 Validating request body...
+// 📝 Logging: /api/users
+// ✅ Request processed!</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new handlers without modifying existing ones</span>
+    <span class="sb sb-s">S — Each handler has one responsibility</span>
+    <span class="sb sb-d">D — Handlers depend on abstract RequestHandler, not concrete next</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — MEDIATOR
+══════════════════════════════════ -->
+<div id="tab-mediator" class="tab-panel ph-med"><div class="section">
+  <h2>📡 Mediator Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Mediator prevents objects from referring to each other directly. Instead, all communication goes through a <strong>central mediator object</strong>. Objects only know about the mediator — not about each other. This reduces the spaghetti of direct connections between many objects.</p>
+  </div>
+
+  <div class="analogy an-med">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>An <strong>air traffic controller</strong>. Planes don't communicate directly with each other — they'd crash! Every plane talks only to the control tower (Mediator). The tower knows all the planes and coordinates their paths. Planes only need to know how to talk to the tower — not to every other plane in the sky. Remove the tower and you have chaos.</p>
+  </div>
+
+  <div class="code-block med-c">
+    <div class="code-label med-l">C# — Chat room mediator</div>
+    <pre><span class="cm">// ── Mediator interface ────────────────────────────────────────────</span>
+<span class="kw">public interface</span> <span class="iface">IChatRoom</span>
+{
+    <span class="kw">void</span> <span class="fn">Register</span>(<span class="tp">ChatUser</span> user);
+    <span class="kw">void</span> <span class="fn">SendMessage</span>(<span class="kw">string</span> from, <span class="kw">string</span>? to, <span class="kw">string</span> message);
+}
+
+<span class="cm">// ── Concrete Mediator ─────────────────────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">ChatRoom</span> : <span class="iface">IChatRoom</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="tp">ChatUser</span>&gt; _users = <span class="kw">new</span>();
+
+    <span class="kw">public void</span> <span class="fn">Register</span>(<span class="tp">ChatUser</span> user)
+    {
+        _users[user.Name] = user;
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"🟢 {user.Name} joined the room"</span>);
+    }
+
+    <span class="kw">public void</span> <span class="fn">SendMessage</span>(<span class="kw">string</span> from, <span class="kw">string</span>? to, <span class="kw">string</span> message)
+    {
+        <span class="kw">if</span> (to != <span class="kw">null</span>)
+        {
+            <span class="cm">// Direct message</span>
+            <span class="kw">if</span> (_users.<span class="fn">TryGetValue</span>(to, <span class="kw">out var</span> recipient))
+                recipient.<span class="fn">Receive</span>(from, message);
+            <span class="kw">else</span>
+                <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"User {to} not found"</span>);
+        }
+        <span class="kw">else</span>
+        {
+            <span class="cm">// Broadcast to everyone except sender</span>
+            <span class="kw">foreach</span> (<span class="kw">var</span> user <span class="kw">in</span> _users.Values.<span class="fn">Where</span>(u => u.Name != from))
+                user.<span class="fn">Receive</span>(from, message);
+        }
+    }
+}
+
+<span class="cm">// ── Colleague — knows only the mediator, not other users ──────────</span>
+<span class="kw">public class</span> <span class="tp">ChatUser</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IChatRoom</span> _room;
+    <span class="kw">public string</span> Name { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">ChatUser</span>(<span class="kw">string</span> name, <span class="iface">IChatRoom</span> room)
+    { Name = name; _room = room; room.<span class="fn">Register</span>(<span class="kw">this</span>); }
+
+    <span class="kw">public void</span> <span class="fn">Send</span>(<span class="kw">string</span> message, <span class="kw">string</span>? to = <span class="kw">null</span>)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{Name} → {(to ?? "all")}: \"{message}\""</span>);
+        _room.<span class="fn">SendMessage</span>(Name, to, message);
+    }
+
+    <span class="kw">public void</span> <span class="fn">Receive</span>(<span class="kw">string</span> from, <span class="kw">string</span> message)
+        => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"  [{Name} receives from {from}]: \"{message}\""</span>);
+}
+
+<span class="cm">// Usage — users talk through the mediator, never directly</span>
+<span class="iface">IChatRoom</span> room  = <span class="kw">new</span> <span class="tp">ChatRoom</span>();
+<span class="kw">var</span>        alice = <span class="kw">new</span> <span class="tp">ChatUser</span>(<span class="str">"Alice"</span>, room);
+<span class="kw">var</span>        bob   = <span class="kw">new</span> <span class="tp">ChatUser</span>(<span class="str">"Bob"</span>,   room);
+<span class="kw">var</span>        carol = <span class="kw">new</span> <span class="tp">ChatUser</span>(<span class="str">"Carol"</span>, room);
+
+alice.<span class="fn">Send</span>(<span class="str">"Hello everyone!"</span>);         <span class="cm">// broadcast</span>
+bob.<span class="fn">Send</span>(<span class="str">"Hey Alice!"</span>, to: <span class="str">"Alice"</span>);  <span class="cm">// direct message</span>
+carol.<span class="fn">Send</span>(<span class="str">"Welcome Bob!"</span>);             <span class="cm">// broadcast</span></pre>
+  </div>
+
+  <h3>Mediator in Real .NET — MediatR</h3>
+  <div class="card">
+    <h4>📦 MediatR Library — Mediator in ASP.NET Core</h4>
+    <p>MediatR is the most popular .NET Mediator implementation. Commands and queries are sent through a central mediator — handlers don't know about controllers, and controllers don't know about handlers.</p>
+    <ul style="margin-top:8px;">
+      <li>Install: <code>dotnet add package MediatR</code></li>
+      <li>Controller sends: <code>await _mediator.Send(new GetUserQuery(id))</code></li>
+      <li>Handler implements: <code>IRequestHandler&lt;GetUserQuery, User&gt;</code></li>
+      <li>Perfectly decoupled — controller never references handler directly</li>
+      <li>Used heavily in CQRS architecture patterns</li>
+    </ul>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Each colleague has its own job; mediator handles routing</span>
+    <span class="sb sb-d">D — Colleagues depend on IChatRoom interface, not each other</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — STATE
+══════════════════════════════════ -->
+<div id="tab-state" class="tab-panel ph-stt"><div class="section">
+  <h2>🚦 State Pattern</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>The State pattern allows an object to <strong>change its behaviour when its internal state changes</strong>. Instead of giant if/else or switch statements checking the state everywhere, each state is its own class with its own behaviour. The object delegates to its current state object, which handles actions appropriately for that state.</p>
+  </div>
+
+  <div class="analogy an-stt">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>traffic light</strong>. When it is Red, cars stop. When Green, cars go. When Amber, cars prepare to stop. The same physical light behaves completely differently depending on its current state. You don't check "if red then stop, else if green then go" in your car — you react to whatever state the light currently shows. The light manages its own state transitions.</p>
+  </div>
+
+  <h3>The Problem — If/Else State Checking</h3>
+
+  <div class="code-block bad">
+    <div class="code-label bad"><span class="cl-badge cl-bad">PROBLEM</span> C# — State scattered in if/else throughout the class</div>
+    <pre><span class="cm">// ❌ State scattered everywhere — hard to add new states</span>
+<span class="kw">public class</span> <span class="tp">Order</span>
+{
+    <span class="kw">public string</span> State { <span class="kw">get</span>; <span class="kw">private set</span>; } = <span class="str">"Pending"</span>;
+
+    <span class="kw">public void</span> <span class="fn">Pay</span>()
+    {
+        <span class="kw">if</span> (State == <span class="str">"Pending"</span>)     State = <span class="str">"Paid"</span>;
+        <span class="kw">else if</span> (State == <span class="str">"Paid"</span>)   <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Already paid"</span>);
+        <span class="kw">else</span>                        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Cannot pay"</span>);
+    }
+    <span class="kw">public void</span> <span class="fn">Ship</span>()
+    {
+        <span class="kw">if</span> (State == <span class="str">"Paid"</span>)        State = <span class="str">"Shipped"</span>;
+        <span class="kw">else if</span> (State == <span class="str">"Pending"</span>) <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Not paid yet"</span>);
+        <span class="kw">else</span>                          <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"Cannot ship"</span>);
+    }
+    <span class="cm">// ❌ Every method checks state. Adding "Refunded" state = edit EVERY method!</span>
+}</pre>
+  </div>
+
+  <h3>State Pattern Solution</h3>
+
+  <div class="code-block stt-c">
+    <div class="code-label stt-l">C# — Order lifecycle with State pattern</div>
+    <pre><span class="cm">// ── State interface — defines what an order can do in ANY state ───</span>
+<span class="kw">public interface</span> <span class="iface">IOrderState</span>
+{
+    <span class="kw">void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> order);
+    <span class="kw">void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> order);
+    <span class="kw">void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> order);
+    <span class="kw">void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> order);
+    <span class="kw">string</span> StateName { <span class="kw">get</span>; }
+}
+
+<span class="cm">// ── Context — holds current state and delegates to it ─────────────</span>
+<span class="kw">public class</span> <span class="tp">OrderContext</span>
+{
+    <span class="kw">private</span> <span class="iface">IOrderState</span> _state;
+
+    <span class="kw">public</span> <span class="fn">OrderContext</span>()  => _state = <span class="kw">new</span> <span class="tp">PendingState</span>();
+    <span class="kw">public void</span> <span class="fn">SetState</span>(<span class="iface">IOrderState</span> state)
+    {
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"  → Transitioning to {state.StateName}"</span>);
+        _state = state;
+    }
+    <span class="kw">public string</span> CurrentState => _state.StateName;
+
+    <span class="cm">// Delegate ALL actions to the current state</span>
+    <span class="kw">public void</span> <span class="fn">Pay</span>()    => _state.<span class="fn">Pay</span>(<span class="kw">this</span>);
+    <span class="kw">public void</span> <span class="fn">Ship</span>()   => _state.<span class="fn">Ship</span>(<span class="kw">this</span>);
+    <span class="kw">public void</span> <span class="fn">Cancel</span>() => _state.<span class="fn">Cancel</span>(<span class="kw">this</span>);
+    <span class="kw">public void</span> <span class="fn">Refund</span>() => _state.<span class="fn">Refund</span>(<span class="kw">this</span>);
+}
+
+<span class="cm">// ── Concrete States — each handles actions for its specific state ──</span>
+<span class="kw">public class</span> <span class="tp">PendingState</span> : <span class="iface">IOrderState</span>
+{
+    <span class="kw">public string</span> StateName => <span class="str">"Pending"</span>;
+    <span class="kw">public void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> o)    { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"💳 Payment received"</span>);      o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">PaidState</span>()); }
+    <span class="kw">public void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> o)   => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Pay first before shipping"</span>);
+    <span class="kw">public void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> o) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"🚫 Order cancelled"</span>);          o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">CancelledState</span>()); }
+    <span class="kw">public void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Cannot refund — not paid"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">PaidState</span> : <span class="iface">IOrderState</span>
+{
+    <span class="kw">public string</span> StateName => <span class="str">"Paid"</span>;
+    <span class="kw">public void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> o)    => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Already paid"</span>);
+    <span class="kw">public void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> o)   { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"📦 Order shipped!"</span>);         o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">ShippedState</span>()); }
+    <span class="kw">public void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> o) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"🚫 Order cancelled + refund"</span>); o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">CancelledState</span>()); }
+    <span class="kw">public void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> o) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"💰 Refund issued"</span>);          o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">RefundedState</span>()); }
+}
+
+<span class="kw">public class</span> <span class="tp">ShippedState</span> : <span class="iface">IOrderState</span>
+{
+    <span class="kw">public string</span> StateName => <span class="str">"Shipped"</span>;
+    <span class="kw">public void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> o)    => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Already shipped and paid"</span>);
+    <span class="kw">public void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> o)   => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Already shipped"</span>);
+    <span class="kw">public void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Cannot cancel shipped order"</span>);
+    <span class="kw">public void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> o) { <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"💰 Return + refund initiated"</span>); o.<span class="fn">SetState</span>(<span class="kw">new</span> <span class="tp">RefundedState</span>()); }
+}
+
+<span class="kw">public class</span> <span class="tp">CancelledState</span> : <span class="iface">IOrderState</span>
+{
+    <span class="kw">public string</span> StateName => <span class="str">"Cancelled"</span>;
+    <span class="kw">public void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> o)    => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Order is cancelled"</span>);
+    <span class="kw">public void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> o)   => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Order is cancelled"</span>);
+    <span class="kw">public void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Already cancelled"</span>);
+    <span class="kw">public void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Nothing to refund"</span>);
+}
+
+<span class="kw">public class</span> <span class="tp">RefundedState</span> : <span class="iface">IOrderState</span>
+{
+    <span class="kw">public string</span> StateName => <span class="str">"Refunded"</span>;
+    <span class="kw">public void</span> <span class="fn">Pay</span>(<span class="tp">OrderContext</span> o)    => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Order was refunded"</span>);
+    <span class="kw">public void</span> <span class="fn">Ship</span>(<span class="tp">OrderContext</span> o)   => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Order was refunded"</span>);
+    <span class="kw">public void</span> <span class="fn">Cancel</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Order was refunded"</span>);
+    <span class="kw">public void</span> <span class="fn">Refund</span>(<span class="tp">OrderContext</span> o) => <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">"❌ Already refunded"</span>);
+}
+
+<span class="cm">// Usage — clean state lifecycle</span>
+<span class="kw">var</span> order = <span class="kw">new</span> <span class="tp">OrderContext</span>();
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"State: {order.CurrentState}"</span>);   <span class="cm">// Pending</span>
+order.<span class="fn">Ship</span>();                                           <span class="cm">// ❌ Pay first</span>
+order.<span class="fn">Pay</span>();                                            <span class="cm">// 💳 Payment received → Paid</span>
+order.<span class="fn">Pay</span>();                                            <span class="cm">// ❌ Already paid</span>
+order.<span class="fn">Ship</span>();                                           <span class="cm">// 📦 Shipped → Shipped</span>
+order.<span class="fn">Cancel</span>();                                        <span class="cm">// ❌ Cannot cancel shipped</span>
+order.<span class="fn">Refund</span>();                                        <span class="cm">// 💰 Return + refund → Refunded</span>
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Final state: {order.CurrentState}"</span>); <span class="cm">// Refunded</span>
+
+<span class="cm">// ✅ Add "OnHold" state? Add ONE new class — zero changes to existing states!</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-o">O — Add new states by adding new classes, not editing existing ones</span>
+    <span class="sb sb-s">S — Each state class handles behaviour for exactly one state</span>
+    <span class="sb sb-l">L — Any IOrderState can substitute for another</span>
+  </div>
+
+  <div class="completion">
+    <h3>🎉 All 3 Parts of Design Patterns Complete!</h3>
+    <p>Strategy — swap algorithms at runtime via interface · Observer — subscribe/unsubscribe notification system, C# events built-in · Command — encapsulate requests as objects for undo/redo/queue · Template Method — algorithm skeleton in base class, steps in subclasses · Iterator — IEnumerable&lt;T&gt;, foreach, yield return for custom traversal · Chain of Responsibility — request passes through handlers until one handles it · Mediator — central hub for communication, MediatR in ASP.NET Core · State — behaviour changes with state, each state is its own class · Every pattern: real-world analogy, problem code, solution code, SOLID connections</p>
+    <div class="all-done">
+      <span class="np np-done">✅ Part 1: Creational — Singleton · Factory · Abstract Factory · Builder · Prototype</span>
+      <span class="np np-done">✅ Part 2: Structural — Adapter · Decorator · Facade · Proxy · Composite · Bridge</span>
+      <span class="np np-done">✅ Part 3: Behavioural — Strategy · Observer · Command · Template · Iterator · Chain · Mediator · State</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

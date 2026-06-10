@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Patterns — Part 1: Application Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --arch:#1a5abf;--arch-l:#d6e8f8;--arch-d:#0e3a8a;
+  --mvc:#0e8a5a;--mvc-l:#d4f0e8;--mvc-d:#085c38;
+  --mvvm:#7a2abf;--mvvm-l:#ede0f8;--mvvm-d:#4a1580;
+  --mvp:#bf6a0e;--mvp-l:#f8f0d4;--mvp-d:#8a4500;
+  --lay:#0e6abf;--lay-l:#d6ebf8;--lay-d:#0a4280;
+  --clean:#bf2a5a;--clean-l:#f8d6e4;--clean-d:#8a003a;
+  --cqrs:#1a8a7a;--cqrs-l:#d0f0ec;--cqrs-d:#0d5c52;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(26,90,191,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,90,.2) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(122,42,191,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#60a5fa,#34d399,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-active{background:rgba(96,165,250,.25);border:1px solid rgba(96,165,250,.4);color:#93c5fd;}
+.pb-inactive{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-over.active{background:var(--arch-l);color:var(--arch-d);}
+.t-mvc.active{background:var(--mvc-l);color:var(--mvc-d);}
+.t-mvvm.active{background:var(--mvvm-l);color:var(--mvvm-d);}
+.t-mvp.active{background:var(--mvp-l);color:var(--mvp-d);}
+.t-lay.active{background:var(--lay-l);color:var(--lay-d);}
+.t-clean.active{background:var(--clean-l);color:var(--clean-d);}
+.t-cqrs.active{background:var(--cqrs-l);color:var(--cqrs-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--arch-d);}  .ph-over h2{border-bottom:3px solid var(--arch-l);}
+.ph-mvc h2,.ph-mvc h3{color:var(--mvc-d);}      .ph-mvc h2{border-bottom:3px solid var(--mvc-l);}
+.ph-mvvm h2,.ph-mvvm h3{color:var(--mvvm-d);}   .ph-mvvm h2{border-bottom:3px solid var(--mvvm-l);}
+.ph-mvp h2,.ph-mvp h3{color:var(--mvp-d);}      .ph-mvp h2{border-bottom:3px solid var(--mvp-l);}
+.ph-lay h2,.ph-lay h3{color:var(--lay-d);}       .ph-lay h2{border-bottom:3px solid var(--lay-l);}
+.ph-clean h2,.ph-clean h3{color:var(--clean-d);} .ph-clean h2{border-bottom:3px solid var(--clean-l);}
+.ph-cqrs h2,.ph-cqrs h3{color:var(--cqrs-d);}   .ph-cqrs h2{border-bottom:3px solid var(--cqrs-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--arch);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--arch-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-mvc{background:var(--mvc-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--mvc);}    .an-mvc .analogy-tag{color:var(--mvc-d);}
+.an-mvvm{background:var(--mvvm-l);border:1.5px solid rgba(122,42,191,.2);border-left:4px solid var(--mvvm);} .an-mvvm .analogy-tag{color:var(--mvvm-d);}
+.an-mvp{background:var(--mvp-l);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--mvp);}    .an-mvp .analogy-tag{color:var(--mvp-d);}
+.an-lay{background:var(--lay-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--lay);}    .an-lay .analogy-tag{color:var(--lay-d);}
+.an-clean{background:var(--clean-l);border:1.5px solid rgba(191,42,90,.2);border-left:4px solid var(--clean);}.an-clean .analogy-tag{color:var(--clean-d);}
+.an-cqrs{background:var(--cqrs-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--cqrs);} .an-cqrs .analogy-tag{color:var(--cqrs-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.bad{border-left:4px solid var(--red);}
+.code-block.good{border-left:4px solid var(--green);}
+.code-block.mvc-c{border-left:4px solid var(--mvc);}
+.code-block.mvvm-c{border-left:4px solid var(--mvvm);}
+.code-block.mvp-c{border-left:4px solid var(--mvp);}
+.code-block.lay-c{border-left:4px solid var(--lay);}
+.code-block.clean-c{border-left:4px solid var(--clean);}
+.code-block.cqrs-c{border-left:4px solid var(--cqrs);}
+.code-block.neutral{border-left:4px solid var(--arch);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.bad{color:#f87171;}.code-label.good{color:#86efac;}.code-label.neutral{color:#93c5fd;}
+.code-label.mvc-l{color:#6ee7b7;}.code-label.mvvm-l{color:#d8b4fe;}.code-label.mvp-l{color:#fde68a;}
+.code-label.lay-l{color:#93c5fd;}.code-label.clean-l{color:#fca5a5;}.code-label.cqrs-l{color:#99f6e4;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.cl-bad{background:rgba(248,113,113,.15);color:#f87171;}
+.cl-good{background:rgba(134,239,172,.15);color:#86efac;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--arch-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-mvc li{border-left:3px solid var(--mvc);}    .cl-mvc li:before{content:"✓ ";color:var(--mvc);font-weight:700;}
+.cl-mvvm li{border-left:3px solid var(--mvvm);}  .cl-mvvm li:before{content:"✓ ";color:var(--mvvm);font-weight:700;}
+.cl-mvp li{border-left:3px solid var(--mvp);}    .cl-mvp li:before{content:"✓ ";color:var(--mvp);font-weight:700;}
+.cl-lay li{border-left:3px solid var(--lay);}    .cl-lay li:before{content:"✓ ";color:var(--lay);font-weight:700;}
+.cl-clean li{border-left:3px solid var(--clean);}.cl-clean li:before{content:"✓ ";color:var(--clean);font-weight:700;}
+.cl-cqrs li{border-left:3px solid var(--cqrs);}  .cl-cqrs li:before{content:"✓ ";color:var(--cqrs);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}    .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);}      .cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(200px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-mvc{background:var(--mvc-l);border-color:rgba(14,138,90,.25);}
+.pc-mvvm{background:var(--mvvm-l);border-color:rgba(122,42,191,.25);}
+.pc-mvp{background:var(--mvp-l);border-color:rgba(191,106,14,.25);}
+.pc-lay{background:var(--lay-l);border-color:rgba(14,106,191,.25);}
+.pc-clean{background:var(--clean-l);border-color:rgba(191,42,90,.25);}
+.pc-cqrs{background:var(--cqrs-l);border-color:rgba(26,138,122,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-mvc .pc-name{color:var(--mvc-d);}   .pc-mvvm .pc-name{color:var(--mvvm-d);}
+.pc-mvp .pc-name{color:var(--mvp-d);}   .pc-lay .pc-name{color:var(--lay-d);}
+.pc-clean .pc-name{color:var(--clean-d);}.pc-cqrs .pc-name{color:var(--cqrs-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.pc-used{font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:4px 8px;border-radius:4px;color:var(--text2);}
+.pc-mvc .pc-used{background:rgba(14,138,90,.1);}   .pc-mvvm .pc-used{background:rgba(122,42,191,.1);}
+.pc-mvp .pc-used{background:rgba(191,106,14,.1);}  .pc-lay .pc-used{background:rgba(14,106,191,.1);}
+.pc-clean .pc-used{background:rgba(191,42,90,.1);} .pc-cqrs .pc-used{background:rgba(26,138,122,.1);}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* LAYER BOX */
+.layers{display:flex;flex-direction:column;gap:6px;margin:14px 0;max-width:580px;}
+.layer{border-radius:var(--r);padding:13px 18px;border:1.5px solid;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.layer-name{font-weight:700;font-size:.9rem;}
+.layer-desc{font-size:.78rem;color:var(--muted);text-align:right;}
+.layer-examples{font-family:'JetBrains Mono',monospace;font-size:.68rem;margin-top:4px;opacity:.8;}
+.l-pres{background:var(--mvvm-l);border-color:rgba(122,42,191,.25);}  .l-pres .layer-name{color:var(--mvvm-d);}
+.l-app{background:var(--mvc-l);border-color:rgba(14,138,90,.25);}     .l-app .layer-name{color:var(--mvc-d);}
+.l-domain{background:var(--clean-l);border-color:rgba(191,42,90,.25);}.l-domain .layer-name{color:var(--clean-d);}
+.l-infra{background:var(--lay-l);border-color:rgba(14,106,191,.25);}  .l-infra .layer-name{color:var(--lay-d);}
+.l-db{background:var(--cqrs-l);border-color:rgba(26,138,122,.25);}    .l-db .layer-name{color:var(--cqrs-d);}
+.layer-arrow{text-align:center;padding:2px 0;color:var(--border2);font-size:1.2rem;}
+
+/* SOLID BADGE */
+.solid-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.sb{padding:3px 10px;border-radius:100px;font-size:.65rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sb-s{background:rgba(26,106,191,.12);color:#0e3a8a;border:1px solid rgba(26,106,191,.2);}
+.sb-o{background:rgba(191,106,14,.12);color:#8a4a00;border:1px solid rgba(191,106,14,.2);}
+.sb-l{background:rgba(26,138,74,.12);color:#0d5c38;border:1px solid rgba(26,138,74,.2);}
+.sb-i{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+.sb-d{background:rgba(176,42,55,.12);color:#8a0010;border:1px solid rgba(176,42,55,.2);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+  .layer{flex-direction:column;text-align:left;}
+  .layer-desc{text-align:left;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">Architecture Patterns Series · Part 1 of 2</div>
+    <div class="part-badge">
+      <span class="pb pb-active">① Application Architecture</span>
+      <span class="pb pb-inactive">② System Architecture</span>
+    </div>
+    <h1>Application <span>Architecture Patterns</span></h1>
+    <p>MVC · MVVM · MVP · Layered Architecture · Clean Architecture · CQRS · C# deep dive · beginner to expert</p>
+    <div class="header-chips">
+      <span class="chip">MVC</span>
+      <span class="chip">MVVM</span>
+      <span class="chip">MVP</span>
+      <span class="chip">N-Tier / Layered</span>
+      <span class="chip">Clean Architecture</span>
+      <span class="chip">CQRS</span>
+      <span class="chip">Real C# Examples</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-mvc"   onclick="T('mvc',this)">② MVC</button>
+      <button class="tab-btn t-mvvm"  onclick="T('mvvm',this)">③ MVVM</button>
+      <button class="tab-btn t-mvp"   onclick="T('mvp',this)">④ MVP</button>
+      <button class="tab-btn t-lay"   onclick="T('layered',this)">⑤ Layered / N-Tier</button>
+      <button class="tab-btn t-clean" onclick="T('clean',this)">⑥ Clean Architecture</button>
+      <button class="tab-btn t-cqrs"  onclick="T('cqrs',this)">⑦ CQRS</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🏛️ What Are Architecture Patterns?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — What Is Application Architecture?</div>
+    <p>If Design Patterns answer <em>"how do I structure this class?"</em>, Architecture Patterns answer <em>"how do I structure my entire application?"</em> They define the big-picture organisation — which folders exist, what responsibilities each layer has, how data flows between them, and how different parts of your codebase talk to each other. Getting architecture right means your app is easy to test, easy to change, and easy to grow.</p>
+  </div>
+
+  <h3>The 6 Application Architecture Patterns</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-mvc">
+      <span class="pc-emoji">🌐</span>
+      <div class="pc-name">MVC</div>
+      <div class="pc-intent">Model-View-Controller. Classic web pattern. Controller handles requests, Model holds data, View renders HTML.</div>
+      <div class="pc-used">ASP.NET Core MVC · Rails · Django</div>
+    </div>
+    <div class="pc pc-mvvm">
+      <span class="pc-emoji">🖥️</span>
+      <div class="pc-name">MVVM</div>
+      <div class="pc-intent">Model-View-ViewModel. Two-way data binding. View binds to ViewModel, ViewModel has no UI knowledge.</div>
+      <div class="pc-used">WPF · MAUI · Angular · Vue</div>
+    </div>
+    <div class="pc pc-mvp">
+      <span class="pc-emoji">📱</span>
+      <div class="pc-name">MVP</div>
+      <div class="pc-intent">Model-View-Presenter. Presenter drives the View through an interface. Fully testable UI logic.</div>
+      <div class="pc-used">WinForms · Android · Legacy desktop</div>
+    </div>
+    <div class="pc pc-lay">
+      <span class="pc-emoji">🏢</span>
+      <div class="pc-name">Layered / N-Tier</div>
+      <div class="pc-intent">Split application into horizontal layers — Presentation, Business Logic, Data Access. Each layer talks only to the one below it.</div>
+      <div class="pc-used">Enterprise apps · Classic 3-tier</div>
+    </div>
+    <div class="pc pc-clean">
+      <span class="pc-emoji">⭕</span>
+      <div class="pc-name">Clean Architecture</div>
+      <div class="pc-intent">Concentric circles. Domain at the centre. Dependencies only point inward. Infrastructure at the outer edge.</div>
+      <div class="pc-used">Modern .NET · Domain-driven apps</div>
+    </div>
+    <div class="pc pc-cqrs">
+      <span class="pc-emoji">⚡</span>
+      <div class="pc-name">CQRS</div>
+      <div class="pc-intent">Command Query Responsibility Segregation. Separate the read model from the write model. Optimise each independently.</div>
+      <div class="pc-used">High-scale APIs · Event sourcing</div>
+    </div>
+  </div>
+
+  <h3>Architecture vs Design Patterns</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔩 Design Patterns (Parts 1-3)</h4>
+      <ul>
+        <li>Solve problems within a single class or small group of classes</li>
+        <li>Examples: Singleton, Factory, Observer, Strategy</li>
+        <li>Scope: a few lines to a few classes</li>
+        <li>Language-specific (C# patterns)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🏛️ Architecture Patterns (This Guide)</h4>
+      <ul>
+        <li>Define the entire high-level structure of the application</li>
+        <li>Examples: MVC, Clean Architecture, CQRS</li>
+        <li>Scope: folders, projects, entire solutions</li>
+        <li>Language-agnostic (apply to any tech stack)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Quick Decision Guide</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Pattern</th><th>Best for</th><th>Key benefit</th><th>Avoid when</th></tr>
+    <tr><td><strong>MVC</strong></td><td>Web APIs and server-rendered web apps</td><td>Clean separation of routing, data, view</td><td>Desktop/mobile apps with rich UI binding</td></tr>
+    <tr><td><strong>MVVM</strong></td><td>Desktop (WPF/MAUI) and SPA frameworks</td><td>Two-way data binding, fully testable VM</td><td>Simple web APIs with no rich UI binding</td></tr>
+    <tr><td><strong>MVP</strong></td><td>WinForms, older Android, legacy desktop</td><td>Fully testable UI logic, View is passive</td><td>When MVVM is available (easier binding)</td></tr>
+    <tr><td><strong>Layered</strong></td><td>Traditional enterprise apps, simple CRUD</td><td>Clear separation, easy to understand</td><td>Complex domain, high testability needs</td></tr>
+    <tr><td><strong>Clean</strong></td><td>Complex domain-driven apps</td><td>Domain isolated, infrastructure swappable</td><td>Simple CRUD — overkill</td></tr>
+    <tr><td><strong>CQRS</strong></td><td>High-performance, complex query/write needs</td><td>Optimised reads and writes independently</td><td>Simple apps where R/W models are same</td></tr>
+  </table></div>
+
+  <h3>How They Relate to SOLID</h3>
+  <div class="card">
+    <h4>🔗 Architecture Patterns Are SOLID at the Application Level</h4>
+    <ul>
+      <li><strong>SRP</strong> — Each layer/component has one responsibility (Controller routes, Service processes, Repository saves)</li>
+      <li><strong>OCP</strong> — Add new features in new classes/layers without changing existing infrastructure</li>
+      <li><strong>DIP</strong> — All patterns depend on abstractions (interfaces) not concrete implementations</li>
+      <li><strong>Clean Architecture</strong> is the most explicit expression of all 5 SOLID principles at the architectural level</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — MVC
+══════════════════════════════════ -->
+<div id="tab-mvc" class="tab-panel ph-mvc"><div class="section">
+  <h2>🌐 MVC — Model View Controller</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>MVC splits your application into three parts. The <strong>Model</strong> holds your data and business logic. The <strong>View</strong> is what the user sees (HTML page, JSON response). The <strong>Controller</strong> sits in the middle — it receives the request, asks the Model for data, and tells the View what to display. They each have one job and don't need to know each other's internals.</p>
+  </div>
+
+  <div class="analogy an-mvc">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>restaurant</strong>. The <strong>menu (View)</strong> is what the customer sees. The <strong>waiter (Controller)</strong> takes the order and communicates between customer and kitchen. The <strong>kitchen (Model)</strong> holds the recipes and prepares the food. The customer never goes into the kitchen. The kitchen never designs the menu. The waiter is the coordinator.</p>
+  </div>
+
+  <h3>How MVC Works — Request Lifecycle</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🌐 MVC Request Flow</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e8a5a"/>
+          </marker>
+        </defs>
+        <!-- Browser -->
+        <rect x="10" y="70" width="110" height="60" rx="8" fill="#d6e8f8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="65" y="96" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">Browser</text>
+        <text x="65" y="114" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">HTTP Request</text>
+        <!-- Arrow 1 -->
+        <line x1="120" y1="100" x2="170" y2="100" stroke="#0e6abf" stroke-width="2" marker-end="url(#arr)"/>
+        <text x="145" y="93" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">GET /users</text>
+        <!-- Controller -->
+        <rect x="172" y="60" width="140" height="80" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="242" y="92" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">Controller</text>
+        <text x="242" y="108" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">UsersController</text>
+        <text x="242" y="124" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Index() action</text>
+        <!-- Arrow to Model -->
+        <line x1="312" y1="90" x2="368" y2="90" stroke="#0e6abf" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="340" y="83" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">GetAll()</text>
+        <!-- Arrow back from Model -->
+        <line x1="368" y1="110" x2="312" y2="110" stroke="#0e8a5a" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <text x="340" y="127" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e8a5a" text-anchor="middle">List&lt;User&gt;</text>
+        <!-- Model -->
+        <rect x="370" y="60" width="130" height="80" rx="8" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="1.5"/>
+        <text x="435" y="92" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#4a1580" text-anchor="middle">Model</text>
+        <text x="435" y="108" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">UserService</text>
+        <text x="435" y="124" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">+ Repository</text>
+        <!-- Arrow to View -->
+        <line x1="312" y1="100" x2="312" y2="162" stroke="#0e6abf" stroke-width="1.5"/>
+        <line x1="312" y1="162" x2="552" y2="162" stroke="#0e6abf" stroke-width="1.5"/>
+        <line x1="552" y1="162" x2="552" y2="152" stroke="#0e6abf" stroke-width="1.5" marker-end="url(#arr)"/>
+        <text x="432" y="177" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">Pass model to View</text>
+        <!-- View -->
+        <rect x="502" y="60" width="130" height="80" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="567" y="92" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">View</text>
+        <text x="567" y="108" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Users/Index.cshtml</text>
+        <text x="567" y="124" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Renders HTML</text>
+        <!-- Arrow back to browser -->
+        <line x1="632" y1="100" x2="680" y2="100" stroke="#0e8a5a" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <text x="656" y="93" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e8a5a" text-anchor="middle">HTML</text>
+        <rect x="678" y="78" width="38" height="44" rx="5" fill="#d6e8f8" stroke="rgba(14,106,191,.3)" stroke-width="1"/>
+        <text x="697" y="100" font-family="Sora,sans-serif" font-size="9" font-weight="600" fill="#0a4280" text-anchor="middle">👤</text>
+        <text x="697" y="113" font-family="Sora,sans-serif" font-size="7" fill="#606278" text-anchor="middle">User</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>MVC in ASP.NET Core — Full Example</h3>
+
+  <div class="code-block mvc-c">
+    <div class="code-label mvc-l">C# — Model (data + business rules)</div>
+    <pre><span class="cm">// Model — represents data and business rules</span>
+<span class="kw">public class</span> <span class="tp">Product</span>
+{
+    <span class="kw">public int</span>     Id       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span>  Name     { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public decimal</span> Price    { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public int</span>     Stock    { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public bool</span>    InStock  => Stock > <span class="num">0</span>;
+}
+
+<span class="cm">// Service (part of the Model layer — business logic)</span>
+<span class="kw">public interface</span> <span class="iface">IProductService</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetAllAsync</span>();
+    <span class="tp">Task</span>&lt;<span class="tp">Product</span>?&gt;      <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id);
+    <span class="tp">Task</span>                 <span class="fn">CreateAsync</span>(<span class="tp">Product</span> product);
+    <span class="tp">Task</span>                 <span class="fn">UpdateAsync</span>(<span class="tp">Product</span> product);
+    <span class="tp">Task</span>                 <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id);
+}
+
+<span class="kw">public class</span> <span class="tp">ProductService</span> : <span class="iface">IProductService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IProductRepository</span> _repo;
+    <span class="kw">public</span> <span class="fn">ProductService</span>(<span class="iface">IProductRepository</span> repo) => _repo = repo;
+
+    <span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetAllAsync</span>()        => _repo.<span class="fn">GetAllAsync</span>();
+    <span class="kw">public</span> <span class="tp">Task</span>&lt;<span class="tp">Product</span>?&gt;      <span class="fn">GetByIdAsync</span>(<span class="kw">int</span> id) => _repo.<span class="fn">GetByIdAsync</span>(id);
+    <span class="kw">public</span> <span class="tp">Task</span>                 <span class="fn">CreateAsync</span>(<span class="tp">Product</span> p) => _repo.<span class="fn">AddAsync</span>(p);
+    <span class="kw">public</span> <span class="tp">Task</span>                 <span class="fn">UpdateAsync</span>(<span class="tp">Product</span> p) => _repo.<span class="fn">UpdateAsync</span>(p);
+    <span class="kw">public</span> <span class="tp">Task</span>                 <span class="fn">DeleteAsync</span>(<span class="kw">int</span> id)    => _repo.<span class="fn">DeleteAsync</span>(id);
+}</pre>
+  </div>
+
+  <div class="code-block mvc-c">
+    <div class="code-label mvc-l">C# — Controller (handles HTTP requests)</div>
+    <pre><span class="cm">// Controller — receives requests, calls Model, passes data to View</span>
+<span class="kw">public class</span> <span class="tp">ProductsController</span> : <span class="tp">Controller</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IProductService</span> _service;
+
+    <span class="kw">public</span> <span class="fn">ProductsController</span>(<span class="iface">IProductService</span> service) => _service = service;
+
+    <span class="cm">// GET /Products — List all products</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">Index</span>()
+    {
+        <span class="kw">var</span> products = <span class="kw">await</span> _service.<span class="fn">GetAllAsync</span>();
+        <span class="kw">return</span> <span class="fn">View</span>(products);   <span class="cm">// passes model to Index.cshtml</span>
+    }
+
+    <span class="cm">// GET /Products/Details/5</span>
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">Details</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> product = <span class="kw">await</span> _service.<span class="fn">GetByIdAsync</span>(id);
+        <span class="kw">if</span> (product == <span class="kw">null</span>) <span class="kw">return</span> <span class="fn">NotFound</span>();
+        <span class="kw">return</span> <span class="fn">View</span>(product);
+    }
+
+    <span class="cm">// POST /Products/Create</span>
+    [<span class="at">HttpPost</span>]
+    [<span class="at">ValidateAntiForgeryToken</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">Create</span>(<span class="tp">Product</span> product)
+    {
+        <span class="kw">if</span> (!ModelState.IsValid) <span class="kw">return</span> <span class="fn">View</span>(product);  <span class="cm">// re-show form with errors</span>
+        <span class="kw">await</span> _service.<span class="fn">CreateAsync</span>(product);
+        <span class="kw">return</span> <span class="fn">RedirectToAction</span>(<span class="kw">nameof</span>(Index));
+    }
+
+    <span class="cm">// DELETE /Products/Delete/5</span>
+    [<span class="at">HttpPost</span>, <span class="at">ActionName</span>(<span class="str">"Delete"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">DeleteConfirmed</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">await</span> _service.<span class="fn">DeleteAsync</span>(id);
+        <span class="kw">return</span> <span class="fn">RedirectToAction</span>(<span class="kw">nameof</span>(Index));
+    }
+}</pre>
+  </div>
+
+  <div class="code-block mvc-c">
+    <div class="code-label mvc-l">Razor — View (renders HTML from model data)</div>
+    <pre><span class="cm">@* Views/Products/Index.cshtml — the View *@</span>
+<span class="at">@model</span> <span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;
+
+&lt;<span class="ky">h1</span>&gt;Products&lt;/<span class="ky">h1</span>&gt;
+&lt;<span class="ky">a</span> asp-action=<span class="str">"Create"</span>&gt;+ Add Product&lt;/<span class="ky">a</span>&gt;
+
+&lt;<span class="ky">table</span>&gt;
+    &lt;<span class="ky">tr</span>&gt;&lt;<span class="ky">th</span>&gt;Name&lt;/<span class="ky">th</span>&gt;&lt;<span class="ky">th</span>&gt;Price&lt;/<span class="ky">th</span>&gt;&lt;<span class="ky">th</span>&gt;Stock&lt;/<span class="ky">th</span>&gt;&lt;/<span class="ky">tr</span>&gt;
+
+    @foreach (var p in Model)           @* loops over the Model data *@
+    {
+        &lt;<span class="ky">tr</span>&gt;
+            &lt;<span class="ky">td</span>&gt;@p.Name&lt;/<span class="ky">td</span>&gt;
+            &lt;<span class="ky">td</span>&gt;£@p.Price.ToString("F2")&lt;/<span class="ky">td</span>&gt;
+            &lt;<span class="ky">td</span>&gt;@(p.InStock ? "In Stock" : "Out of Stock")&lt;/<span class="ky">td</span>&gt;
+            &lt;<span class="ky">td</span>&gt;
+                &lt;<span class="ky">a</span> asp-action=<span class="str">"Details"</span> asp-route-id=<span class="str">"@p.Id"</span>&gt;View&lt;/<span class="ky">a</span>&gt;
+            &lt;/<span class="ky">td</span>&gt;
+        &lt;/<span class="ky">tr</span>&gt;
+    }
+&lt;/<span class="ky">table</span>&gt;</pre>
+  </div>
+
+  <h3>MVC for APIs — No View Needed</h3>
+  <div class="code-block mvc-c">
+    <div class="code-label mvc-l">C# — API Controller (returns JSON instead of View)</div>
+    <pre><span class="cm">// In REST APIs: Controller returns JSON, no View needed</span>
+[<span class="at">ApiController</span>]
+[<span class="at">Route</span>(<span class="str">"api/[controller]"</span>)]
+<span class="kw">public class</span> <span class="tp">ProductsController</span> : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IProductService</span> _service;
+    <span class="kw">public</span> <span class="fn">ProductsController</span>(<span class="iface">IProductService</span> service) => _service = service;
+
+    [<span class="at">HttpGet</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">ActionResult</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Product</span>&gt;&gt;&gt; <span class="fn">GetAll</span>()
+        => <span class="fn">Ok</span>(<span class="kw">await</span> _service.<span class="fn">GetAllAsync</span>());
+
+    [<span class="at">HttpGet</span>(<span class="str">"{id}"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">ActionResult</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">GetById</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">var</span> product = <span class="kw">await</span> _service.<span class="fn">GetByIdAsync</span>(id);
+        <span class="kw">return</span> product == <span class="kw">null</span> ? <span class="fn">NotFound</span>() : <span class="fn">Ok</span>(product);
+    }
+
+    [<span class="at">HttpPost</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">ActionResult</span>&lt;<span class="tp">Product</span>&gt;&gt; <span class="fn">Create</span>(<span class="tp">Product</span> product)
+    {
+        <span class="kw">await</span> _service.<span class="fn">CreateAsync</span>(product);
+        <span class="kw">return</span> <span class="fn">CreatedAtAction</span>(<span class="kw">nameof</span>(GetById), <span class="kw">new</span> { id = product.Id }, product);
+    }
+
+    [<span class="at">HttpDelete</span>(<span class="str">"{id}"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">Delete</span>(<span class="kw">int</span> id)
+    {
+        <span class="kw">await</span> _service.<span class="fn">DeleteAsync</span>(id);
+        <span class="kw">return</span> <span class="fn">NoContent</span>();
+    }
+}</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Controller routes; Model handles logic; View handles display</span>
+    <span class="sb sb-d">D — Controller depends on IProductService interface</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — MVVM
+══════════════════════════════════ -->
+<div id="tab-mvvm" class="tab-panel ph-mvvm"><div class="section">
+  <h2>🖥️ MVVM — Model View ViewModel</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>MVVM is the go-to pattern for <strong>data-bound desktop and mobile apps</strong>. The View (XAML) binds directly to properties on the ViewModel (C# class). When the ViewModel's data changes, the View updates automatically — no code needed. The ViewModel knows nothing about buttons, labels, or textboxes — it just exposes properties and commands.</p>
+  </div>
+
+  <div class="analogy an-mvvm">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>live scoreboard at a stadium</strong>. The scoreboard (View) is wired to a data feed (ViewModel). When the score changes in the system, the board updates immediately — you don't send a worker up to change numbers manually. The data feed doesn't know what the board looks like — it just updates the numbers. The board doesn't know how the score is calculated — it just shows what it's given.</p>
+  </div>
+
+  <h3>MVVM Data Flow</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🖥️ MVVM — Two-Way Data Binding</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a2abf"/>
+          </marker>
+          <marker id="arrb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e8a5a"/>
+          </marker>
+        </defs>
+        <!-- VIEW -->
+        <rect x="20" y="30" width="180" height="160" rx="10" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="2"/>
+        <text x="110" y="55" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#4a1580" text-anchor="middle">VIEW</text>
+        <text x="110" y="72" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">MainWindow.xaml</text>
+        <rect x="40" y="85" width="140" height="24" rx="5" fill="rgba(122,42,191,.1)" stroke="rgba(122,42,191,.2)" stroke-width="1"/>
+        <text x="110" y="101" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">TextBox {Binding Name}</text>
+        <rect x="40" y="117" width="140" height="24" rx="5" fill="rgba(122,42,191,.1)" stroke="rgba(122,42,191,.2)" stroke-width="1"/>
+        <text x="110" y="133" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Button {Binding SaveCmd}</text>
+        <rect x="40" y="149" width="140" height="24" rx="5" fill="rgba(122,42,191,.1)" stroke="rgba(122,42,191,.2)" stroke-width="1"/>
+        <text x="110" y="165" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Label {Binding Status}</text>
+        <!-- Arrows: Two-way binding -->
+        <line x1="200" y1="100" x2="252" y2="100" stroke="#7a2abf" stroke-width="2" marker-end="url(#arrf)"/>
+        <line x1="252" y1="115" x2="200" y2="115" stroke="#0e8a5a" stroke-width="2" marker-end="url(#arrb)"/>
+        <text x="226" y="92" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a2abf" text-anchor="middle">User types</text>
+        <text x="226" y="130" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e8a5a" text-anchor="middle">INPC notify</text>
+        <!-- VIEWMODEL -->
+        <rect x="254" y="30" width="200" height="160" rx="10" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="354" y="55" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#085c38" text-anchor="middle">VIEWMODEL</text>
+        <text x="354" y="72" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">ContactViewModel.cs</text>
+        <rect x="274" y="82" width="160" height="22" rx="4" fill="rgba(14,138,90,.12)" stroke="rgba(14,138,90,.2)" stroke-width="1"/>
+        <text x="354" y="97" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">string Name {get;set;}</text>
+        <rect x="274" y="110" width="160" height="22" rx="4" fill="rgba(14,138,90,.12)" stroke="rgba(14,138,90,.2)" stroke-width="1"/>
+        <text x="354" y="125" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">ICommand SaveCommand</text>
+        <rect x="274" y="138" width="160" height="22" rx="4" fill="rgba(14,138,90,.12)" stroke="rgba(14,138,90,.2)" stroke-width="1"/>
+        <text x="354" y="153" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">string Status {get;set;}</text>
+        <!-- Arrow to Model -->
+        <line x1="454" y1="100" x2="498" y2="100" stroke="#7a2abf" stroke-width="1.5" marker-end="url(#arrf)"/>
+        <line x1="498" y1="115" x2="454" y2="115" stroke="#0e8a5a" stroke-width="1.5" marker-end="url(#arrb)"/>
+        <text x="476" y="92" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a2abf" text-anchor="middle">calls</text>
+        <text x="476" y="130" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e8a5a" text-anchor="middle">data</text>
+        <!-- MODEL -->
+        <rect x="500" y="30" width="200" height="160" rx="10" fill="#d6e8f8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="600" y="55" font-family="Sora,sans-serif" font-size="13" font-weight="700" fill="#0a4280" text-anchor="middle">MODEL</text>
+        <text x="600" y="72" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Services + Repositories</text>
+        <rect x="520" y="82" width="160" height="22" rx="4" fill="rgba(14,106,191,.1)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="600" y="97" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Contact.cs (data)</text>
+        <rect x="520" y="110" width="160" height="22" rx="4" fill="rgba(14,106,191,.1)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="600" y="125" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">IContactService</text>
+        <rect x="520" y="138" width="160" height="22" rx="4" fill="rgba(14,106,191,.1)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="600" y="153" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">ContactRepository</text>
+        <!-- Note -->
+        <text x="354" y="205" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">View has no C# code. ViewModel has no WPF references. Both change independently.</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Complete MVVM Example — WPF Contact Form</h3>
+
+  <div class="code-block mvvm-c">
+    <div class="code-label mvvm-l">C# — ViewModelBase + ContactViewModel</div>
+    <pre><span class="cm">// ── Base class: INotifyPropertyChanged in one place ───────────────</span>
+<span class="kw">public abstract class</span> <span class="tp">ViewModelBase</span> : <span class="tp">INotifyPropertyChanged</span>
+{
+    <span class="kw">public event</span> <span class="tp">PropertyChangedEventHandler</span>? PropertyChanged;
+
+    <span class="kw">protected bool</span> <span class="fn">SetProperty</span>&lt;<span class="tp">T</span>&gt;(<span class="kw">ref</span> <span class="tp">T</span> field, <span class="tp">T</span> value,
+        [<span class="tp">CallerMemberName</span>] <span class="kw">string</span>? name = <span class="kw">null</span>)
+    {
+        <span class="kw">if</span> (<span class="tp">EqualityComparer</span>&lt;<span class="tp">T</span>&gt;.Default.<span class="fn">Equals</span>(field, value)) <span class="kw">return false</span>;
+        field = value;
+        PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(name));
+        <span class="kw">return true</span>;
+    }
+}
+
+<span class="cm">// ── ContactViewModel — zero WPF references ────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">ContactViewModel</span> : <span class="tp">ViewModelBase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IContactService</span> _service;
+
+    <span class="kw">private string</span> _firstName = <span class="str">""</span>;
+    <span class="kw">private string</span> _lastName  = <span class="str">""</span>;
+    <span class="kw">private string</span> _email     = <span class="str">""</span>;
+    <span class="kw">private string</span> _status    = <span class="str">""</span>;
+    <span class="kw">private bool</span>   _isBusy;
+
+    <span class="kw">public string</span> FirstName
+    {
+        <span class="kw">get</span> => _firstName;
+        <span class="kw">set</span> { <span class="fn">SetProperty</span>(<span class="kw">ref</span> _firstName, value); <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(FullName)); }
+    }
+    <span class="kw">public string</span> LastName
+    {
+        <span class="kw">get</span> => _lastName;
+        <span class="kw">set</span> { <span class="fn">SetProperty</span>(<span class="kw">ref</span> _lastName, value); <span class="fn">OnPropertyChanged</span>(<span class="kw">nameof</span>(FullName)); }
+    }
+    <span class="kw">public string</span> Email   { <span class="kw">get</span> => _email;   <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _email,   value); }
+    <span class="kw">public string</span> Status  { <span class="kw">get</span> => _status;  <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _status,  value); }
+    <span class="kw">public bool</span>   IsBusy  { <span class="kw">get</span> => _isBusy;  <span class="kw">set</span> => <span class="fn">SetProperty</span>(<span class="kw">ref</span> _isBusy,  value); }
+
+    <span class="cm">// Computed property</span>
+    <span class="kw">public string</span> FullName => <span class="str">$"{FirstName} {LastName}"</span>.Trim();
+    <span class="kw">public bool</span>   CanSave  => !<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(FirstName) &&
+                               !<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(Email);
+
+    <span class="cm">// Commands — what buttons bind to</span>
+    <span class="kw">public</span> <span class="tp">ICommand</span> SaveCommand  { <span class="kw">get</span>; }
+    <span class="kw">public</span> <span class="tp">ICommand</span> ClearCommand { <span class="kw">get</span>; }
+
+    <span class="kw">public</span> <span class="fn">ContactViewModel</span>(<span class="iface">IContactService</span> service)
+    {
+        _service     = service;
+        SaveCommand  = <span class="kw">new</span> <span class="tp">AsyncRelayCommand</span>(<span class="fn">SaveAsync</span>, () => CanSave);
+        ClearCommand = <span class="kw">new</span> <span class="tp">RelayCommand</span>(_ => <span class="fn">Clear</span>());
+    }
+
+    <span class="kw">private async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>()
+    {
+        IsBusy = <span class="kw">true</span>;
+        Status = <span class="str">"Saving..."</span>;
+        <span class="kw">try</span>
+        {
+            <span class="kw">await</span> _service.<span class="fn">SaveAsync</span>(<span class="kw">new</span> <span class="tp">Contact</span>
+                { FirstName = FirstName, LastName = LastName, Email = Email });
+            Status = <span class="str">"✅ Contact saved!"</span>;
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex) { Status = <span class="str">$"❌ Error: {ex.Message}"</span>; }
+        <span class="kw">finally</span> { IsBusy = <span class="kw">false</span>; }
+    }
+
+    <span class="kw">private void</span> <span class="fn">Clear</span>()
+    { FirstName = <span class="str">""</span>; LastName = <span class="str">""</span>; Email = <span class="str">""</span>; Status = <span class="str">""</span>; }
+
+    <span class="kw">private void</span> <span class="fn">OnPropertyChanged</span>(<span class="kw">string</span> name)
+        => PropertyChanged?.Invoke(<span class="kw">this</span>, <span class="kw">new</span> <span class="tp">PropertyChangedEventArgs</span>(name));
+}</pre>
+  </div>
+
+  <div class="code-block mvvm-c">
+    <div class="code-label mvvm-l">XAML — View binds to ViewModel (zero C# code-behind)</div>
+    <pre><span class="tag">&lt;Window.DataContext&gt;</span>
+    <span class="tag">&lt;vm:ContactViewModel</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Window.DataContext&gt;</span>
+
+<span class="tag">&lt;Grid</span> <span class="prop">Margin</span>=<span class="val">"20"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;TextBox</span>     <span class="prop">Text</span>=<span class="val">"{Binding FirstName, UpdateSourceTrigger=PropertyChanged}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBox</span>     <span class="prop">Text</span>=<span class="val">"{Binding LastName,  UpdateSourceTrigger=PropertyChanged}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBox</span>     <span class="prop">Text</span>=<span class="val">"{Binding Email,     UpdateSourceTrigger=PropertyChanged}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBlock</span>   <span class="prop">Text</span>=<span class="val">"{Binding FullName}"</span>  <span class="prop">FontWeight</span>=<span class="val">"Bold"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;TextBlock</span>   <span class="prop">Text</span>=<span class="val">"{Binding Status}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;ProgressBar</span> <span class="prop">Visibility</span>=<span class="val">"{Binding IsBusy, Converter={StaticResource BoolToVis}}"</span>
+                 <span class="prop">IsIndeterminate</span>=<span class="val">"True"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>      <span class="prop">Content</span>=<span class="val">"Save"</span>  <span class="prop">Command</span>=<span class="val">"{Binding SaveCommand}"</span><span class="tag">/&gt;</span>
+    <span class="tag">&lt;Button</span>      <span class="prop">Content</span>=<span class="val">"Clear"</span> <span class="prop">Command</span>=<span class="val">"{Binding ClearCommand}"</span><span class="tag">/&gt;</span>
+<span class="tag">&lt;/Grid&gt;</span>
+<span class="cm">&lt;!-- MainWindow.xaml.cs is completely empty except InitializeComponent() --&gt;</span></pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — VM handles state/commands; View handles display; Model handles data</span>
+    <span class="sb sb-d">D — VM depends on IContactService interface</span>
+    <span class="sb sb-o">O — Add new views/VMs without touching existing ones</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — MVP
+══════════════════════════════════ -->
+<div id="tab-mvp" class="tab-panel ph-mvp"><div class="section">
+  <h2>📱 MVP — Model View Presenter</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>MVP is similar to MVC but the <strong>Presenter drives the View directly through an interface</strong>. The View is completely passive — it just displays what the Presenter tells it to, and passes every user action to the Presenter. The Presenter contains all the logic. Because the View is behind an interface, you can test the Presenter without touching any real UI.</p>
+  </div>
+
+  <div class="analogy an-mvp">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>puppet show</strong>. The puppet (View) has no mind of its own — it does exactly what the puppeteer (Presenter) makes it do. The audience sees the puppet moving, but all the intelligence is in the puppeteer's hands. The puppeteer can work with any puppet that has the right control points (interface) — they don't care whether it's a wooden puppet or a cloth one.</p>
+  </div>
+
+  <h3>MVC vs MVVM vs MVP</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Feature</th><th>MVC</th><th>MVVM</th><th>MVP</th></tr>
+    <tr><td>View knows about</td><td>Controller</td><td>ViewModel (via binding)</td><td>Nothing (passive)</td></tr>
+    <tr><td>Who drives the View?</td><td>Controller sets model</td><td>Binding system</td><td>Presenter explicitly</td></tr>
+    <tr><td>Data binding</td><td>No (manual)</td><td>Yes (two-way)</td><td>No (manual via interface)</td></tr>
+    <tr><td>View testability</td><td>Hard</td><td>VM fully testable</td><td>Fully testable via IView</td></tr>
+    <tr><td>Best for</td><td>Web (ASP.NET)</td><td>Desktop (WPF/MAUI)</td><td>WinForms / legacy</td></tr>
+    <tr><td>View-Controller coupling</td><td>Controller selects View</td><td>Loose (binding)</td><td>Loose (IView interface)</td></tr>
+  </table></div>
+
+  <div class="code-block mvp-c">
+    <div class="code-label mvp-l">C# — MVP full example (WinForms style)</div>
+    <pre><span class="cm">// ── Step 1: IView interface — what the Presenter can tell the View ─</span>
+<span class="kw">public interface</span> <span class="iface">ILoginView</span>
+{
+    <span class="cm">// Properties: Presenter reads/writes these</span>
+    <span class="kw">string</span> Username    { <span class="kw">get</span>; }
+    <span class="kw">string</span> Password    { <span class="kw">get</span>; }
+    <span class="kw">bool</span>   IsLoading   { <span class="kw">set</span>; }
+    <span class="kw">string</span> ErrorMessage{ <span class="kw">set</span>; }
+
+    <span class="cm">// Events: View fires these when user acts</span>
+    <span class="kw">event</span> <span class="tp">EventHandler</span> LoginClicked;
+    <span class="kw">event</span> <span class="tp">EventHandler</span> CancelClicked;
+
+    <span class="cm">// Methods: Presenter calls these</span>
+    <span class="kw">void</span> <span class="fn">NavigateToDashboard</span>();
+    <span class="kw">void</span> <span class="fn">ShowError</span>(<span class="kw">string</span> message);
+}
+
+<span class="cm">// ── Step 2: Presenter — all the logic, no UI knowledge ────────────</span>
+<span class="kw">public class</span> <span class="tp">LoginPresenter</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">ILoginView</span>    _view;
+    <span class="kw">private readonly</span> <span class="iface">IAuthService</span>  _auth;
+
+    <span class="kw">public</span> <span class="fn">LoginPresenter</span>(<span class="iface">ILoginView</span> view, <span class="iface">IAuthService</span> auth)
+    {
+        _view = view;
+        _auth = auth;
+        <span class="cm">// Subscribe to View events</span>
+        _view.LoginClicked  += <span class="fn">OnLoginClicked</span>;
+        _view.CancelClicked += <span class="fn">OnCancelClicked</span>;
+    }
+
+    <span class="kw">private async void</span> <span class="fn">OnLoginClicked</span>(<span class="kw">object</span>? sender, <span class="tp">EventArgs</span> e)
+    {
+        <span class="cm">// Validation</span>
+        <span class="kw">if</span> (<span class="kw">string</span>.<span class="fn">IsNullOrWhiteSpace</span>(_view.Username))
+        {
+            _view.<span class="fn">ShowError</span>(<span class="str">"Username is required"</span>);
+            <span class="kw">return</span>;
+        }
+
+        <span class="cm">// Update View state</span>
+        _view.IsLoading    = <span class="kw">true</span>;
+        _view.ErrorMessage = <span class="str">""</span>;
+
+        <span class="kw">try</span>
+        {
+            <span class="kw">var</span> success = <span class="kw">await</span> _auth.<span class="fn">LoginAsync</span>(_view.Username, _view.Password);
+            <span class="kw">if</span> (success)
+                _view.<span class="fn">NavigateToDashboard</span>();
+            <span class="kw">else</span>
+                _view.<span class="fn">ShowError</span>(<span class="str">"Invalid username or password"</span>);
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            _view.<span class="fn">ShowError</span>(<span class="str">$"Login failed: {ex.Message}"</span>);
+        }
+        <span class="kw">finally</span> { _view.IsLoading = <span class="kw">false</span>; }
+    }
+
+    <span class="kw">private void</span> <span class="fn">OnCancelClicked</span>(<span class="kw">object</span>? sender, <span class="tp">EventArgs</span> e)
+        => <span class="tp">Environment</span>.<span class="fn">Exit</span>(<span class="num">0</span>);
+}
+
+<span class="cm">// ── Step 3: Concrete View — WinForms Form ─────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">LoginForm</span> : <span class="tp">Form</span>, <span class="iface">ILoginView</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">TextBox</span> _txtUsername = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">TextBox</span> _txtPassword = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">Button</span>  _btnLogin    = <span class="kw">new</span>();
+    <span class="kw">private readonly</span> <span class="tp">Label</span>   _lblError    = <span class="kw">new</span>();
+
+    <span class="kw">public string</span> Username     => _txtUsername.Text;
+    <span class="kw">public string</span> Password     => _txtPassword.Text;
+    <span class="kw">public bool</span>   IsLoading    { <span class="kw">set</span> => _btnLogin.Enabled = !value; }
+    <span class="kw">public string</span> ErrorMessage { <span class="kw">set</span> => _lblError.Text = value; }
+
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? LoginClicked;
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? CancelClicked;
+
+    <span class="kw">public</span> <span class="fn">LoginForm</span>()
+    {
+        _btnLogin.Click += (s, e) => LoginClicked?.Invoke(s, e);
+        <span class="cm">// layout setup...</span>
+    }
+
+    <span class="kw">public void</span> <span class="fn">NavigateToDashboard</span>() { <span class="kw">new</span> <span class="tp">DashboardForm</span>().<span class="fn">Show</span>(); <span class="fn">Close</span>(); }
+    <span class="kw">public void</span> <span class="fn">ShowError</span>(<span class="kw">string</span> msg)  => _lblError.Text = msg;
+}
+
+<span class="cm">// ── Testable! Fake view in unit tests ─────────────────────────────</span>
+<span class="kw">public class</span> <span class="tp">FakeLoginView</span> : <span class="iface">ILoginView</span>
+{
+    <span class="kw">public string</span> Username     { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">"alice"</span>;
+    <span class="kw">public string</span> Password     { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">"pass"</span>;
+    <span class="kw">public bool</span>   IsLoading    { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span> ErrorMessage { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public bool</span>   NavigatedToDashboard { <span class="kw">get</span>; <span class="kw">private set</span>; }
+
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? LoginClicked;
+    <span class="kw">public event</span> <span class="tp">EventHandler</span>? CancelClicked;
+    <span class="kw">public void</span> <span class="fn">NavigateToDashboard</span>() => NavigatedToDashboard = <span class="kw">true</span>;
+    <span class="kw">public void</span> <span class="fn">ShowError</span>(<span class="kw">string</span> msg)  => ErrorMessage = msg;
+    <span class="kw">public void</span> <span class="fn">SimulateLoginClick</span>()  => LoginClicked?.Invoke(<span class="kw">this</span>, <span class="tp">EventArgs</span>.Empty);
+}</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-d">D — Presenter depends on ILoginView interface, not concrete Form</span>
+    <span class="sb sb-s">S — View displays; Presenter orchestrates; Model holds data</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — LAYERED
+══════════════════════════════════ -->
+<div id="tab-layered" class="tab-panel ph-lay"><div class="section">
+  <h2>🏢 Layered / N-Tier Architecture</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Layered architecture divides your application into <strong>horizontal layers</strong>, each with a specific responsibility. The most common is 3-tier: Presentation (UI/API), Business Logic (services), Data Access (database). Each layer can only talk to the layer directly below it. This creates clear boundaries and makes each layer independently testable and replaceable.</p>
+  </div>
+
+  <div class="analogy an-lay">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>restaurant kitchen brigade</strong>. The head chef (Presentation) takes orders and plates food. The sous chef (Business Logic) cooks and applies recipes. The prep cook (Data Access) fetches ingredients from the walk-in (Database). Each level only communicates with the one immediately below — the head chef doesn't go to the walk-in themselves.</p>
+  </div>
+
+  <h3>The Layers</h3>
+  <div class="layers">
+    <div class="layer l-pres">
+      <div>
+        <div class="layer-name">🖥️ Presentation Layer</div>
+        <div class="layer-examples">Controllers · Views · Razor Pages · API endpoints</div>
+      </div>
+      <div class="layer-desc">What users see and interact with. Handles HTTP requests, renders UI. No business logic here.</div>
+    </div>
+    <div class="layer-arrow">↕️ depends on</div>
+    <div class="layer l-app">
+      <div>
+        <div class="layer-name">⚙️ Business Logic / Application Layer</div>
+        <div class="layer-examples">Services · Use cases · Validators · Domain rules</div>
+      </div>
+      <div class="layer-desc">All the business rules live here. Orchestrates operations. Knows nothing about HTTP or databases.</div>
+    </div>
+    <div class="layer-arrow">↕️ depends on</div>
+    <div class="layer l-infra">
+      <div>
+        <div class="layer-name">🗄️ Data Access / Infrastructure Layer</div>
+        <div class="layer-examples">Repositories · EF Core DbContext · Email service · File system</div>
+      </div>
+      <div class="layer-desc">Talks to databases, external APIs, file system. Implements interfaces defined in the layer above.</div>
+    </div>
+    <div class="layer-arrow">↕️ depends on</div>
+    <div class="layer l-db">
+      <div>
+        <div class="layer-name">💾 Database / External Services</div>
+        <div class="layer-examples">SQL Server · PostgreSQL · Redis · External APIs</div>
+      </div>
+      <div class="layer-desc">Actual data storage and external integrations. No application code here.</div>
+    </div>
+  </div>
+
+  <h3>Layered Architecture in C#</h3>
+
+  <div class="code-block lay-c">
+    <div class="code-label lay-l">C# — Typical 3-tier project structure</div>
+    <pre><span class="cm">// ── Folder / Project Structure ────────────────────────────────────
+// MyApp.sln
+// ├── MyApp.Web           (Presentation Layer — ASP.NET Core project)
+// │   ├── Controllers/
+// │   ├── Views/
+// │   └── Program.cs
+// ├── MyApp.Application   (Business Logic Layer — class library)
+// │   ├── Services/
+// │   ├── Interfaces/
+// │   └── DTOs/
+// ├── MyApp.Infrastructure(Data Access Layer — class library)
+// │   ├── Repositories/
+// │   ├── DbContext/
+// │   └── ExternalServices/
+// └── MyApp.Domain        (Shared models — class library)
+//     └── Models/</span>
+
+<span class="cm">// ── Data Access Layer — Repository ────────────────────────────────</span>
+<span class="cm">// MyApp.Infrastructure/Repositories/OrderRepository.cs</span>
+<span class="kw">public class</span> <span class="tp">OrderRepository</span> : <span class="iface">IOrderRepository</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">AppDbContext</span> _ctx;
+    <span class="kw">public</span> <span class="fn">OrderRepository</span>(<span class="tp">AppDbContext</span> ctx) => _ctx = ctx;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetByCustomerIdAsync</span>(<span class="kw">int</span> customerId)
+        => <span class="kw">await</span> _ctx.Orders
+            .<span class="fn">Where</span>(o => o.CustomerId == customerId)
+            .<span class="fn">Include</span>(o => o.Items)
+            .<span class="fn">ToListAsync</span>();
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>(<span class="tp">Order</span> order)
+    {
+        _ctx.Orders.<span class="fn">Add</span>(order);
+        <span class="kw">await</span> _ctx.<span class="fn">SaveChangesAsync</span>();
+    }
+}
+
+<span class="cm">// ── Business Logic Layer — Service ────────────────────────────────</span>
+<span class="cm">// MyApp.Application/Services/OrderService.cs</span>
+<span class="kw">public class</span> <span class="tp">OrderService</span> : <span class="iface">IOrderService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IOrderRepository</span> _repo;
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span>    _email;
+    <span class="kw">private readonly</span> <span class="iface">IInventoryService</span> _inventory;
+
+    <span class="kw">public</span> <span class="fn">OrderService</span>(
+        <span class="iface">IOrderRepository</span> repo,
+        <span class="iface">IEmailService</span>    email,
+        <span class="iface">IInventoryService</span> inventory)
+    { _repo = repo; _email = email; _inventory = inventory; }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">OrderResult</span>&gt; <span class="fn">PlaceOrderAsync</span>(<span class="tp">PlaceOrderRequest</span> request)
+    {
+        <span class="cm">// Business rule: check stock</span>
+        <span class="kw">if</span> (!<span class="kw">await</span> _inventory.<span class="fn">CheckStockAsync</span>(request.Items))
+            <span class="kw">return</span> <span class="tp">OrderResult</span>.<span class="fn">Fail</span>(<span class="str">"Insufficient stock"</span>);
+
+        <span class="cm">// Business rule: calculate total</span>
+        <span class="kw">var</span> order = <span class="kw">new</span> <span class="tp">Order</span>
+        {
+            CustomerId = request.CustomerId,
+            Items      = request.Items,
+            Total      = request.Items.<span class="fn">Sum</span>(i => i.Price * i.Quantity),
+            OrderDate  = <span class="tp">DateTime</span>.UtcNow
+        };
+
+        <span class="cm">// Save to DB via repository</span>
+        <span class="kw">await</span> _repo.<span class="fn">SaveAsync</span>(order);
+
+        <span class="cm">// Send confirmation email</span>
+        <span class="kw">await</span> _email.<span class="fn">SendOrderConfirmationAsync</span>(order);
+
+        <span class="kw">return</span> <span class="tp">OrderResult</span>.<span class="fn">Success</span>(order.Id);
+    }
+}
+
+<span class="cm">// ── Presentation Layer — Controller ───────────────────────────────</span>
+<span class="cm">// MyApp.Web/Controllers/OrdersController.cs</span>
+[<span class="at">ApiController</span>][<span class="at">Route</span>(<span class="str">"api/[controller]"</span>)]
+<span class="kw">public class</span> <span class="tp">OrdersController</span> : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IOrderService</span> _service;
+    <span class="kw">public</span> <span class="fn">OrdersController</span>(<span class="iface">IOrderService</span> service) => _service = service;
+
+    [<span class="at">HttpPost</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">PlaceOrder</span>(<span class="tp">PlaceOrderRequest</span> request)
+    {
+        <span class="kw">var</span> result = <span class="kw">await</span> _service.<span class="fn">PlaceOrderAsync</span>(request);
+        <span class="kw">return</span> result.Success ? <span class="fn">Ok</span>(result) : <span class="fn">BadRequest</span>(result.Error);
+    }
+}</pre>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Each layer has one responsibility</span>
+    <span class="sb sb-d">D — Each layer depends on interfaces of the layer below</span>
+    <span class="sb sb-o">O — Swap infrastructure (SQL → NoSQL) without touching business logic</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — CLEAN ARCHITECTURE
+══════════════════════════════════ -->
+<div id="tab-clean" class="tab-panel ph-clean"><div class="section">
+  <h2>⭕ Clean Architecture</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Clean Architecture (by Robert C. Martin) is like onion rings — <strong>concentric circles where the most important code is at the centre</strong>. The Domain (your business rules) sits at the very centre and has zero dependencies on anything else. The database, UI, and external services are at the outer edge. Dependencies only point <em>inward</em> — inner circles never know about outer ones. This means you can swap your entire database without touching a single line of business logic.</p>
+  </div>
+
+  <div class="analogy an-clean">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Your <strong>brain doesn't know or care</strong> what operating system it's running on, which keyboard you're using, or what database stores your memories. The brain (Domain) is independent of all I/O devices. This is Clean Architecture — your core business logic is completely independent of frameworks, databases, UI, and external services. You could swap the entire database and your brain logic wouldn't change.</p>
+  </div>
+
+  <h3>The Concentric Layers</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⭕ Clean Architecture — Dependency Rule: Always Inward</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 500 380" xmlns="http://www.w3.org/2000/svg">
+        <!-- Infrastructure (outermost) -->
+        <ellipse cx="250" cy="190" rx="238" ry="178" fill="#d6e8f8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="250" y="30" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Infrastructure</text>
+        <text x="250" y="46" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">DB · Web · UI · External APIs · Email</text>
+        <!-- Application -->
+        <ellipse cx="250" cy="190" rx="185" ry="135" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="250" y="80" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">Application Layer</text>
+        <text x="250" y="96" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Use Cases · Application Services · DTOs</text>
+        <!-- Domain -->
+        <ellipse cx="250" cy="190" rx="128" ry="90" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="2"/>
+        <text x="250" y="136" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Domain Layer</text>
+        <text x="250" y="152" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Entities · Value Objects</text>
+        <text x="250" y="166" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Domain Services · Interfaces</text>
+        <!-- Core -->
+        <ellipse cx="250" cy="195" rx="68" ry="48" fill="#f8d6e4" stroke="rgba(191,42,90,.4)" stroke-width="2.5"/>
+        <text x="250" y="188" font-family="Sora,sans-serif" font-size="11" font-weight="800" fill="#8a003a" text-anchor="middle">Domain</text>
+        <text x="250" y="204" font-family="Sora,sans-serif" font-size="11" font-weight="800" fill="#8a003a" text-anchor="middle">Entities</text>
+        <!-- Arrows -->
+        <text x="250" y="300" font-family="Sora,sans-serif" font-size="10" fill="#606278" text-anchor="middle">↑ Dependencies only point INWARD</text>
+        <text x="250" y="316" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Infrastructure knows about Application</text>
+        <text x="250" y="330" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Application knows about Domain</text>
+        <text x="250" y="344" font-family="Sora,sans-serif" font-size="9" fill="#8a003a" font-weight="700" text-anchor="middle">Domain knows about NOTHING ← The Key Rule</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Clean Architecture in C# — Project Structure</h3>
+
+  <div class="code-block clean-c">
+    <div class="code-label clean-l">C# — Clean Architecture solution layout</div>
+    <pre><span class="cm">// Solution structure:
+// MyApp.sln
+// ├── MyApp.Domain              ← innermost circle, NO dependencies
+// │   ├── Entities/
+// │   │   └── Order.cs          ← pure business entity
+// │   ├── Interfaces/
+// │   │   ├── IOrderRepository.cs ← interface defined HERE, implemented elsewhere
+// │   │   └── IEmailService.cs
+// │   └── ValueObjects/
+// │       └── Money.cs
+// ├── MyApp.Application         ← depends on Domain only
+// │   ├── UseCases/
+// │   │   └── PlaceOrderUseCase.cs
+// │   └── DTOs/
+// │       └── PlaceOrderRequest.cs
+// ├── MyApp.Infrastructure      ← depends on Application + Domain
+// │   ├── Persistence/
+// │   │   └── OrderRepository.cs  ← implements IOrderRepository
+// │   └── Email/
+// │       └── SmtpEmailService.cs ← implements IEmailService
+// └── MyApp.Api                 ← depends on Application only
+//     └── Controllers/
+//         └── OrdersController.cs</span>
+
+<span class="cm">// ── Domain Entity — zero dependencies ────────────────────────────</span>
+<span class="kw">namespace</span> MyApp.Domain.Entities;
+
+<span class="kw">public class</span> <span class="tp">Order</span>
+{
+    <span class="kw">public</span> <span class="tp">Guid</span>              Id         { <span class="kw">get</span>; <span class="kw">private set</span>; } = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>();
+    <span class="kw">public int</span>               CustomerId { <span class="kw">get</span>; <span class="kw">private set</span>; }
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="tp">OrderLine</span>&gt;  Lines      { <span class="kw">get</span>; <span class="kw">private set</span>; } = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="tp">OrderStatus</span>       Status     { <span class="kw">get</span>; <span class="kw">private set</span>; } = <span class="tp">OrderStatus</span>.Pending;
+    <span class="kw">public</span> <span class="tp">DateTime</span>          CreatedAt  { <span class="kw">get</span>; } = <span class="tp">DateTime</span>.UtcNow;
+
+    <span class="cm">// Domain logic lives in the entity itself</span>
+    <span class="kw">public decimal</span> <span class="fn">CalculateTotal</span>() => Lines.<span class="fn">Sum</span>(l => l.Quantity * l.UnitPrice);
+
+    <span class="kw">public void</span> <span class="fn">Confirm</span>()
+    {
+        <span class="kw">if</span> (Status != <span class="tp">OrderStatus</span>.Pending)
+            <span class="kw">throw new</span> <span class="tp">InvalidOperationException</span>(<span class="str">"Only pending orders can be confirmed"</span>);
+        Status = <span class="tp">OrderStatus</span>.Confirmed;
+    }
+
+    <span class="kw">public static</span> <span class="tp">Order</span> <span class="fn">Create</span>(<span class="kw">int</span> customerId, <span class="tp">List</span>&lt;<span class="tp">OrderLine</span>&gt; lines)
+    {
+        <span class="kw">if</span> (!lines.Any()) <span class="kw">throw new</span> <span class="tp">ArgumentException</span>(<span class="str">"Order must have at least one line"</span>);
+        <span class="kw">return new</span> <span class="tp">Order</span> { CustomerId = customerId, Lines = lines };
+    }
+}
+
+<span class="cm">// ── Domain Interface — defined in Domain, implemented in Infrastructure</span>
+<span class="kw">namespace</span> MyApp.Domain.Interfaces;
+
+<span class="kw">public interface</span> <span class="iface">IOrderRepository</span>
+{
+    <span class="tp">Task</span>&lt;<span class="tp">Order</span>?&gt;        <span class="fn">GetByIdAsync</span>(<span class="tp">Guid</span> id);
+    <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt;  <span class="fn">GetByCustomerAsync</span>(<span class="kw">int</span> customerId);
+    <span class="tp">Task</span>                <span class="fn">SaveAsync</span>(<span class="tp">Order</span> order);
+}
+
+<span class="cm">// ── Application Layer — Use Case ──────────────────────────────────</span>
+<span class="kw">namespace</span> MyApp.Application.UseCases;
+
+<span class="kw">public class</span> <span class="tp">PlaceOrderUseCase</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IOrderRepository</span> _repo;   <span class="cm">// Domain interface</span>
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span>    _email;  <span class="cm">// Domain interface</span>
+
+    <span class="kw">public</span> <span class="fn">PlaceOrderUseCase</span>(<span class="iface">IOrderRepository</span> repo, <span class="iface">IEmailService</span> email)
+    { _repo = repo; _email = email; }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">ExecuteAsync</span>(<span class="tp">PlaceOrderRequest</span> request)
+    {
+        <span class="kw">var</span> order = <span class="tp">Order</span>.<span class="fn">Create</span>(request.CustomerId, request.Lines);
+        order.<span class="fn">Confirm</span>();
+        <span class="kw">await</span> _repo.<span class="fn">SaveAsync</span>(order);
+        <span class="kw">await</span> _email.<span class="fn">SendConfirmationAsync</span>(order);
+        <span class="kw">return</span> order.Id;
+    }
+}
+
+<span class="cm">// ── Infrastructure — implements Domain interfaces ─────────────────</span>
+<span class="kw">namespace</span> MyApp.Infrastructure.Persistence;
+
+<span class="kw">public class</span> <span class="tp">EfOrderRepository</span> : <span class="iface">IOrderRepository</span>   <span class="cm">// implements Domain interface</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">AppDbContext</span> _ctx;
+    <span class="kw">public</span> <span class="fn">EfOrderRepository</span>(<span class="tp">AppDbContext</span> ctx) => _ctx = ctx;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Order</span>?&gt; <span class="fn">GetByIdAsync</span>(<span class="tp">Guid</span> id)
+        => <span class="kw">await</span> _ctx.Orders.<span class="fn">FindAsync</span>(id);
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SaveAsync</span>(<span class="tp">Order</span> order)
+    { <span class="kw">await</span> _ctx.Orders.<span class="fn">AddAsync</span>(order); <span class="kw">await</span> _ctx.<span class="fn">SaveChangesAsync</span>(); }
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Order</span>&gt;&gt; <span class="fn">GetByCustomerAsync</span>(<span class="kw">int</span> cId)
+        => <span class="kw">await</span> _ctx.Orders.<span class="fn">Where</span>(o => o.CustomerId == cId).<span class="fn">ToListAsync</span>();
+}</pre>
+  </div>
+
+  <h3>The Dependency Rule — The Most Important Rule</h3>
+  <div class="tip">
+    <h4>💡 The Golden Rule of Clean Architecture</h4>
+    <p>Source code dependencies can only point <strong>inward</strong>. Nothing in an inner circle can know about anything in an outer circle. The Domain doesn't know about EF Core. The Application doesn't know about SQL Server. The API doesn't know about the database. This is enforced by having infrastructure implement interfaces defined in the Domain.</p>
+  </div>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-d">D — All layers depend on abstractions (interfaces in Domain)</span>
+    <span class="sb sb-s">S — Each circle has one reason to change</span>
+    <span class="sb sb-o">O — Swap DB/UI by adding new implementations, not editing Domain</span>
+    <span class="sb sb-l">L — Any IOrderRepository implementation works anywhere</span>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — CQRS
+══════════════════════════════════ -->
+<div id="tab-cqrs" class="tab-panel ph-cqrs"><div class="section">
+  <h2>⚡ CQRS — Command Query Responsibility Segregation</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>CQRS is simple: <strong>separate reading data (Queries) from writing data (Commands)</strong>. You have one model/path for writes (creating, updating, deleting) and a completely separate model/path for reads (fetching, displaying). This lets you optimise each side independently — your read queries can return flat, denormalised data perfect for your screen, while your writes enforce all business rules on rich domain objects.</p>
+  </div>
+
+  <div class="analogy an-cqrs">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>bank</strong>. The teller (Command) who processes deposits and withdrawals follows strict rules and updates the account. The <strong>bank statement generator</strong> (Query) reads a pre-prepared view of your account history in a flat, readable format. They're completely separate systems — the statement generator doesn't use the same complex transactional model that the teller uses. Both are optimised for their specific job.</p>
+  </div>
+
+  <h3>Traditional vs CQRS Approach</h3>
+  <div class="compare">
+    <div class="bad-box">
+      <div class="box-label">❌ Traditional — One Model for Everything</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>Same complex Order entity used for reads AND writes</li>
+        <li>Read queries drag along all navigation properties and business rules</li>
+        <li>Fetching a list needs full domain model — slow and heavy</li>
+        <li>Write model needs validation, state machines, events — complex</li>
+        <li>Scaling reads means scaling writes too</li>
+      </ul>
+    </div>
+    <div class="good-box">
+      <div class="box-label">✅ CQRS — Separate Read and Write Models</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>Write model: rich domain entities, business rules, events</li>
+        <li>Read model: flat DTOs optimised for what the screen needs</li>
+        <li>Read queries are fast — select exactly what's needed</li>
+        <li>Scale reads and writes independently</li>
+        <li>Each side optimised for its specific job</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>CQRS with MediatR</h3>
+
+  <div class="code-block cqrs-c">
+    <div class="code-label cqrs-l">C# — CQRS Commands and Queries with MediatR</div>
+    <pre><span class="cm">// Install: dotnet add package MediatR</span>
+
+<span class="cm">// ── COMMANDS — change state ────────────────────────────────────────</span>
+<span class="cm">// Command: represents an intent to change something</span>
+<span class="kw">public record</span> <span class="tp">PlaceOrderCommand</span>(
+    <span class="kw">int</span>              CustomerId,
+    <span class="tp">List</span>&lt;<span class="tp">OrderLine</span>&gt; Lines
+) : <span class="iface">IRequest</span>&lt;<span class="tp">Guid</span>&gt;;   <span class="cm">// IRequest = MediatR command with return type</span>
+
+<span class="cm">// Command Handler: processes the command</span>
+<span class="kw">public class</span> <span class="tp">PlaceOrderCommandHandler</span>
+    : <span class="iface">IRequestHandler</span>&lt;<span class="tp">PlaceOrderCommand</span>, <span class="tp">Guid</span>&gt;
+{
+    <span class="kw">private readonly</span> <span class="iface">IOrderRepository</span> _repo;
+    <span class="kw">private readonly</span> <span class="iface">IEmailService</span>    _email;
+
+    <span class="kw">public</span> <span class="fn">PlaceOrderCommandHandler</span>(<span class="iface">IOrderRepository</span> repo, <span class="iface">IEmailService</span> email)
+    { _repo = repo; _email = email; }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Guid</span>&gt; <span class="fn">Handle</span>(<span class="tp">PlaceOrderCommand</span> cmd, <span class="tp">CancellationToken</span> ct)
+    {
+        <span class="kw">var</span> order = <span class="tp">Order</span>.<span class="fn">Create</span>(cmd.CustomerId, cmd.Lines);
+        order.<span class="fn">Confirm</span>();
+        <span class="kw">await</span> _repo.<span class="fn">SaveAsync</span>(order, ct);
+        <span class="kw">await</span> _email.<span class="fn">SendConfirmationAsync</span>(order, ct);
+        <span class="kw">return</span> order.Id;
+    }
+}
+
+<span class="cm">// ── QUERIES — read state ───────────────────────────────────────────</span>
+<span class="cm">// Read DTO — flat, optimised for what the UI needs (not domain model)</span>
+<span class="kw">public record</span> <span class="tp">OrderSummaryDto</span>(
+    <span class="tp">Guid</span>     Id,
+    <span class="kw">string</span>   CustomerName,
+    <span class="kw">decimal</span>  Total,
+    <span class="kw">string</span>   Status,
+    <span class="tp">DateTime</span> OrderDate,
+    <span class="kw">int</span>      ItemCount
+);
+
+<span class="cm">// Query: represents a request for data</span>
+<span class="kw">public record</span> <span class="tp">GetOrdersQuery</span>(<span class="kw">int</span> CustomerId) : <span class="iface">IRequest</span>&lt;<span class="tp">List</span>&lt;<span class="tp">OrderSummaryDto</span>&gt;&gt;;
+
+<span class="cm">// Query Handler: reads optimised data — can use Dapper, raw SQL, etc.</span>
+<span class="kw">public class</span> <span class="tp">GetOrdersQueryHandler</span>
+    : <span class="iface">IRequestHandler</span>&lt;<span class="tp">GetOrdersQuery</span>, <span class="tp">List</span>&lt;<span class="tp">OrderSummaryDto</span>&gt;&gt;
+{
+    <span class="kw">private readonly</span> <span class="tp">IDbConnection</span> _db;   <span class="cm">// raw Dapper — fast reads</span>
+    <span class="kw">public</span> <span class="fn">GetOrdersQueryHandler</span>(<span class="tp">IDbConnection</span> db) => _db = db;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">OrderSummaryDto</span>&gt;&gt; <span class="fn">Handle</span>(
+        <span class="tp">GetOrdersQuery</span> query, <span class="tp">CancellationToken</span> ct)
+    {
+        <span class="cm">// Flat, optimised SQL — no complex domain objects loaded</span>
+        <span class="kw">var</span> sql = <span class="str">"""
+            SELECT o.Id, c.Name AS CustomerName,
+                   SUM(ol.Quantity * ol.UnitPrice) AS Total,
+                   o.Status, o.CreatedAt AS OrderDate,
+                   COUNT(ol.Id) AS ItemCount
+            FROM Orders o
+            JOIN Customers c ON c.Id = o.CustomerId
+            JOIN OrderLines ol ON ol.OrderId = o.Id
+            WHERE o.CustomerId = @CustomerId
+            GROUP BY o.Id, c.Name, o.Status, o.CreatedAt
+            ORDER BY o.CreatedAt DESC
+            """</span>;
+
+        <span class="kw">var</span> results = <span class="kw">await</span> _db.<span class="fn">QueryAsync</span>&lt;<span class="tp">OrderSummaryDto</span>&gt;(sql,
+            <span class="kw">new</span> { query.CustomerId });
+        <span class="kw">return</span> results.<span class="fn">ToList</span>();
+    }
+}
+
+<span class="cm">// ── Controller — sends Commands and Queries through MediatR ───────</span>
+[<span class="at">ApiController</span>][<span class="at">Route</span>(<span class="str">"api/[controller]"</span>)]
+<span class="kw">public class</span> <span class="tp">OrdersController</span> : <span class="tp">ControllerBase</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IMediator</span> _mediator;
+    <span class="kw">public</span> <span class="fn">OrdersController</span>(<span class="tp">IMediator</span> mediator) => _mediator = mediator;
+
+    <span class="cm">// QUERY — thin read path</span>
+    [<span class="at">HttpGet</span>(<span class="str">"customer/{customerId}"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">GetOrders</span>(<span class="kw">int</span> customerId)
+        => <span class="fn">Ok</span>(<span class="kw">await</span> _mediator.<span class="fn">Send</span>(<span class="kw">new</span> <span class="tp">GetOrdersQuery</span>(customerId)));
+
+    <span class="cm">// COMMAND — rich write path</span>
+    [<span class="at">HttpPost</span>]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">PlaceOrder</span>(<span class="tp">PlaceOrderCommand</span> cmd)
+    {
+        <span class="kw">var</span> orderId = <span class="kw">await</span> _mediator.<span class="fn">Send</span>(cmd);
+        <span class="kw">return</span> <span class="fn">CreatedAtAction</span>(<span class="kw">nameof</span>(GetOrders), <span class="kw">new</span> { orderId }, orderId);
+    }
+}</pre>
+  </div>
+
+  <h3>When to Use CQRS</h3>
+  <ul class="checklist cl-cqrs">
+    <li>Read and write workloads have very different performance requirements</li>
+    <li>Complex domain with many business rules on writes but simple flat reads</li>
+    <li>Working with Event Sourcing — commands generate events, queries read projections</li>
+    <li>Teams can work independently on read and write paths</li>
+    <li>You need to scale reads independently from writes</li>
+  </ul>
+  <ul class="checklist cl-r">
+    <li>Simple CRUD apps — CQRS adds unnecessary complexity</li>
+    <li>Small teams where the overhead isn't justified</li>
+    <li>When read and write models are identical</li>
+  </ul>
+
+  <div class="solid-badges">
+    <strong style="font-size:.78rem;color:var(--muted);">SOLID:</strong>
+    <span class="sb sb-s">S — Each handler handles one command or query</span>
+    <span class="sb sb-o">O — Add new commands/queries as new classes</span>
+    <span class="sb sb-d">D — Controller depends on IMediator, not concrete handlers</span>
+  </div>
+
+  <div class="completion">
+    <h3>Application Architecture Patterns Complete!</h3>
+    <p>MVC — Controller routes requests, Model holds logic, View renders (ASP.NET Core) · MVVM — two-way binding, ViewModel has no UI references, Commands instead of events (WPF/MAUI) · MVP — passive View behind IView interface, Presenter drives everything, fully unit-testable (WinForms) · Layered / N-Tier — Presentation → Business Logic → Data Access, clear boundaries, each layer depends on interface of layer below · Clean Architecture — concentric circles, Domain at centre with zero dependencies, infrastructure at outer edge implements Domain interfaces · CQRS — separate read (Query) and write (Command) models, MediatR in ASP.NET, optimise each path independently</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Application Architecture</span>
+      <span class="np np-next">→ Part 2: System Architecture</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

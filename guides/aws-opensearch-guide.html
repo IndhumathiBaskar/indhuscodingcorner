@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS OpenSearch Service — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#b84c00;--pc-l:#fde8d4;--pc-d:#7a3000;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#080c12;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#fde8d4 0%,#f9c99a 45%,#f0a060 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'🔍';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.08;pointer-events:none;}
+.header::after{content:'📊';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#fef3ea);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:820px;display:block;margin:0 auto;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(184,76,0,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+.tip{background:var(--pc-l);border:1px solid rgba(184,76,0,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #0d1520;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#f0a060;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#4a5070;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(184,76,0,.1);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+.console-step{background:var(--card);border:1px solid var(--border);border-radius:var(--r);margin:10px 0;overflow:hidden;box-shadow:var(--sh);}
+.console-step-header{background:var(--surface);padding:9px 13px;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--border);}
+.console-step-num{background:var(--pc-d);color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;flex-shrink:0;}
+.console-step-title{font-weight:600;font-size:.86rem;color:var(--text);}
+.console-step-path{font-family:'JetBrains Mono',monospace;font-size:.63rem;color:var(--muted);margin-left:auto;}
+.console-step-body{padding:11px 13px;}
+.console-field{display:flex;flex-direction:column;gap:2px;margin-bottom:9px;}
+.console-field:last-child{margin-bottom:0;}
+.console-field-label{font-size:.68rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.console-field-value{font-family:'JetBrains Mono',monospace;font-size:.76rem;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:5px 9px;}
+.console-field-hint{font-size:.7rem;color:var(--muted);}
+.console-note{font-size:.76rem;color:var(--muted);padding:7px 9px;background:var(--pc-l);border-radius:5px;margin-top:7px;}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.cc-teal{background:var(--teal-l);color:var(--teal);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--amber-l));border:1px solid rgba(184,76,0,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+  .console-step-path{display:none;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>🔍 AWS <span>OpenSearch Service</span> — Complete Guide</h1>
+    <p>Core Concepts · Indexing · Search Queries · Cluster Architecture · Security · Ingestion Pipelines · Dashboards · C# SDK · beginner→expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('concepts',this)">② Core Concepts</button>
+      <button class="tab-btn" onclick="T('indexing',this)">③ Indexing &amp; Mappings</button>
+      <button class="tab-btn" onclick="T('search',this)">④ Search &amp; Queries</button>
+      <button class="tab-btn" onclick="T('cluster',this)">⑤ Cluster Architecture</button>
+      <button class="tab-btn" onclick="T('ingestion',this)">⑥ Ingestion Pipelines</button>
+      <button class="tab-btn" onclick="T('security',this)">⑦ Security &amp; IAM</button>
+      <button class="tab-btn" onclick="T('console',this)">⑧ Console Setup</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑨ C# SDK</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① OVERVIEW -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>🔍 What is AWS OpenSearch Service?</h2>
+  <p>AWS OpenSearch Service is a <strong>fully managed search and analytics engine</strong> built on OpenSearch (a fork of Elasticsearch). It lets you ingest, store, search, and visualise large volumes of data — from log files and application events to e-commerce product catalogues and real-time dashboards.</p>
+
+  <div class="tip">
+    <h4>💡 OpenSearch in One Sentence</h4>
+    <p>AWS OpenSearch = a managed Elasticsearch-compatible service for <strong>full-text search, log analytics, and real-time dashboards</strong> — with AWS handling clusters, patching, backups, and scaling.</p>
+  </div>
+
+  <h3>Brief History — Elasticsearch → OpenSearch</h3>
+  <div class="info">
+    <h4>📌 Why OpenSearch exists</h4>
+    <p>AWS offered Elasticsearch Service for years. In 2021, Elastic changed Elasticsearch's licence to non-open-source (SSPL). AWS forked Elasticsearch 7.10 and OpenSearch Distro, creating the <strong>OpenSearch project</strong> (Apache 2.0 licence). AWS OpenSearch Service now runs OpenSearch natively. It remains compatible with most Elasticsearch 7.x APIs.</p>
+  </div>
+
+  <h3>What AWS Manages for You</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>Cluster Provisioning</h4><p>Spin up multi-node clusters in minutes. No EC2 management.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Automated Snapshots</h4><p>Daily snapshots to S3. One-click restore.</p></div>
+    <div class="icon-item"><span class="emoji">📈</span><h4>Auto-scaling</h4><p>Managed scaling for data nodes. UltraWarm and cold tiers for cost.</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Encryption</h4><p>At-rest (KMS) and in-transit (TLS) encryption built in.</p></div>
+    <div class="icon-item"><span class="emoji">🛡️</span><h4>Fine-grained Access</h4><p>Index-level, document-level, and field-level security controls.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>OpenSearch Dashboards</h4><p>Built-in Kibana-compatible UI for visualisations and queries.</p></div>
+    <div class="icon-item"><span class="emoji">🔗</span><h4>VPC Integration</h4><p>Deploy inside your VPC. Private endpoint. No public exposure.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>CloudWatch Metrics</h4><p>Cluster health, search latency, JVM pressure — all in CloudWatch.</p></div>
+    <div class="icon-item"><span class="emoji">🌡️</span><h4>Alerting</h4><p>Built-in alerting on query results. Notify via SNS, Slack, webhook.</p></div>
+  </div>
+
+  <h3>Key Terminology</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Term</th><th>Meaning</th><th>SQL / File Analogy</th></tr>
+    <tr><td><strong>Document</strong></td><td>A JSON object — the unit of data stored and searched</td><td>A row in a table</td></tr>
+    <tr><td><strong>Index</strong></td><td>A collection of documents with similar structure</td><td>A table / a database</td></tr>
+    <tr><td><strong>Shard</strong></td><td>A sub-division of an index distributed across nodes</td><td>A table partition</td></tr>
+    <tr><td><strong>Replica</strong></td><td>A copy of a shard on a different node for HA and read scaling</td><td>A read replica</td></tr>
+    <tr><td><strong>Node</strong></td><td>A single server (instance) in the cluster</td><td>A DB server</td></tr>
+    <tr><td><strong>Cluster</strong></td><td>One or more nodes working together</td><td>An RDS cluster</td></tr>
+    <tr><td><strong>Mapping</strong></td><td>Schema definition — field names, types, analysis config</td><td>CREATE TABLE schema</td></tr>
+    <tr><td><strong>Inverted Index</strong></td><td>Internal data structure mapping words → documents (makes text search fast)</td><td>Book index at the back</td></tr>
+    <tr><td><strong>Analyzer</strong></td><td>Pipeline that processes text: tokenise → lowercase → filter → stem</td><td>Text collation in SQL</td></tr>
+    <tr><td><strong>Query DSL</strong></td><td>JSON-based query language for OpenSearch</td><td>SQL WHERE clauses</td></tr>
+    <tr><td><strong>Aggregation</strong></td><td>Grouping / metrics on search results (count, avg, histogram)</td><td>GROUP BY + aggregates</td></tr>
+    <tr><td><strong>UltraWarm</strong></td><td>Low-cost warm storage tier using S3 + cached nodes</td><td>Archival tier</td></tr>
+  </table></div>
+
+  <h3>Common Use Cases</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔎 Search Applications</h4>
+      <ul>
+        <li>E-commerce product search with filters and ranking</li>
+        <li>Full-text document search (knowledge bases, wikis)</li>
+        <li>Auto-complete and typeahead suggestions</li>
+        <li>Fuzzy search — typo tolerance</li>
+        <li>Geo-location search — "find nearest stores"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📊 Analytics &amp; Observability</h4>
+      <ul>
+        <li>Centralised log analytics (application, access, security logs)</li>
+        <li>Real-time dashboards (OpenSearch Dashboards)</li>
+        <li>APM — application performance monitoring traces</li>
+        <li>SIEM — security event monitoring and alerting</li>
+        <li>Business intelligence on click-stream events</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Pricing Model</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Component</th><th>Pricing Basis</th><th>Notes</th></tr>
+    <tr><td>Data nodes (hot)</td><td>Instance type + hours</td><td>r6g, m6g, c6g families. Pay per hour per node.</td></tr>
+    <tr><td>UltraWarm nodes</td><td>Instance + S3 data</td><td>~90% cheaper than hot for infrequently queried data</td></tr>
+    <tr><td>Cold storage</td><td>S3 storage rates only</td><td>Detach indices — attach on demand. Very cheap.</td></tr>
+    <tr><td>Storage (EBS)</td><td>GB-month</td><td>gp3 recommended. Provisioned per node.</td></tr>
+    <tr><td>Automated snapshots</td><td>Free (14 days)</td><td>Beyond 14 days stored in S3 at standard rates</td></tr>
+    <tr><td>OpenSearch Dashboards</td><td>Included</td><td>No extra cost — runs on master/dedicated nodes</td></tr>
+    <tr><td>Data transfer</td><td>Standard AWS rates</td><td>In-region free; cross-region / internet charged</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ② CORE CONCEPTS -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🧱 Core Concepts — How OpenSearch Thinks</h2>
+
+  <h3>The Inverted Index — Why OpenSearch is Fast at Text Search</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📖 Inverted Index — Word → Documents mapping</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b84c00"/></marker>
+        </defs>
+        <!-- Documents left -->
+        <rect x="10" y="20" width="230" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="125" y="38" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a3000" text-anchor="middle">Doc 1</text>
+        <text x="125" y="52" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30" text-anchor="middle">"fast search engine for logs"</text>
+        <text x="125" y="66" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">id: 1</text>
+
+        <rect x="10" y="95" width="230" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="125" y="113" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a3000" text-anchor="middle">Doc 2</text>
+        <text x="125" y="127" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30" text-anchor="middle">"search engine for analytics"</text>
+        <text x="125" y="141" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">id: 2</text>
+
+        <rect x="10" y="170" width="230" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="125" y="188" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a3000" text-anchor="middle">Doc 3</text>
+        <text x="125" y="202" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30" text-anchor="middle">"fast logs ingestion pipeline"</text>
+        <text x="125" y="216" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">id: 3</text>
+
+        <!-- Inverted Index right -->
+        <rect x="380" y="10" width="330" height="220" rx="9" fill="#f2f0ec" stroke="var(--border2)" stroke-width="1.5"/>
+        <text x="545" y="30" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#141410" text-anchor="middle">📖 Inverted Index</text>
+        <text x="420" y="50" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"fast"</text>
+        <text x="510" y="50" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 1, Doc 3]</text>
+        <text x="420" y="68" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"search"</text>
+        <text x="510" y="68" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 1, Doc 2]</text>
+        <text x="420" y="86" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"engine"</text>
+        <text x="510" y="86" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 1, Doc 2]</text>
+        <text x="420" y="104" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"logs"</text>
+        <text x="510" y="104" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 1, Doc 3]</text>
+        <text x="420" y="122" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"analytics"</text>
+        <text x="510" y="122" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 2]</text>
+        <text x="420" y="140" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"ingestion"</text>
+        <text x="510" y="140" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 3]</text>
+        <text x="420" y="158" font-family="JetBrains Mono,monospace" font-size="9" fill="#b84c00" font-weight="600">"pipeline"</text>
+        <text x="510" y="158" font-family="JetBrains Mono,monospace" font-size="8.5" fill="#3a3a30">→ [Doc 3]</text>
+        <text x="545" y="195" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Query "fast logs" → intersect → [Doc 1, Doc 3]</text>
+        <text x="545" y="210" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">No full scan needed — direct lookup!</text>
+
+        <!-- Arrows -->
+        <line x1="240" y1="50" x2="375" y2="100" stroke="#b84c00" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="240" y1="125" x2="375" y2="110" stroke="#b84c00" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+        <line x1="240" y1="200" x2="375" y2="125" stroke="#b84c00" stroke-width="1.2" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+      </svg>
+    </div>
+  </div>
+
+  <h3>How Text is Analysed Before Indexing</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔬 Text Analysis Pipeline — "Running Quickly!" → tokens</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc"><div class="flow-node-title">① Character Filter</div><ul class="flow-items"><li>Remove HTML tags, replace special chars</li><li>"Running &lt;b&gt;Quickly&lt;/b&gt;!" → "Running Quickly!"</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-blue"><div class="flow-node-title">② Tokeniser</div><ul class="flow-items"><li>Split text into individual tokens (words)</li><li>"Running Quickly!" → ["Running", "Quickly"]</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-teal"><div class="flow-node-title">③ Token Filters</div><ul class="flow-items"><li>Lowercase: ["running", "quickly"]</li><li>Stop words removed: "the", "a", "is" removed</li><li>Stemming: "running" → "run", "quickly" → "quick"</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">④ Final Tokens → Stored in Inverted Index</div><ul class="flow-items"><li>["run", "quick"] → indexed and searchable</li><li>Searching "runs" or "runner" also finds this doc!</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Sharding and Replication</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔀 Shards — Horizontal Scale</h4>
+      <ul>
+        <li>An index is split into N primary shards</li>
+        <li>Each shard = a full Lucene index on one node</li>
+        <li>More shards = more parallelism = faster search at scale</li>
+        <li>Shard count is <strong>fixed at index creation</strong> — plan ahead!</li>
+        <li>Rule of thumb: shard size 10–50 GB, max 200 shards/node</li>
+        <li>Over-sharding is a common mistake — too many small shards = overhead</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📋 Replicas — High Availability &amp; Read Scale</h4>
+      <ul>
+        <li>Each primary shard has N replica shards on <em>different</em> nodes</li>
+        <li>Replicas serve read/search requests — increases search throughput</li>
+        <li>If a node fails, replicas are promoted to primaries automatically</li>
+        <li>Replica count <em>can</em> be changed after creation (unlike shards)</li>
+        <li>Minimum for production: 1 replica per shard (so 2 copies of data)</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Cluster Tiers — Hot, UltraWarm, Cold</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">🔥 Hot Tier</div>
+      <div class="compare-row"><span class="compare-label">Storage</span><span class="compare-val">EBS (SSD)</span></div>
+      <div class="compare-row"><span class="compare-label">Performance</span><span class="compare-val val-good">Highest</span></div>
+      <div class="compare-row"><span class="compare-label">Cost</span><span class="compare-val val-bad">Highest</span></div>
+      <div class="compare-row"><span class="compare-label">Use for</span><span class="compare-val">Recent data, active search</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-amber">🌡️ UltraWarm Tier</div>
+      <div class="compare-row"><span class="compare-label">Storage</span><span class="compare-val">S3 + cache</span></div>
+      <div class="compare-row"><span class="compare-label">Performance</span><span class="compare-val val-warn">Good</span></div>
+      <div class="compare-row"><span class="compare-label">Cost</span><span class="compare-val val-good">~90% cheaper</span></div>
+      <div class="compare-row"><span class="compare-label">Use for</span><span class="compare-val">7–30 day old logs</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-teal">❄️ Cold Tier</div>
+      <div class="compare-row"><span class="compare-label">Storage</span><span class="compare-val">S3 only</span></div>
+      <div class="compare-row"><span class="compare-label">Performance</span><span class="compare-val val-warn">Attach on demand</span></div>
+      <div class="compare-row"><span class="compare-label">Cost</span><span class="compare-val val-good">S3 rates only</span></div>
+      <div class="compare-row"><span class="compare-label">Use for</span><span class="compare-val">Compliance archives</span></div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ③ INDEXING & MAPPINGS -->
+<div id="tab-indexing" class="tab-panel"><div class="section">
+  <h2>📂 Indexing &amp; Mappings</h2>
+  <p>Before you can search, you need to define how your data is structured and how it will be analysed. This is done through <strong>index mappings</strong>.</p>
+
+  <h3>Field Data Types</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>Use for</th><th>Example</th></tr>
+    <tr><td><strong>text</strong></td><td>Full-text search — analysed, tokenised</td><td>Product descriptions, log messages</td></tr>
+    <tr><td><strong>keyword</strong></td><td>Exact match, sorting, aggregations — not analysed</td><td>Status, region, user ID, tag</td></tr>
+    <tr><td><strong>integer / long</strong></td><td>Numeric values, range queries</td><td>Price, count, HTTP status code</td></tr>
+    <tr><td><strong>float / double</strong></td><td>Decimal numbers</td><td>Scores, coordinates</td></tr>
+    <tr><td><strong>date</strong></td><td>Date/time values with format support</td><td>timestamp, created_at</td></tr>
+    <tr><td><strong>boolean</strong></td><td>true/false flags</td><td>is_active, is_deleted</td></tr>
+    <tr><td><strong>geo_point</strong></td><td>Latitude/longitude for geo queries</td><td>Store location, user GPS</td></tr>
+    <tr><td><strong>nested</strong></td><td>Array of objects with independent field relationships</td><td>Order line items</td></tr>
+    <tr><td><strong>object</strong></td><td>JSON sub-object (flattened internally)</td><td>Address, metadata</td></tr>
+  </table></div>
+
+  <h3>Dynamic vs Explicit Mappings</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🤖 Dynamic Mapping (Default)</h4>
+      <ul>
+        <li>OpenSearch auto-detects field types from first document</li>
+        <li>Strings → <code>text</code> + <code>keyword</code> sub-field</li>
+        <li>Numbers → <code>long</code> or <code>float</code></li>
+        <li>Dates (ISO format) → <code>date</code></li>
+        <li>⚠️ Can cause "mapping explosion" if keys are dynamic/random</li>
+        <li>Good for: prototyping, log schemas</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📋 Explicit Mapping (Production)</h4>
+      <ul>
+        <li>You define every field and its type upfront</li>
+        <li>Control analyser, store, index, doc_values per field</li>
+        <li>Set <code>"dynamic": "strict"</code> to reject unknown fields</li>
+        <li>Prevents accidental indexing of sensitive fields</li>
+        <li>Good for: production indices, performance-optimised schemas</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Creating an Index with Explicit Mapping</h3>
+  <div class="code-block">
+    <span class="code-label">json — PUT /products (create index with mapping)</span>
+    <pre>{
+  <span class="str">"settings"</span>: {
+    <span class="str">"number_of_shards"</span>: <span class="num">3</span>,
+    <span class="str">"number_of_replicas"</span>: <span class="num">1</span>,
+    <span class="str">"analysis"</span>: {
+      <span class="str">"analyzer"</span>: {
+        <span class="str">"product_analyzer"</span>: {
+          <span class="str">"type"</span>: <span class="str">"custom"</span>,
+          <span class="str">"tokenizer"</span>: <span class="str">"standard"</span>,
+          <span class="str">"filter"</span>: [<span class="str">"lowercase"</span>, <span class="str">"stop"</span>, <span class="str">"snowball"</span>]
+        }
+      }
+    }
+  },
+  <span class="str">"mappings"</span>: {
+    <span class="str">"dynamic"</span>: <span class="str">"strict"</span>,
+    <span class="str">"properties"</span>: {
+      <span class="str">"product_id"</span>:   { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+      <span class="str">"name"</span>:         { <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"analyzer"</span>: <span class="str">"product_analyzer"</span> },
+      <span class="str">"description"</span>:  { <span class="str">"type"</span>: <span class="str">"text"</span>, <span class="str">"analyzer"</span>: <span class="str">"product_analyzer"</span> },
+      <span class="str">"price"</span>:        { <span class="str">"type"</span>: <span class="str">"float"</span> },
+      <span class="str">"in_stock"</span>:     { <span class="str">"type"</span>: <span class="str">"boolean"</span> },
+      <span class="str">"category"</span>:     { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+      <span class="str">"tags"</span>:         { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+      <span class="str">"created_at"</span>:   { <span class="str">"type"</span>: <span class="str">"date"</span> },
+      <span class="str">"location"</span>:     { <span class="str">"type"</span>: <span class="str">"geo_point"</span> }
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>Indexing a Document</h3>
+  <div class="code-block">
+    <span class="code-label">json — POST /products/_doc (index a single document)</span>
+    <pre>{
+  <span class="str">"product_id"</span>:  <span class="str">"SKU-9912"</span>,
+  <span class="str">"name"</span>:        <span class="str">"Wireless Noise-Cancelling Headphones"</span>,
+  <span class="str">"description"</span>: <span class="str">"Premium over-ear headphones with 30hr battery"</span>,
+  <span class="str">"price"</span>:       <span class="num">149.99</span>,
+  <span class="str">"in_stock"</span>:    <span class="kw">true</span>,
+  <span class="str">"category"</span>:   <span class="str">"Electronics"</span>,
+  <span class="str">"tags"</span>:        [<span class="str">"audio"</span>, <span class="str">"wireless"</span>, <span class="str">"premium"</span>],
+  <span class="str">"created_at"</span>:  <span class="str">"2025-03-01T10:00:00Z"</span>
+}</pre>
+  </div>
+
+  <h3>Index Templates — Apply Settings to Future Indices</h3>
+  <div class="code-block">
+    <span class="code-label">json — PUT /_index_template/logs-template</span>
+    <pre>{
+  <span class="str">"index_patterns"</span>: [<span class="str">"logs-*"</span>],  <span class="cm">// applies to any index named logs-*</span>
+  <span class="str">"template"</span>: {
+    <span class="str">"settings"</span>: { <span class="str">"number_of_shards"</span>: <span class="num">2</span>, <span class="str">"number_of_replicas"</span>: <span class="num">1</span> },
+    <span class="str">"mappings"</span>: {
+      <span class="str">"properties"</span>: {
+        <span class="str">"@timestamp"</span>: { <span class="str">"type"</span>: <span class="str">"date"</span> },
+        <span class="str">"level"</span>:      { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+        <span class="str">"service"</span>:    { <span class="str">"type"</span>: <span class="str">"keyword"</span> },
+        <span class="str">"message"</span>:    { <span class="str">"type"</span>: <span class="str">"text"</span> },
+        <span class="str">"trace_id"</span>:   { <span class="str">"type"</span>: <span class="str">"keyword"</span> }
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Mapping Explosion</h4>
+    <p>If you index documents where field names are dynamic (e.g. user-defined metadata keys), OpenSearch creates a new mapping entry for every unique key. With millions of keys, the cluster state grows enormous and causes instability. Always use <code>"dynamic": "strict"</code> or <code>flattened</code> field type for dynamic keys.</p>
+  </div>
+</div></div>
+
+
+<!-- ④ SEARCH & QUERIES -->
+<div id="tab-search" class="tab-panel"><div class="section">
+  <h2>🔎 Search &amp; Queries — Query DSL</h2>
+  <p>OpenSearch uses a <strong>JSON-based Query DSL</strong>. All queries go to <code>POST /&lt;index&gt;/_search</code>. There are two kinds of clauses: <strong>queries</strong> (affect relevance score) and <strong>filters</strong> (yes/no, cached, faster).</p>
+
+  <h3>Query vs Filter Context</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🎯 Query Context — "How relevant?"</h4>
+      <ul>
+        <li>Calculates a relevance <code>_score</code> for each document</li>
+        <li>Use for: full-text search, ranking results</li>
+        <li>Examples: <code>match</code>, <code>multi_match</code>, <code>match_phrase</code></li>
+        <li>Slower (scoring overhead)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚡ Filter Context — "Yes or No?"</h4>
+      <ul>
+        <li>No score — binary include/exclude</li>
+        <li>Results are <strong>cached</strong> — much faster for repeated filters</li>
+        <li>Use for: status, date range, category, boolean flags</li>
+        <li>Examples: <code>term</code>, <code>range</code>, <code>exists</code>, <code>terms</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common Query Types</h3>
+
+  <div class="code-block">
+    <span class="code-label">json — match query (full-text search, scored)</span>
+    <pre><span class="cm">// Search for "wireless headphones" in the name field</span>
+{
+  <span class="str">"query"</span>: {
+    <span class="str">"match"</span>: {
+      <span class="str">"name"</span>: {
+        <span class="str">"query"</span>: <span class="str">"wireless headphones"</span>,
+        <span class="str">"operator"</span>: <span class="str">"and"</span>    <span class="cm">// both words must be present</span>
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">json — bool query (combine multiple clauses)</span>
+    <pre><span class="cm">// Find: in-stock Electronics, name matches "headphones",</span>
+<span class="cm">// price < 200, boost if tagged "wireless"</span>
+{
+  <span class="str">"query"</span>: {
+    <span class="str">"bool"</span>: {
+      <span class="str">"must"</span>: [
+        { <span class="str">"match"</span>: { <span class="str">"name"</span>: <span class="str">"headphones"</span> } }
+      ],
+      <span class="str">"filter"</span>: [
+        { <span class="str">"term"</span>:  { <span class="str">"category"</span>: <span class="str">"Electronics"</span> } },
+        { <span class="str">"term"</span>:  { <span class="str">"in_stock"</span>: <span class="kw">true</span> } },
+        { <span class="str">"range"</span>: { <span class="str">"price"</span>: { <span class="str">"lte"</span>: <span class="num">200</span> } } }
+      ],
+      <span class="str">"should"</span>: [
+        { <span class="str">"term"</span>: { <span class="str">"tags"</span>: <span class="str">"wireless"</span> } }
+      ],
+      <span class="str">"must_not"</span>: [
+        { <span class="str">"term"</span>: { <span class="str">"tags"</span>: <span class="str">"refurbished"</span> } }
+      ]
+    }
+  }
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Bool Query Clauses</h4>
+    <p><strong>must</strong> = must match (affects score) · <strong>filter</strong> = must match (no score, cached) · <strong>should</strong> = nice to have (boosts score) · <strong>must_not</strong> = must NOT match (cached)</p>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">json — fuzzy search (typo tolerance)</span>
+    <pre>{
+  <span class="str">"query"</span>: {
+    <span class="str">"match"</span>: {
+      <span class="str">"name"</span>: {
+        <span class="str">"query"</span>: <span class="str">"hedfones"</span>,   <span class="cm">// typo — still finds "headphones"</span>
+        <span class="str">"fuzziness"</span>: <span class="str">"AUTO"</span>  <span class="cm">// AUTO: 0 for 1-2 chars, 1 for 3-5, 2 for 6+</span>
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">json — aggregation query (group by + metrics)</span>
+    <pre>{
+  <span class="str">"size"</span>: <span class="num">0</span>,  <span class="cm">// return only aggregation results, not documents</span>
+  <span class="str">"aggs"</span>: {
+    <span class="str">"by_category"</span>: {
+      <span class="str">"terms"</span>: { <span class="str">"field"</span>: <span class="str">"category"</span>, <span class="str">"size"</span>: <span class="num">10</span> },
+      <span class="str">"aggs"</span>: {
+        <span class="str">"avg_price"</span>: { <span class="str">"avg"</span>:  { <span class="str">"field"</span>: <span class="str">"price"</span> } },
+        <span class="str">"max_price"</span>: { <span class="str">"max"</span>:  { <span class="str">"field"</span>: <span class="str">"price"</span> } },
+        <span class="str">"count"</span>:     { <span class="str">"value_count"</span>: { <span class="str">"field"</span>: <span class="str">"product_id"</span> } }
+      }
+    },
+    <span class="str">"price_histogram"</span>: {
+      <span class="str">"histogram"</span>: { <span class="str">"field"</span>: <span class="str">"price"</span>, <span class="str">"interval"</span>: <span class="num">50</span> }
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>Query Types — Quick Reference</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Query</th><th>Use for</th><th>Context</th></tr>
+    <tr><td><code>match</code></td><td>Full-text search on a field, analysed</td><td>Query (scored)</td></tr>
+    <tr><td><code>multi_match</code></td><td>match across multiple fields at once</td><td>Query (scored)</td></tr>
+    <tr><td><code>match_phrase</code></td><td>Exact phrase search (word order matters)</td><td>Query (scored)</td></tr>
+    <tr><td><code>term</code></td><td>Exact keyword match (not analysed)</td><td>Filter (cached)</td></tr>
+    <tr><td><code>terms</code></td><td>Match any value from a list</td><td>Filter (cached)</td></tr>
+    <tr><td><code>range</code></td><td>Numeric or date range (gt, lt, gte, lte)</td><td>Filter (cached)</td></tr>
+    <tr><td><code>bool</code></td><td>Combine must/filter/should/must_not</td><td>Both</td></tr>
+    <tr><td><code>exists</code></td><td>Check if a field has any value</td><td>Filter</td></tr>
+    <tr><td><code>fuzzy</code></td><td>Typo-tolerant search</td><td>Query (scored)</td></tr>
+    <tr><td><code>geo_distance</code></td><td>Find docs within X km of a point</td><td>Filter</td></tr>
+    <tr><td><code>nested</code></td><td>Query inside nested objects</td><td>Both</td></tr>
+    <tr><td><code>query_string</code></td><td>Lucene syntax queries (advanced users)</td><td>Query</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ⑤ CLUSTER ARCHITECTURE -->
+<div id="tab-cluster" class="tab-panel"><div class="section">
+  <h2>🏗️ Cluster Architecture</h2>
+
+  <h3>Node Types</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🏗️ OpenSearch Cluster — Node Roles</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 380" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b84c00"/></marker>
+        </defs>
+        <!-- Client -->
+        <rect x="270" y="10" width="180" height="44" rx="8" fill="#fde8d4" stroke="rgba(184,76,0,.5)" stroke-width="2"/>
+        <text x="360" y="30" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#7a3000" text-anchor="middle">📱 Client / Application</text>
+        <text x="360" y="46" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">REST API  ·  AWS SDK  ·  HTTPS</text>
+
+        <!-- Coordinating / Dedicated Master -->
+        <line x1="360" y1="54" x2="360" y2="84" stroke="#b84c00" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <rect x="210" y="84" width="300" height="54" rx="8" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="360" y="104" font-family="DM Sans,sans-serif" font-size="10.5" font-weight="700" fill="#7a3000" text-anchor="middle">👑 Dedicated Master Nodes (×3)</text>
+        <text x="360" y="118" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Cluster state · Shard allocation · Leader election</text>
+        <text x="360" y="130" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">Do NOT serve data — dedicated for cluster management</text>
+
+        <!-- Data Nodes row -->
+        <line x1="280" y1="138" x2="160" y2="178" stroke="#b84c00" stroke-width="1.3" marker-end="url(#arr2)"/>
+        <line x1="360" y1="138" x2="360" y2="178" stroke="#b84c00" stroke-width="1.3" marker-end="url(#arr2)"/>
+        <line x1="440" y1="138" x2="560" y2="178" stroke="#b84c00" stroke-width="1.3" marker-end="url(#arr2)"/>
+
+        <rect x="60"  y="178" width="200" height="65" rx="8" fill="#d0eef5" stroke="rgba(26,106,122,.35)" stroke-width="1.5"/>
+        <text x="160" y="198" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1a6a7a" text-anchor="middle">🗄️ Data Node 1</text>
+        <text x="160" y="212" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Primary: P0, P2</text>
+        <text x="160" y="226" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Replica: R1</text>
+        <text x="160" y="238" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">r6g.large · 32GB RAM · 500GB EBS</text>
+
+        <rect x="260" y="178" width="200" height="65" rx="8" fill="#d0eef5" stroke="rgba(26,106,122,.35)" stroke-width="1.5"/>
+        <text x="360" y="198" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1a6a7a" text-anchor="middle">🗄️ Data Node 2</text>
+        <text x="360" y="212" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Primary: P1</text>
+        <text x="360" y="226" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Replica: R0, R2</text>
+        <text x="360" y="238" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">r6g.large · 32GB RAM · 500GB EBS</text>
+
+        <rect x="460" y="178" width="200" height="65" rx="8" fill="#d0eef5" stroke="rgba(26,106,122,.35)" stroke-width="1.5"/>
+        <text x="560" y="198" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#1a6a7a" text-anchor="middle">🗄️ Data Node 3</text>
+        <text x="560" y="212" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Primary: P3</text>
+        <text x="560" y="226" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30" text-anchor="middle">Replica: R3</text>
+        <text x="560" y="238" font-family="DM Sans,sans-serif" font-size="7.5" fill="#7a7a6a" text-anchor="middle">r6g.large · 32GB RAM · 500GB EBS</text>
+
+        <!-- UltraWarm -->
+        <rect x="60" y="270" width="600" height="50" rx="8" fill="#fef0d0" stroke="rgba(196,122,16,.3)" stroke-width="1.5"/>
+        <text x="360" y="290" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#7a4a00" text-anchor="middle">🌡️ UltraWarm Nodes (optional) — backed by S3</text>
+        <text x="360" y="308" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Indices migrated from hot tier after N days · ultrawarm1.medium · ~90% cost saving</text>
+
+        <!-- S3 snapshot -->
+        <rect x="180" y="340" width="360" height="34" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.5"/>
+        <text x="360" y="361" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="700" fill="#0d5230" text-anchor="middle">🗃️ S3 — Automated Snapshots + Cold Storage</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Node Type Roles</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Node Type</th><th>Role</th><th>When to dedicate</th></tr>
+    <tr><td>Dedicated Master</td><td>Cluster state, shard allocation, elections</td><td>Always — production clusters with 10+ nodes</td></tr>
+    <tr><td>Data (Hot)</td><td>Store and search indices on SSD EBS</td><td>All clusters — primary data nodes</td></tr>
+    <tr><td>Data (UltraWarm)</td><td>Store warm indices backed by S3</td><td>When storing 30+ days of logs</td></tr>
+    <tr><td>Coordinating Only</td><td>Route requests, aggregate results — no data</td><td>Large clusters with heavy aggregations</td></tr>
+    <tr><td>Ingest</td><td>Run ingest pipelines before indexing</td><td>If using ingest pipelines heavily</td></tr>
+    <tr><td>ML</td><td>Run machine learning models</td><td>If using anomaly detection or neural search</td></tr>
+  </table></div>
+
+  <h3>Sizing Guidelines</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📐 Data Node Sizing</h4>
+      <ul>
+        <li>Target 10–50 GB per shard (sweet spot)</li>
+        <li>Total data (with replicas) ÷ nodes = data per node</li>
+        <li>Leave 25% headroom for merges and overhead</li>
+        <li>JVM heap = 50% of RAM, max 32 GB per node</li>
+        <li>r6g (memory-optimised) for search-heavy workloads</li>
+        <li>c6g (compute-optimised) for log analytics</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚙️ Master Node Sizing</h4>
+      <ul>
+        <li>Always use <strong>3</strong> dedicated masters (odd number, quorum)</li>
+        <li>m6g.large is usually enough — masters don't store data</li>
+        <li>Master node RAM scales with cluster state size (number of shards)</li>
+        <li>Rule: 1 GB RAM per 3,000 shards on master</li>
+        <li>Never use the same node as data + master in production</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Multi-AZ Deployment</h3>
+  <div class="success">
+    <h4>✅ Production: Always 3 Availability Zones</h4>
+    <p>Deploy data nodes across 3 AZs with <strong>zone awareness</strong> enabled. OpenSearch will ensure primary and replica shards of the same shard are never on the same AZ — so an AZ failure never causes data loss. Use an even number of data nodes divisible by 3 (e.g. 3, 6, 9 nodes).</p>
+  </div>
+</div></div>
+
+
+<!-- ⑥ INGESTION PIPELINES -->
+<div id="tab-ingestion" class="tab-panel"><div class="section">
+  <h2>📥 Ingestion Pipelines — Getting Data In</h2>
+  <p>OpenSearch doesn't pull data — data is pushed into it. Multiple AWS services and patterns exist for ingestion.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📥 Common Data Ingestion Patterns</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 720 310" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#b84c00"/></marker></defs>
+        <!-- Sources -->
+        <rect x="10" y="40" width="130" height="36" rx="6" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.3"/>
+        <text x="75" y="62" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a6a7a" text-anchor="middle">📱 Applications</text>
+
+        <rect x="10" y="90" width="130" height="36" rx="6" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.3"/>
+        <text x="75" y="112" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a6a7a" text-anchor="middle">📋 CloudWatch Logs</text>
+
+        <rect x="10" y="140" width="130" height="36" rx="6" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.3"/>
+        <text x="75" y="162" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a6a7a" text-anchor="middle">🗄️ DynamoDB Streams</text>
+
+        <rect x="10" y="190" width="130" height="36" rx="6" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.3"/>
+        <text x="75" y="212" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a6a7a" text-anchor="middle">🚀 Kinesis Data Streams</text>
+
+        <rect x="10" y="240" width="130" height="36" rx="6" fill="#d0eef5" stroke="rgba(26,106,122,.3)" stroke-width="1.3"/>
+        <text x="75" y="262" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a6a7a" text-anchor="middle">📂 S3 (batch)</text>
+
+        <!-- Middle connectors / processors -->
+        <line x1="140" y1="58" x2="190" y2="90" stroke="#b84c00" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="140" y1="108" x2="190" y2="108" stroke="#b84c00" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="140" y1="158" x2="190" y2="140" stroke="#b84c00" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="140" y1="208" x2="190" y2="170" stroke="#b84c00" stroke-width="1.2" marker-end="url(#arr3)"/>
+        <line x1="140" y1="258" x2="190" y2="200" stroke="#b84c00" stroke-width="1.2" marker-end="url(#arr3)"/>
+
+        <!-- Processors -->
+        <rect x="190" y="60" width="170" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="275" y="80" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="700" fill="#7a3000" text-anchor="middle">🚀 Kinesis Firehose</text>
+        <text x="275" y="95" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Buffer · Retry · Transform</text>
+        <text x="275" y="110" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">Delivery stream → OpenSearch</text>
+
+        <rect x="190" y="135" width="170" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="275" y="155" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="700" fill="#7a3000" text-anchor="middle">⚡ Lambda</text>
+        <text x="275" y="170" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Transform · Enrich · Filter</text>
+        <text x="275" y="185" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">Bulk index via HTTP</text>
+
+        <rect x="190" y="210" width="170" height="60" rx="7" fill="#fde8d4" stroke="rgba(184,76,0,.4)" stroke-width="1.5"/>
+        <text x="275" y="230" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="700" fill="#7a3000" text-anchor="middle">🔧 Logstash / FluentBit</text>
+        <text x="275" y="245" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Parse · Enrich · Route</text>
+        <text x="275" y="260" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">Direct OpenSearch output</text>
+
+        <!-- Arrows to OpenSearch -->
+        <line x1="360" y1="90" x2="430" y2="155" stroke="#b84c00" stroke-width="1.4" marker-end="url(#arr3)"/>
+        <line x1="360" y1="165" x2="430" y2="165" stroke="#b84c00" stroke-width="1.4" marker-end="url(#arr3)"/>
+        <line x1="360" y1="240" x2="430" y2="175" stroke="#b84c00" stroke-width="1.4" marker-end="url(#arr3)"/>
+
+        <!-- OpenSearch -->
+        <rect x="430" y="100" width="170" height="130" rx="9" fill="#fde8d4" stroke="rgba(184,76,0,.5)" stroke-width="2.5"/>
+        <text x="515" y="125" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#7a3000" text-anchor="middle">🔍 AWS</text>
+        <text x="515" y="142" font-family="DM Sans,sans-serif" font-size="12" font-weight="700" fill="#7a3000" text-anchor="middle">OpenSearch</text>
+        <text x="515" y="162" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">Index · Store · Search</text>
+        <text x="515" y="177" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">_bulk API</text>
+        <text x="515" y="192" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#b84c00" text-anchor="middle">_doc API</text>
+        <text x="515" y="207" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Dashboards ↗</text>
+
+        <!-- Ingest Pipeline box -->
+        <rect x="605" y="120" width="110" height="60" rx="7" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.3"/>
+        <text x="660" y="143" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#0d5230" text-anchor="middle">🔬 Ingest</text>
+        <text x="660" y="157" font-family="DM Sans,sans-serif" font-size="9" font-weight="700" fill="#0d5230" text-anchor="middle">Pipeline</text>
+        <text x="660" y="172" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Grok · GeoIP · Set</text>
+        <line x1="600" y1="160" x2="610" y2="160" stroke="#1f7a52" stroke-width="1.2" marker-end="url(#arr3)"/>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Kinesis Firehose → OpenSearch (Most Common)</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Create OpenSearch Domain</h4><p>Set up your cluster with VPC and fine-grained access control enabled.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Create Kinesis Firehose Delivery Stream</h4><p>Source: Kinesis Data Stream or Direct Put. Destination: Amazon OpenSearch Service.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>Configure Index &amp; Buffering</h4><p>Set index name, buffering hints (e.g. 5 MB or 60 seconds), S3 backup for failed records.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">4</div>
+    <div class="step-body"><h4>IAM Role</h4><p>Firehose needs an IAM role with <code>es:ESHttpPost</code> and <code>es:ESHttpPut</code> permissions on the domain.</p></div>
+  </div>
+
+  <h3>Ingest Pipelines — Transform Before Indexing</h3>
+  <div class="code-block">
+    <span class="code-label">json — PUT /_ingest/pipeline/log-enrichment</span>
+    <pre>{
+  <span class="str">"description"</span>: <span class="str">"Parse Nginx logs and add geo data"</span>,
+  <span class="str">"processors"</span>: [
+    {
+      <span class="str">"grok"</span>: {
+        <span class="str">"field"</span>: <span class="str">"message"</span>,
+        <span class="str">"patterns"</span>: [<span class="str">"%{IPORHOST:client_ip} .* \"%{WORD:method} %{URIPATH:path}.*\" %{NUMBER:status}"</span>]
+      }
+    },
+    {
+      <span class="str">"geoip"</span>: {
+        <span class="str">"field"</span>: <span class="str">"client_ip"</span>,
+        <span class="str">"target_field"</span>: <span class="str">"geo"</span>
+      }
+    },
+    {
+      <span class="str">"set"</span>: {
+        <span class="str">"field"</span>: <span class="str">"environment"</span>,
+        <span class="str">"value"</span>: <span class="str">"production"</span>
+      }
+    },
+    {
+      <span class="str">"date"</span>: {
+        <span class="str">"field"</span>: <span class="str">"raw_timestamp"</span>,
+        <span class="str">"formats"</span>: [<span class="str">"dd/MMM/yyyy:HH:mm:ss Z"</span>],
+        <span class="str">"target_field"</span>: <span class="str">"@timestamp"</span>
+      }
+    }
+  ]
+}
+
+<span class="cm">// Use pipeline when indexing:</span>
+<span class="cm">// POST /logs-2025-03/_doc?pipeline=log-enrichment</span></pre>
+  </div>
+
+  <h3>ISM — Index State Management (Auto-lifecycle)</h3>
+  <div class="code-block">
+    <span class="code-label">json — ISM policy: hot → UltraWarm → delete</span>
+    <pre>{
+  <span class="str">"policy"</span>: {
+    <span class="str">"description"</span>: <span class="str">"Log lifecycle: 7d hot, 30d warm, then delete"</span>,
+    <span class="str">"states"</span>: [
+      {
+        <span class="str">"name"</span>: <span class="str">"hot"</span>,
+        <span class="str">"transitions"</span>: [{ <span class="str">"state_name"</span>: <span class="str">"warm"</span>, <span class="str">"conditions"</span>: { <span class="str">"min_index_age"</span>: <span class="str">"7d"</span> } }]
+      },
+      {
+        <span class="str">"name"</span>: <span class="str">"warm"</span>,
+        <span class="str">"actions"</span>: [{ <span class="str">"warm_migration"</span>: {} }],
+        <span class="str">"transitions"</span>: [{ <span class="str">"state_name"</span>: <span class="str">"delete"</span>, <span class="str">"conditions"</span>: { <span class="str">"min_index_age"</span>: <span class="str">"30d"</span> } }]
+      },
+      {
+        <span class="str">"name"</span>: <span class="str">"delete"</span>,
+        <span class="str">"actions"</span>: [{ <span class="str">"delete"</span>: {} }]
+      }
+    ]
+  }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑦ SECURITY & IAM -->
+<div id="tab-security" class="tab-panel"><div class="section">
+  <h2>🔐 Security &amp; IAM</h2>
+
+  <h3>Security Layers in OpenSearch</h3>
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔐 OpenSearch Security — Four Layers</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-bad"><div class="flow-node-title">🌐 Layer 1 — Network</div><ul class="flow-items"><li>VPC-only or public endpoint</li><li>Security Groups control which resources can reach the domain</li><li><strong>Always use VPC endpoint for production</strong></li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-amber"><div class="flow-node-title">🔑 Layer 2 — IAM Resource Policy</div><ul class="flow-items"><li>Domain-level access policy (like an S3 bucket policy)</li><li>Controls which AWS principals can call the OpenSearch API at all</li><li>Whitelist by IAM ARN, account, condition (source IP)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-pc"><div class="flow-node-title">👤 Layer 3 — Fine-Grained Access Control (FGAC)</div><ul class="flow-items"><li>Internal OpenSearch users and roles</li><li>Role-based access: index patterns, document-level, field-level</li><li>Map IAM roles or SAML identities → OpenSearch roles</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">🔒 Layer 4 — Encryption</div><ul class="flow-items"><li>In-transit: TLS 1.2/1.3 enforced</li><li>At-rest: KMS managed or customer-managed CMK</li><li>Automated snapshots encrypted at rest</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>IAM-based Access — Resource Policy Example</h3>
+  <div class="code-block">
+    <span class="code-label">json — domain access policy (allow specific IAM role)</span>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Principal"</span>: {
+        <span class="str">"AWS"</span>: <span class="str">"arn:aws:iam::123456789012:role/MyAppRole"</span>
+      },
+      <span class="str">"Action"</span>: [
+        <span class="str">"es:ESHttpGet"</span>,
+        <span class="str">"es:ESHttpPost"</span>,
+        <span class="str">"es:ESHttpPut"</span>,
+        <span class="str">"es:ESHttpDelete"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"arn:aws:es:eu-west-1:123456789012:domain/my-domain/*"</span>
+    }
+  ]
+}</pre>
+  </div>
+
+  <h3>Fine-Grained Access Control (FGAC)</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🎭 Roles &amp; Permissions</h4>
+      <ul>
+        <li>Create OpenSearch internal roles with specific permissions</li>
+        <li>Assign index patterns: <code>logs-*</code>, <code>products</code></li>
+        <li>Grant: read, write, manage, create_index, etc.</li>
+        <li>Map AWS IAM role → OpenSearch role via role mapping</li>
+        <li>Also supports HTTP Basic auth (username/password)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📄 Document &amp; Field Level</h4>
+      <ul>
+        <li><strong>Document-level security:</strong> filter which docs a role can see</li>
+        <li>E.g. "finance team sees only region=EU documents"</li>
+        <li><strong>Field-level security:</strong> hide specific fields from a role</li>
+        <li>E.g. "mask the <code>salary</code> field for non-HR roles"</li>
+        <li>Applied transparently — user's query returns filtered results</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Common IAM Actions</h3>
+  <div class="table-wrap"><table>
+    <tr><th>IAM Action</th><th>What it allows</th></tr>
+    <tr><td><code>es:CreateDomain</code></td><td>Create a new OpenSearch domain</td></tr>
+    <tr><td><code>es:ESHttpGet</code></td><td>GET requests — read documents, search</td></tr>
+    <tr><td><code>es:ESHttpPost</code></td><td>POST requests — search, index documents, bulk</td></tr>
+    <tr><td><code>es:ESHttpPut</code></td><td>PUT requests — create index, update settings</td></tr>
+    <tr><td><code>es:ESHttpDelete</code></td><td>DELETE requests — delete index or document</td></tr>
+    <tr><td><code>es:ESHttpHead</code></td><td>HEAD requests — check if index exists</td></tr>
+    <tr><td><code>es:DescribeDomain</code></td><td>Describe domain configuration (console/API)</td></tr>
+    <tr><td><code>es:UpdateDomainConfig</code></td><td>Modify cluster settings, node count, etc.</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Never use a public endpoint in production</h4>
+    <p>Public endpoints expose the OpenSearch API to the internet. Even with an access policy, it's a risk. Always deploy within a VPC and access via private endpoint. Use VPN or AWS Systems Manager Session Manager for dashboard access.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑧ CONSOLE SETUP -->
+<div id="tab-console" class="tab-panel"><div class="section">
+  <h2>🖥️ Console Setup — Create Your First Domain</h2>
+  <p>Step-by-step guide to create a production-ready OpenSearch domain from the AWS Console.</p>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">1</div>
+      <span class="console-step-title">Open OpenSearch Service Console</span>
+      <span class="console-step-path">Services → OpenSearch Service → Create domain</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Domain Name</span>
+        <span class="console-field-value">my-opensearch-domain</span>
+        <span class="console-field-hint">Lowercase, 3–28 chars, hyphens allowed. Cannot be changed after creation.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Deployment Type</span>
+        <span class="console-field-value">Production</span>
+        <span class="console-field-hint">Enables Multi-AZ and dedicated masters. Use "Dev/Test" only for dev clusters.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">2</div>
+      <span class="console-step-title">Version &amp; Instance Configuration</span>
+      <span class="console-step-path">Domain configuration → Data nodes</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">OpenSearch Version</span>
+        <span class="console-field-value">OpenSearch 2.x (latest)</span>
+        <span class="console-field-hint">Use latest unless you need specific plugin compatibility.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Instance Type (Data)</span>
+        <span class="console-field-value">r6g.large.search</span>
+        <span class="console-field-hint">r6g for search-heavy; c6g for log analytics. Use .search suffix instances.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Number of Data Nodes</span>
+        <span class="console-field-value">3</span>
+        <span class="console-field-hint">Min 3 for Multi-AZ (one per AZ). Use multiples of 3 for zone balance.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">EBS Storage per Node</span>
+        <span class="console-field-value">gp3 · 100 GB</span>
+        <span class="console-field-hint">gp3 is recommended (better cost/performance than gp2). Plan for 2× your data size + replicas.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">3</div>
+      <span class="console-step-title">Dedicated Master Nodes</span>
+      <span class="console-step-path">Domain configuration → Dedicated master nodes</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Enable Dedicated Masters</span>
+        <span class="console-field-value">✓ Enabled</span>
+        <span class="console-field-hint">Always enable for production. Protects cluster stability under heavy indexing.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Master Instance Type</span>
+        <span class="console-field-value">m6g.large.search</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Number of Masters</span>
+        <span class="console-field-value">3</span>
+        <span class="console-field-hint">Always odd. 3 is the minimum. Use 5 for very large clusters (1,000+ shards).</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">4</div>
+      <span class="console-step-title">Network — VPC Configuration</span>
+      <span class="console-step-path">Network → VPC access</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Network</span>
+        <span class="console-field-value">VPC access</span>
+        <span class="console-field-hint">Never use Public access in production.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">VPC</span>
+        <span class="console-field-value">vpc-0abc123def456 (your app VPC)</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Subnets</span>
+        <span class="console-field-value">Private subnet in each AZ (3 subnets)</span>
+        <span class="console-field-hint">Use private subnets only. OpenSearch endpoint will be accessible only within VPC.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Security Groups</span>
+        <span class="console-field-value">sg-opensearch-clients (port 443 from app SG)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">5</div>
+      <span class="console-step-title">Fine-Grained Access Control</span>
+      <span class="console-step-path">Security → Fine-grained access control</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Enable Fine-Grained Access Control</span>
+        <span class="console-field-value">✓ Enabled</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Master User</span>
+        <span class="console-field-value">Create master user — set username + strong password</span>
+        <span class="console-field-hint">Or use IAM ARN as master user (recommended for IAM-integrated setups).</span>
+      </div>
+      <div class="console-note">After creation: log in to OpenSearch Dashboards with master user → Security → Roles → create roles → Role Mappings → map IAM roles to OpenSearch roles.</div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">6</div>
+      <span class="console-step-title">Encryption</span>
+      <span class="console-step-path">Encryption → at-rest + in-transit</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Encryption at rest</span>
+        <span class="console-field-value">✓ Enable · AWS managed key</span>
+        <span class="console-field-hint">Use Customer Managed Key (CMK) if you need key rotation control.</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Node-to-node encryption</span>
+        <span class="console-field-value">✓ Enable</span>
+      </div>
+      <div class="console-field">
+        <span class="console-field-label">Require HTTPS</span>
+        <span class="console-field-value">✓ Enable · TLS 1.2 minimum</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="console-step">
+    <div class="console-step-header">
+      <div class="console-step-num">7</div>
+      <span class="console-step-title">Access Policy</span>
+      <span class="console-step-path">Access policy → Custom policy</span>
+    </div>
+    <div class="console-step-body">
+      <div class="console-field">
+        <span class="console-field-label">Policy Type</span>
+        <span class="console-field-value">Custom policy — allow specific IAM roles</span>
+        <span class="console-field-hint">Grant es:ESHttp* actions to your application's IAM role. Deny * to everyone else.</span>
+      </div>
+      <div class="console-note">With FGAC enabled on a VPC domain, the access policy can be set to allow all principals (the VPC + FGAC together provide security). Set to: {"Effect":"Allow","Principal":{"AWS":"*"},"Action":"es:*","Resource":"domain-arn/*"}</div>
+    </div>
+  </div>
+
+  <div class="info">
+    <h4>⏱️ Creation Time</h4>
+    <p>Domain creation takes <strong>15–30 minutes</strong>. The domain will show as "Creating" during this time. Once active, you'll get a VPC endpoint URL like <code>https://vpc-my-domain-xxxxx.eu-west-1.es.amazonaws.com</code>.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑨ C# SDK -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — OpenSearch with .NET</h2>
+  <p>Use the official <strong>OpenSearch.Client</strong> NuGet package (forked from NEST) or the low-level <strong>OpenSearch.Net</strong> package. For AWS SigV4 authentication, use <strong>AWS.Auth.OpenSearch</strong>.</p>
+
+  <h3>NuGet Packages</h3>
+  <div class="code-block">
+    <span class="code-label">shell — install packages</span>
+    <pre>dotnet add package OpenSearch.Client
+dotnet add package OpenSearch.Net
+dotnet add package AWS.Auth.OpenSearch   <span class="cm"># for SigV4 signing</span>
+dotnet add package AWSSDK.Core</pre>
+  </div>
+
+  <h3>1. Client Setup — AWS SigV4 Authentication</h3>
+  <div class="code-block">
+    <span class="code-label">c# — connect to opensearch with aws sigv4 signing</span>
+    <pre><span class="kw">using</span> <span class="tp">OpenSearch.Client</span>;
+<span class="kw">using</span> <span class="tp">OpenSearch.Net.Auth.AwsSigV4</span>;
+<span class="kw">using</span> <span class="tp">Amazon.Runtime</span>;
+
+<span class="kw">var</span> endpoint = <span class="kw">new</span> <span class="tp">Uri</span>(<span class="str">"https://vpc-my-domain-xxxxx.eu-west-1.es.amazonaws.com"</span>);
+<span class="kw">var</span> region   = <span class="tp">Amazon.RegionEndpoint</span>.EUWest1;
+
+<span class="cm">// SigV4 signing — uses IAM role attached to EC2 / Lambda / ECS task</span>
+<span class="kw">var</span> creds    = <span class="tp">FallbackCredentialsFactory</span>.<span class="fn">GetCredentials</span>();
+<span class="kw">var</span> httpConn = <span class="kw">new</span> <span class="tp">AwsSigV4HttpConnection</span>(creds, region);
+
+<span class="kw">var</span> config = <span class="kw">new</span> <span class="tp">ConnectionSettings</span>(endpoint, httpConn)
+    .<span class="fn">DefaultIndex</span>(<span class="str">"products"</span>)
+    .<span class="fn">EnableDebugMode</span>()  <span class="cm">// log request/response — remove in prod</span>
+    .<span class="fn">PrettyJson</span>();
+
+<span class="kw">var</span> client = <span class="kw">new</span> <span class="tp">OpenSearchClient</span>(config);</pre>
+  </div>
+
+  <h3>2. Define a Document Model</h3>
+  <div class="code-block">
+    <span class="code-label">c# — product document model</span>
+    <pre><span class="kw">public class</span> <span class="tp">Product</span>
+{
+    <span class="kw">public string</span>   ProductId   { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span>   Name        { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public string</span>   Description { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public decimal</span>  Price       { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public bool</span>     InStock     { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public string</span>   Category    { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="str">""</span>;
+    <span class="kw">public</span> <span class="tp">List</span>&lt;<span class="kw">string</span>&gt; Tags { <span class="kw">get</span>; <span class="kw">set</span>; } = <span class="kw">new</span>();
+    <span class="kw">public</span> <span class="tp">DateTime</span> CreatedAt   { <span class="kw">get</span>; <span class="kw">set</span>; }
+}</pre>
+  </div>
+
+  <h3>3. Index a Document</h3>
+  <div class="code-block">
+    <span class="code-label">c# — index a single document</span>
+    <pre><span class="kw">var</span> product = <span class="kw">new</span> <span class="tp">Product</span>
+{
+    ProductId   = <span class="str">"SKU-9912"</span>,
+    Name        = <span class="str">"Wireless Noise-Cancelling Headphones"</span>,
+    Description = <span class="str">"Premium over-ear headphones with 30hr battery"</span>,
+    Price       = <span class="num">149.99m</span>,
+    InStock     = <span class="kw">true</span>,
+    Category    = <span class="str">"Electronics"</span>,
+    Tags        = <span class="kw">new</span>() { <span class="str">"audio"</span>, <span class="str">"wireless"</span>, <span class="str">"premium"</span> },
+    CreatedAt   = <span class="tp">DateTime</span>.UtcNow
+};
+
+<span class="kw">var</span> response = <span class="kw">await</span> client.<span class="fn">IndexDocumentAsync</span>(product);
+
+<span class="kw">if</span> (!response.IsValid)
+    <span class="kw">throw new</span> <span class="tp">Exception</span>(<span class="str">$"Index failed: {response.DebugInformation}"</span>);</pre>
+  </div>
+
+  <h3>4. Search — Match Query</h3>
+  <div class="code-block">
+    <span class="code-label">c# — full-text search on name field</span>
+    <pre><span class="kw">var</span> searchResponse = <span class="kw">await</span> client.<span class="fn">SearchAsync</span>&lt;<span class="tp">Product</span>&gt;(s => s
+    .<span class="fn">Index</span>(<span class="str">"products"</span>)
+    .<span class="fn">Size</span>(<span class="num">10</span>)
+    .<span class="fn">Query</span>(q => q
+        .<span class="fn">Match</span>(m => m
+            .<span class="fn">Field</span>(f => f.Name)
+            .<span class="fn">Query</span>(<span class="str">"wireless headphones"</span>)
+            .<span class="fn">Operator</span>(<span class="tp">Operator</span>.And)
+        )
+    )
+);
+
+<span class="kw">foreach</span> (<span class="kw">var</span> hit <span class="kw">in</span> searchResponse.Hits)
+{
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"[{hit.Score:F2}] {hit.Source.Name} — £{hit.Source.Price}"</span>);
+}</pre>
+  </div>
+
+  <h3>5. Bool Query — Filters + Full-Text</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bool query with must, filter, should</span>
+    <pre><span class="kw">var</span> result = <span class="kw">await</span> client.<span class="fn">SearchAsync</span>&lt;<span class="tp">Product</span>&gt;(s => s
+    .<span class="fn">Query</span>(q => q
+        .<span class="fn">Bool</span>(b => b
+            .<span class="fn">Must</span>(m => m
+                .<span class="fn">Match</span>(ma => ma.<span class="fn">Field</span>(f => f.Name).<span class="fn">Query</span>(<span class="str">"headphones"</span>))
+            )
+            .<span class="fn">Filter</span>(f => f
+                .<span class="fn">Term</span>(t => t.<span class="fn">Field</span>(fi => fi.Category).<span class="fn">Value</span>(<span class="str">"Electronics"</span>)) &amp;&amp;
+                <span class="fn">f</span>.<span class="fn">Term</span>(t => t.<span class="fn">Field</span>(fi => fi.InStock).<span class="fn">Value</span>(<span class="kw">true</span>)) &amp;&amp;
+                <span class="fn">f</span>.<span class="fn">Range</span>(r => r.<span class="fn">Field</span>(fi => fi.Price).<span class="fn">LessThanOrEquals</span>(<span class="num">200</span>))
+            )
+            .<span class="fn">Should</span>(sh => sh
+                .<span class="fn">Term</span>(t => t.<span class="fn">Field</span>(fi => fi.Tags).<span class="fn">Value</span>(<span class="str">"wireless"</span>))
+            )
+        )
+    )
+);</pre>
+  </div>
+
+  <h3>6. Bulk Indexing</h3>
+  <div class="code-block">
+    <span class="code-label">c# — bulk index multiple documents efficiently</span>
+    <pre><span class="kw">var</span> products = <span class="kw">await</span> <span class="fn">GetProductsFromDbAsync</span>();  <span class="cm">// your data source</span>
+
+<span class="kw">var</span> bulkResponse = <span class="kw">await</span> client.<span class="fn">BulkAsync</span>(b => b
+    .<span class="fn">Index</span>(<span class="str">"products"</span>)
+    .<span class="fn">IndexMany</span>(products)
+);
+
+<span class="kw">if</span> (bulkResponse.Errors)
+{
+    <span class="kw">var</span> failedItems = bulkResponse.ItemsWithErrors;
+    <span class="kw">foreach</span> (<span class="kw">var</span> item <span class="kw">in</span> failedItems)
+        <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Failed: {item.Id} — {item.Error.Reason}"</span>);
+}
+
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Indexed: {bulkResponse.Items.Count - bulkResponse.ItemsWithErrors.Count()}"</span>);</pre>
+  </div>
+
+  <h3>7. Aggregations in C#</h3>
+  <div class="code-block">
+    <span class="code-label">c# — terms aggregation grouped by category</span>
+    <pre><span class="kw">var</span> aggResult = <span class="kw">await</span> client.<span class="fn">SearchAsync</span>&lt;<span class="tp">Product</span>&gt;(s => s
+    .<span class="fn">Size</span>(<span class="num">0</span>)  <span class="cm">// only return aggregations, no documents</span>
+    .<span class="fn">Aggregations</span>(a => a
+        .<span class="fn">Terms</span>(<span class="str">"by_category"</span>, t => t
+            .<span class="fn">Field</span>(f => f.Category)
+            .<span class="fn">Size</span>(<span class="num">10</span>)
+            .<span class="fn">Aggregations</span>(aa => aa
+                .<span class="fn">Average</span>(<span class="str">"avg_price"</span>, avg => avg.<span class="fn">Field</span>(f => f.Price))
+                .<span class="fn">Max</span>(<span class="str">"max_price"</span>, max => max.<span class="fn">Field</span>(f => f.Price))
+            )
+        )
+    )
+);
+
+<span class="kw">var</span> byCategory = aggResult.Aggregations.<span class="fn">Terms</span>(<span class="str">"by_category"</span>);
+<span class="kw">foreach</span> (<span class="kw">var</span> bucket <span class="kw">in</span> byCategory.Buckets)
+{
+    <span class="kw">var</span> avg = bucket.Average(<span class="str">"avg_price"</span>).Value;
+    <span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"{bucket.Key}: {bucket.DocCount} items, avg price £{avg:F2}"</span>);
+}</pre>
+  </div>
+
+  <h3>8. Health Check</h3>
+  <div class="code-block">
+    <span class="code-label">c# — check cluster health</span>
+    <pre><span class="kw">var</span> health = <span class="kw">await</span> client.Cluster.<span class="fn">HealthAsync</span>(h => h
+    .<span class="fn">WaitForStatus</span>(<span class="tp">HealthStatus</span>.Yellow)  <span class="cm">// wait until at least yellow</span>
+    .<span class="fn">Timeout</span>(<span class="str">"30s"</span>)
+);
+
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Status: {health.Status}"</span>);       <span class="cm">// green / yellow / red</span>
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Nodes: {health.NumberOfNodes}"</span>);
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Shards: {health.ActiveShards} active"</span>);
+<span class="tp">Console</span>.<span class="fn">WriteLine</span>(<span class="str">$"Unassigned: {health.UnassignedShards}"</span>);
+
+<span class="cm">// Green  = all shards assigned</span>
+<span class="cm">// Yellow = primary shards ok, some replicas unassigned (still functional)</span>
+<span class="cm">// Red    = some primary shards unassigned — partial data loss risk</span></pre>
+  </div>
+
+  <div class="completion">
+    <h3>🔍 AWS OpenSearch — Complete!</h3>
+    <p>You've covered the full OpenSearch Service landscape: inverted index internals, text analysis, index mappings, Query DSL (match, bool, fuzzy, aggregations), cluster architecture (hot/warm/cold tiers), ingestion patterns (Firehose, Lambda, Logstash), ISM lifecycle policies, four security layers, console setup, and a complete C# SDK integration. OpenSearch is powerful once you understand the document model and query context — the rest is configuration.</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+}
+</script>
+</body>
+</html>
