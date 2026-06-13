@@ -333,6 +333,53 @@ code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family
     <p>A <strong>radio station</strong>. The station (producer) broadcasts a show (event) without knowing who is listening. Every radio tuned to that frequency (consumer) receives and reacts to it. Add a new listener? The station doesn't need to change. Remove a listener? The station doesn't notice. Listeners are completely independent of each other and of the station's internal workings.</p>
   </div>
 
+  <h3>Event-Driven Flow — One Event, Many Independent Reactions</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚡ Event-Driven — Publisher Doesn't Know the Subscribers</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrevt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a5a"/>
+          </marker>
+        </defs>
+        <!-- Publisher -->
+        <rect x="30" y="95" width="150" height="60" rx="8" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="2"/>
+        <text x="105" y="120" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a003a" text-anchor="middle">OrderService</text>
+        <text x="105" y="137" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">PlaceOrderAsync()</text>
+        <text x="105" y="150" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a003a" text-anchor="middle">Publisher</text>
+        <!-- Arrow to event -->
+        <line x1="180" y1="125" x2="240" y2="125" stroke="#bf2a5a" stroke-width="2" marker-end="url(#arrevt)"/>
+        <text x="210" y="118" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf2a5a" text-anchor="middle">publishes</text>
+        <!-- Event -->
+        <rect x="245" y="100" width="160" height="50" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="2"/>
+        <text x="325" y="122" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#8a4500" text-anchor="middle">OrderPlacedEvent</text>
+        <text x="325" y="138" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">{OrderId, CustomerId, Total}</text>
+        <!-- Arrows to handlers (fan out) -->
+        <line x1="405" y1="115" x2="470" y2="35"  stroke="#1f7a52" stroke-width="1.5" marker-end="url(#arrevt)"/>
+        <line x1="405" y1="125" x2="470" y2="125" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#arrevt)"/>
+        <line x1="405" y1="135" x2="470" y2="215" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#arrevt)"/>
+        <!-- Handler 1 -->
+        <rect x="475" y="10" width="220" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="585" y="32" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">📧 SendOrderConfirmationEmailHandler</text>
+        <text x="585" y="48" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">NotificationService</text>
+        <!-- Handler 2 -->
+        <rect x="475" y="100" width="220" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="585" y="122" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">📦 ReserveInventoryHandler</text>
+        <text x="585" y="138" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">InventoryService</text>
+        <!-- Handler 3 -->
+        <rect x="475" y="190" width="220" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="585" y="212" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">🏷️ AwardLoyaltyPointsHandler</text>
+        <text x="585" y="228" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">LoyaltyService</text>
+
+        <text x="360" y="200" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Each handler runs independently</text>
+        <text x="360" y="225" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">If one fails, others still complete.</text>
+        <text x="360" y="248" font-family="Sora,sans-serif" font-size="10" fill="#8a003a" font-weight="700" text-anchor="middle">Add a 4th handler? Zero changes to OrderService.</text>
+      </svg>
+    </div>
+  </div>
+
   <h3>Synchronous vs Event-Driven Communication</h3>
   <div class="compare">
     <div class="bad-box">
@@ -522,6 +569,76 @@ code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family
     <p>A <strong>Swiss Army knife (Monolith)</strong> has everything in one tool — convenient, always together, easy to carry. But if one blade breaks, you can't replace just that blade. A <strong>toolbox (Microservices)</strong> has separate tools — you can upgrade, replace, or add individual tools without affecting others. But you need a toolbox to carry them, and coordination between tools is more effort.</p>
   </div>
 
+  <h3>Monolith vs Microservices — Visual Comparison</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🔬 Monolith (One Box) vs Microservices (Many Boxes, Own DBs)</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg">
+        <!-- MONOLITH -->
+        <text x="160" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">Monolith</text>
+        <rect x="30" y="32" width="260" height="160" rx="10" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <rect x="46" y="46" width="228" height="28" rx="5" fill="rgba(14,106,191,.12)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="160" y="64" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Orders module</text>
+        <rect x="46" y="80" width="228" height="28" rx="5" fill="rgba(14,106,191,.12)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="160" y="98" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Payments module</text>
+        <rect x="46" y="114" width="228" height="28" rx="5" fill="rgba(14,106,191,.12)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="160" y="132" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Inventory module</text>
+        <rect x="46" y="148" width="228" height="28" rx="5" fill="rgba(14,106,191,.12)" stroke="rgba(14,106,191,.2)" stroke-width="1"/>
+        <text x="160" y="166" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Users module</text>
+        <text x="160" y="208" font-family="Sora,sans-serif" font-size="10" fill="#606278" text-anchor="middle">One process</text>
+        <rect x="100" y="218" width="120" height="32" rx="6" fill="#d0f0ec" stroke="rgba(26,138,122,.3)" stroke-width="1.5"/>
+        <text x="160" y="238" font-family="JetBrains Mono,monospace" font-size="9" fill="#0d5c52" text-anchor="middle">One Database</text>
+        <text x="160" y="270" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">One deploy · scale all together</text>
+
+        <!-- divider -->
+        <line x1="360" y1="15" x2="360" y2="280" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+        <!-- MICROSERVICES -->
+        <text x="540" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">Microservices</text>
+
+        <!-- Service 1 -->
+        <rect x="385" y="35" width="120" height="55" rx="8" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="1.5"/>
+        <text x="445" y="56" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a003a" text-anchor="middle">Order Svc</text>
+        <rect x="395" y="65" width="100" height="16" rx="3" fill="rgba(191,42,90,.12)"/>
+        <text x="445" y="77" font-family="JetBrains Mono,monospace" font-size="7" fill="#8a003a" text-anchor="middle">own DB</text>
+
+        <!-- Service 2 -->
+        <rect x="515" y="35" width="120" height="55" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="575" y="56" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Payment Svc</text>
+        <rect x="525" y="65" width="100" height="16" rx="3" fill="rgba(14,138,90,.12)"/>
+        <text x="575" y="77" font-family="JetBrains Mono,monospace" font-size="7" fill="#085c38" text-anchor="middle">own DB</text>
+
+        <!-- Service 3 -->
+        <rect x="385" y="105" width="120" height="55" rx="8" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="1.5"/>
+        <text x="445" y="126" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Notification Svc</text>
+        <rect x="395" y="135" width="100" height="16" rx="3" fill="rgba(122,42,191,.12)"/>
+        <text x="445" y="147" font-family="JetBrains Mono,monospace" font-size="7" fill="#4a1580" text-anchor="middle">own DB</text>
+
+        <!-- Service 4 -->
+        <rect x="515" y="105" width="120" height="55" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="575" y="126" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">User Svc</text>
+        <rect x="525" y="135" width="100" height="16" rx="3" fill="rgba(191,106,14,.12)"/>
+        <text x="575" y="147" font-family="JetBrains Mono,monospace" font-size="7" fill="#8a4500" text-anchor="middle">own DB</text>
+
+        <!-- Service 5 -->
+        <rect x="385" y="175" width="120" height="55" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="445" y="196" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Inventory Svc</text>
+        <rect x="395" y="205" width="100" height="16" rx="3" fill="rgba(14,106,191,.12)"/>
+        <text x="445" y="217" font-family="JetBrains Mono,monospace" font-size="7" fill="#0a4280" text-anchor="middle">own DB</text>
+
+        <!-- Service 6 -->
+        <rect x="515" y="175" width="120" height="55" rx="8" fill="#d0f0ec" stroke="rgba(26,138,122,.3)" stroke-width="1.5"/>
+        <text x="575" y="196" font-family="JetBrains Mono,monospace" font-size="9" fill="#0d5c52" text-anchor="middle">Shipping Svc</text>
+        <rect x="525" y="205" width="100" height="16" rx="3" fill="rgba(26,138,122,.12)"/>
+        <text x="575" y="217" font-family="JetBrains Mono,monospace" font-size="7" fill="#0d5c52" text-anchor="middle">own DB</text>
+
+        <text x="510" y="252" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Each box: its own process, own deploy, own DB</text>
+        <text x="510" y="270" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Talk via HTTP / message bus · scale independently</text>
+      </svg>
+    </div>
+  </div>
+
   <h3>Monolith vs Microservices — The Real Tradeoffs</h3>
   <div class="table-wrap"><table>
     <tr><th>Aspect</th><th>Monolith</th><th>Microservices</th></tr>
@@ -655,6 +772,55 @@ builder.Services.<span class="fn">Configure</span>&lt;<span class="tp">ServiceEn
   <div class="analogy an-pub">
     <div class="analogy-tag">💡 Real World Analogy</div>
     <p>A <strong>YouTube channel</strong>. The creator (Publisher) uploads a video to their channel (Topic). All subscribers receive a notification. The creator doesn't know or care who is subscribed. Subscribers don't know or care who else is subscribed. New subscriber? The creator doesn't need to do anything. Unsubscribe? Same. The platform (Broker) handles all the routing.</p>
+  </div>
+
+  <h3>Pub/Sub Flow — Decoupled via the Broker</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📡 Pub/Sub — Publisher and Subscribers Never Meet Directly</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrpub" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a2abf"/>
+          </marker>
+        </defs>
+        <!-- Publisher -->
+        <rect x="20" y="85" width="140" height="60" rx="8" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="2"/>
+        <text x="90" y="110" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a003a" text-anchor="middle">OrderService</text>
+        <text x="90" y="127" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Publisher</text>
+        <text x="90" y="140" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a003a" text-anchor="middle">no knowledge of subscribers</text>
+        <!-- Arrow to broker -->
+        <line x1="160" y1="115" x2="225" y2="115" stroke="#8a2abf" stroke-width="2" marker-end="url(#arrpub)"/>
+        <text x="192" y="108" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a2abf" text-anchor="middle">send</text>
+        <!-- Broker -->
+        <rect x="230" y="60" width="180" height="110" rx="10" fill="#ede0f8" stroke="rgba(122,42,191,.35)" stroke-width="2.5"/>
+        <text x="320" y="85" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#4a1580" text-anchor="middle">Message Broker</text>
+        <text x="320" y="102" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Azure Service Bus / RabbitMQ</text>
+        <rect x="250" y="112" width="140" height="26" rx="5" fill="rgba(122,42,191,.12)" stroke="rgba(122,42,191,.2)" stroke-width="1"/>
+        <text x="320" y="129" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Topic: "orders"</text>
+        <text x="320" y="155" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">stores · retries · routes</text>
+        <!-- Arrows fan out -->
+        <line x1="410" y1="90"  x2="475" y2="40"  stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrpub)"/>
+        <line x1="410" y1="115" x2="475" y2="115" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrpub)"/>
+        <line x1="410" y1="140" x2="475" y2="190" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrpub)"/>
+        <!-- Subscriber 1 -->
+        <rect x="480" y="15" width="220" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="590" y="36" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">📧 NotificationService</text>
+        <text x="590" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">subscription: "notification-service"</text>
+        <!-- Subscriber 2 -->
+        <rect x="480" y="90" width="220" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="590" y="111" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">📊 AnalyticsService</text>
+        <text x="590" y="127" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">subscription: "analytics"</text>
+        <!-- Subscriber 3 -->
+        <rect x="480" y="165" width="220" height="50" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="2"/>
+        <text x="590" y="186" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#8a4500" text-anchor="middle">🚚 ShippingService</text>
+        <text x="590" y="202" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">subscription: "shipping"</text>
+
+        <text x="320" y="195" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">If a subscriber is offline,</text>
+        <text x="320" y="212" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">the broker holds the message until it returns.</text>
+      </svg>
+    </div>
   </div>
 
   <h3>Pub/Sub vs Direct HTTP</h3>
@@ -802,6 +968,52 @@ builder.Services.AddHostedService&lt;OrderEventConsumer&gt;();</span></pre>
   <div class="analogy an-repo">
     <div class="analogy-tag">💡 Real World Analogy</div>
     <p>A <strong>librarian (Repository)</strong> is your interface to the library's books. You ask the librarian for a book by title — you don't walk the stacks yourself. The librarian knows where everything is and handles the physical storage. A <strong>shopping basket (Unit of Work)</strong> — you add multiple items to your basket, and only when you check out do all items get purchased together as one transaction. Put one back = none are purchased.</p>
+  </div>
+
+  <h3>Repository + Unit of Work — How It Fits Together</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🗄️ Repository + Unit of Work — One Transaction, Many Repositories</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrrepo" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf6a0e"/>
+          </marker>
+        </defs>
+        <!-- Service -->
+        <rect x="20" y="90" width="140" height="60" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="2"/>
+        <text x="90" y="115" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">OrderService</text>
+        <text x="90" y="132" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">PlaceOrderAsync()</text>
+        <text x="90" y="145" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">uses IUnitOfWork</text>
+        <!-- Arrow -->
+        <line x1="160" y1="120" x2="225" y2="120" stroke="#bf6a0e" stroke-width="2" marker-end="url(#arrrepo)"/>
+        <!-- UoW box -->
+        <rect x="230" y="35" width="190" height="180" rx="10" fill="#fde8d0" stroke="rgba(201,96,10,.35)" stroke-width="2.5"/>
+        <text x="325" y="58" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Unit of Work</text>
+        <text x="325" y="75" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">shares one DbContext</text>
+        <rect x="248" y="86" width="154" height="26" rx="5" fill="rgba(191,106,14,.12)" stroke="rgba(191,106,14,.2)" stroke-width="1"/>
+        <text x="325" y="103" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Orders : IOrderRepository</text>
+        <rect x="248" y="118" width="154" height="26" rx="5" fill="rgba(191,106,14,.12)" stroke="rgba(191,106,14,.2)" stroke-width="1"/>
+        <text x="325" y="135" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Customers : IRepository&lt;T&gt;</text>
+        <rect x="248" y="150" width="154" height="26" rx="5" fill="rgba(191,106,14,.12)" stroke="rgba(191,106,14,.2)" stroke-width="1"/>
+        <text x="325" y="167" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Products : IRepository&lt;T&gt;</text>
+        <rect x="248" y="182" width="154" height="26" rx="5" fill="rgba(176,42,55,.1)" stroke="rgba(176,42,55,.25)" stroke-width="1"/>
+        <text x="325" y="199" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a0010" text-anchor="middle">SaveChangesAsync() ← ONE call</text>
+        <!-- Arrow to DbContext -->
+        <line x1="420" y1="120" x2="475" y2="120" stroke="#bf6a0e" stroke-width="2" marker-end="url(#arrrepo)"/>
+        <!-- DbContext / DB -->
+        <rect x="480" y="60" width="220" height="120" rx="10" fill="#d6e8f8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="590" y="85" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">AppDbContext</text>
+        <text x="590" y="102" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">single change-tracker</text>
+        <rect x="498" y="113" width="184" height="24" rx="4" fill="rgba(14,106,191,.1)"/>
+        <text x="590" y="129" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Orders + Products updated</text>
+        <rect x="498" y="143" width="184" height="24" rx="4" fill="rgba(14,106,191,.1)"/>
+        <text x="590" y="159" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">💾 committed atomically</text>
+
+        <text x="360" y="232" font-family="Sora,sans-serif" font-size="10" fill="#8a0010" font-weight="700" text-anchor="middle">If ANY step throws before SaveChangesAsync() → NOTHING is saved (atomic)</text>
+      </svg>
+    </div>
   </div>
 
   <h3>Repository Pattern — Full Implementation</h3>
@@ -982,6 +1194,75 @@ builder.Services.AddHostedService&lt;OrderEventConsumer&gt;();</span></pre>
     <p>A new employee (class) doesn't build their own desk, computer, and tools — the company (DI container) provides them. The employee just says "I need a computer and a desk" (constructor parameters), and facilities (the container) provides them. The employee doesn't know or care who made the computer or where the desk came from. This makes it easy to give a different computer (mock in tests) without changing the employee.</p>
   </div>
 
+  <h3>How the DI Container Resolves Dependencies</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">💉 Dependency Injection — Container Wires Everything Together</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 270" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrdi" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+        </defs>
+        <!-- Container -->
+        <rect x="20" y="20" width="200" height="230" rx="10" fill="#d6ebf8" stroke="rgba(14,106,191,.35)" stroke-width="2.5"/>
+        <text x="120" y="45" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">DI Container</text>
+        <text x="120" y="62" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">IServiceCollection</text>
+        <rect x="36" y="75" width="168" height="44" rx="5" fill="rgba(176,42,55,.1)" stroke="rgba(176,42,55,.2)" stroke-width="1"/>
+        <text x="120" y="93" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a0010" text-anchor="middle">Singleton</text>
+        <text x="120" y="108" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">one for app lifetime</text>
+        <rect x="36" y="125" width="168" height="44" rx="5" fill="rgba(14,138,90,.1)" stroke="rgba(14,138,90,.2)" stroke-width="1"/>
+        <text x="120" y="143" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Scoped</text>
+        <text x="120" y="158" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">one per HTTP request</text>
+        <rect x="36" y="175" width="168" height="44" rx="5" fill="rgba(122,42,191,.1)" stroke="rgba(122,42,191,.2)" stroke-width="1"/>
+        <text x="120" y="193" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Transient</text>
+        <text x="120" y="208" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">new every time</text>
+        <text x="120" y="240" font-family="JetBrains Mono,monospace" font-size="8" fill="#0a4280" text-anchor="middle">registered in Program.cs</text>
+
+        <!-- Arrow -->
+        <line x1="225" y1="135" x2="270" y2="135" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrdi)"/>
+        <text x="247" y="128" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">resolves</text>
+
+        <!-- Controller -->
+        <rect x="275" y="20" width="200" height="60" rx="8" fill="#d0f0ec" stroke="rgba(26,138,122,.3)" stroke-width="2"/>
+        <text x="375" y="42" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0d5c52" text-anchor="middle">OrderController</text>
+        <text x="375" y="59" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">requires IOrderService</text>
+        <text x="375" y="73" font-family="JetBrains Mono,monospace" font-size="8" fill="#0d5c52" text-anchor="middle">via constructor</text>
+
+        <!-- Arrow down -->
+        <line x1="375" y1="80" x2="375" y2="105" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrdi)"/>
+
+        <!-- OrderService -->
+        <rect x="275" y="110" width="200" height="60" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="375" y="132" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">OrderService</text>
+        <text x="375" y="149" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Scoped</text>
+        <text x="375" y="163" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c38" text-anchor="middle">injects IUnitOfWork, IEmailService...</text>
+
+        <!-- Arrows down to deps -->
+        <line x1="330" y1="170" x2="290" y2="200" stroke="#0e6abf" stroke-width="1.5" marker-end="url(#arrdi)"/>
+        <line x1="420" y1="170" x2="460" y2="200" stroke="#0e6abf" stroke-width="1.5" marker-end="url(#arrdi)"/>
+
+        <!-- IUnitOfWork -->
+        <rect x="225" y="205" width="150" height="50" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="2"/>
+        <text x="300" y="227" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a4500" text-anchor="middle">IUnitOfWork</text>
+        <text x="300" y="243" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Scoped — same DbContext</text>
+
+        <!-- IEmailService -->
+        <rect x="395" y="205" width="150" height="50" rx="8" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="2"/>
+        <text x="470" y="227" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#4a1580" text-anchor="middle">IEmailService</text>
+        <text x="470" y="243" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Transient — new instance</text>
+
+        <!-- Warning -->
+        <rect x="565" y="100" width="135" height="90" rx="8" fill="#fff8f8" stroke="rgba(176,42,55,.25)" stroke-width="2"/>
+        <text x="632" y="122" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#b02a37" text-anchor="middle">⚠️ Captive</text>
+        <text x="632" y="138" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#b02a37" text-anchor="middle">Dependency</text>
+        <text x="632" y="158" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Never inject Scoped</text>
+        <text x="632" y="172" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">into Singleton</text>
+      </svg>
+    </div>
+  </div>
+
   <h3>The Three Lifetimes</h3>
   <div class="grid-3">
     <div class="icon-item">
@@ -1140,6 +1421,65 @@ builder.Services.AddInfrastructure(builder.Configuration);</span></pre>
   <div class="analogy an-api">
     <div class="analogy-tag">💡 Real World Analogy</div>
     <p>A <strong>hotel reception desk</strong>. Every guest (client) goes to reception first — they don't wander directly to the kitchen, housekeeping, or the spa. Reception (Gateway) authenticates you (checks your booking), routes you ("Room 302 is on the third floor"), applies rules ("spa closes at 10pm"), and coordinates services. The individual departments don't deal with guest authentication — reception handles it.</p>
+  </div>
+
+  <h3>API Gateway — Single Entry Point, Many Services</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🚪 API Gateway — Routing, Auth, and Rate Limiting in One Place</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrapi" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a7a"/>
+          </marker>
+        </defs>
+        <!-- Clients -->
+        <rect x="15" y="30" width="120" height="40" rx="7" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="75" y="54" font-family="JetBrains Mono,monospace" font-size="10" fill="#0a4280" text-anchor="middle">📱 Mobile App</text>
+        <rect x="15" y="100" width="120" height="40" rx="7" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="75" y="124" font-family="JetBrains Mono,monospace" font-size="10" fill="#0a4280" text-anchor="middle">🖥️ Web App</text>
+        <rect x="15" y="170" width="120" height="40" rx="7" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="75" y="194" font-family="JetBrains Mono,monospace" font-size="10" fill="#0a4280" text-anchor="middle">🤝 Partner API</text>
+
+        <!-- Arrows to gateway -->
+        <line x1="135" y1="50"  x2="200" y2="105" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+        <line x1="135" y1="120" x2="200" y2="120" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+        <line x1="135" y1="190" x2="200" y2="135" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+
+        <!-- Gateway -->
+        <rect x="205" y="60" width="180" height="120" rx="10" fill="#d0f0ec" stroke="rgba(26,138,122,.35)" stroke-width="2.5"/>
+        <text x="295" y="83" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0d5c52" text-anchor="middle">API Gateway</text>
+        <text x="295" y="99" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">YARP Reverse Proxy</text>
+        <rect x="220" y="108" width="150" height="22" rx="4" fill="rgba(26,138,122,.1)"/>
+        <text x="295" y="123" font-family="JetBrains Mono,monospace" font-size="9" fill="#0d5c52" text-anchor="middle">🔐 Auth · Rate limit</text>
+        <rect x="220" y="134" width="150" height="22" rx="4" fill="rgba(26,138,122,.1)"/>
+        <text x="295" y="149" font-family="JetBrains Mono,monospace" font-size="9" fill="#0d5c52" text-anchor="middle">🗺️ Route by path</text>
+        <rect x="220" y="160" width="150" height="14" rx="4" fill="rgba(26,138,122,.1)"/>
+        <text x="295" y="170" font-family="JetBrains Mono,monospace" font-size="8" fill="#0d5c52" text-anchor="middle">📋 Logging + Correlation ID</text>
+
+        <!-- Arrows to services -->
+        <line x1="385" y1="90"  x2="450" y2="50"  stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+        <line x1="385" y1="120" x2="450" y2="120" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+        <line x1="385" y1="150" x2="450" y2="190" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrapi)"/>
+
+        <!-- Services -->
+        <rect x="455" y="25" width="240" height="48" rx="7" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="1.5"/>
+        <text x="575" y="44" font-family="JetBrains Mono,monospace" font-size="10" fill="#8a003a" text-anchor="middle">/api/orders/{**} → Order Service</text>
+        <text x="575" y="60" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">RoundRobin · 2 instances</text>
+
+        <rect x="455" y="96" width="240" height="48" rx="7" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="575" y="115" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">/api/payments/{**} → Payment Svc</text>
+        <text x="575" y="131" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">RequireAuthenticatedUser</text>
+
+        <rect x="455" y="167" width="240" height="48" rx="7" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="575" y="186" font-family="JetBrains Mono,monospace" font-size="10" fill="#8a4500" text-anchor="middle">/api/users/{**} → User Service</text>
+        <text x="575" y="202" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">internal HTTP, not HTTPS</text>
+
+        <text x="295" y="225" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Clients only know ONE address — the gateway</text>
+        <text x="295" y="240" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Services never exposed directly to the internet</text>
+      </svg>
+    </div>
   </div>
 
   <h3>What a Gateway Does</h3>

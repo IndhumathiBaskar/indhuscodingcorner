@@ -1,0 +1,1190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Part 1: Core Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --sd:#1a5abf;--sd-l:#d6e8f8;--sd-d:#0e3a8a;
+  --scale:#0e8a5a;--scale-l:#d4f0e8;--scale-d:#085c38;
+  --lb:#8a2abf;--lb-l:#ede0f8;--lb-d:#4a1580;
+  --cache:#bf6a0e;--cache-l:#f8f0d4;--cache-d:#8a4500;
+  --db:#0e6abf;--db-l:#d6ebf8;--db-d:#0a4280;
+  --cap:#bf2a5a;--cap-l:#f8d6e4;--cap-d:#8a003a;
+  --msg:#1a8a7a;--msg-l:#d0f0ec;--msg-d:#0d5c52;
+  --cdn:#6a3abf;--cdn-l:#ede0f8;--cdn-d:#3a1880;
+  --rate:#bf3a1a;--rate-l:#f8e0d4;--rate-d:#8a2000;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(26,90,191,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,90,.2) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(191,42,90,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#60a5fa,#34d399,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-active{background:rgba(96,165,250,.25);border:1px solid rgba(96,165,250,.4);color:#93c5fd;}
+.pb-inactive{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-over.active{background:var(--sd-l);color:var(--sd-d);}
+.t-scale.active{background:var(--scale-l);color:var(--scale-d);}
+.t-lb.active{background:var(--lb-l);color:var(--lb-d);}
+.t-cache.active{background:var(--cache-l);color:var(--cache-d);}
+.t-db.active{background:var(--db-l);color:var(--db-d);}
+.t-cap.active{background:var(--cap-l);color:var(--cap-d);}
+.t-msg.active{background:var(--msg-l);color:var(--msg-d);}
+.t-cdn.active{background:var(--cdn-l);color:var(--cdn-d);}
+.t-rate.active{background:var(--rate-l);color:var(--rate-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--sd-d);}     .ph-over h2{border-bottom:3px solid var(--sd-l);}
+.ph-scale h2,.ph-scale h3{color:var(--scale-d);} .ph-scale h2{border-bottom:3px solid var(--scale-l);}
+.ph-lb h2,.ph-lb h3{color:var(--lb-d);}          .ph-lb h2{border-bottom:3px solid var(--lb-l);}
+.ph-cache h2,.ph-cache h3{color:var(--cache-d);} .ph-cache h2{border-bottom:3px solid var(--cache-l);}
+.ph-db h2,.ph-db h3{color:var(--db-d);}          .ph-db h2{border-bottom:3px solid var(--db-l);}
+.ph-cap h2,.ph-cap h3{color:var(--cap-d);}       .ph-cap h2{border-bottom:3px solid var(--cap-l);}
+.ph-msg h2,.ph-msg h3{color:var(--msg-d);}       .ph-msg h2{border-bottom:3px solid var(--msg-l);}
+.ph-cdn h2,.ph-cdn h3{color:var(--cdn-d);}       .ph-cdn h2{border-bottom:3px solid var(--cdn-l);}
+.ph-rate h2,.ph-rate h3{color:var(--rate-d);}    .ph-rate h2{border-bottom:3px solid var(--rate-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--sd);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sd-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-scale{background:var(--scale-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--scale);} .an-scale .analogy-tag{color:var(--scale-d);}
+.an-lb{background:var(--lb-l);border:1.5px solid rgba(138,42,191,.2);border-left:4px solid var(--lb);}          .an-lb .analogy-tag{color:var(--lb-d);}
+.an-cache{background:var(--cache-l);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--cache);} .an-cache .analogy-tag{color:var(--cache-d);}
+.an-db{background:var(--db-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--db);}          .an-db .analogy-tag{color:var(--db-d);}
+.an-cap{background:var(--cap-l);border:1.5px solid rgba(191,42,90,.2);border-left:4px solid var(--cap);}        .an-cap .analogy-tag{color:var(--cap-d);}
+.an-msg{background:var(--msg-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--msg);}       .an-msg .analogy-tag{color:var(--msg-d);}
+.an-cdn{background:var(--cdn-l);border:1.5px solid rgba(106,58,191,.2);border-left:4px solid var(--cdn);}       .an-cdn .analogy-tag{color:var(--cdn-d);}
+.an-rate{background:var(--rate-l);border:1.5px solid rgba(191,58,26,.2);border-left:4px solid var(--rate);}     .an-rate .analogy-tag{color:var(--rate-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.danger h4{color:var(--red);margin-bottom:5px;font-size:.87rem;}
+.danger p{color:var(--muted);font-size:.84rem;margin:0;}
+
+/* COMPARE */
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:14px;margin:14px 0;}
+.bad-box{background:#fff8f8;border:1.5px solid rgba(176,42,55,.2);border-top:4px solid var(--red);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.bad-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--red);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.good-box{background:#f5fff9;border:1.5px solid rgba(31,122,82,.2);border-top:4px solid var(--green);border-radius:var(--r);padding:14px;box-shadow:var(--sh);}
+.good-box .box-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--green);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.box-text{font-size:.82rem;color:var(--muted);}
+.box-text li{margin-bottom:4px;}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.scale-c{border-left:4px solid var(--scale);}
+.code-block.lb-c{border-left:4px solid var(--lb);}
+.code-block.cache-c{border-left:4px solid var(--cache);}
+.code-block.db-c{border-left:4px solid var(--db);}
+.code-block.cap-c{border-left:4px solid var(--cap);}
+.code-block.msg-c{border-left:4px solid var(--msg);}
+.code-block.cdn-c{border-left:4px solid var(--cdn);}
+.code-block.rate-c{border-left:4px solid var(--rate);}
+.code-block.neutral{border-left:4px solid var(--sd);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.scale-l{color:#6ee7b7;}.code-label.lb-l{color:#d8b4fe;}.code-label.cache-l{color:#fde68a;}
+.code-label.db-l{color:#93c5fd;}.code-label.cap-l{color:#fca5a5;}.code-label.msg-l{color:#99f6e4;}
+.code-label.cdn-l{color:#c4b5fd;}.code-label.rate-l{color:#fdba74;}.code-label.neutral{color:#93c5fd;}
+.cl-badge{padding:2px 8px;border-radius:4px;font-size:.6rem;font-weight:700;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.at{color:#f9e2af;}.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--sd-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-scale li{border-left:3px solid var(--scale);} .cl-scale li:before{content:"✓ ";color:var(--scale);font-weight:700;}
+.cl-lb li{border-left:3px solid var(--lb);}       .cl-lb li:before{content:"✓ ";color:var(--lb);font-weight:700;}
+.cl-cache li{border-left:3px solid var(--cache);} .cl-cache li:before{content:"✓ ";color:var(--cache);font-weight:700;}
+.cl-db li{border-left:3px solid var(--db);}       .cl-db li:before{content:"✓ ";color:var(--db);font-weight:700;}
+.cl-cap li{border-left:3px solid var(--cap);}     .cl-cap li:before{content:"✓ ";color:var(--cap);font-weight:700;}
+.cl-msg li{border-left:3px solid var(--msg);}     .cl-msg li:before{content:"✓ ";color:var(--msg);font-weight:700;}
+.cl-cdn li{border-left:3px solid var(--cdn);}     .cl-cdn li:before{content:"✓ ";color:var(--cdn);font-weight:700;}
+.cl-rate li{border-left:3px solid var(--rate);}   .cl-rate li:before{content:"✓ ";color:var(--rate);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);}     .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);}       .cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-scale{background:var(--scale-l);border-color:rgba(14,138,90,.25);}
+.pc-lb{background:var(--lb-l);border-color:rgba(138,42,191,.25);}
+.pc-cache{background:var(--cache-l);border-color:rgba(191,106,14,.25);}
+.pc-db{background:var(--db-l);border-color:rgba(14,106,191,.25);}
+.pc-cap{background:var(--cap-l);border-color:rgba(191,42,90,.25);}
+.pc-msg{background:var(--msg-l);border-color:rgba(26,138,122,.25);}
+.pc-cdn{background:var(--cdn-l);border-color:rgba(106,58,191,.25);}
+.pc-rate{background:var(--rate-l);border-color:rgba(191,58,26,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-scale .pc-name{color:var(--scale-d);} .pc-lb .pc-name{color:var(--lb-d);}
+.pc-cache .pc-name{color:var(--cache-d);} .pc-db .pc-name{color:var(--db-d);}
+.pc-cap .pc-name{color:var(--cap-d);}     .pc-msg .pc-name{color:var(--msg-d);}
+.pc-cdn .pc-name{color:var(--cdn-d);}     .pc-rate .pc-name{color:var(--rate-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);line-height:1.5;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;}
+
+/* NUMBER STAT */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin:14px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--sd-d);}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare,.pattern-cards,.stat-grid{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">System Design Series · Part 1 of 3</div>
+    <div class="part-badge">
+      <span class="pb pb-active">① Core Concepts</span>
+      <span class="pb pb-inactive">② Beginner Examples</span>
+      <span class="pb pb-inactive">③ Advanced Examples</span>
+    </div>
+    <h1>System Design — <span>Core Concepts</span></h1>
+    <p>Scalability · Load Balancing · Caching · Databases · CAP Theorem · Message Queues · CDN · Rate Limiting · beginner to expert</p>
+    <div class="header-chips">
+      <span class="chip">Vertical vs Horizontal Scaling</span>
+      <span class="chip">Load Balancers</span>
+      <span class="chip">Caching</span>
+      <span class="chip">SQL vs NoSQL</span>
+      <span class="chip">Replication &amp; Sharding</span>
+      <span class="chip">CAP Theorem</span>
+      <span class="chip">Message Queues</span>
+      <span class="chip">CDN</span>
+      <span class="chip">Rate Limiting</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn t-scale" onclick="T('scale',this)">② Scalability</button>
+      <button class="tab-btn t-lb"    onclick="T('lb',this)">③ Load Balancing</button>
+      <button class="tab-btn t-cache" onclick="T('cache',this)">④ Caching</button>
+      <button class="tab-btn t-db"    onclick="T('db',this)">⑤ Databases</button>
+      <button class="tab-btn t-cap"   onclick="T('cap',this)">⑥ CAP Theorem</button>
+      <button class="tab-btn t-msg"   onclick="T('msg',this)">⑦ Message Queues</button>
+      <button class="tab-btn t-cdn"   onclick="T('cdn',this)">⑧ CDN</button>
+      <button class="tab-btn t-rate"  onclick="T('rate',this)">⑨ Rate Limiting</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🏗️ What Is System Design?</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — What Is System Design?</div>
+    <p>System design is the process of planning <strong>how a large software system will work at scale</strong> — before you write code. It answers questions like: How will this handle 1 million users? What happens when a server crashes? How do we keep data consistent across multiple databases? Where do we store files? System design interviews test whether you can reason about these tradeoffs — there's rarely one "correct" answer, only better and worse tradeoffs for a given situation.</p>
+  </div>
+
+  <h3>The 8 Core Building Blocks</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-scale">
+      <span class="pc-emoji">📈</span>
+      <div class="pc-name">Scalability</div>
+      <div class="pc-intent">How a system handles growing load — more users, more data, more requests — without falling over.</div>
+    </div>
+    <div class="pc pc-lb">
+      <span class="pc-emoji">⚖️</span>
+      <div class="pc-name">Load Balancing</div>
+      <div class="pc-intent">Distributing incoming traffic across multiple servers so no single server is overwhelmed.</div>
+    </div>
+    <div class="pc pc-cache">
+      <span class="pc-emoji">⚡</span>
+      <div class="pc-name">Caching</div>
+      <div class="pc-intent">Storing frequently accessed data in fast memory to avoid repeating expensive operations.</div>
+    </div>
+    <div class="pc pc-db">
+      <span class="pc-emoji">🗄️</span>
+      <div class="pc-name">Databases</div>
+      <div class="pc-intent">SQL vs NoSQL, replication for read scaling, sharding for write scaling.</div>
+    </div>
+    <div class="pc pc-cap">
+      <span class="pc-emoji">⚖️</span>
+      <div class="pc-name">CAP Theorem</div>
+      <div class="pc-intent">In a distributed system you can't have perfect Consistency, Availability, AND Partition tolerance all at once.</div>
+    </div>
+    <div class="pc pc-msg">
+      <span class="pc-emoji">📨</span>
+      <div class="pc-name">Message Queues</div>
+      <div class="pc-intent">Decouple services with asynchronous messaging — producers and consumers work independently.</div>
+    </div>
+    <div class="pc pc-cdn">
+      <span class="pc-emoji">🌍</span>
+      <div class="pc-name">CDN</div>
+      <div class="pc-intent">Content Delivery Network — serve static content from servers physically close to users.</div>
+    </div>
+    <div class="pc pc-rate">
+      <span class="pc-emoji">🚦</span>
+      <div class="pc-name">Rate Limiting</div>
+      <div class="pc-intent">Control how many requests a client can make in a time window — protects against abuse and overload.</div>
+    </div>
+  </div>
+
+  <h3>Latency vs Throughput — Two Key Measurements</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⏱️ Latency</h4>
+      <p>The time it takes for ONE request to complete — from sending the request to receiving the response. Measured in milliseconds (ms).</p>
+      <ul style="margin-top:8px;">
+        <li>"This API responds in 50ms"</li>
+        <li>Lower is better</li>
+        <li>Affected by: network distance, processing time, queueing</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🚀 Throughput</h4>
+      <p>How many requests a system can handle in a given time period. Measured in requests per second (RPS) or transactions per second (TPS).</p>
+      <ul style="margin-top:8px;">
+        <li>"This server handles 10,000 RPS"</li>
+        <li>Higher is better</li>
+        <li>Affected by: parallelism, resource limits, bottlenecks</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 They're Not the Same Thing</h4>
+    <p>A system can have low latency but low throughput (fast for one user, but can't handle many at once) or high throughput but high latency (handles lots of requests, but each one is slow). Good system design optimises both, but sometimes you trade one for the other — e.g., batching requests increases throughput but adds latency per individual request.</p>
+  </div>
+
+  <h3>Common Numbers Every Engineer Should Know</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">~0.5ms</div><div class="stat-label">Read 1MB from RAM</div></div>
+    <div class="stat"><div class="stat-num">~1ms</div><div class="stat-label">Read 1MB from SSD</div></div>
+    <div class="stat"><div class="stat-num">~10ms</div><div class="stat-label">Read 1MB from disk (HDD)</div></div>
+    <div class="stat"><div class="stat-num">~0.5ms</div><div class="stat-label">Round trip in same datacentre</div></div>
+    <div class="stat"><div class="stat-num">~150ms</div><div class="stat-label">Round trip cross-continent</div></div>
+    <div class="stat"><div class="stat-num">86,400</div><div class="stat-label">Seconds in a day</div></div>
+  </div>
+  <div class="tip">
+    <h4>💡 Why These Numbers Matter</h4>
+    <p>If you need to estimate "how many servers do we need for 1 million daily users", you use these numbers. E.g., 1 million requests/day ÷ 86,400 seconds ≈ 11.5 requests/second on average — but you design for peak traffic, which could be 5-10× the average.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — SCALABILITY
+══════════════════════════════════ -->
+<div id="tab-scale" class="tab-panel ph-scale"><div class="section">
+  <h2>📈 Scalability — Vertical vs Horizontal</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Scalability is your system's ability to handle <strong>more load</strong> — more users, more data, more requests — by adding resources. There are two fundamental ways to scale: <strong>Vertical Scaling</strong> (make one server bigger/more powerful) and <strong>Horizontal Scaling</strong> (add more servers). Most large systems use horizontal scaling because it has no upper limit and provides redundancy.</p>
+  </div>
+
+  <div class="analogy an-scale">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A restaurant kitchen is overwhelmed with orders. <strong>Vertical scaling</strong> = hire a faster chef with better equipment (one super-chef does everything quicker). <strong>Horizontal scaling</strong> = hire 5 more chefs and split the orders between them. The super-chef approach has a limit — there's only so fast one person can work, and if they get sick, the kitchen stops. With 5 chefs, if one gets sick, the other 4 keep going.</p>
+  </div>
+
+  <h3>Vertical vs Horizontal Scaling</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📈 Vertical Scaling (Scale Up) vs Horizontal Scaling (Scale Out)</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg">
+        <!-- VERTICAL -->
+        <text x="160" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">⬆️ Vertical Scaling (Scale Up)</text>
+        <rect x="100" y="170" width="120" height="60" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="160" y="195" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Server</text>
+        <text x="160" y="210" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">4 CPU, 8GB RAM</text>
+        <text x="160" y="155" font-family="Sora,sans-serif" font-size="14" fill="#085c38" text-anchor="middle">⬆️ upgrade</text>
+        <rect x="80" y="60" width="160" height="90" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.4)" stroke-width="2"/>
+        <text x="160" y="95" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">Bigger Server</text>
+        <text x="160" y="115" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">32 CPU, 256GB RAM</text>
+        <text x="160" y="133" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c38" text-anchor="middle">Same server, more power</text>
+        <text x="160" y="255" font-family="Sora,sans-serif" font-size="9" fill="#b02a37" text-anchor="middle">⚠️ Single point of failure</text>
+        <text x="160" y="270" font-family="Sora,sans-serif" font-size="9" fill="#b02a37" text-anchor="middle">⚠️ Hardware limits exist</text>
+
+        <!-- divider -->
+        <line x1="360" y1="15" x2="360" y2="270" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+        <!-- HORIZONTAL -->
+        <text x="540" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#4a1580" text-anchor="middle">➡️ Horizontal Scaling (Scale Out)</text>
+        <!-- Load balancer -->
+        <rect x="480" y="45" width="120" height="34" rx="6" fill="#ede0f8" stroke="rgba(122,42,191,.35)" stroke-width="2"/>
+        <text x="540" y="67" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Load Balancer</text>
+        <!-- Servers -->
+        <rect x="400" y="110" width="80" height="50" rx="6" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="1.5"/>
+        <text x="440" y="138" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Server 1</text>
+        <rect x="500" y="110" width="80" height="50" rx="6" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="1.5"/>
+        <text x="540" y="138" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Server 2</text>
+        <rect x="600" y="110" width="80" height="50" rx="6" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="1.5"/>
+        <text x="640" y="138" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Server 3</text>
+        <!-- arrows -->
+        <line x1="500" y1="79" x2="450" y2="108" stroke="#8a2abf" stroke-width="1.5"/>
+        <line x1="540" y1="79" x2="540" y2="108" stroke="#8a2abf" stroke-width="1.5"/>
+        <line x1="580" y1="79" x2="630" y2="108" stroke="#8a2abf" stroke-width="1.5"/>
+        <!-- + more -->
+        <rect x="500" y="180" width="80" height="34" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="540" y="201" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">+ Server N...</text>
+        <text x="540" y="240" font-family="Sora,sans-serif" font-size="9" fill="#1f7a52" text-anchor="middle">✅ No single point of failure</text>
+        <text x="540" y="255" font-family="Sora,sans-serif" font-size="9" fill="#1f7a52" text-anchor="middle">✅ Add servers as needed — near-infinite scale</text>
+        <text x="540" y="270" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">More operational complexity</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Vertical vs Horizontal — Detailed Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>Vertical Scaling</th><th>Horizontal Scaling</th></tr>
+    <tr><td>How it works</td><td>Add more CPU/RAM to existing server</td><td>Add more servers running the same app</td></tr>
+    <tr><td>Limit</td><td>Hardware ceiling (biggest server money can buy)</td><td>Effectively unlimited — add as many servers as needed</td></tr>
+    <tr><td>Downtime</td><td>Usually requires restart/downtime to upgrade</td><td>New servers added without downtime</td></tr>
+    <tr><td>Failure impact</td><td>One server down = whole app down</td><td>One server down = others keep serving</td></tr>
+    <tr><td>Complexity</td><td>Simple — no code changes needed</td><td>Needs load balancer, stateless design, session handling</td></tr>
+    <tr><td>Cost curve</td><td>Cost increases exponentially at high end</td><td>Cost increases roughly linearly</td></tr>
+    <tr><td>Best for</td><td>Databases (initially), simple apps, early stage</td><td>Web/API servers, stateless services, high traffic</td></tr>
+  </table></div>
+
+  <h3>Stateless vs Stateful — Why It Matters for Scaling</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔄 Stateless Services</h4>
+      <p>Each request contains everything needed to process it. The server doesn't remember anything between requests.</p>
+      <ul style="margin-top:8px;">
+        <li>Any server can handle any request</li>
+        <li>Easy to horizontally scale — just add more identical servers</li>
+        <li>Example: REST APIs using JWT tokens (no server-side session)</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📌 Stateful Services</h4>
+      <p>The server remembers information about the client between requests (session data stored in server memory).</p>
+      <ul style="margin-top:8px;">
+        <li>Same client must hit the same server ("sticky sessions")</li>
+        <li>Harder to scale — server failure loses session data</li>
+        <li>Solution: move state to external store (Redis) → becomes stateless</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 The Golden Rule</h4>
+    <p>Design your application servers to be <strong>stateless</strong>. Store session data, user state, and shopping carts in an external store like Redis instead of server memory. This means any server can handle any request, making horizontal scaling trivial — just add more identical servers behind a load balancer.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — LOAD BALANCING
+══════════════════════════════════ -->
+<div id="tab-lb" class="tab-panel ph-lb"><div class="section">
+  <h2>⚖️ Load Balancing</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>A Load Balancer sits in front of multiple servers and <strong>distributes incoming requests across them</strong>. Clients only know the load balancer's address — they don't know or care which actual server handles their request. This enables horizontal scaling, provides redundancy (if one server dies, traffic goes to the others), and can do health checks to avoid sending traffic to unhealthy servers.</p>
+  </div>
+
+  <div class="analogy an-lb">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>supermarket queue manager</strong>. Instead of customers picking a checkout lane themselves (some queues get long while others are empty), a staff member directs each customer to the next available till. If a till closes (breaks down), the manager stops sending customers there. Customers don't need to know which till is "best" — they just follow directions.</p>
+  </div>
+
+  <h3>Load Balancing Algorithms</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔁 Round Robin</h4>
+      <p>Requests distributed sequentially: Server 1, Server 2, Server 3, Server 1, Server 2... Simple and fair if all servers are equal capacity.</p>
+    </div>
+    <div class="card">
+      <h4>⚖️ Weighted Round Robin</h4>
+      <p>Like round robin but servers with more capacity get proportionally more requests. Server A (weight 3) gets 3 requests for every 1 to Server B (weight 1).</p>
+    </div>
+    <div class="card">
+      <h4>📊 Least Connections</h4>
+      <p>Send the next request to whichever server currently has the fewest active connections. Good when requests take varying amounts of time.</p>
+    </div>
+    <div class="card">
+      <h4>🔑 IP Hash / Consistent Hashing</h4>
+      <p>Hash the client's IP to consistently route the same client to the same server. Useful for sticky sessions without external session storage.</p>
+    </div>
+  </div>
+
+  <h3>Layer 4 vs Layer 7 Load Balancing</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>Layer 4 (Transport)</th><th>Layer 7 (Application)</th></tr>
+    <tr><td>Operates on</td><td>IP address + Port (TCP/UDP)</td><td>HTTP content (headers, URL, cookies)</td></tr>
+    <tr><td>Decision based on</td><td>Source/destination IP and port only</td><td>URL path, headers, cookies, request body</td></tr>
+    <tr><td>Speed</td><td>Faster — less inspection</td><td>Slightly slower — inspects HTTP content</td></tr>
+    <tr><td>Routing example</td><td>Route all traffic to port 443 to a server pool</td><td>Route /api/* to API servers, /images/* to image servers</td></tr>
+    <tr><td>SSL termination</td><td>Usually passes through</td><td>Can terminate SSL and inspect content</td></tr>
+    <tr><td>Examples</td><td>AWS NLB, basic TCP load balancers</td><td>AWS ALB, NGINX, YARP</td></tr>
+  </table></div>
+
+  <h3>Load Balancer in the Request Flow</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚖️ Load Balancer with Health Checks</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrlb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a2abf"/>
+          </marker>
+          <marker id="arrlbh" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <!-- clients -->
+        <rect x="15" y="40" width="100" height="36" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="65" y="62" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Client A</text>
+        <rect x="15" y="86" width="100" height="36" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="65" y="108" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Client B</text>
+        <rect x="15" y="132" width="100" height="36" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="65" y="154" font-family="JetBrains Mono,monospace" font-size="9" fill="#0a4280" text-anchor="middle">Client C</text>
+
+        <!-- arrows to LB -->
+        <line x1="115" y1="58"  x2="190" y2="100" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrlb)"/>
+        <line x1="115" y1="104" x2="190" y2="104" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrlb)"/>
+        <line x1="115" y1="150" x2="190" y2="108" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrlb)"/>
+
+        <!-- LB -->
+        <rect x="195" y="65" width="160" height="80" rx="8" fill="#ede0f8" stroke="rgba(122,42,191,.35)" stroke-width="2.5"/>
+        <text x="275" y="90" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#4a1580" text-anchor="middle">Load Balancer</text>
+        <text x="275" y="107" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Round Robin</text>
+        <text x="275" y="124" font-family="JetBrains Mono,monospace" font-size="8" fill="#4a1580" text-anchor="middle">+ Health Checks every 10s</text>
+
+        <!-- arrows to servers -->
+        <line x1="355" y1="90"  x2="430" y2="50"  stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrlb)"/>
+        <line x1="355" y1="105" x2="430" y2="105" stroke="#8a2abf" stroke-width="1.5" marker-end="url(#arrlb)"/>
+        <line x1="355" y1="120" x2="430" y2="160" stroke="#b02a37" stroke-width="1.5" stroke-dasharray="3,3"/>
+
+        <!-- servers -->
+        <rect x="435" y="25" width="160" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="515" y="46" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">Server 1</text>
+        <text x="515" y="63" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">✅ healthy</text>
+
+        <rect x="435" y="80" width="160" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="515" y="101" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">Server 2</text>
+        <text x="515" y="118" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">✅ healthy</text>
+
+        <rect x="435" y="135" width="160" height="50" rx="6" fill="#fff8f8" stroke="rgba(176,42,55,.3)" stroke-width="1.5" stroke-dasharray="4,3"/>
+        <text x="515" y="156" font-family="JetBrains Mono,monospace" font-size="10" fill="#b02a37" text-anchor="middle">Server 3</text>
+        <text x="515" y="173" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">❌ unhealthy — skipped</text>
+
+        <!-- health check loop -->
+        <path d="M 360 70 Q 410 30 430 50" fill="none" stroke="#1f7a52" stroke-width="1" stroke-dasharray="2,2" marker-end="url(#arrlbh)"/>
+        <text x="395" y="25" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">GET /health</text>
+
+        <text x="360" y="215" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Clients only know the Load Balancer's address — never see individual servers</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Health Checks</h3>
+  <div class="card">
+    <h4>🏥 How Health Checks Work</h4>
+    <p>The load balancer periodically sends a request (e.g., <code>GET /health</code>) to each server. If a server responds successfully within a timeout, it's marked healthy and receives traffic. If it fails repeatedly, it's marked unhealthy and removed from rotation — until it recovers.</p>
+    <ul style="margin-top:8px;">
+      <li><strong>Health endpoint</strong> — typically checks DB connectivity, disk space, dependencies</li>
+      <li><strong>Interval</strong> — how often to check (e.g., every 10 seconds)</li>
+      <li><strong>Threshold</strong> — how many failures before marking unhealthy (avoids false positives from one slow response)</li>
+    </ul>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — CACHING
+══════════════════════════════════ -->
+<div id="tab-cache" class="tab-panel ph-cache"><div class="section">
+  <h2>⚡ Caching</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Caching means <strong>storing a copy of frequently accessed data in a fast storage layer</strong> (usually in-memory, like Redis) so future requests for that data don't need to repeat expensive work — like querying a database or calling an external API. Cached data is faster but might be slightly outdated (stale).</p>
+  </div>
+
+  <div class="analogy an-cache">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>You keep frequently used spices on your kitchen counter (cache) instead of walking to the pantry (database) every time you cook. It's much faster to grab salt from the counter. But if someone restocks the pantry with a new spice brand, your counter copy might be "stale" until you refill it. Most-used items stay on the counter; rarely-used items stay in the pantry.</p>
+  </div>
+
+  <h3>Where Caching Happens</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌍</span><h4>CDN / Edge</h4><p>Static assets cached close to users — images, CSS, JS, videos.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>Browser Cache</h4><p>Browser stores responses locally based on Cache-Control headers.</p></div>
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>API / App Cache</h4><p>Redis/Memcached stores computed results, session data, API responses.</p></div>
+    <div class="icon-item"><span class="emoji">🗄️</span><h4>Database Cache</h4><p>Query result caching, buffer pools — built into most databases.</p></div>
+  </div>
+
+  <h3>Cache-Aside Pattern — The Most Common Strategy</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚡ Cache-Aside — Application Manages the Cache</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrch" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf6a0e"/>
+          </marker>
+          <marker id="arrchm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+          <marker id="arrchr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#b02a37"/>
+          </marker>
+        </defs>
+        <!-- App -->
+        <rect x="30" y="85" width="130" height="70" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="2"/>
+        <text x="95" y="113" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Application</text>
+        <text x="95" y="130" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">GetProduct(id)</text>
+        <text x="95" y="145" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">1. check cache first</text>
+
+        <!-- arrow to cache -->
+        <line x1="160" y1="105" x2="240" y2="60" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrchm)"/>
+        <text x="200" y="73" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">1. GET key</text>
+
+        <!-- Cache -->
+        <rect x="245" y="20" width="160" height="60" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="325" y="44" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">Cache (Redis)</text>
+        <text x="325" y="62" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">in-memory, fast</text>
+
+        <!-- HIT path -->
+        <line x1="245" y1="55" x2="170" y2="100" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrchm)"/>
+        <text x="195" y="95" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle" font-weight="700">✅ HIT → return</text>
+
+        <!-- MISS path to DB -->
+        <line x1="160" y1="150" x2="240" y2="195" stroke="#b02a37" stroke-width="2" marker-end="url(#arrchr)"/>
+        <text x="200" y="190" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">❌ MISS → query</text>
+
+        <!-- DB -->
+        <rect x="245" y="165" width="160" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="325" y="189" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">Database</text>
+        <text x="325" y="207" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">source of truth</text>
+
+        <!-- DB result back to app, and populate cache -->
+        <line x1="245" y1="200" x2="170" y2="155" stroke="#b02a37" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrchr)"/>
+        <text x="195" y="245" font-family="Sora,sans-serif" font-size="0"> </text>
+
+        <!-- Populate cache after DB -->
+        <path d="M 405 195 Q 470 195 470 110 Q 470 50 405 50" fill="none" stroke="#bf6a0e" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrch)"/>
+        <text x="490" y="120" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle" transform="rotate(90 490 120)">2. populate cache (with TTL)</text>
+
+        <text x="360" y="232" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Next request for same key → cache HIT, database not touched</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Cache Eviction Policies</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⏰ TTL (Time To Live)</h4>
+      <p>Each cached item expires after a set time (e.g., 5 minutes). Simple and predictable — guarantees data isn't stale for longer than the TTL.</p>
+    </div>
+    <div class="card">
+      <h4>📉 LRU (Least Recently Used)</h4>
+      <p>When the cache is full, remove the item that hasn't been accessed for the longest time. Most common eviction policy — keeps "hot" data in cache.</p>
+    </div>
+    <div class="card">
+      <h4>📊 LFU (Least Frequently Used)</h4>
+      <p>Remove the item that has been accessed the fewest times. Good when access patterns are stable over time.</p>
+    </div>
+    <div class="card">
+      <h4>🔄 Write-Through / Write-Behind</h4>
+      <p>Write-through: write to cache AND database simultaneously. Write-behind: write to cache immediately, database updated asynchronously later.</p>
+    </div>
+  </div>
+
+  <h3>Cache Invalidation — "The Hardest Problem"</h3>
+  <div class="warn">
+    <h4>⚠️ There Are Only Two Hard Problems in Computer Science</h4>
+    <p>Cache invalidation, naming things, and off-by-one errors. When underlying data changes, the cache becomes stale. Strategies: (1) short TTLs accept some staleness, (2) explicitly delete/update cache keys when data changes, (3) versioned cache keys (e.g., <code>product:123:v2</code>) so old versions naturally expire. Choose based on how critical freshness is for that data.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — DATABASES
+══════════════════════════════════ -->
+<div id="tab-db" class="tab-panel ph-db"><div class="section">
+  <h2>🗄️ Databases — SQL vs NoSQL, Replication, Sharding</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Databases store your application's data. The big choices are: <strong>SQL vs NoSQL</strong> (structured tables with relationships vs flexible documents/key-value), <strong>Replication</strong> (copies of the database for read scaling and redundancy), and <strong>Sharding</strong> (splitting data across multiple databases for write scaling). Each choice has real tradeoffs — there's no universally "best" database.</p>
+  </div>
+
+  <h3>SQL vs NoSQL</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>SQL (Relational)</th><th>NoSQL</th></tr>
+    <tr><td>Structure</td><td>Tables with fixed schema, rows and columns</td><td>Documents, key-value, graphs, wide-column — flexible schema</td></tr>
+    <tr><td>Relationships</td><td>Foreign keys, JOINs across tables</td><td>Usually denormalised — related data embedded together</td></tr>
+    <tr><td>Consistency</td><td>ACID transactions — strong consistency</td><td>Often eventual consistency (tunable in some)</td></tr>
+    <tr><td>Scaling</td><td>Vertical first, sharding is complex</td><td>Built for horizontal scaling from the start</td></tr>
+    <tr><td>Query language</td><td>SQL — powerful ad-hoc queries, JOINs</td><td>Varies — often simpler key-based lookups</td></tr>
+    <tr><td>Best for</td><td>Financial data, complex relationships, transactions</td><td>Large scale, flexible schema, high write throughput</td></tr>
+    <tr><td>Examples</td><td>PostgreSQL, MySQL, SQL Server</td><td>MongoDB (document), Redis (key-value), Cassandra (wide-column), Neo4j (graph)</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 It's Not Either/Or</h4>
+    <p>Most real systems use multiple databases for different purposes — "polyglot persistence". E.g., PostgreSQL for orders (need ACID transactions), Redis for sessions/cache (need speed), Elasticsearch for search (need full-text search), MongoDB for product catalogues (flexible schema per category).</p>
+  </div>
+
+  <h3>Database Replication</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🗄️ Primary-Replica Replication — Scale Reads</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrdbw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#b02a37"/>
+          </marker>
+          <marker id="arrdbr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+          <marker id="arrdbs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <!-- App -->
+        <rect x="30" y="80" width="120" height="70" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="2"/>
+        <text x="90" y="108" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Application</text>
+        <text x="90" y="125" font-family="JetBrains Mono,monospace" font-size="9" fill="#b02a37" text-anchor="middle">Writes → Primary</text>
+        <text x="90" y="140" font-family="JetBrains Mono,monospace" font-size="9" fill="#0e6abf" text-anchor="middle">Reads → Replicas</text>
+
+        <!-- Arrow to primary (write) -->
+        <line x1="150" y1="105" x2="245" y2="65" stroke="#b02a37" stroke-width="2" marker-end="url(#arrdbw)"/>
+        <text x="195" y="78" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">WRITE</text>
+
+        <!-- Primary -->
+        <rect x="250" y="25" width="170" height="60" rx="8" fill="#fff8f8" stroke="rgba(176,42,55,.35)" stroke-width="2.5"/>
+        <text x="335" y="50" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#b02a37" text-anchor="middle">Primary DB</text>
+        <text x="335" y="68" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">All writes go here</text>
+
+        <!-- Arrow to replicas (reads) -->
+        <line x1="150" y1="140" x2="245" y2="175" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrdbr)"/>
+        <text x="195" y="170" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">READ</text>
+
+        <!-- Replication arrows -->
+        <line x1="420" y1="55" x2="490" y2="115" stroke="#1f7a52" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrdbs)"/>
+        <line x1="420" y1="65" x2="490" y2="170" stroke="#1f7a52" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrdbs)"/>
+        <text x="460" y="100" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">replicate</text>
+
+        <!-- Replicas -->
+        <rect x="495" y="95" width="170" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="580" y="116" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Read Replica 1</text>
+        <text x="580" y="133" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">slightly delayed copy</text>
+
+        <rect x="495" y="155" width="170" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="580" y="176" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Read Replica 2</text>
+        <text x="580" y="193" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">slightly delayed copy</text>
+
+        <!-- arrows from app to replica2 -->
+        <line x1="150" y1="145" x2="490" y2="180" stroke="#0e6abf" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrdbr)"/>
+
+        <text x="335" y="220" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Replication lag means replicas may be a fraction behind primary — "eventual consistency" for reads</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Sharding — Splitting Data Across Databases</h3>
+
+  <div class="card">
+    <h4>🔀 What Is Sharding?</h4>
+    <p>Replication copies the WHOLE database to multiple servers (helps with reads). Sharding splits the database HORIZONTALLY — each shard holds a different subset of rows, e.g., users A-M on Shard 1, users N-Z on Shard 2. This scales WRITES, since each shard handles only a portion of the data.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔑 Sharding Strategies</h4>
+      <ul>
+        <li><strong>Range-based:</strong> Shard by ID ranges (1-1000 → Shard A, 1001-2000 → Shard B). Simple but can cause hotspots.</li>
+        <li><strong>Hash-based:</strong> Hash(user_id) % num_shards. Even distribution but hard to add shards later.</li>
+        <li><strong>Geographic:</strong> Shard by region (EU users → EU database, US users → US database). Helps with latency and compliance (GDPR).</li>
+        <li><strong>Directory-based:</strong> A lookup table maps each key to its shard. Flexible but adds a lookup hop.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚠️ Sharding Challenges</h4>
+      <ul>
+        <li><strong>Cross-shard JOINs</strong> are slow or impossible — denormalise data instead</li>
+        <li><strong>Re-sharding</strong> (adding shards later) requires moving lots of data</li>
+        <li><strong>Hotspots</strong> — uneven distribution if one shard gets disproportionate traffic (e.g., a celebrity user)</li>
+        <li><strong>Transactions</strong> across shards are complex — avoid if possible</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Replication vs Sharding — Use Both</h4>
+    <p>They solve different problems and are often combined: shard the database to scale writes across multiple primaries, then replicate each shard for read scaling and redundancy. This is how massive systems like Twitter and Instagram handle billions of rows.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — CAP THEOREM
+══════════════════════════════════ -->
+<div id="tab-cap" class="tab-panel ph-cap"><div class="section">
+  <h2>⚖️ CAP Theorem</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>CAP Theorem says that in a distributed system (data spread across multiple machines), when a <strong>network partition</strong> happens (machines can't talk to each other), you must choose between <strong>Consistency</strong> (every read gets the latest write) and <strong>Availability</strong> (every request gets a response, even if not the latest data). You can't have perfect both during a partition — Partition tolerance is essentially mandatory for distributed systems, so the real choice is C vs A.</p>
+  </div>
+
+  <h3>The Three Properties</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">✅</span><h4>Consistency (C)</h4><p>Every read receives the most recent write or an error. All nodes see the same data at the same time.</p></div>
+    <div class="icon-item"><span class="emoji">🟢</span><h4>Availability (A)</h4><p>Every request receives a response (success or failure), without guarantee it's the latest data.</p></div>
+    <div class="icon-item"><span class="emoji">🔌</span><h4>Partition Tolerance (P)</h4><p>The system continues operating despite network failures between nodes.</p></div>
+  </div>
+
+  <div class="analogy an-cap">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>Two bank branches (Node A and Node B) normally sync balances instantly. The phone line between them goes down (network partition). Someone withdraws £100 from Branch A. Branch B doesn't know yet. If Branch B refuses all transactions until the line is restored = <strong>Consistent but not Available</strong>. If Branch B allows transactions using its old balance = <strong>Available but possibly inConsistent</strong> (someone could overdraw).</p>
+  </div>
+
+  <h3>CP vs AP — The Real-World Choice</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚖️ During a Network Partition — CP vs AP</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 230" xmlns="http://www.w3.org/2000/svg">
+        <!-- Partition -->
+        <text x="360" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a003a" text-anchor="middle">🔌 Network Partition — Node A and Node B can't communicate</text>
+
+        <rect x="60" y="40" width="160" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="140" y="65" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Node A</text>
+        <text x="140" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">balance = £900</text>
+
+        <rect x="500" y="40" width="160" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="580" y="65" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Node B</text>
+        <text x="580" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">balance = £1000 (stale)</text>
+
+        <!-- broken link -->
+        <line x1="220" y1="70" x2="500" y2="70" stroke="#b02a37" stroke-width="2" stroke-dasharray="6,4"/>
+        <text x="360" y="55" font-family="Sora,sans-serif" font-size="10" fill="#b02a37" text-anchor="middle">❌ X</text>
+
+        <!-- CP option -->
+        <rect x="40" y="125" width="300" height="90" rx="8" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="2"/>
+        <text x="190" y="148" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a003a" text-anchor="middle">CP — Consistency over Availability</text>
+        <text x="190" y="168" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Node B refuses requests until</text>
+        <text x="190" y="184" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">it can confirm it has latest data</text>
+        <text x="190" y="203" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a003a" text-anchor="middle">Examples: MongoDB, HBase, Zookeeper</text>
+
+        <!-- AP option -->
+        <rect x="380" y="125" width="300" height="90" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="530" y="148" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">AP — Availability over Consistency</text>
+        <text x="530" y="168" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Node B still answers with its</text>
+        <text x="530" y="184" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">last known data (might be stale)</text>
+        <text x="530" y="203" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Examples: Cassandra, DynamoDB, CouchDB</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>When to Choose CP vs AP</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Scenario</th><th>Choice</th><th>Why</th></tr>
+    <tr><td>Bank account balances</td><td><strong>CP</strong></td><td>Showing wrong balance could cause overdrafts — better to show error than wrong data</td></tr>
+    <tr><td>Social media like counts</td><td><strong>AP</strong></td><td>Showing 999 likes instead of 1000 for a moment doesn't matter — must stay available</td></tr>
+    <tr><td>Inventory stock levels</td><td>Depends</td><td>Overselling is bad (CP-leaning) but showing "unavailable" loses sales (AP-leaning) — often hybrid</td></tr>
+    <tr><td>Shopping cart</td><td><strong>AP</strong></td><td>Users must always be able to add to cart — resolve conflicts later</td></tr>
+    <tr><td>Configuration / feature flags</td><td><strong>AP</strong></td><td>Slightly stale config is fine; system must stay running</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 PACELC — A More Practical Extension</h4>
+    <p>CAP only describes behaviour DURING a partition. PACELC adds: even when there's <strong>No partition</strong>, you still trade off <strong>Latency vs Consistency</strong> (waiting for all replicas to confirm a write = more consistent but slower). Most real systems spend most of their time NOT partitioned, so this day-to-day latency/consistency tradeoff often matters more in practice.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — MESSAGE QUEUES
+══════════════════════════════════ -->
+<div id="tab-msg" class="tab-panel ph-msg"><div class="section">
+  <h2>📨 Message Queues</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>A Message Queue lets one part of your system (Producer) <strong>send a message and move on</strong>, while another part (Consumer) processes it <strong>whenever it's ready</strong>. The queue sits in between, storing messages until they're consumed. This decouples services — the producer doesn't wait for the consumer, and if the consumer is temporarily down, messages just wait in the queue.</p>
+  </div>
+
+  <div class="analogy an-msg">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>restaurant order ticket rail</strong>. The waiter (Producer) clips an order ticket onto the rail and immediately goes to serve other tables — they don't stand and wait for the food to be cooked. The chef (Consumer) picks up tickets from the rail when ready and cooks them in order. If the chef is briefly overwhelmed, tickets just wait on the rail — nothing is lost, and the waiter keeps working.</p>
+  </div>
+
+  <h3>Why Use a Message Queue?</h3>
+  <div class="grid-2">
+    <div class="bad-box">
+      <div class="box-label">❌ Without a Queue (Synchronous)</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>API waits for email service to finish before responding</li>
+        <li>If email service is slow, the whole API request is slow</li>
+        <li>If email service is down, the API request fails entirely</li>
+        <li>Traffic spikes overwhelm downstream services directly</li>
+      </ul>
+    </div>
+    <div class="good-box">
+      <div class="box-label">✅ With a Queue (Asynchronous)</div>
+      <ul class="box-text" style="padding-left:14px;">
+        <li>API publishes a message and responds immediately</li>
+        <li>Email service processes messages at its own pace</li>
+        <li>If email service is down, messages wait safely in the queue</li>
+        <li>Queue absorbs traffic spikes — consumers catch up over time</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Queue vs Topic (Pub/Sub)</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Aspect</th><th>Queue (Point-to-Point)</th><th>Topic (Pub/Sub)</th></tr>
+    <tr><td>Consumers</td><td>One message → ONE consumer processes it</td><td>One message → ALL subscribers receive a copy</td></tr>
+    <tr><td>Use case</td><td>Work distribution — task processed exactly once</td><td>Broadcasting events to multiple interested parties</td></tr>
+    <tr><td>Example</td><td>Order processing queue — one worker picks each order</td><td>"OrderPlaced" event — email, inventory, AND analytics all react</td></tr>
+    <tr><td>Scaling consumers</td><td>More consumers = work split among them (competing consumers)</td><td>More subscribers = more copies of each message delivered</td></tr>
+  </table></div>
+
+  <h3>Message Queue Concepts</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🔄</span><h4>At-Least-Once Delivery</h4><p>Message may be delivered more than once (e.g., consumer crashes after processing but before acknowledging). Consumers must be idempotent.</p></div>
+    <div class="icon-item"><span class="emoji">☠️</span><h4>Dead Letter Queue</h4><p>Messages that repeatedly fail processing are moved to a separate queue for investigation, instead of blocking the main queue forever.</p></div>
+    <div class="icon-item"><span class="emoji">👁️</span><h4>Visibility Timeout</h4><p>When a consumer picks up a message, it becomes invisible to other consumers for a period. If not acknowledged in time, it becomes visible again for retry.</p></div>
+    <div class="icon-item"><span class="emoji">📶</span><h4>Backpressure</h4><p>When consumers can't keep up, the queue grows. Monitoring queue depth helps you scale consumers before it becomes a problem.</p></div>
+    <div class="icon-item"><span class="emoji">🔢</span><h4>Ordering</h4><p>Most queues don't guarantee global order. FIFO queues (e.g., SQS FIFO) preserve order but typically have lower throughput.</p></div>
+    <div class="icon-item"><span class="emoji">🔁</span><h4>Idempotency</h4><p>Processing the same message twice should have the same effect as processing it once — critical for at-least-once delivery.</p></div>
+  </div>
+
+  <h3>Common Message Queue Technologies</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Technology</th><th>Type</th><th>Best for</th></tr>
+    <tr><td>RabbitMQ</td><td>Traditional message broker</td><td>Complex routing, flexible exchanges, moderate throughput</td></tr>
+    <tr><td>Apache Kafka</td><td>Distributed event streaming log</td><td>High throughput, event replay, stream processing</td></tr>
+    <tr><td>Azure Service Bus</td><td>Managed cloud message broker</td><td>.NET ecosystem, enterprise messaging, topics + queues</td></tr>
+    <tr><td>AWS SQS</td><td>Managed cloud queue</td><td>Simple decoupling, serverless architectures</td></tr>
+    <tr><td>Redis Pub/Sub</td><td>In-memory pub/sub</td><td>Real-time, low-latency, but no persistence</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 8 — CDN
+══════════════════════════════════ -->
+<div id="tab-cdn" class="tab-panel ph-cdn"><div class="section">
+  <h2>🌍 CDN — Content Delivery Network</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>A CDN is a network of servers spread around the world that <strong>cache and serve static content</strong> (images, videos, CSS, JS) from a location physically <strong>close to the user</strong>. Instead of every user fetching a video from one server in London, users in Tokyo get it from a server in Tokyo — dramatically reducing latency and load on your origin server.</p>
+  </div>
+
+  <div class="analogy an-cdn">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>global pizza chain</strong> with local franchises vs one central kitchen shipping pizzas worldwide. If everyone ordered from one kitchen in Italy, delivery to Australia would take days and the kitchen would be overwhelmed. Instead, local franchises (CDN edge servers) bake using the same recipe (cached content) — Australians get pizza from Australia, fast. The central kitchen (origin server) just needs to occasionally update the recipe.</p>
+  </div>
+
+  <h3>How CDN Requests Work</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🌍 CDN — Edge Cache Hit vs Miss</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrcdn" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#6a3abf"/>
+          </marker>
+          <marker id="arrcdnm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#b02a37"/>
+          </marker>
+        </defs>
+        <!-- User -->
+        <rect x="20" y="90" width="110" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="115" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">User</text>
+        <text x="75" y="132" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">in Tokyo</text>
+
+        <!-- arrow to edge -->
+        <line x1="130" y1="120" x2="200" y2="120" stroke="#6a3abf" stroke-width="2" marker-end="url(#arrcdn)"/>
+        <text x="165" y="113" font-family="JetBrains Mono,monospace" font-size="8" fill="#6a3abf" text-anchor="middle">request</text>
+
+        <!-- Edge server -->
+        <rect x="205" y="55" width="180" height="130" rx="8" fill="#ede0f8" stroke="rgba(106,58,191,.35)" stroke-width="2.5"/>
+        <text x="295" y="80" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#3a1880" text-anchor="middle">CDN Edge — Tokyo</text>
+        <rect x="220" y="90" width="150" height="40" rx="5" fill="rgba(31,122,82,.1)" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="295" y="108" font-family="JetBrains Mono,monospace" font-size="9" fill="#1f7a52" text-anchor="middle" font-weight="700">✅ CACHE HIT</text>
+        <text x="295" y="123" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">~5ms — served instantly</text>
+        <rect x="220" y="138" width="150" height="40" rx="5" fill="rgba(176,42,55,.08)" stroke="rgba(176,42,55,.2)" stroke-width="1"/>
+        <text x="295" y="156" font-family="JetBrains Mono,monospace" font-size="9" fill="#b02a37" text-anchor="middle" font-weight="700">❌ CACHE MISS</text>
+        <text x="295" y="171" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">fetch from origin, then cache</text>
+
+        <!-- arrow back hit (dotted, short return) -->
+        <path d="M 205 105 Q 165 80 130 110" fill="none" stroke="#1f7a52" stroke-width="1.5" marker-end="url(#arrcdn)"/>
+
+        <!-- arrow to origin on miss -->
+        <line x1="385" y1="158" x2="490" y2="158" stroke="#b02a37" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrcdnm)"/>
+        <text x="437" y="151" font-family="JetBrains Mono,monospace" font-size="8" fill="#b02a37" text-anchor="middle">fetch (once)</text>
+
+        <!-- Origin -->
+        <rect x="495" y="115" width="180" height="80" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="2"/>
+        <text x="585" y="142" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Origin Server</text>
+        <text x="585" y="160" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">London — source of truth</text>
+        <text x="585" y="178" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">~150ms cross-continent</text>
+
+        <text x="360" y="220" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Only the FIRST request per region hits the origin — every subsequent request is served from the nearby edge cache</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>What Goes on a CDN</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Great for CDN</h4>
+      <ul>
+        <li>Images, videos, audio files</li>
+        <li>CSS, JavaScript bundles</li>
+        <li>Fonts</li>
+        <li>Static HTML pages</li>
+        <li>Software downloads, large files</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>❌ Not Suitable for CDN</h4>
+      <ul>
+        <li>Personalised content (user dashboards)</li>
+        <li>Real-time data (live scores, stock prices)</li>
+        <li>POST/PUT/DELETE requests (writes)</li>
+        <li>Highly dynamic API responses</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Push vs Pull CDN</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Type</th><th>How it works</th><th>Best for</th></tr>
+    <tr><td><strong>Pull CDN</strong></td><td>CDN fetches content from origin on first request, then caches it</td><td>Most websites — simple setup, CDN manages itself</td></tr>
+    <tr><td><strong>Push CDN</strong></td><td>You proactively upload content to the CDN ahead of time</td><td>Large files, infrequently changing content, predictable traffic</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Cache Headers Control CDN Behaviour</h4>
+    <p>The <code>Cache-Control</code> HTTP header tells the CDN (and browsers) how long to cache content: <code>Cache-Control: max-age=86400</code> caches for 1 day. For content that changes, use cache-busting (e.g., <code>app.v2.js</code> or content-hashed filenames like <code>app.a3f9c1.js</code>) so updates are immediately visible without waiting for cache expiry.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 9 — RATE LIMITING
+══════════════════════════════════ -->
+<div id="tab-rate" class="tab-panel ph-rate"><div class="section">
+  <h2>🚦 Rate Limiting</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 In Plain English</div>
+    <p>Rate limiting restricts <strong>how many requests a client can make in a given time window</strong> — e.g., "100 requests per minute per user". This protects your system from being overwhelmed (accidentally by buggy clients, or deliberately by attacks) and ensures fair usage across all clients. When the limit is exceeded, the server responds with <code>429 Too Many Requests</code>.</p>
+  </div>
+
+  <div class="analogy an-rate">
+    <div class="analogy-tag">💡 Real World Analogy</div>
+    <p>A <strong>theme park ride</strong> with a "fast pass" system. Each person can use the fast pass a limited number of times per day. If you try to use it too many times too quickly, the gate simply won't let you through — "come back later". This prevents one person from monopolising the ride and ensures everyone gets a fair chance, while the ride itself doesn't get overwhelmed beyond its capacity.</p>
+  </div>
+
+  <h3>Rate Limiting Algorithms</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🚦 Token Bucket — The Most Common Algorithm</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrrl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf3a1a"/>
+          </marker>
+        </defs>
+        <!-- Bucket -->
+        <rect x="60" y="40" width="160" height="140" rx="10" fill="#f8e0d4" stroke="rgba(191,58,26,.35)" stroke-width="2.5"/>
+        <text x="140" y="65" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a2000" text-anchor="middle">Token Bucket</text>
+        <text x="140" y="82" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">capacity: 10 tokens</text>
+        <!-- tokens -->
+        <circle cx="95"  cy="105" r="10" fill="#fdba74"/>
+        <circle cx="120" cy="105" r="10" fill="#fdba74"/>
+        <circle cx="145" cy="105" r="10" fill="#fdba74"/>
+        <circle cx="170" cy="105" r="10" fill="#fdba74"/>
+        <circle cx="95"  cy="130" r="10" fill="#fdba74"/>
+        <circle cx="120" cy="130" r="10" fill="#fdba74"/>
+        <circle cx="145" cy="130" r="10" fill="#fdba74"/>
+        <circle cx="170" cy="130" r="10" fill="rgba(253,186,116,.25)" stroke="#fdba74" stroke-dasharray="2,2"/>
+        <text x="140" y="160" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a2000" text-anchor="middle">7 / 10 remaining</text>
+        <text x="140" y="195" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">refills: +1 token every 6 seconds</text>
+
+        <!-- Arrow -->
+        <line x1="225" y1="110" x2="290" y2="110" stroke="#bf3a1a" stroke-width="2" marker-end="url(#arrrl)"/>
+        <text x="257" y="103" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf3a1a" text-anchor="middle">request</text>
+
+        <!-- Decision -->
+        <rect x="295" y="55" width="170" height="110" rx="8" fill="#fff" stroke="rgba(220,224,245,1)" stroke-width="2"/>
+        <text x="380" y="80" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#12141f" text-anchor="middle">Token available?</text>
+        <rect x="312" y="92" width="135" height="28" rx="5" fill="rgba(31,122,82,.1)" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="380" y="111" font-family="JetBrains Mono,monospace" font-size="9" fill="#1f7a52" text-anchor="middle">✅ YES → consume, allow</text>
+        <rect x="312" y="125" width="135" height="28" rx="5" fill="rgba(176,42,55,.08)" stroke="rgba(176,42,55,.2)" stroke-width="1"/>
+        <text x="380" y="144" font-family="JetBrains Mono,monospace" font-size="9" fill="#b02a37" text-anchor="middle">❌ NO → 429 response</text>
+
+        <!-- Arrow to result -->
+        <line x1="470" y1="105" x2="530" y2="105" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrrl)"/>
+        <line x1="470" y1="140" x2="530" y2="140" stroke="#b02a37" stroke-width="2" marker-end="url(#arrrl)"/>
+
+        <rect x="535" y="80" width="160" height="35" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="615" y="102" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">200 OK — process request</text>
+
+        <rect x="535" y="125" width="160" height="35" rx="6" fill="#fff8f8" stroke="rgba(176,42,55,.3)" stroke-width="1.5"/>
+        <text x="615" y="147" font-family="JetBrains Mono,monospace" font-size="10" fill="#b02a37" text-anchor="middle">429 Too Many Requests</text>
+
+        <text x="380" y="200" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Allows short bursts up to bucket capacity, then enforces steady average rate via refill</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Rate Limiting Algorithm Comparison</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Algorithm</th><th>How it works</th><th>Pros</th><th>Cons</th></tr>
+    <tr><td><strong>Fixed Window</strong></td><td>Count requests in fixed time blocks (e.g., per minute, resets at :00)</td><td>Simple to implement and understand</td><td>Burst at window edges — 2x limit possible across boundary</td></tr>
+    <tr><td><strong>Sliding Window</strong></td><td>Count requests in a rolling window (last 60 seconds from now)</td><td>Smooths out edge bursts, more accurate</td><td>More memory — needs to track timestamps</td></tr>
+    <tr><td><strong>Token Bucket</strong></td><td>Bucket holds tokens, refills at fixed rate, request consumes a token</td><td>Allows bursts up to bucket size, smooths over time</td><td>Slightly more complex to tune</td></tr>
+    <tr><td><strong>Leaky Bucket</strong></td><td>Requests queue and are processed at a fixed output rate</td><td>Smooths bursts into a steady output rate</td><td>Bursts are delayed, not rejected — adds latency</td></tr>
+  </table></div>
+
+  <h3>Where to Rate Limit</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🚪</span><h4>API Gateway</h4><p>Centralised — applies to all services, simplest to manage globally.</p></div>
+    <div class="icon-item"><span class="emoji">⚖️</span><h4>Load Balancer</h4><p>Early rejection before traffic even reaches application servers.</p></div>
+    <div class="icon-item"><span class="emoji">🖥️</span><h4>Application Level</h4><p>Per-endpoint limits — e.g., login endpoint stricter than read endpoints.</p></div>
+  </div>
+
+  <h3>What to Key Limits By</h3>
+  <ul class="checklist cl-rate">
+    <li><strong>Per user / API key</strong> — most common for authenticated APIs, fair usage per account</li>
+    <li><strong>Per IP address</strong> — protects against anonymous abuse, but shared IPs (NAT, corporate networks) can over-restrict legitimate users</li>
+    <li><strong>Per endpoint</strong> — expensive endpoints (search, reports) get stricter limits than cheap ones (health checks)</li>
+    <li><strong>Global</strong> — overall system-wide limit as a last-resort circuit breaker</li>
+  </ul>
+
+  <div class="tip">
+    <h4>💡 Always Communicate Limits to Clients</h4>
+    <p>Return headers like <code>X-RateLimit-Limit</code>, <code>X-RateLimit-Remaining</code>, and <code>X-RateLimit-Reset</code> so well-behaved clients can self-throttle before hitting 429s. This improves the developer experience for anyone building on top of your API.</p>
+  </div>
+
+  <div class="completion">
+    <h3>System Design Core Concepts Complete!</h3>
+    <p>Scalability — vertical vs horizontal scaling, stateless design as the foundation for horizontal scaling · Load Balancing — algorithms (round robin, least connections, IP hash), Layer 4 vs Layer 7, health checks · Caching — cache-aside pattern, eviction policies (TTL, LRU, LFU), the cache invalidation problem · Databases — SQL vs NoSQL tradeoffs, replication for read scaling, sharding for write scaling, sharding strategies and challenges · CAP Theorem — Consistency vs Availability during partitions, CP vs AP examples, PACELC extension · Message Queues — decoupling producers and consumers, queue vs topic, delivery guarantees, dead letter queues · CDN — edge caching close to users, push vs pull, what content belongs on a CDN · Rate Limiting — token bucket and other algorithms, where and how to apply limits</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Core Concepts</span>
+      <span class="np np-next">→ Part 2: Beginner Examples</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

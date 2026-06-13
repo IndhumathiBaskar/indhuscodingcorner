@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWS CloudWatch Logs — Complete Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f7;--surface:#f2f0ec;--card:#fff;--border:#dddbd6;--border2:#c4c0b8;
+  --pc:#0f6b7a;--pc-l:#cff0f5;--pc-d:#074550;
+  --blue:#2a4db0;--blue-l:#dce4f8;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --purple:#6c47d4;--purple-l:#ede8fc;
+  --amber:#c47a10;--amber-l:#fef0d0;
+  --teal:#1a6a7a;--teal-l:#d0eef5;
+  --red:#b02a37;--red-l:rgba(176,42,55,.07);--red-b:rgba(176,42,55,.22);
+  --text:#141410;--text2:#3a3a30;--muted:#7a7a6a;
+  --code-bg:#060d10;--r:8px;
+  --sh:0 1px 3px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.07),0 8px 32px rgba(0,0,0,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#cff0f5 0%,#8fd8e4 45%,#4abaca 100%);border-bottom:1px solid var(--border);padding:clamp(2rem,6vw,4rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'📋';position:absolute;right:-10px;top:-10px;font-size:9rem;opacity:.08;pointer-events:none;}
+.header::after{content:'🔍';position:absolute;left:-5px;bottom:-15px;font-size:7rem;opacity:.06;pointer-events:none;}
+.header h1{color:var(--text);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;margin-bottom:8px;letter-spacing:-.02em;}
+.header h1 span{color:var(--pc-d);}
+.header p{color:var(--muted);font-size:.88rem;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(250,249,247,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);overflow-x:scroll;-webkit-overflow-scrolling:touch;scrollbar-width:none;touch-action:pan-x;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:flex;gap:2px;padding:6px 8px;white-space:nowrap;width:max-content;min-width:100%;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{background:var(--pc-l);color:var(--pc-d);font-weight:600;}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.5rem,4vw,2.5rem) clamp(1rem,4vw,2rem);}
+.section h2{color:var(--text);font-size:clamp(1.1rem,3.5vw,1.6rem);font-weight:700;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid var(--pc-l);letter-spacing:-.01em;}
+.section h3{color:var(--pc-d);font-size:.96rem;font-weight:700;margin:20px 0 8px;}
+.section p{color:var(--muted);margin-bottom:12px;font-size:.88rem;}
+.flow-diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:14px 0;box-shadow:var(--sh-lg);}
+.flow-diagram-header{background:linear-gradient(90deg,var(--pc-l),#e6f9fb);padding:10px 16px;font-weight:700;font-size:.82rem;color:var(--text);border-bottom:1px solid var(--border);}
+.flow-diagram-body{padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.flow-svg{width:100%;min-width:320px;max-width:820px;display:block;margin:0 auto;}
+.flow{margin:14px 0;}
+.flow-node{border-radius:var(--r);padding:11px 15px;margin:0 auto;max-width:600px;}
+.flow-node-title{font-weight:700;font-size:.86rem;margin-bottom:5px;display:flex;align-items:center;gap:7px;}
+.flow-items{list-style:none;font-size:.77rem;color:var(--text2);}
+.flow-items li{padding:2px 0 2px 14px;position:relative;}
+.flow-items li::before{content:"›";position:absolute;left:0;color:var(--pc-d);}
+.flow-arrow{text-align:center;padding:3px 0;color:var(--border2);font-size:1.2rem;line-height:1;}
+.flow-row{display:flex;gap:8px;max-width:600px;margin:0 auto;}
+.flow-row .flow-node{flex:1;margin:0;}
+.n-pc{background:var(--pc-l);border:1.5px solid rgba(15,107,122,.3);}
+.n-pc .flow-node-title{color:var(--pc-d);}
+.n-blue{background:var(--blue-l);border:1.5px solid rgba(42,77,176,.25);}
+.n-blue .flow-node-title{color:var(--blue);}
+.n-green{background:var(--green-l);border:1.5px solid rgba(31,122,82,.25);}
+.n-green .flow-node-title{color:var(--green);}
+.n-purple{background:var(--purple-l);border:1.5px solid rgba(108,71,212,.2);}
+.n-purple .flow-node-title{color:var(--purple);}
+.n-teal{background:var(--teal-l);border:1.5px solid rgba(26,106,122,.25);}
+.n-teal .flow-node-title{color:var(--teal);}
+.n-amber{background:var(--amber-l);border:1.5px solid rgba(196,122,16,.3);}
+.n-amber .flow-node-title{color:var(--amber);}
+.n-plain{background:var(--surface);border:1.5px solid var(--border2);}
+.n-plain .flow-node-title{color:var(--text2);}
+.n-bad{background:var(--red-l);border:1.5px solid var(--red-b);}
+.n-bad .flow-node-title{color:var(--red);}
+.card{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{color:var(--pc-d);margin-bottom:7px;font-size:.86rem;border-bottom:1px solid var(--border);padding-bottom:5px;}
+.card p,.card li{color:var(--muted);font-size:.82rem;margin:0;}
+.card ul{padding-left:14px;margin-top:4px;}
+.card li{margin-bottom:3px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr));gap:10px;margin:12px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(150px,100%),1fr));gap:9px;margin:12px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:12px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:border-color .2s,transform .2s;}
+.icon-item:hover{border-color:var(--pc);transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.4rem;margin-bottom:4px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:2px;font-size:.74rem;font-weight:600;}
+.icon-item p{font-size:.68rem;color:var(--muted);}
+.tip{background:var(--pc-l);border:1px solid rgba(15,107,122,.2);border-left:4px solid var(--pc);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.tip h4{color:var(--pc-d);margin-bottom:4px;font-size:.84rem;}
+.tip p{color:var(--muted);font-size:.82rem;margin:0;}
+.info{background:var(--blue-l);border:1px solid rgba(42,77,176,.2);border-left:4px solid var(--blue);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.info h4{color:var(--blue);margin-bottom:4px;font-size:.84rem;}
+.info p{color:var(--muted);font-size:.82rem;margin:0;}
+.warn{background:var(--amber-l);border:1px solid rgba(196,122,16,.25);border-left:4px solid var(--amber);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.warn h4{color:var(--amber);margin-bottom:4px;font-size:.84rem;}
+.warn p{color:var(--muted);font-size:.82rem;margin:0;}
+.danger{background:var(--red-l);border:1px solid var(--red-b);border-left:4px solid var(--red);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.danger h4{color:var(--red);margin-bottom:4px;font-size:.84rem;}
+.danger p{color:var(--muted);font-size:.82rem;margin:0;}
+.success{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);padding:11px 13px;border-radius:var(--r);margin:10px 0;}
+.success h4{color:var(--green);margin-bottom:4px;font-size:.84rem;}
+.success p{color:var(--muted);font-size:.82rem;margin:0;}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:12px 0;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:360px;}
+th{background:var(--surface);color:var(--text);padding:8px 11px;text-align:left;font-size:.68rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:7px 11px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.82rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+.code-block{background:var(--code-bg);border:1px solid #091418;border-left:3px solid var(--pc);border-radius:var(--r);padding:clamp(.75rem,2.5vw,1.1rem);margin:10px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.63rem,1.7vw,.74rem);line-height:1.75;color:#cdd6f4;white-space:pre;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:#4abaca;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;display:block;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#3a5560;font-style:italic;}.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}.flag{color:#94e2d5;}.out{color:#cdd6f4;opacity:.7;}
+code{background:rgba(15,107,122,.12);padding:1px 5px;border-radius:3px;font-family:'JetBrains Mono',monospace;font-size:.77rem;color:var(--pc-d);}
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:6px 11px;margin:4px 0;background:var(--surface);border-left:3px solid var(--green);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.checklist li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.badlist{list-style:none;margin:10px 0;}
+.badlist li{padding:6px 11px;margin:4px 0;background:var(--red-l);border-left:3px solid var(--red);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.82rem;}
+.badlist li:before{content:"✗ ";color:var(--red);font-weight:700;}
+.step{display:flex;align-items:flex-start;margin:12px 0;gap:11px;}
+.step-num{background:var(--pc-d);color:#fff;width:28px;height:28px;min-width:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;flex-shrink:0;}
+.step-body{background:var(--surface);padding:11px 13px;border-radius:var(--r);flex:1;border-left:3px solid var(--pc);}
+.step-body h4{color:var(--pc-d);margin-bottom:3px;font-size:.86rem;}
+.step-body p{color:var(--muted);font-size:.82rem;margin:0;}
+.compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:10px;margin:12px 0;}
+.compare-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--sh);}
+.compare-card-header{padding:9px 13px;font-weight:700;font-size:.77rem;border-bottom:1px solid var(--border);}
+.cc-pc{background:var(--pc-l);color:var(--pc-d);}
+.cc-blue{background:var(--blue-l);color:var(--blue);}
+.cc-green{background:var(--green-l);color:var(--green);}
+.cc-amber{background:var(--amber-l);color:var(--amber);}
+.cc-teal{background:var(--teal-l);color:var(--teal);}
+.compare-row{display:flex;justify-content:space-between;align-items:center;padding:5px 13px;border-bottom:1px solid var(--border);font-size:.74rem;}
+.compare-row:last-child{border-bottom:none;}
+.compare-label{color:var(--muted);font-weight:500;}
+.compare-val{font-weight:600;font-family:'JetBrains Mono',monospace;font-size:.68rem;}
+.val-good{color:var(--green);}
+.val-warn{color:var(--amber);}
+.val-bad{color:var(--red);}
+.completion{background:linear-gradient(135deg,var(--pc-l),var(--teal-l));border:1px solid rgba(15,107,122,.2);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:14px 0;}
+.completion h3{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:10px;}
+.completion p{color:var(--text2);font-size:.84rem;line-height:1.8;margin:0;}
+@media(max-width:640px){
+  .grid-2,.grid-3,.compare-grid{grid-template-columns:1fr;}
+  .flow-row{flex-direction:column;}
+  .code-block pre{font-size:.6rem;}
+  .step{gap:8px;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <h1>📋 AWS <span>CloudWatch Logs</span> — Complete Guide</h1>
+    <p>Log Groups · Log Streams · Ingestion · Insights Queries · Metric Filters · Alarms · Subscriptions · Retention · C# SDK · beginner→expert</p>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn active" onclick="T('overview',this)">① Overview</button>
+      <button class="tab-btn" onclick="T('concepts',this)">② Core Concepts</button>
+      <button class="tab-btn" onclick="T('ingestion',this)">③ Log Ingestion</button>
+      <button class="tab-btn" onclick="T('insights',this)">④ Logs Insights</button>
+      <button class="tab-btn" onclick="T('filters',this)">⑤ Metric Filters &amp; Alarms</button>
+      <button class="tab-btn" onclick="T('subscriptions',this)">⑥ Subscriptions</button>
+      <button class="tab-btn" onclick="T('retention',this)">⑦ Retention &amp; Cost</button>
+      <button class="tab-btn" onclick="T('csharp',this)">⑧ C# SDK</button>
+      <button class="tab-btn" onclick="T('cheatsheet',this)">⑨ Cheat Sheet</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ① OVERVIEW -->
+<div id="tab-overview" class="tab-panel active"><div class="section">
+  <h2>📋 What is AWS CloudWatch Logs?</h2>
+  <p>AWS CloudWatch Logs is a <strong>fully managed log storage, search, and monitoring service</strong>. Every AWS service — Lambda, ECS, EC2, API Gateway, RDS, VPC Flow Logs — can stream their logs here. You store them, query them, set alarms on patterns, and route them to other services like S3 or OpenSearch.</p>
+
+  <div class="tip">
+    <h4>💡 CloudWatch Logs in One Sentence</h4>
+    <p>CloudWatch Logs = AWS's <strong>centralised logging system</strong> — ingest logs from any source, store them durably, search with Logs Insights SQL-like queries, alert on patterns, and export to S3 or OpenSearch.</p>
+  </div>
+
+  <h3>What You Can Do with CloudWatch Logs</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">📥</span><h4>Ingest</h4><p>Collect logs from Lambda, EC2, ECS, API GW, RDS, VPC, and custom apps.</p></div>
+    <div class="icon-item"><span class="emoji">🔍</span><h4>Query</h4><p>Logs Insights — SQL-like queries across billions of log events.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Metric Filters</h4><p>Turn log patterns into CloudWatch metrics (e.g. count of ERRORs).</p></div>
+    <div class="icon-item"><span class="emoji">🔔</span><h4>Alarms</h4><p>Alert on metric filters — SNS, PagerDuty, auto-scaling actions.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Subscriptions</h4><p>Stream logs in real time to Lambda, Kinesis, OpenSearch.</p></div>
+    <div class="icon-item"><span class="emoji">📦</span><h4>Export to S3</h4><p>Archive logs to S3 for long-term storage and Athena queries.</p></div>
+    <div class="icon-item"><span class="emoji">⏱️</span><h4>Retention Policies</h4><p>Auto-delete logs after 1 day to 10 years — or never expire.</p></div>
+    <div class="icon-item"><span class="emoji">📡</span><h4>Live Tail</h4><p>Stream log events live from the Console or CLI — great for debugging.</p></div>
+    <div class="icon-item"><span class="emoji">🔐</span><h4>Encryption</h4><p>KMS encryption at rest, IAM-controlled access per log group.</p></div>
+  </div>
+
+  <h3>CloudWatch Logs vs Other Log Services</h3>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-card-header cc-pc">📋 CloudWatch Logs</div>
+      <div class="compare-row"><span class="compare-label">Managed by</span><span class="compare-val">AWS fully</span></div>
+      <div class="compare-row"><span class="compare-label">Query language</span><span class="compare-val">Logs Insights</span></div>
+      <div class="compare-row"><span class="compare-label">Setup</span><span class="compare-val val-good">Zero</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">AWS service logs</span></div>
+      <div class="compare-row"><span class="compare-label">Retention</span><span class="compare-val">1 day–10 yrs</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-amber">🔍 OpenSearch</div>
+      <div class="compare-row"><span class="compare-label">Managed by</span><span class="compare-val">AWS (cluster)</span></div>
+      <div class="compare-row"><span class="compare-label">Query language</span><span class="compare-val">Query DSL / SQL</span></div>
+      <div class="compare-row"><span class="compare-label">Setup</span><span class="compare-val val-warn">Cluster needed</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Full-text search</span></div>
+      <div class="compare-row"><span class="compare-label">Retention</span><span class="compare-val">Index lifecycle</span></div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-card-header cc-blue">🪣 S3 + Athena</div>
+      <div class="compare-row"><span class="compare-label">Managed by</span><span class="compare-val">AWS fully</span></div>
+      <div class="compare-row"><span class="compare-label">Query language</span><span class="compare-val">Standard SQL</span></div>
+      <div class="compare-row"><span class="compare-label">Setup</span><span class="compare-val val-warn">Schema needed</span></div>
+      <div class="compare-row"><span class="compare-label">Best for</span><span class="compare-val">Historical archives</span></div>
+      <div class="compare-row"><span class="compare-label">Retention</span><span class="compare-val">S3 lifecycle</span></div>
+    </div>
+  </div>
+
+  <h3>Pricing Overview</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Component</th><th>Pricing</th><th>Note</th></tr>
+    <tr><td>Ingestion (Standard)</td><td>~$0.50 / GB</td><td>Per GB of log data ingested</td></tr>
+    <tr><td>Storage</td><td>~$0.03 / GB-month</td><td>Per GB stored per month</td></tr>
+    <tr><td>Logs Insights queries</td><td>~$0.005 / GB scanned</td><td>Charged per GB of data scanned</td></tr>
+    <tr><td>Export to S3</td><td>Free</td><td>S3 storage costs still apply</td></tr>
+    <tr><td>Live Tail</td><td>~$0.01 / minute</td><td>Per minute of active tailing session</td></tr>
+    <tr><td>Infrequent Access class</td><td>~$0.25 / GB ingestion</td><td>50% cheaper, query cost higher</td></tr>
+  </table></div>
+
+  <div class="warn">
+    <h4>⚠️ Ingestion cost is the big one</h4>
+    <p>CloudWatch Logs ingestion (~$0.50/GB) adds up fast with verbose logging. Set <strong>log levels</strong> correctly (INFO in production, DEBUG only in dev), use <strong>retention policies</strong>, and consider the <strong>Infrequent Access log class</strong> for logs you rarely query.</p>
+  </div>
+</div></div>
+
+
+<!-- ② CORE CONCEPTS -->
+<div id="tab-concepts" class="tab-panel"><div class="section">
+  <h2>🧱 Core Concepts — Log Groups, Streams &amp; Events</h2>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🏗️ CloudWatch Logs — Hierarchy</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#0f6b7a"/></marker></defs>
+
+        <!-- Log Group -->
+        <rect x="10" y="10" width="660" height="270" rx="10" fill="#e6f9fb" stroke="rgba(15,107,122,.3)" stroke-width="2"/>
+        <text x="340" y="32" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#074550" text-anchor="middle">📁 Log Group  (/aws/lambda/MyFunction)</text>
+        <text x="340" y="47" font-family="DM Sans,sans-serif" font-size="8.5" fill="#7a7a6a" text-anchor="middle">One per service/application. Retention policy set here. KMS key set here.</text>
+
+        <!-- Log Stream 1 -->
+        <rect x="25" y="60" width="300" height="190" rx="8" fill="#cff0f5" stroke="rgba(15,107,122,.25)" stroke-width="1.5"/>
+        <text x="175" y="80" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#074550" text-anchor="middle">📄 Log Stream — Lambda instance #1</text>
+        <text x="175" y="94" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#0f6b7a" text-anchor="middle">2025/03/01/[$LATEST]abc123</text>
+
+        <!-- Events in stream 1 -->
+        <rect x="38" y="105" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="50" y="120" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:01  START RequestId: aaa-111</text>
+        <rect x="38" y="140" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="50" y="155" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:01  INFO  Processing order #501</text>
+        <rect x="38" y="175" width="274" height="30" rx="5" fill="#fde8d4" stroke="rgba(184,76,0,.25)" stroke-width="1"/>
+        <text x="50" y="190" font-family="JetBrains Mono,monospace" font-size="8" fill="#7a3000">12:00:02  ERROR DB timeout after 5s</text>
+        <rect x="38" y="210" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="50" y="225" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:02  END  Duration: 1234ms</text>
+
+        <!-- Log Stream 2 -->
+        <rect x="355" y="60" width="300" height="190" rx="8" fill="#cff0f5" stroke="rgba(15,107,122,.25)" stroke-width="1.5"/>
+        <text x="505" y="80" font-family="DM Sans,sans-serif" font-size="10" font-weight="700" fill="#074550" text-anchor="middle">📄 Log Stream — Lambda instance #2</text>
+        <text x="505" y="94" font-family="JetBrains Mono,monospace" font-size="7.5" fill="#0f6b7a" text-anchor="middle">2025/03/01/[$LATEST]def456</text>
+
+        <rect x="368" y="105" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="380" y="120" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:03  START RequestId: bbb-222</text>
+        <rect x="368" y="140" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="380" y="155" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:03  INFO  Processing order #502</text>
+        <rect x="368" y="175" width="274" height="30" rx="5" fill="#d4f0e4" stroke="rgba(31,122,82,.25)" stroke-width="1"/>
+        <text x="380" y="190" font-family="JetBrains Mono,monospace" font-size="8" fill="#0d5230">12:00:04  INFO  Order completed OK</text>
+        <rect x="368" y="210" width="274" height="30" rx="5" fill="#fff" stroke="rgba(15,107,122,.2)" stroke-width="1"/>
+        <text x="380" y="225" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a3a30">12:00:04  END  Duration: 450ms</text>
+
+        <!-- Labels -->
+        <text x="340" y="270" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">Each log stream = one source instance. Logs Insights queries across ALL streams in the group simultaneously.</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>The Three Layers Explained</h3>
+  <div class="grid-3">
+    <div class="card">
+      <h4>📁 Log Group</h4>
+      <ul>
+        <li>Container for log streams from the same source</li>
+        <li>Named by convention: <code>/aws/lambda/FnName</code></li>
+        <li>Retention policy set at this level</li>
+        <li>KMS encryption key set at this level</li>
+        <li>IAM access controlled per group</li>
+        <li>Metric filters defined per group</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📄 Log Stream</h4>
+      <ul>
+        <li>Sequence of events from one source instance</li>
+        <li>Lambda: one stream per container instance</li>
+        <li>EC2: one stream per instance (via agent)</li>
+        <li>ECS: one stream per task</li>
+        <li>Auto-created by AWS services</li>
+        <li>Events within a stream are ordered by time</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>📝 Log Event</h4>
+      <ul>
+        <li>A single log entry — timestamp + message</li>
+        <li>Max size: 256 KB per event</li>
+        <li>Timestamp in milliseconds (epoch)</li>
+        <li>Message: any string (JSON recommended)</li>
+        <li>Events are immutable once ingested</li>
+        <li>Queryable by Logs Insights</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Log Group Naming Conventions</h3>
+  <div class="table-wrap"><table>
+    <tr><th>AWS Service</th><th>Auto-created Log Group Name</th></tr>
+    <tr><td>Lambda</td><td><code>/aws/lambda/&lt;function-name&gt;</code></td></tr>
+    <tr><td>API Gateway</td><td><code>API-Gateway-Execution-Logs_&lt;api-id&gt;/&lt;stage&gt;</code></td></tr>
+    <tr><td>ECS (awslogs driver)</td><td><code>/ecs/&lt;task-definition-name&gt;</code></td></tr>
+    <tr><td>RDS</td><td><code>/aws/rds/instance/&lt;db-id&gt;/&lt;log-type&gt;</code></td></tr>
+    <tr><td>VPC Flow Logs</td><td>Custom — you define it</td></tr>
+    <tr><td>CloudTrail</td><td>Custom — you define it</td></tr>
+    <tr><td>CodeBuild</td><td><code>/aws/codebuild/&lt;project-name&gt;</code></td></tr>
+    <tr><td>CloudWatch Agent (EC2)</td><td>Custom — defined in agent config</td></tr>
+  </table></div>
+
+  <h3>Log Classes — Standard vs Infrequent Access</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚡ Standard Log Class</h4>
+      <ul>
+        <li>Full feature set — all query, filter, subscription features</li>
+        <li>Ingestion: ~$0.50/GB</li>
+        <li>Use for: active production logs, frequently queried</li>
+        <li>Live Tail available</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>💰 Infrequent Access Log Class</h4>
+      <ul>
+        <li>50% cheaper ingestion (~$0.25/GB)</li>
+        <li>No metric filters, no subscriptions, no Live Tail</li>
+        <li>Logs Insights queries still work (at higher per-GB rate)</li>
+        <li>Use for: audit logs, compliance archives, rarely queried logs</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ③ LOG INGESTION -->
+<div id="tab-ingestion" class="tab-panel"><div class="section">
+  <h2>📥 Log Ingestion — Getting Logs In</h2>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">📥 Common Log Ingestion Paths</div>
+    <div class="flow-diagram-body">
+      <svg class="flow-svg" viewBox="0 0 700 280" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arr2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10z" fill="#0f6b7a"/></marker></defs>
+
+        <!-- Sources column -->
+        <rect x="10" y="20" width="155" height="38" rx="6" fill="#cff0f5" stroke="rgba(15,107,122,.3)" stroke-width="1.3"/>
+        <text x="88" y="43" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="600" fill="#074550" text-anchor="middle">⚡ Lambda</text>
+
+        <rect x="10" y="68" width="155" height="38" rx="6" fill="#cff0f5" stroke="rgba(15,107,122,.3)" stroke-width="1.3"/>
+        <text x="88" y="91" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="600" fill="#074550" text-anchor="middle">🐳 ECS / EKS</text>
+
+        <rect x="10" y="116" width="155" height="38" rx="6" fill="#cff0f5" stroke="rgba(15,107,122,.3)" stroke-width="1.3"/>
+        <text x="88" y="139" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="600" fill="#074550" text-anchor="middle">🖥️ EC2 (CW Agent)</text>
+
+        <rect x="10" y="164" width="155" height="38" rx="6" fill="#cff0f5" stroke="rgba(15,107,122,.3)" stroke-width="1.3"/>
+        <text x="88" y="187" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="600" fill="#074550" text-anchor="middle">🌐 API Gateway</text>
+
+        <rect x="10" y="212" width="155" height="38" rx="6" fill="#cff0f5" stroke="rgba(15,107,122,.3)" stroke-width="1.3"/>
+        <text x="88" y="235" font-family="DM Sans,sans-serif" font-size="9.5" font-weight="600" fill="#074550" text-anchor="middle">📱 Custom App (SDK)</text>
+
+        <!-- Arrows -->
+        <line x1="165" y1="39" x2="263" y2="100" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="165" y1="87" x2="263" y2="108" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="165" y1="135" x2="263" y2="130" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="165" y1="183" x2="263" y2="155" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="165" y1="231" x2="263" y2="168" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- CloudWatch Logs box -->
+        <rect x="265" y="60" width="180" height="150" rx="9" fill="#cff0f5" stroke="rgba(15,107,122,.5)" stroke-width="2.5"/>
+        <text x="355" y="88" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#074550" text-anchor="middle">📋 CloudWatch</text>
+        <text x="355" y="104" font-family="DM Sans,sans-serif" font-size="11" font-weight="700" fill="#074550" text-anchor="middle">Logs</text>
+        <text x="355" y="122" font-family="JetBrains Mono,monospace" font-size="8" fill="#0f6b7a" text-anchor="middle">Log Groups</text>
+        <text x="355" y="137" font-family="JetBrains Mono,monospace" font-size="8" fill="#0f6b7a" text-anchor="middle">Log Streams</text>
+        <text x="355" y="152" font-family="JetBrains Mono,monospace" font-size="8" fill="#0f6b7a" text-anchor="middle">Log Events</text>
+        <text x="355" y="170" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">PutLogEvents API</text>
+        <text x="355" y="183" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">awslogs driver</text>
+        <text x="355" y="197" font-family="DM Sans,sans-serif" font-size="8" fill="#7a7a6a" text-anchor="middle">CloudWatch Agent</text>
+
+        <!-- Downstream arrows -->
+        <line x1="445" y1="100" x2="498" y2="60" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="445" y1="130" x2="498" y2="130" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+        <line x1="445" y1="170" x2="498" y2="200" stroke="#0f6b7a" stroke-width="1.2" marker-end="url(#arr2)"/>
+
+        <!-- Downstream targets -->
+        <rect x="500" y="30" width="180" height="40" rx="6" fill="#d4f0e4" stroke="rgba(31,122,82,.3)" stroke-width="1.3"/>
+        <text x="590" y="54" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#0d5230" text-anchor="middle">🔍 Logs Insights Queries</text>
+
+        <rect x="500" y="110" width="180" height="40" rx="6" fill="#fef0d0" stroke="rgba(196,122,16,.3)" stroke-width="1.3"/>
+        <text x="590" y="134" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#7a4a00" text-anchor="middle">🔔 Metric Filters + Alarms</text>
+
+        <rect x="500" y="185" width="180" height="40" rx="6" fill="#dce4f8" stroke="rgba(42,77,176,.3)" stroke-width="1.3"/>
+        <text x="590" y="209" font-family="DM Sans,sans-serif" font-size="9" font-weight="600" fill="#1a3380" text-anchor="middle">🔄 Subscriptions → Kinesis/Lambda</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Lambda — Automatic (Zero Config)</h3>
+  <div class="code-block">
+    <span class="code-label">lambda — logs written automatically to /aws/lambda/FunctionName</span>
+    <pre><span class="cm">// Lambda auto-sends stdout/stderr to CloudWatch Logs</span>
+<span class="cm">// Just use Console.WriteLine in C# — it goes straight to CW Logs</span>
+
+<span class="cm">// Lambda execution role needs:</span>
+<span class="cm">// logs:CreateLogGroup</span>
+<span class="cm">// logs:CreateLogStream</span>
+<span class="cm">// logs:PutLogEvents</span>
+
+<span class="cm">// These are included in the AWSLambdaBasicExecutionRole managed policy</span>
+
+<span class="cm">// Each log entry format (Lambda):
+// START RequestId: xxx
+// &lt;your stdout here&gt;
+// END RequestId: xxx
+// REPORT RequestId: xxx Duration: 123ms Billed Duration: 200ms Memory: 128MB Max Used: 45MB</span></pre>
+  </div>
+
+  <h3>ECS — Using awslogs Log Driver</h3>
+  <div class="code-block">
+    <span class="code-label">json — ecs task definition log configuration</span>
+    <pre>{
+  <span class="str">"containerDefinitions"</span>: [{
+    <span class="str">"name"</span>: <span class="str">"my-app"</span>,
+    <span class="str">"image"</span>: <span class="str">"my-ecr-image:latest"</span>,
+    <span class="str">"logConfiguration"</span>: {
+      <span class="str">"logDriver"</span>: <span class="str">"awslogs"</span>,
+      <span class="str">"options"</span>: {
+        <span class="str">"awslogs-group"</span>:         <span class="str">"/ecs/my-app"</span>,
+        <span class="str">"awslogs-region"</span>:        <span class="str">"eu-west-1"</span>,
+        <span class="str">"awslogs-stream-prefix"</span>: <span class="str">"ecs"</span>,
+        <span class="str">"awslogs-create-group"</span>:  <span class="str">"true"</span>
+      }
+    }
+  }]
+}</pre>
+  </div>
+
+  <h3>EC2 — CloudWatch Agent</h3>
+  <div class="step">
+    <div class="step-num">1</div>
+    <div class="step-body"><h4>Install CloudWatch Agent on EC2</h4><p>Via SSM Run Command: <code>AWS-ConfigureAWSPackage</code> action <code>Install</code>, package <code>AmazonCloudWatchAgent</code>. Or via userdata script.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">2</div>
+    <div class="step-body"><h4>Configure which files to collect</h4><p>Create <code>/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json</code> specifying log file paths and target log group names.</p></div>
+  </div>
+  <div class="step">
+    <div class="step-num">3</div>
+    <div class="step-body"><h4>EC2 Instance Role needs CloudWatch permissions</h4><p>Attach <code>CloudWatchAgentServerPolicy</code> managed policy to the instance profile.</p></div>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">json — cloudwatch agent config for application logs</span>
+    <pre>{
+  <span class="str">"logs"</span>: {
+    <span class="str">"logs_collected"</span>: {
+      <span class="str">"files"</span>: {
+        <span class="str">"collect_list"</span>: [
+          {
+            <span class="str">"file_path"</span>:        <span class="str">"/var/log/myapp/app.log"</span>,
+            <span class="str">"log_group_name"</span>:  <span class="str">"/ec2/my-app/application"</span>,
+            <span class="str">"log_stream_name"</span>: <span class="str">"{instance_id}"</span>,
+            <span class="str">"timestamp_format"</span>:<span class="str">"%Y-%m-%d %H:%M:%S"</span>,
+            <span class="str">"retention_in_days"</span>: <span class="num">30</span>
+          },
+          {
+            <span class="str">"file_path"</span>:       <span class="str">"/var/log/nginx/access.log"</span>,
+            <span class="str">"log_group_name"</span>: <span class="str">"/ec2/my-app/nginx-access"</span>,
+            <span class="str">"log_stream_name"</span>:<span class="str">"{instance_id}"</span>
+          }
+        ]
+      }
+    }
+  }
+}</pre>
+  </div>
+
+  <h3>Structured Logging — JSON is Best</h3>
+  <div class="tip">
+    <h4>💡 Always log structured JSON</h4>
+    <p>When your log messages are JSON, Logs Insights can query individual fields. Instead of <code>"User 123 placed order 456"</code>, log <code>{"userId":"123","orderId":"456","action":"place_order","duration_ms":45}</code>. This makes your logs <em>searchable by field</em> — filter by userId, aggregate durations, count by action.</p>
+  </div>
+</div></div>
+
+
+<!-- ④ LOGS INSIGHTS -->
+<div id="tab-insights" class="tab-panel"><div class="section">
+  <h2>🔍 CloudWatch Logs Insights — Query Your Logs</h2>
+  <p>Logs Insights is a <strong>fast, SQL-like query engine</strong> for your logs. Query across multiple log groups simultaneously, aggregate data, filter fields, and visualise results.</p>
+
+  <h3>Query Syntax — Key Commands</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Command</th><th>Purpose</th><th>Example</th></tr>
+    <tr><td><code>fields</code></td><td>Select which fields to display</td><td><code>fields @timestamp, @message</code></td></tr>
+    <tr><td><code>filter</code></td><td>Filter events matching a condition</td><td><code>filter @message like /ERROR/</code></td></tr>
+    <tr><td><code>parse</code></td><td>Extract fields from unstructured text</td><td><code>parse @message "* * * *" as a, b, c, d</code></td></tr>
+    <tr><td><code>stats</code></td><td>Aggregate data (count, avg, sum, min, max)</td><td><code>stats count(*) by bin(5m)</code></td></tr>
+    <tr><td><code>sort</code></td><td>Sort results</td><td><code>sort @timestamp desc</code></td></tr>
+    <tr><td><code>limit</code></td><td>Limit number of results returned</td><td><code>limit 50</code></td></tr>
+    <tr><td><code>dedup</code></td><td>Remove duplicate values on a field</td><td><code>dedup requestId</code></td></tr>
+    <tr><td><code>display</code></td><td>Show specific fields in output (like SELECT)</td><td><code>display userId, duration</code></td></tr>
+  </table></div>
+
+  <h3>Essential Query Patterns</h3>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — find all errors in last hour</span>
+    <pre>fields @timestamp, @message, @logStream
+| filter @message like /(?i)error/
+| sort @timestamp desc
+| limit 100</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — lambda cold starts count over time</span>
+    <pre>fields @timestamp, @message
+| filter @message like /Init Duration/
+| stats count(*) as coldStarts by bin(5m)
+| sort @timestamp asc</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — lambda p50 p95 p99 duration</span>
+    <pre>filter @type = "REPORT"
+| parse @message "Duration: * ms" as duration
+| stats
+    avg(duration)                    as avg_ms,
+    pct(duration, 50)                as p50_ms,
+    pct(duration, 95)                as p95_ms,
+    pct(duration, 99)                as p99_ms,
+    max(duration)                    as max_ms
+by bin(1h)</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — query structured json logs</span>
+    <pre>fields @timestamp, userId, orderId, action, duration_ms
+| filter action = "place_order"
+| filter duration_ms > 1000
+| stats
+    count(*) as slow_orders,
+    avg(duration_ms) as avg_duration,
+    max(duration_ms) as max_duration
+by userId
+| sort slow_orders desc
+| limit 20</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — extract fields from unstructured log</span>
+    <pre>fields @timestamp, @message
+| parse @message '[*] * * * "*"' as level, method, path, status, userAgent
+| filter level = "ERROR"
+| stats count(*) as errors by path
+| sort errors desc</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — top 10 slowest api endpoints</span>
+    <pre>fields @timestamp, path, duration_ms, statusCode
+| filter ispresent(duration_ms)
+| stats
+    count(*) as requests,
+    avg(duration_ms) as avg_ms,
+    pct(duration_ms, 95) as p95_ms
+by path
+| sort p95_ms desc
+| limit 10</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — error rate by service over time</span>
+    <pre>fields @timestamp, service, level
+| filter level in ["ERROR", "FATAL"]
+| stats count(*) as errors by service, bin(10m)
+| sort @timestamp asc</pre>
+  </div>
+
+  <div class="code-block">
+    <span class="code-label">logs insights — vpc flow logs — rejected traffic</span>
+    <pre>fields @timestamp, srcAddr, dstAddr, dstPort, action
+| filter action = "REJECT"
+| stats count(*) as rejectCount by srcAddr, dstPort
+| sort rejectCount desc
+| limit 20</pre>
+  </div>
+
+  <h3>Special Built-in Fields</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td><code>@timestamp</code></td><td>Log event timestamp (milliseconds epoch)</td></tr>
+    <tr><td><code>@message</code></td><td>Full raw log message text</td></tr>
+    <tr><td><code>@logStream</code></td><td>Name of the log stream the event came from</td></tr>
+    <tr><td><code>@log</code></td><td>Log group name (useful when querying multiple groups)</td></tr>
+    <tr><td><code>@ingestionTime</code></td><td>When CloudWatch received the event (may differ from @timestamp)</td></tr>
+    <tr><td><code>@type</code></td><td>For Lambda: START, END, REPORT</td></tr>
+  </table></div>
+
+  <div class="tip">
+    <h4>💡 Query multiple log groups at once</h4>
+    <p>In the Logs Insights console, select multiple log groups in the log group selector. Your query runs across all of them simultaneously. Use <code>@log</code> field to see which group each result came from.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑤ METRIC FILTERS & ALARMS -->
+<div id="tab-filters" class="tab-panel"><div class="section">
+  <h2>📊 Metric Filters &amp; Alarms</h2>
+  <p>Metric Filters let you <strong>turn log patterns into CloudWatch Metrics</strong> — and from there, set alarms. This is how you get paged when your Lambda starts throwing errors.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔔 Metric Filter → Metric → Alarm → Notification Flow</div>
+    <div class="flow-diagram-body">
+      <div class="flow">
+        <div class="flow-node n-pc"><div class="flow-node-title">📋 Log Group receives a log event</div><ul class="flow-items"><li>e.g. <code>{"level":"ERROR","message":"DB connection timeout"}</code></li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-blue"><div class="flow-node-title">🔍 Metric Filter scans event</div><ul class="flow-items"><li>Pattern: <code>{ $.level = "ERROR" }</code></li><li>Match? → Increment custom metric by 1 (or by extracted value)</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-teal"><div class="flow-node-title">📊 CloudWatch Custom Metric updated</div><ul class="flow-items"><li>Namespace: <code>MyApp/Errors</code> &nbsp; Metric: <code>ErrorCount</code></li><li>Data point added to the time series</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-amber"><div class="flow-node-title">🔔 CloudWatch Alarm evaluates metric</div><ul class="flow-items"><li>Condition: ErrorCount &gt; 5 in 5 minutes</li><li>State transitions: OK → ALARM → OK</li></ul></div>
+        <div class="flow-arrow">↓</div>
+        <div class="flow-node n-green"><div class="flow-node-title">📣 Action triggered</div><ul class="flow-items"><li>SNS topic → Email / PagerDuty / Slack via Lambda</li><li>Or: Auto Scaling action, EC2 action, SSM document</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Creating a Metric Filter — CLI</h3>
+  <div class="code-block">
+    <span class="code-label">cli — create metric filter for error count</span>
+    <pre>aws logs put-metric-filter \
+  --log-group-name /aws/lambda/MyFunction \
+  --filter-name ErrorCount \
+  --filter-pattern '{ $.level = "ERROR" }' \
+  --metric-transformations \
+    metricName=ErrorCount,\
+    metricNamespace=MyApp/Lambda,\
+    metricValue=1,\
+    defaultValue=0,\
+    unit=Count</pre>
+  </div>
+
+  <h3>Metric Filter Patterns — Reference</h3>
+  <div class="code-block">
+    <span class="code-label">filter patterns — common examples</span>
+    <pre><span class="cm"># Simple string match (any message containing ERROR)</span>
+ERROR
+
+<span class="cm"># Case-insensitive string match</span>
+?ERROR ?error
+
+<span class="cm"># JSON field match (structured logs)</span>
+{ $.level = "ERROR" }
+
+<span class="cm"># JSON field not equal</span>
+{ $.statusCode != 200 }
+
+<span class="cm"># JSON field numeric comparison</span>
+{ $.duration_ms > 1000 }
+
+<span class="cm"># Multiple conditions (AND)</span>
+{ $.level = "ERROR" && $.service = "payment-svc" }
+
+<span class="cm"># Multiple conditions (OR)</span>
+{ $.statusCode = 500 || $.statusCode = 503 }
+
+<span class="cm"># Extract a numeric value for the metric (e.g. record actual duration)</span>
+<span class="cm"># metricValue = $.duration_ms</span>
+[timestamp, requestId, level="ERROR", ...]</pre>
+  </div>
+
+  <h3>Creating a CloudWatch Alarm — CLI</h3>
+  <div class="code-block">
+    <span class="code-label">cli — create alarm on the metric filter above</span>
+    <pre>aws cloudwatch put-metric-alarm \
+  --alarm-name "Lambda-ErrorRate-High" \
+  --alarm-description "Alert when Lambda errors exceed 5 in 5 minutes" \
+  --namespace MyApp/Lambda \
+  --metric-name ErrorCount \
+  --dimensions Name=FunctionName,Value=MyFunction \
+  --statistic Sum \
+  --period 300 \
+  --evaluation-periods 1 \
+  --threshold 5 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --treat-missing-data notBreaching \
+  --alarm-actions arn:aws:sns:eu-west-1:123456789012:ops-alerts \
+  --ok-actions    arn:aws:sns:eu-west-1:123456789012:ops-alerts</pre>
+  </div>
+
+  <h3>Practical Metric Filters to Set Up</h3>
+  <div class="table-wrap"><table>
+    <tr><th>What to Monitor</th><th>Filter Pattern</th><th>Alarm Threshold</th></tr>
+    <tr><td>Lambda errors</td><td><code>{ $.level = "ERROR" }</code></td><td>&gt;5 errors in 5 min</td></tr>
+    <tr><td>Lambda timeouts</td><td><code>Task timed out</code></td><td>&gt;1 in 1 min</td></tr>
+    <tr><td>Lambda out of memory</td><td><code>Runtime exited with error: signal: killed</code></td><td>&gt;1 in 1 min</td></tr>
+    <tr><td>HTTP 5xx errors (API GW)</td><td><code>{ $.status = 5* }</code></td><td>&gt;10 in 5 min</td></tr>
+    <tr><td>Slow responses</td><td><code>{ $.duration_ms > 3000 }</code></td><td>&gt;20 in 5 min</td></tr>
+    <tr><td>Login failures</td><td><code>{ $.action = "login" && $.result = "failure" }</code></td><td>&gt;10 in 1 min</td></tr>
+    <tr><td>DB connection errors</td><td><code>{ $.message = "connection refused" }</code></td><td>&gt;3 in 1 min</td></tr>
+  </table></div>
+</div></div>
+
+
+<!-- ⑥ SUBSCRIPTIONS -->
+<div id="tab-subscriptions" class="tab-panel"><div class="section">
+  <h2>🔄 Subscription Filters — Real-time Log Streaming</h2>
+  <p>Subscription filters let you <strong>stream log events in real time</strong> to another service — Lambda, Kinesis Data Streams, or Kinesis Firehose. This is how you build real-time log pipelines.</p>
+
+  <div class="flow-diagram-wrap">
+    <div class="flow-diagram-header">🔄 Subscription Filter Destinations</div>
+    <div class="flow-diagram-body">
+      <div class="flow-row">
+        <div class="flow-node n-pc">
+          <div class="flow-node-title">⚡ → Lambda</div>
+          <ul class="flow-items">
+            <li>Real-time transform &amp; route log events</li>
+            <li>Parse, enrich, and forward to Slack/PagerDuty</li>
+            <li>Max 2 subscriptions per log group</li>
+            <li>Events arrive base64-encoded, gzip-compressed</li>
+            <li>Best for: custom alerts, log enrichment</li>
+          </ul>
+        </div>
+        <div class="flow-node n-teal">
+          <div class="flow-node-title">🚀 → Kinesis Data Streams</div>
+          <ul class="flow-items">
+            <li>High-throughput real-time streaming</li>
+            <li>Fan out to multiple consumers</li>
+            <li>Buffer and process in batches</li>
+            <li>Best for: high-volume log pipelines</li>
+            <li>From there: OpenSearch, S3, analytics</li>
+          </ul>
+        </div>
+        <div class="flow-node n-amber">
+          <div class="flow-node-title">🔥 → Kinesis Firehose</div>
+          <ul class="flow-items">
+            <li>Buffer &amp; deliver to S3 / OpenSearch / Splunk</li>
+            <li>Built-in retry and backup to S3</li>
+            <li>Transform via Lambda before delivery</li>
+            <li>Best for: log archiving to S3 or OpenSearch</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Create a Subscription Filter — Stream to Lambda</h3>
+  <div class="code-block">
+    <span class="code-label">cli — create subscription filter (log group → lambda)</span>
+    <pre>aws logs put-subscription-filter \
+  --log-group-name /aws/lambda/MyFunction \
+  --filter-name ForwardErrorsToSlack \
+  --filter-pattern '{ $.level = "ERROR" }' \
+  --destination-arn arn:aws:lambda:eu-west-1:123456789012:function:LogAlerter
+
+<span class="cm"># Lambda receives base64-gzip encoded payload</span>
+<span class="cm"># Structure after decode:</span>
+<span class="cm"># {</span>
+<span class="cm">#   "messageType": "DATA_MESSAGE",</span>
+<span class="cm">#   "owner": "123456789012",</span>
+<span class="cm">#   "logGroup": "/aws/lambda/MyFunction",</span>
+<span class="cm">#   "logStream": "2025/03/01/[$LATEST]abc",</span>
+<span class="cm">#   "subscriptionFilters": ["ForwardErrorsToSlack"],</span>
+<span class="cm">#   "logEvents": [</span>
+<span class="cm">#     { "id": "xxx", "timestamp": 1234567890, "message": "..." }</span>
+<span class="cm">#   ]</span>
+<span class="cm"># }</span></pre>
+  </div>
+
+  <h3>Lambda Handler — Decode Subscription Payload (C#)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — lambda handler decoding cloudwatch logs subscription</span>
+    <pre><span class="kw">using</span> <span class="tp">System.IO.Compression</span>;
+<span class="kw">using</span> <span class="tp">System.Text.Json</span>;
+<span class="kw">using</span> <span class="tp">Amazon.Lambda.Core</span>;
+
+<span class="kw">public class</span> <span class="tp">LogAlerterFunction</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">HandleAsync</span>(<span class="tp">CloudWatchLogsEvent</span> cwEvent, <span class="tp">ILambdaContext</span> ctx)
+    {
+        <span class="cm">// Decode: base64 → gzip decompress → JSON parse</span>
+        <span class="kw">var</span> compressed = <span class="tp">Convert</span>.<span class="fn">FromBase64String</span>(cwEvent.AwsLogs.Data);
+        <span class="kw">using var</span> gzip   = <span class="kw">new</span> <span class="tp">GZipStream</span>(
+            <span class="kw">new</span> <span class="tp">MemoryStream</span>(compressed), <span class="tp">CompressionMode</span>.Decompress);
+        <span class="kw">using var</span> reader = <span class="kw">new</span> <span class="tp">StreamReader</span>(gzip);
+        <span class="kw">var</span> json = <span class="kw">await</span> reader.<span class="fn">ReadToEndAsync</span>();
+
+        <span class="kw">var</span> payload = <span class="tp">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="tp">CWLogsData</span>&gt;(json);
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> evt <span class="kw">in</span> payload!.LogEvents)
+        {
+            ctx.Logger.<span class="fn">LogLine</span>(<span class="str">$"[{payload.LogGroup}] {evt.Message}"</span>);
+            <span class="cm">// Forward to Slack, PagerDuty, SNS, etc.</span>
+            <span class="kw">await</span> <span class="fn">ForwardToSlackAsync</span>(payload.LogGroup, evt.Message);
+        }
+    }
+}
+
+<span class="kw">public record</span> <span class="tp">CWLogsData</span>(
+    <span class="kw">string</span> LogGroup,
+    <span class="kw">string</span> LogStream,
+    <span class="tp">List</span>&lt;<span class="tp">LogEvent</span>&gt; LogEvents);
+
+<span class="kw">public record</span> <span class="tp">LogEvent</span>(<span class="kw">string</span> Id, <span class="kw">long</span> Timestamp, <span class="kw">string</span> Message);</pre>
+  </div>
+
+  <h3>Stream to Kinesis Firehose → S3</h3>
+  <div class="code-block">
+    <span class="code-label">cli — subscription filter to kinesis firehose</span>
+    <pre>aws logs put-subscription-filter \
+  --log-group-name /aws/lambda/MyFunction \
+  --filter-name ArchiveAllLogs \
+  --filter-pattern "" \
+  --destination-arn arn:aws:firehose:eu-west-1:123456789012:deliverystream/LogArchive
+
+<span class="cm"># Empty filter-pattern "" means ALL events are forwarded</span>
+<span class="cm"># Kinesis Firehose buffers and delivers to S3 in Parquet/JSON/text</span>
+<span class="cm"># From S3 you can run Athena queries on archived logs</span></pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Max 2 subscription filters per log group</h4>
+    <p>Each log group supports a maximum of <strong>2 subscription filters</strong>. If you need to send logs to more than 2 destinations, use a Kinesis Data Stream as the first destination, then fan out from there to multiple consumers.</p>
+  </div>
+</div></div>
+
+
+<!-- ⑦ RETENTION & COST -->
+<div id="tab-retention" class="tab-panel"><div class="section">
+  <h2>🗑️ Retention Policies &amp; Cost Optimisation</h2>
+
+  <div class="danger">
+    <h4>🚨 Default retention = Never Expire — costs add up!</h4>
+    <p>By default, CloudWatch log groups have <strong>no retention policy</strong> — logs are stored forever. This is the #1 source of unexpected CloudWatch costs. Always set a retention policy on every log group.</p>
+  </div>
+
+  <h3>Available Retention Periods</h3>
+  <div class="code-block">
+    <span class="code-label">cli — set retention policy on a log group</span>
+    <pre><span class="cm"># Retention options (days):</span>
+<span class="cm"># 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365,</span>
+<span class="cm"># 400, 545, 731, 1096, 1827, 2192, 2557, 2922, 3288, 3653</span>
+
+<span class="cm"># Set 30-day retention on a Lambda log group</span>
+aws logs put-retention-policy \
+  --log-group-name /aws/lambda/MyFunction \
+  --retention-in-days 30
+
+<span class="cm"># Remove retention (back to Never Expire)</span>
+aws logs delete-retention-policy \
+  --log-group-name /aws/lambda/MyFunction</pre>
+  </div>
+
+  <h3>Set Retention on ALL Log Groups at Once (Bash)</h3>
+  <div class="code-block">
+    <span class="code-label">bash — set 90-day retention on all log groups without a policy</span>
+    <pre>#!/bin/bash
+RETENTION_DAYS=90
+
+for GROUP in $(aws logs describe-log-groups \
+  --query 'logGroups[?retentionInDays==`null`].logGroupName' \
+  --output text); do
+  echo "Setting ${RETENTION_DAYS}d retention on: $GROUP"
+  aws logs put-retention-policy \
+    --log-group-name "$GROUP" \
+    --retention-in-days $RETENTION_DAYS
+done
+
+echo "Done!"</pre>
+  </div>
+
+  <h3>Recommended Retention by Log Type</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Log Type</th><th>Recommended Retention</th><th>Reason</th></tr>
+    <tr><td>Lambda / ECS debug logs</td><td>7–14 days</td><td>Only needed for recent debugging</td></tr>
+    <tr><td>Application INFO logs</td><td>30 days</td><td>Incident investigation window</td></tr>
+    <tr><td>API Gateway access logs</td><td>30–90 days</td><td>Traffic analysis, debugging</td></tr>
+    <tr><td>VPC Flow Logs</td><td>30–90 days</td><td>Network security investigation</td></tr>
+    <tr><td>CloudTrail logs</td><td>365 days (or export to S3)</td><td>Compliance &amp; audit requirements</td></tr>
+    <tr><td>Security / compliance logs</td><td>365–2557 days</td><td>Regulatory requirements (HIPAA, PCI)</td></tr>
+    <tr><td>RDS / Aurora logs</td><td>7–30 days</td><td>Query performance analysis</td></tr>
+  </table></div>
+
+  <h3>Export to S3 for Long-term Storage</h3>
+  <div class="code-block">
+    <span class="code-label">cli — export log group to s3 (async task)</span>
+    <pre>aws logs create-export-task \
+  --task-name "export-march-2025" \
+  --log-group-name /aws/lambda/MyFunction \
+  --from 1709251200000 \
+  --to   1711929600000 \
+  --destination my-log-archive-bucket \
+  --destination-prefix logs/lambda/MyFunction/2025/03
+
+<span class="cm"># Check export task status</span>
+aws logs describe-export-tasks \
+  --task-id &lt;task-id-from-above&gt; \
+  --query 'exportTasks[0].status'
+
+<span class="cm"># Note: only ONE export task per account can run at a time</span>
+<span class="cm"># For continuous archiving, use Kinesis Firehose subscription instead</span></pre>
+  </div>
+
+  <h3>Cost Optimisation Checklist</h3>
+  <ul class="checklist">
+    <li>Set retention policies on every log group — never leave at "Never Expire"</li>
+    <li>Use <code>Infrequent Access</code> log class for audit/compliance logs you rarely query</li>
+    <li>Set log level to <code>INFO</code> (not DEBUG) in production — reduces ingestion volume</li>
+    <li>Use structured JSON logging so Logs Insights queries scan less data</li>
+    <li>Export historical logs to S3 and use Athena for cheaper long-term queries</li>
+    <li>Use <code>--filter-pattern</code> in subscriptions to forward only needed events (not all)</li>
+    <li>Review and delete unused log groups regularly</li>
+    <li>Use Lambda Powertools for .NET — structured logging built-in, avoids verbose output</li>
+  </ul>
+</div></div>
+
+
+<!-- ⑧ C# SDK -->
+<div id="tab-csharp" class="tab-panel"><div class="section">
+  <h2>⌨️ C# SDK — CloudWatch Logs with .NET</h2>
+
+  <h3>NuGet Packages</h3>
+  <div class="code-block">
+    <span class="code-label">shell — install packages</span>
+    <pre>dotnet add package AWSSDK.CloudWatchLogs
+dotnet add package AWS.Lambda.Powertools.Logging   <span class="cm"># recommended for Lambda</span>
+dotnet add package Serilog.Sinks.AwsCloudWatch      <span class="cm"># Serilog sink option</span></pre>
+  </div>
+
+  <h3>1. Write Logs via SDK (PutLogEvents)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — put log events to cloudwatch</span>
+    <pre><span class="kw">using</span> <span class="tp">Amazon.CloudWatchLogs</span>;
+<span class="kw">using</span> <span class="tp">Amazon.CloudWatchLogs.Model</span>;
+
+<span class="kw">public class</span> <span class="tp">CloudWatchLogger</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IAmazonCloudWatchLogs</span> _client;
+    <span class="kw">private readonly string</span> _logGroupName  = <span class="str">"/myapp/application"</span>;
+    <span class="kw">private readonly string</span> _logStreamName = <span class="str">"api-server-1"</span>;
+    <span class="kw">private string</span>? _sequenceToken;
+
+    <span class="kw">public</span> <span class="fn">CloudWatchLogger</span>()
+    {
+        _client = <span class="kw">new</span> <span class="tp">AmazonCloudWatchLogsClient</span>(
+            <span class="tp">Amazon.RegionEndpoint</span>.EUWest1);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">EnsureLogGroupAsync</span>()
+    {
+        <span class="kw">try</span>
+        {
+            <span class="kw">await</span> _client.<span class="fn">CreateLogGroupAsync</span>(
+                <span class="kw">new</span> <span class="tp">CreateLogGroupRequest</span>(_logGroupName));
+            <span class="kw">await</span> _client.<span class="fn">PutRetentionPolicyAsync</span>(
+                <span class="kw">new</span> <span class="tp">PutRetentionPolicyRequest</span>(_logGroupName, <span class="num">30</span>));
+        }
+        <span class="kw">catch</span> (<span class="tp">ResourceAlreadyExistsException</span>) { }
+
+        <span class="kw">try</span>
+        {
+            <span class="kw">await</span> _client.<span class="fn">CreateLogStreamAsync</span>(
+                <span class="kw">new</span> <span class="tp">CreateLogStreamRequest</span>(_logGroupName, _logStreamName));
+        }
+        <span class="kw">catch</span> (<span class="tp">ResourceAlreadyExistsException</span>) { }
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LogAsync</span>(<span class="kw">string</span> level, <span class="kw">string</span> message, <span class="kw">object</span>? extra = <span class="kw">null</span>)
+    {
+        <span class="kw">var</span> payload = <span class="tp">JsonSerializer</span>.<span class="fn">Serialize</span>(<span class="kw">new</span> {
+            timestamp = <span class="tp">DateTime</span>.UtcNow,
+            level,
+            message,
+            extra
+        });
+
+        <span class="kw">var</span> request = <span class="kw">new</span> <span class="tp">PutLogEventsRequest</span>
+        {
+            LogGroupName  = _logGroupName,
+            LogStreamName = _logStreamName,
+            SequenceToken = _sequenceToken,
+            LogEvents = <span class="kw">new</span> <span class="tp">List</span>&lt;<span class="tp">InputLogEvent</span>&gt;
+            {
+                <span class="kw">new</span>() {
+                    Timestamp = <span class="tp">DateTime</span>.UtcNow,
+                    Message   = payload
+                }
+            }
+        };
+
+        <span class="kw">var</span> response = <span class="kw">await</span> _client.<span class="fn">PutLogEventsAsync</span>(request);
+        _sequenceToken = response.NextSequenceToken;
+    }
+}</pre>
+  </div>
+
+  <h3>2. Query Logs with Logs Insights from C#</h3>
+  <div class="code-block">
+    <span class="code-label">c# — run logs insights query programmatically</span>
+    <pre><span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Dictionary</span>&lt;<span class="kw">string</span>,<span class="kw">string</span>&gt;&gt;&gt; <span class="fn">QueryLogsAsync</span>(
+    <span class="kw">string</span> logGroupName,
+    <span class="kw">string</span> queryString,
+    <span class="tp">DateTime</span> startTime,
+    <span class="tp">DateTime</span> endTime)
+{
+    <span class="kw">using var</span> client = <span class="kw">new</span> <span class="tp">AmazonCloudWatchLogsClient</span>();
+
+    <span class="cm">// Start the query</span>
+    <span class="kw">var</span> startResp = <span class="kw">await</span> client.<span class="fn">StartQueryAsync</span>(<span class="kw">new</span> <span class="tp">StartQueryRequest</span>
+    {
+        LogGroupName = logGroupName,
+        QueryString  = queryString,
+        StartTime    = <span class="fn">ToEpochSeconds</span>(startTime),
+        EndTime      = <span class="fn">ToEpochSeconds</span>(endTime),
+        Limit        = <span class="num">100</span>
+    });
+
+    <span class="cm">// Poll until complete</span>
+    <span class="tp">GetQueryResultsResponse</span> results;
+    <span class="kw">do</span>
+    {
+        <span class="kw">await</span> <span class="tp">Task</span>.<span class="fn">Delay</span>(<span class="num">500</span>);
+        results = <span class="kw">await</span> client.<span class="fn">GetQueryResultsAsync</span>(
+            <span class="kw">new</span> <span class="tp">GetQueryResultsRequest</span> { QueryId = startResp.QueryId });
+    }
+    <span class="kw">while</span> (results.Status == <span class="tp">QueryStatus</span>.Running
+        || results.Status == <span class="tp">QueryStatus</span>.Scheduled);
+
+    <span class="cm">// Map results to dictionaries</span>
+    <span class="kw">return</span> results.Results
+        .<span class="fn">Select</span>(row => row.<span class="fn">ToDictionary</span>(f => f.Field, f => f.Value))
+        .<span class="fn">ToList</span>();
+}
+
+<span class="cm">// Usage:</span>
+<span class="kw">var</span> rows = <span class="kw">await</span> <span class="fn">QueryLogsAsync</span>(
+    <span class="str">"/aws/lambda/MyFunction"</span>,
+    <span class="str">@"fields @timestamp, @message
+      | filter @message like /ERROR/
+      | sort @timestamp desc
+      | limit 20"</span>,
+    <span class="tp">DateTime</span>.UtcNow.<span class="fn">AddHours</span>(-<span class="num">1</span>),
+    <span class="tp">DateTime</span>.UtcNow
+);</pre>
+  </div>
+
+  <h3>3. Lambda Powertools for .NET (Recommended)</h3>
+  <div class="code-block">
+    <span class="code-label">c# — structured logging with lambda powertools</span>
+    <pre><span class="kw">using</span> <span class="tp">AWS.Lambda.Powertools.Logging</span>;
+
+<span class="kw">public class</span> <span class="tp">Function</span>
+{
+    [<span class="tp">Logging</span>(LogEvent = <span class="kw">true</span>, CorrelationIdPath = <span class="tp">CorrelationIdPaths</span>.ApiGatewayRest)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">APIGatewayProxyResponse</span>&gt; <span class="fn">Handler</span>(
+        <span class="tp">APIGatewayProxyRequest</span> request,
+        <span class="tp">ILambdaContext</span> context)
+    {
+        <span class="cm">// Structured JSON log — Logs Insights can query every field</span>
+        Logger.<span class="fn">LogInformation</span>(<span class="str">"Processing order"</span>, <span class="kw">new</span> {
+            OrderId    = <span class="str">"ord-001"</span>,
+            UserId     = <span class="str">"usr-123"</span>,
+            Amount     = <span class="num">49.99</span>,
+            Currency   = <span class="str">"GBP"</span>
+        });
+
+        <span class="kw">try</span>
+        {
+            <span class="kw">var</span> result = <span class="kw">await</span> <span class="fn">ProcessOrderAsync</span>();
+            Logger.<span class="fn">LogInformation</span>(<span class="str">"Order processed"</span>, <span class="kw">new</span> { result.OrderId });
+            <span class="kw">return new</span> <span class="tp">APIGatewayProxyResponse</span> { StatusCode = <span class="num">200</span> };
+        }
+        <span class="kw">catch</span> (<span class="tp">Exception</span> ex)
+        {
+            <span class="cm">// Structured error — shows in Logs Insights as queryable fields</span>
+            Logger.<span class="fn">LogError</span>(ex, <span class="str">"Order processing failed"</span>);
+            <span class="kw">return new</span> <span class="tp">APIGatewayProxyResponse</span> { StatusCode = <span class="num">500</span> };
+        }
+    }
+}</pre>
+  </div>
+
+  <h3>4. Tail Logs via CLI (Most Useful)</h3>
+  <div class="code-block">
+    <span class="code-label">cli — live log tailing and filtering</span>
+    <pre><span class="cm"># Tail live — blocks and streams new events</span>
+aws logs tail /aws/lambda/MyFunction --follow
+
+<span class="cm"># Tail with time window</span>
+aws logs tail /aws/lambda/MyFunction --since 30m
+
+<span class="cm"># Tail only ERROR lines</span>
+aws logs tail /aws/lambda/MyFunction --follow \
+  --filter-pattern ERROR
+
+<span class="cm"># Format output (short / detailed / json)</span>
+aws logs tail /aws/lambda/MyFunction --follow \
+  --format short</pre>
+  </div>
+</div></div>
+
+
+<!-- ⑨ CHEAT SHEET -->
+<div id="tab-cheatsheet" class="tab-panel"><div class="section">
+  <h2>📋 CloudWatch Logs Cheat Sheet</h2>
+
+  <h3>Core CLI Commands</h3>
+  <div class="code-block">
+    <span class="code-label">essential cli commands</span>
+    <pre><span class="cm"># List log groups</span>
+aws logs describe-log-groups \
+  --query 'logGroups[].[logGroupName,retentionInDays,storedBytes]' \
+  --output table
+
+<span class="cm"># List log streams in a group</span>
+aws logs describe-log-streams \
+  --log-group-name /aws/lambda/MyFunction \
+  --order-by LastEventTime --descending \
+  --query 'logStreams[].[logStreamName,lastEventTimestamp]' \
+  --output table
+
+<span class="cm"># Get log events from a stream</span>
+aws logs get-log-events \
+  --log-group-name /aws/lambda/MyFunction \
+  --log-stream-name '2025/03/01/[$LATEST]abc123' \
+  --limit 50
+
+<span class="cm"># Live tail</span>
+aws logs tail /aws/lambda/MyFunction --follow
+
+<span class="cm"># Filter log events</span>
+aws logs filter-log-events \
+  --log-group-name /aws/lambda/MyFunction \
+  --filter-pattern "ERROR" \
+  --start-time $(date -d '1 hour ago' +%s000)
+
+<span class="cm"># Set retention policy</span>
+aws logs put-retention-policy \
+  --log-group-name /aws/lambda/MyFunction \
+  --retention-in-days 30
+
+<span class="cm"># Delete a log group</span>
+aws logs delete-log-group \
+  --log-group-name /aws/lambda/OldFunction
+
+<span class="cm"># Create metric filter</span>
+aws logs put-metric-filter \
+  --log-group-name /aws/lambda/MyFunction \
+  --filter-name ErrorCount \
+  --filter-pattern '{ $.level = "ERROR" }' \
+  --metric-transformations \
+    metricName=ErrorCount,metricNamespace=MyApp,metricValue=1,defaultValue=0</pre>
+  </div>
+
+  <h3>Logs Insights — Copy-Paste Queries</h3>
+  <div class="code-block">
+    <span class="code-label">logs insights — ready to use queries</span>
+    <pre><span class="cm"># All errors, newest first</span>
+fields @timestamp, @message | filter @message like /ERROR/ | sort @timestamp desc | limit 50
+
+<span class="cm"># Lambda duration stats (p50/p95/p99)</span>
+filter @type = "REPORT"
+| parse @message "Duration: * ms" as dur
+| stats avg(dur) as avg, pct(dur,95) as p95, pct(dur,99) as p99, max(dur) as max by bin(1h)
+
+<span class="cm"># Lambda cold starts</span>
+filter @message like /Init Duration/
+| stats count(*) as coldStarts by bin(5m)
+
+<span class="cm"># Top 10 slowest endpoints</span>
+fields path, duration_ms
+| filter ispresent(duration_ms)
+| stats avg(duration_ms) as avg, pct(duration_ms,95) as p95 by path
+| sort p95 desc | limit 10
+
+<span class="cm"># Error count by service</span>
+fields service, level
+| filter level = "ERROR"
+| stats count(*) as errors by service
+| sort errors desc</pre>
+  </div>
+
+  <h3>Key Facts to Remember</h3>
+  <div class="table-wrap"><table>
+    <tr><th>Fact</th><th>Value</th></tr>
+    <tr><td>Default retention</td><td><strong>Never Expire</strong> — always set a policy!</td></tr>
+    <tr><td>Max log event size</td><td>256 KB per event</td></tr>
+    <tr><td>Max subscription filters per group</td><td>2</td></tr>
+    <tr><td>Log class options</td><td>Standard or Infrequent Access</td></tr>
+    <tr><td>Logs Insights charged by</td><td>GB of data scanned per query</td></tr>
+    <tr><td>Export task limit</td><td>1 export task at a time per account</td></tr>
+    <tr><td>Live Tail cost</td><td>~$0.01/minute of active session</td></tr>
+    <tr><td>Ingestion cost</td><td>~$0.50/GB (Standard), ~$0.25/GB (Infrequent)</td></tr>
+    <tr><td>Lambda log group auto-created</td><td>Yes, on first invocation</td></tr>
+  </table></div>
+
+  <h3>Common Mistakes</h3>
+  <ul class="badlist">
+    <li>No retention policy set — logs stored forever, costs spiral</li>
+    <li>Logging at DEBUG level in production — massive ingestion cost</li>
+    <li>Unstructured string logs — can't query fields in Logs Insights</li>
+    <li>Running Logs Insights on large time windows without filters — expensive scan</li>
+    <li>Using subscription filter with empty pattern on high-volume groups — Lambda throttling</li>
+    <li>Forgetting to give Lambda/ECS role <code>logs:PutLogEvents</code> permission</li>
+    <li>Using Export Task for continuous archiving — only one runs at a time, use Firehose instead</li>
+  </ul>
+
+  <h3>Production Checklist</h3>
+  <ul class="checklist">
+    <li>Retention policy set on every log group (30 days for app logs, 365 for audit)</li>
+    <li>Structured JSON logging enabled — every log field queryable</li>
+    <li>Metric filter for ERROR count → alarm → SNS notification</li>
+    <li>Lambda timeout metric filter and alarm configured</li>
+    <li>Log level set to INFO (not DEBUG) in production</li>
+    <li>Subscription filter → Firehose → S3 for long-term compliance logs</li>
+    <li>IAM policies restricting CloudWatch log access by team/environment</li>
+    <li>Infrequent Access class set for rarely-queried log groups</li>
+  </ul>
+
+  <div class="completion">
+    <h3>📋 AWS CloudWatch Logs — Complete!</h3>
+    <p>You've covered the full picture: log groups, streams and events, every ingestion path (Lambda, ECS, EC2 agent, custom SDK), Logs Insights query patterns for real-world scenarios, metric filters that turn log patterns into alarms, subscription filters for real-time streaming to Lambda/Kinesis/Firehose, retention &amp; cost optimisation, and a complete C# SDK integration. CloudWatch Logs is your <strong>centralised observability backbone</strong> for every AWS workload.</p>
+  </div>
+</div></div>
+
+</div><!-- /container -->
+
+<script>
+function T(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+}
+</script>
+</body>
+</html>
