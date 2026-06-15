@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS ElastiCache – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #c0392b;   /* ElastiCache Redis red */
+    --accent2:    #e74c3c;
+    --accent-dim: rgba(192,57,43,0.12);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --yellow:     #d29922;
+    --teal:       #2ecc71;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 15px; line-height: 1.7;
+    min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 14px 16px; display: flex; align-items: center; gap: 8px;
+    position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden;
+  }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #1a0500 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 16px 36px; text-align: center;
+    position: relative; overflow: hidden; width: 100%; box-sizing: border-box;
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(192,57,43,0.18) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--accent-dim); border: 1px solid rgba(192,57,43,0.3);
+    border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600;
+    color: var(--accent); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px;
+  }
+  .hero h1 { font-size: clamp(24px, 5vw, 42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { max-width: 580px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px, 2vw, 15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  /* TAB NAV */
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0; padding: 0 16px; height: var(--tab-h);
+    background: none; border: none; border-bottom: 2px solid transparent;
+    color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* HEADINGS */
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:680px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* CALLOUTS */
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-red    { background: var(--accent-dim); border: 1px solid rgba(192,57,43,0.25); border-left: 3px solid var(--accent); }
+  .callout-red strong { color: var(--accent); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-red    { background: var(--accent-dim); color: var(--accent); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+  /* TABLE */
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  /* CODE */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw  { color: #ff7b72; } .str { color: #a5d6ff; } .cm  { color: #8b949e; font-style: italic; }
+  .fn  { color: #d2a8ff; } .num { color: #79c0ff; } .var { color: #ffa657; } .typ { color: #7ee787; }
+
+  /* CANVAS */
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  /* PSEUDO */
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent); } .pn { color: var(--green); }
+
+  /* ENGINE COMPARE */
+  .engine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  @media(max-width:600px){ .engine-grid{ grid-template-columns:1fr; } }
+  .engine-card { background: var(--surface); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
+  .engine-card::before { content: ''; position: absolute; top:0; left:0; right:0; height: 3px; background: var(--ec); }
+  .engine-card.redis { --ec: #c0392b; border: 1px solid rgba(192,57,43,0.35); }
+  .engine-card.memcached { --ec: #3498db; border: 1px solid rgba(52,152,219,0.35); }
+  .engine-name { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+  .engine-card.redis .engine-name { color: #e74c3c; }
+  .engine-card.memcached .engine-name { color: #3498db; }
+  .engine-tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-bottom: 12px; }
+  .engine-card.redis .engine-tag { background: rgba(192,57,43,0.15); color: #e74c3c; }
+  .engine-card.memcached .engine-tag { background: rgba(52,152,219,0.15); color: #3498db; }
+  .feature-list { list-style: none; }
+  .feature-list li { font-size: 13px; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .feature-list li:last-child { border-bottom: none; }
+  .fi { flex-shrink: 0; }
+
+  /* DATA STRUCTURES */
+  .ds-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:680px){ .ds-grid{ grid-template-columns:1fr; } }
+  .ds-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .ds-name { font-size: 13px; font-weight: 700; color: var(--accent); margin-bottom: 6px; font-family: var(--mono); }
+  .ds-desc { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .ds-use  { font-size: 11px; color: var(--green); background: rgba(63,185,80,0.1); border-radius: 4px; padding: 3px 7px; display: inline-block; }
+
+  /* COMPLETION */
+  .completion-card { background: linear-gradient(135deg, var(--surface) 0%, rgba(192,57,43,0.08) 100%); border: 1px solid rgba(192,57,43,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p  { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* MOBILE */
+  @media(max-width:600px){
+    .content { padding: 20px 12px 60px; }
+    .section-title { font-size: 18px; }
+    .card { padding: 15px 13px; }
+    pre { font-size: 11.5px; padding: 13px 11px; }
+    .pseudo { font-size: 11.5px; }
+  }
+  @media(max-width:440px){
+    .tab-btn { padding: 0 11px; font-size: 12px; }
+    .tbl th,.tbl td { padding: 8px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS ElastiCache</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">⚡ In-Memory Caching</div>
+  <h1>AWS <span>ElastiCache</span></h1>
+  <p>Fully managed in-memory data store and cache — sub-millisecond latency at massive scale with Redis or Memcached.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🔴 Redis</span>
+    <span class="hero-pill">🔵 Memcached</span>
+    <span class="hero-pill">⚡ Sub-ms Latency</span>
+    <span class="hero-pill">🔁 Replication</span>
+    <span class="hero-pill">📦 Cluster Mode</span>
+    <span class="hero-pill">🛡️ Failover</span>
+    <span class="hero-pill">🔒 Encryption</span>
+    <span class="hero-pill">📊 Pub/Sub</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🆚 Redis vs Memcached</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🗂️ Data Structures</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🔁 Replication</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">📦 Cluster Mode</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🎯 Caching Patterns</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is ElastiCache?</h2>
+  <p class="section-sub">AWS managed in-memory caching service — dramatically reduces database load and response times.</p>
+
+  <div class="callout callout-red">
+    <strong>One-liner</strong>
+    ElastiCache = fully managed Redis or Memcached clusters on AWS — microsecond to sub-millisecond reads, automatic failover, scaling, backups, and patching handled for you.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="300"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">⚡ Performance</div>
+      <p>Sub-millisecond read latency. Serves millions of requests per second. Offloads hot reads from RDS/DynamoDB entirely.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔴 Redis Engine</div>
+      <p>Rich data structures, persistence, replication, pub/sub, Lua scripting, Sorted Sets, Streams. The default choice for most use cases.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔵 Memcached Engine</div>
+      <p>Pure simple key-value cache. Multi-threaded, horizontally scalable. No persistence or replication. Best for pure cache-only scenarios.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 Replication</div>
+      <p>Redis supports up to 5 read replicas per shard. Auto-failover promotes a replica to primary within seconds if the primary fails.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Cluster Mode</div>
+      <p>Redis Cluster shards data across up to 500 nodes. Each shard has its own primary + replicas. Enables horizontal scaling of writes.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 Security</div>
+      <p>VPC isolation, TLS in-transit, at-rest encryption (KMS), Redis AUTH / RBAC, IAM auth for Valkey/Redis 7+.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>When to use ElastiCache?</strong>
+    Database query caching · Session storage · Leaderboards (Sorted Sets) · Rate limiting · Pub/Sub messaging · Real-time analytics · Distributed locking · Job queues
+  </div>
+</section>
+
+<!-- TAB 1: REDIS vs MEMCACHED -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🆚 Redis vs Memcached</h2>
+  <p class="section-sub">Choose the right engine for your workload — they serve very different purposes.</p>
+
+  <div class="engine-grid">
+    <div class="engine-card redis">
+      <div class="engine-name">🔴 Redis</div>
+      <div class="engine-tag">Feature-Rich Cache + Data Store</div>
+      <ul class="feature-list">
+        <li><span class="fi">✅</span> Rich data structures (String, Hash, List, Set, Sorted Set, Stream)</li>
+        <li><span class="fi">✅</span> Persistence (RDB snapshots + AOF logs)</li>
+        <li><span class="fi">✅</span> Replication + Auto-failover</li>
+        <li><span class="fi">✅</span> Cluster mode (sharding)</li>
+        <li><span class="fi">✅</span> Pub/Sub messaging</li>
+        <li><span class="fi">✅</span> Lua scripting + Transactions (MULTI/EXEC)</li>
+        <li><span class="fi">✅</span> Sorted Sets for leaderboards</li>
+        <li><span class="fi">✅</span> Geospatial commands</li>
+        <li><span class="fi">✅</span> Backup & restore</li>
+        <li><span class="fi">❌</span> Single-threaded (per shard)</li>
+      </ul>
+    </div>
+    <div class="engine-card memcached">
+      <div class="engine-name">🔵 Memcached</div>
+      <div class="engine-tag">Simple Pure Cache</div>
+      <ul class="feature-list">
+        <li><span class="fi">✅</span> Simple key-value only</li>
+        <li><span class="fi">✅</span> Multi-threaded — uses all CPU cores</li>
+        <li><span class="fi">✅</span> Horizontally scalable (add nodes)</li>
+        <li><span class="fi">✅</span> Lower memory overhead per item</li>
+        <li><span class="fi">❌</span> No persistence</li>
+        <li><span class="fi">❌</span> No replication</li>
+        <li><span class="fi">❌</span> No failover</li>
+        <li><span class="fi">❌</span> No pub/sub</li>
+        <li><span class="fi">❌</span> No backup/restore</li>
+        <li><span class="fi">❌</span> No cluster mode (only partitioning)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>Redis</th><th>Memcached</th></tr></thead>
+      <tbody>
+        <tr><td>Data Types</td><td>String, Hash, List, Set, ZSet, Stream, Geo…</td><td>String only</td></tr>
+        <tr><td>Persistence</td><td><span class="tag tag-green">RDB + AOF</span></td><td><span class="tag tag-orange">None</span></td></tr>
+        <tr><td>Replication</td><td><span class="tag tag-green">Yes (up to 5 replicas)</span></td><td><span class="tag tag-orange">None</span></td></tr>
+        <tr><td>Failover</td><td><span class="tag tag-green">Auto (Multi-AZ)</span></td><td><span class="tag tag-orange">None</span></td></tr>
+        <tr><td>Sharding</td><td><span class="tag tag-green">Cluster mode</span></td><td><span class="tag tag-blue">Client-side partitioning</span></td></tr>
+        <tr><td>Pub/Sub</td><td><span class="tag tag-green">Yes</span></td><td><span class="tag tag-orange">No</span></td></tr>
+        <tr><td>Transactions</td><td><span class="tag tag-green">MULTI/EXEC</span></td><td><span class="tag tag-orange">No</span></td></tr>
+        <tr><td>Threading</td><td>Single-threaded per shard</td><td>Multi-threaded</td></tr>
+        <tr><td>Use case</td><td>Cache + sessions + queues + leaderboards</td><td>Pure cache, high throughput</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>🎯 Quick decision rule</strong>
+    Need persistence, replication, rich data types, pub/sub, or failover? → <strong>Redis</strong>. Need pure high-throughput simple key-value with multi-threading and don't care about data loss? → <strong>Memcached</strong>.
+    <br/><br/>In practice, <strong>95% of AWS use cases choose Redis</strong>.
+  </div>
+</section>
+
+<!-- TAB 2: DATA STRUCTURES -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🗂️ Redis Data Structures</h2>
+  <p class="section-sub">Redis is more than a cache — it's a data structure server. Each type solves specific problems.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="dsCanvas" width="860" height="180"></canvas>
+  </div>
+
+  <div class="ds-grid">
+    <div class="ds-card">
+      <div class="ds-name">STRING</div>
+      <div class="ds-desc">Plain value — text, number, binary. Max 512 MB. Supports INCR/DECR, APPEND, SETEX (with TTL).</div>
+      <span class="ds-use">Cache HTML, counters, tokens</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">HASH</div>
+      <div class="ds-desc">Map of field → value. Like a mini object / row. HGET, HSET, HMGET. Memory efficient for objects.</div>
+      <span class="ds-use">User profiles, sessions</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">LIST</div>
+      <div class="ds-desc">Ordered linked list. LPUSH/RPUSH, LPOP/RPOP, LRANGE. Preserves insertion order.</div>
+      <span class="ds-use">Message queues, activity feeds</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">SET</div>
+      <div class="ds-desc">Unordered unique values. SADD, SMEMBERS, SINTER (intersection), SUNION. Fast membership test.</div>
+      <span class="ds-use">Tags, unique visitors, dedup</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">SORTED SET (ZSet)</div>
+      <div class="ds-desc">Set with a float score per member. ZADD, ZRANGE, ZRANGEBYSCORE. Members ordered by score automatically.</div>
+      <span class="ds-use">Leaderboards, rate limiting</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">STREAM</div>
+      <div class="ds-desc">Append-only log of entries. XADD, XREAD, XGROUP. Consumer groups for fan-out. Like a lightweight Kafka.</div>
+      <span class="ds-use">Event streams, IoT data</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">GEO</div>
+      <div class="ds-desc">Store lat/long, query by radius. GEOADD, GEODIST, GEORADIUS. Internally uses Sorted Sets.</div>
+      <span class="ds-use">Nearby stores, delivery tracking</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">BITMAP</div>
+      <div class="ds-desc">Bit-level operations on strings. SETBIT, GETBIT, BITCOUNT. Extremely space efficient.</div>
+      <span class="ds-use">Daily active users, feature flags</span>
+    </div>
+    <div class="ds-card">
+      <div class="ds-name">HyperLogLog</div>
+      <div class="ds-desc">Probabilistic cardinality estimation. PFADD, PFCOUNT. ~0.81% error, uses &lt;12 KB regardless of input size.</div>
+      <span class="ds-use">Unique count at scale</span>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>💡 TTL on any key</strong>
+    Every Redis key (regardless of type) can have a TTL set via <code>EXPIRE key seconds</code> or <code>EXPIREAT key timestamp</code>. Expired keys are lazily deleted plus active expiry scans run in background.
+  </div>
+</section>
+
+<!-- TAB 3: REPLICATION -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🔁 Replication &amp; Failover</h2>
+  <p class="section-sub">Redis replication keeps your data available even when a node fails.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="replCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔁 Replication Group</div>
+      <p>One <strong style="color:var(--text)">primary node</strong> handles all writes. Up to <strong style="color:var(--text)">5 read replicas</strong> per shard receive async replication from primary.</p>
+      <p>Replicas serve read traffic, reducing load on primary. Spread replicas across multiple AZs for HA.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Auto-Failover (Multi-AZ)</div>
+      <p>When primary fails, ElastiCache automatically promotes the replica with the least replication lag to primary.</p>
+      <p>DNS endpoint flips to the new primary within ~1 minute. Apps using the cluster endpoint reconnect automatically.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📍 Endpoints</div>
+      <p><span class="tag tag-red">Primary Endpoint</span> → always points to the write primary</p>
+      <p><span class="tag tag-green">Reader Endpoint</span> → load balances across all replicas</p>
+      <p><span class="tag tag-blue">Node Endpoint</span> → direct connection to a specific node</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 Persistence (Redis)</div>
+      <p><span class="tag tag-orange">RDB</span> Point-in-time snapshot. Compact. Faster restart. Some data loss between snapshots.</p>
+      <p><span class="tag tag-purple">AOF</span> Append-only log of every write. Near-zero data loss. Slower restart. Larger file.</p>
+      <p>Both can be used together in ElastiCache.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Replication Lag &amp; Consistency</h3>
+  <div class="pseudo">
+<span class="pk">REPLICATION FLOW:</span><br>
+<br>
+Client <span class="pn">WRITE</span> → Primary Node<br>
+&nbsp;&nbsp;├── Acknowledges write to client <span class="pk">(async replication)</span><br>
+&nbsp;&nbsp;├── Sends command to Replica 1 (AZ-a)<br>
+&nbsp;&nbsp;└── Sends command to Replica 2 (AZ-b)<br>
+<br>
+Client <span class="pn">READ</span> → Reader Endpoint → Replica (round-robin)<br>
+&nbsp;&nbsp;<span class="pk">NOTE:</span> May read slightly stale data (eventual consistency)<br>
+<br>
+<span class="pk">FAILOVER:</span><br>
+Primary fails → ElastiCache detects (~10s)<br>
+&nbsp;&nbsp;→ Elects replica with lowest replication offset<br>
+&nbsp;&nbsp;→ Promotes to Primary (~60s total)<br>
+&nbsp;&nbsp;→ DNS CNAME updated → app reconnects
+  </div>
+</section>
+
+<!-- TAB 4: CLUSTER MODE -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">📦 Cluster Mode</h2>
+  <p class="section-sub">Shard data across multiple nodes for horizontal write scaling beyond a single node's memory.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="clusterCanvas" width="860" height="270"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📦 Cluster Mode Disabled</div>
+      <p>Single shard with 1 primary + up to 5 replicas. All data on one node. Simple setup. Max node size ~768 GB RAM.</p>
+      <p>Good for: most workloads that fit in one node's RAM.</p>
+      <p><span class="tag tag-green">Simpler</span> <span class="tag tag-blue">Easy failover</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔀 Cluster Mode Enabled</div>
+      <p>Up to <strong style="color:var(--text)">500 shards</strong>, each with 1 primary + up to 5 replicas. Keys distributed via hash slots (0–16383).</p>
+      <p>Good for: massive datasets, very high write throughput.</p>
+      <p><span class="tag tag-red">More complex</span> <span class="tag tag-green">Unlimited scale</span></p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Hash Slot Distribution</h3>
+  <div class="callout callout-blue">
+    <strong>How cluster sharding works</strong>
+    Redis Cluster uses <strong>16,384 hash slots</strong>. Each key is hashed via CRC16 % 16384 to determine its slot. Slots are distributed evenly across shards. E.g. 3 shards → Shard 1 gets slots 0–5460, Shard 2: 5461–10922, Shard 3: 10923–16383.
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th></th><th>Cluster Disabled</th><th>Cluster Enabled</th></tr></thead>
+      <tbody>
+        <tr><td>Max shards</td><td>1</td><td>500</td></tr>
+        <tr><td>Max nodes</td><td>6 (1P + 5R)</td><td>3000 (500 × 6)</td></tr>
+        <tr><td>Write scaling</td><td>Single primary</td><td>Per-shard primary</td></tr>
+        <tr><td>Multi-key ops</td><td>✅ All keys</td><td>⚠️ Same slot / hash tag only</td></tr>
+        <tr><td>Cross-slot MGET</td><td>✅ Supported</td><td>❌ Not supported</td></tr>
+        <tr><td>Online resharding</td><td>N/A</td><td>✅ Supported</td></tr>
+        <tr><td>Complexity</td><td>Simple</td><td>Higher (client must be cluster-aware)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Hash Tags for Multi-Key Operations</strong>
+    In cluster mode, keys in the same hash tag (e.g. <code>user:{123}:name</code> and <code>user:{123}:email</code>) always land on the same slot — enabling MGET, MSET, and transactions across them.
+  </div>
+</section>
+
+<!-- TAB 5: C# SDK -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET Examples</h2>
+  <p class="section-sub">Using <code>StackExchange.Redis</code> — the standard .NET Redis client, works with ElastiCache perfectly.</p>
+
+  <div class="callout callout-red">
+    <strong>NuGet Package</strong>
+    <code>dotnet add package StackExchange.Redis</code> — works with both cluster-disabled and cluster-enabled ElastiCache. For cluster mode, set <code>abortConnect=false</code> and use the cluster configuration endpoint.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Connect to ElastiCache Redis</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> StackExchange.Redis;
+
+<span class="cm">// Singleton — reuse across app lifetime</span>
+<span class="kw">var</span> <span class="var">config</span> = <span class="kw">new</span> <span class="typ">ConfigurationOptions</span>
+{
+    EndPoints        = { <span class="str">"my-cluster.abc123.0001.use1.cache.amazonaws.com:6379"</span> },
+    AbortOnConnectFail = <span class="kw">false</span>,   <span class="cm">// Don't crash on startup if Redis is down</span>
+    ConnectRetry     = <span class="num">5</span>,
+    ConnectTimeout   = <span class="num">5000</span>,
+    SyncTimeout      = <span class="num">2000</span>,
+    Ssl              = <span class="kw">true</span>,       <span class="cm">// TLS — required for ElastiCache in-transit encryption</span>
+    Password         = <span class="str">"your-auth-token"</span>  <span class="cm">// Redis AUTH token</span>
+};
+
+<span class="kw">var</span> <span class="var">redis</span> = <span class="kw">await</span> <span class="typ">ConnectionMultiplexer</span>.<span class="fn">ConnectAsync</span>(<span class="var">config</span>);
+<span class="kw">var</span> <span class="var">db</span>    = <span class="var">redis</span>.<span class="fn">GetDatabase</span>();
+
+<span class="cm">// For cluster mode — use the Configuration Endpoint</span>
+<span class="cm">// EndPoints = { "my-cluster.cfg.abc123.use1.cache.amazonaws.com:6379" }</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">String operations — cache-aside pattern</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Cache-Aside: check cache first, fallback to DB</span>
+<span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="typ">Product</span>&gt; <span class="fn">GetProductAsync</span>(<span class="kw">int</span> productId)
+{
+    <span class="kw">var</span> <span class="var">key</span> = $<span class="str">"product:{productId}"</span>;
+
+    <span class="cm">// 1. Try cache</span>
+    <span class="kw">var</span> <span class="var">cached</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StringGetAsync</span>(<span class="var">key</span>);
+    <span class="kw">if</span> (<span class="var">cached</span>.HasValue)
+        <span class="kw">return</span> <span class="typ">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="typ">Product</span>&gt;(<span class="var">cached</span>!)!;
+
+    <span class="cm">// 2. Cache miss → fetch from DB</span>
+    <span class="kw">var</span> <span class="var">product</span> = <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">GetProductByIdAsync</span>(productId);
+    <span class="kw">if</span> (<span class="var">product</span> <span class="kw">is null</span>) <span class="kw">return null</span>!;
+
+    <span class="cm">// 3. Write to cache with TTL</span>
+    <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StringSetAsync</span>(<span class="var">key</span>,
+        <span class="typ">JsonSerializer</span>.<span class="fn">Serialize</span>(<span class="var">product</span>),
+        <span class="typ">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">10</span>));  <span class="cm">// 10-min TTL</span>
+
+    <span class="kw">return</span> <span class="var">product</span>;
+}
+
+<span class="cm">// Invalidate on update</span>
+<span class="kw">public async</span> <span class="typ">Task</span> <span class="fn">UpdateProductAsync</span>(<span class="typ">Product</span> product)
+{
+    <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">UpdateProductAsync</span>(product);
+    <span class="kw">await</span> <span class="var">db</span>.<span class="fn">KeyDeleteAsync</span>($<span class="str">"product:{product.Id}"</span>);
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Hash — store user session</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Store session as Redis Hash</span>
+<span class="kw">var</span> <span class="var">sessionKey</span> = $<span class="str">"session:{userId}"</span>;
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">HashSetAsync</span>(<span class="var">sessionKey</span>,
+[
+    <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"userId"</span>,   userId.ToString()),
+    <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"email"</span>,    <span class="str">"indhu@example.com"</span>),
+    <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"role"</span>,     <span class="str">"Admin"</span>),
+    <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"loginAt"</span>,  <span class="typ">DateTimeOffset</span>.UtcNow.ToUnixTimeSeconds()),
+]);
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">KeyExpireAsync</span>(<span class="var">sessionKey</span>, <span class="typ">TimeSpan</span>.<span class="fn">FromHours</span>(<span class="num">2</span>));
+
+<span class="cm">// Read single field</span>
+<span class="kw">var</span> <span class="var">role</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">HashGetAsync</span>(<span class="var">sessionKey</span>, <span class="str">"role"</span>);
+
+<span class="cm">// Get all fields</span>
+<span class="kw">var</span> <span class="var">all</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">HashGetAllAsync</span>(<span class="var">sessionKey</span>);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Sorted Set — leaderboard</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">board</span> = <span class="str">"leaderboard:weekly"</span>;
+
+<span class="cm">// Add / update score</span>
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">SortedSetAddAsync</span>(<span class="var">board</span>, <span class="str">"player:indhu"</span>, <span class="num">9850</span>);
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">SortedSetAddAsync</span>(<span class="var">board</span>, <span class="str">"player:alice"</span>, <span class="num">11200</span>);
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">SortedSetAddAsync</span>(<span class="var">board</span>, <span class="str">"player:bob"</span>,   <span class="num">7400</span>);
+
+<span class="cm">// Top 10 (highest score first)</span>
+<span class="kw">var</span> <span class="var">top10</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">SortedSetRangeByRankWithScoresAsync</span>(
+    <span class="var">board</span>, <span class="num">0</span>, <span class="num">9</span>, <span class="typ">Order</span>.Descending);
+
+<span class="cm">// Get rank of a specific player (0-indexed)</span>
+<span class="kw">var</span> <span class="var">rank</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">SortedSetRankAsync</span>(<span class="var">board</span>, <span class="str">"player:indhu"</span>, <span class="typ">Order</span>.Descending);
+Console.<span class="fn">WriteLine</span>($<span class="str">"Indhu is ranked #{rank + 1}"</span>);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Distributed lock with SETNX</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre"><span class="kw">var</span> <span class="var">lockKey</span>   = <span class="str">"lock:order-processor"</span>;
+<span class="kw">var</span> <span class="var">lockValue</span> = <span class="typ">Guid</span>.<span class="fn">NewGuid</span>().<span class="fn">ToString</span>();  <span class="cm">// unique per instance</span>
+<span class="kw">var</span> <span class="var">ttl</span>       = <span class="typ">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">30</span>);
+
+<span class="cm">// Try to acquire lock (SET NX EX)</span>
+<span class="kw">bool</span> <span class="var">acquired</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StringSetAsync</span>(
+    <span class="var">lockKey</span>, <span class="var">lockValue</span>, <span class="var">ttl</span>, <span class="typ">When</span>.NotExists);
+
+<span class="kw">if</span> (<span class="var">acquired</span>)
+{
+    <span class="kw">try</span>   { <span class="kw">await</span> <span class="fn">ProcessOrdersAsync</span>(); }
+    <span class="kw">finally</span>
+    {
+        <span class="cm">// Only release if we still own the lock (Lua script for atomicity)</span>
+        <span class="kw">var</span> <span class="var">script</span> = <span class="typ">LuaScript</span>.<span class="fn">Prepare</span>(<span class="str">@"
+            if redis.call('get', @key) == @value then
+                return redis.call('del', @key)
+            else return 0 end"</span>);
+        <span class="kw">await</span> <span class="var">db</span>.<span class="fn">ScriptEvaluateAsync</span>(<span class="var">script</span>,
+            <span class="kw">new</span> { key = (<span class="typ">RedisKey</span>)<span class="var">lockKey</span>, value = (<span class="typ">RedisValue</span>)<span class="var">lockValue</span> });
+    }
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 6: CACHING PATTERNS -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🎯 Caching Patterns</h2>
+  <p class="section-sub">Standard patterns for integrating a cache layer — each with different consistency guarantees.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="patternCanvas" width="860" height="240"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📖 Cache-Aside (Lazy Loading)</div>
+      <p><strong style="color:var(--text)">Read:</strong> Check cache → miss → read DB → write cache → return.</p>
+      <p><strong style="color:var(--text)">Write:</strong> Write DB → invalidate (delete) cache key.</p>
+      <p><span class="tag tag-green">Pros</span> Only caches what's needed. Cache failure doesn't block reads.</p>
+      <p><span class="tag tag-orange">Cons</span> Cache miss = extra latency. Stale data possible until TTL expires.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✍️ Write-Through</div>
+      <p><strong style="color:var(--text)">Write:</strong> Write to cache AND DB simultaneously on every write.</p>
+      <p><strong style="color:var(--text)">Read:</strong> Always hits cache (always warm).</p>
+      <p><span class="tag tag-green">Pros</span> Always consistent. No cold start problem.</p>
+      <p><span class="tag tag-orange">Cons</span> Write latency increases. Cache fills with unread data.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⏪ Write-Behind (Write-Back)</div>
+      <p><strong style="color:var(--text)">Write:</strong> Write to cache only. Async flush to DB later.</p>
+      <p><span class="tag tag-green">Pros</span> Extremely fast writes. DB write batching.</p>
+      <p><span class="tag tag-orange">Cons</span> Risk of data loss if cache crashes before flush. Complex.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔥 Read-Through</div>
+      <p>Cache sits in front of DB. On miss, <strong style="color:var(--text)">cache itself</strong> loads from DB and populates — not the app.</p>
+      <p><span class="tag tag-green">Pros</span> App code simpler — just reads from cache.</p>
+      <p><span class="tag tag-orange">Cons</span> First request always slow. Cache must support read-through.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Cache Eviction Policies</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Policy</th><th>Behaviour</th><th>Best For</th></tr></thead>
+      <tbody>
+        <tr><td><code>noeviction</code></td><td>Return error when memory full</td><td>Never evict — data integrity critical</td></tr>
+        <tr><td><code>allkeys-lru</code></td><td>Evict least recently used key (any key)</td><td>General cache workloads ⭐ Most common</td></tr>
+        <tr><td><code>volatile-lru</code></td><td>Evict LRU among keys with TTL set</td><td>Mix of persistent + cache keys</td></tr>
+        <tr><td><code>allkeys-lfu</code></td><td>Evict least frequently used (any key)</td><td>Skewed access patterns</td></tr>
+        <tr><td><code>volatile-ttl</code></td><td>Evict keys with shortest TTL first</td><td>Time-sensitive data</td></tr>
+        <tr><td><code>allkeys-random</code></td><td>Evict random key</td><td>Uniform access, don't care which evicted</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production-grade ElastiCache setup for performance, cost, and resilience.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Key Naming</div>
+      <p>Use colon-separated namespaces: <code>user:{id}:profile</code>, <code>product:{id}:cache</code>. Consistent naming enables pattern scanning and easier debugging.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Always Set TTL</div>
+      <p>Never cache data without a TTL unless intentional. Without TTL, keys accumulate and eat memory. Match TTL to data staleness tolerance.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Connection Pooling</div>
+      <p>Use a singleton <code>ConnectionMultiplexer</code> (StackExchange.Redis). Don't create a new connection per request — very expensive with ElastiCache.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Multi-AZ + Replicas</div>
+      <p>Always enable Multi-AZ with at least 1 replica in a different AZ for production. Enables auto-failover without manual intervention.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Monitor Key Metrics</div>
+      <p><code>CacheHitRate</code> (aim &gt;90%), <code>Evictions</code> (should be 0 or low), <code>CurrConnections</code>, <code>ReplicationLag</code>, <code>FreeableMemory</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ VPC + Security Groups</div>
+      <p>Always place ElastiCache inside a VPC. Only allow inbound 6379 from your app's security group — never expose to public internet.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Avoid Large Keys</div>
+      <p>Keep values under 1 MB. Large values slow replication and increase memory fragmentation. Split large objects or use S3 for big payloads.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Handle Cache Stampede</div>
+      <p>Use <strong>probabilistic early expiration</strong> or a distributed lock to prevent all instances refilling the cache simultaneously after expiry (thundering herd).</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Key CloudWatch Metrics to Alarm On</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Metric</th><th>Alarm Threshold</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><code>CacheHitRate</code></td><td>&lt; 90% for 5 min</td><td>Review TTLs and access patterns</td></tr>
+        <tr><td><code>Evictions</code></td><td>&gt; 100 / min</td><td>Scale up node size or add shards</td></tr>
+        <tr><td><code>FreeableMemory</code></td><td>&lt; 10% total RAM</td><td>Scale up before OOM evictions</td></tr>
+        <tr><td><code>ReplicationLag</code></td><td>&gt; 100ms</td><td>Check replica node health, network</td></tr>
+        <tr><td><code>CurrConnections</code></td><td>Near max connections</td><td>Add connection pooling / scale</td></tr>
+        <tr><td><code>CPUUtilization</code></td><td>&gt; 90%</td><td>Scale up or shard (cluster mode)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">Everything you need to know about AWS ElastiCache at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔴 Redis vs 🔵 Memcached</div>
+      <p>Redis = rich types + persistence + replication + failover + pub/sub. Memcached = simple pure cache, multi-threaded. Redis wins 95% of the time.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂️ Data Structures</div>
+      <p>String, Hash, List, Set, Sorted Set, Stream, Geo, Bitmap, HyperLogLog. Each type solves a specific problem efficiently in memory.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 Replication</div>
+      <p>Primary + up to 5 read replicas. Multi-AZ auto-failover promotes replica in ~60s. Reader endpoint load-balances across replicas.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Cluster Mode</div>
+      <p>Up to 500 shards, 16,384 hash slots. Enables massive horizontal write scaling. Hash tags keep related keys on same shard.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Caching Patterns</div>
+      <p>Cache-Aside (most common), Write-Through (consistent), Write-Behind (fast writes), Read-Through (simple app code). Choose based on consistency needs.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 Security</div>
+      <p>VPC isolation + Security Groups + TLS in-transit + KMS at-rest encryption + Redis AUTH token or IAM auth. Never expose port 6379 publicly.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Use Case</th><th>Redis Feature</th><th>Data Type</th></tr></thead>
+      <tbody>
+        <tr><td>API response cache</td><td>Cache-Aside + TTL</td><td>STRING</td></tr>
+        <tr><td>User session storage</td><td>HSET + EXPIRE</td><td>HASH</td></tr>
+        <tr><td>Leaderboard / ranking</td><td>ZADD / ZRANGE DESC</td><td>SORTED SET</td></tr>
+        <tr><td>Rate limiting</td><td>INCR + EXPIRE</td><td>STRING</td></tr>
+        <tr><td>Job queue</td><td>LPUSH / BRPOP</td><td>LIST</td></tr>
+        <tr><td>Pub/Sub messaging</td><td>PUBLISH / SUBSCRIBE</td><td>Pub/Sub channel</td></tr>
+        <tr><td>Distributed lock</td><td>SET NX EX + Lua</td><td>STRING</td></tr>
+        <tr><td>Unique visitor count</td><td>PFADD / PFCOUNT</td><td>HyperLogLog</td></tr>
+        <tr><td>Nearby locations</td><td>GEOADD / GEORADIUS</td><td>GEO</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS ElastiCache!</h3>
+    <p>From Redis vs Memcached decisions and rich data structures to cluster mode sharding, C# SDK patterns, caching strategies, and production best practices — you're ready to build blazing-fast apps on AWS.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* TABS */
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, null, drawDs, drawRepl, drawCluster, null, drawPattern, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+/* CANVAS SETUP */
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  red:'#c0392b', red2:'#e74c3c', blue:'#58a6ff', blue2:'#3498db',
+  green:'#3fb950', orange:'#e8834a', purple:'#bc8cff',
+  yellow:'#d29922', text:'#e6edf3', muted:'#8b949e', teal:'#2ecc71',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px';
+  el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(r*sc, r*sc);
+  ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function box(ctx,x,y,w,h,col,label,sub,icon){
+  ctx.shadowColor=col+'44';ctx.shadowBlur=10;
+  ctx.fillStyle=C.bg2;ctx.strokeStyle=col;ctx.lineWidth=1.5;
+  rr(ctx,x,y,w,h,8);ctx.fill();ctx.stroke();ctx.shadowBlur=0;
+  if(icon){ctx.font='15px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));}
+  ctx.fillStyle=C.text;ctx.font='600 11px Inter,sans-serif';ctx.textAlign='center';
+  ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-2:h/2+4)));
+  if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);}
+}
+
+function arr(ctx,x1,y1,x2,y2,col){
+  col=col||C.muted;ctx.strokeStyle=col;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.fillStyle=col;ctx.beginPath();
+  ctx.moveTo(x2,y2);ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4));
+  ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4));ctx.closePath();ctx.fill();
+}
+
+function txt(ctx,x,y,t,col,size,align){
+  ctx.fillStyle=col||C.muted;ctx.font=(size||10)+'px Inter,sans-serif';
+  ctx.textAlign=align||'center';ctx.fillText(t,x,y);
+}
+
+/* ARCH */
+function drawArch(){
+  const s=setup('archCanvas');if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,16,'ElastiCache Architecture',C.muted,11);
+
+  // App layer
+  const apps=[{l:'Web App',ic:'🌐',c:C.blue},{l:'Lambda',ic:'λ',c:C.orange},{l:'.NET API',ic:'⚙️',c:C.green}];
+  const aw=120,ag=(W-40-aw*3)/2;
+  apps.forEach((a,i)=>{
+    const x=20+i*(aw+ag);
+    box(ctx,x,28,aw,52,a.c,a.l,null,a.ic);
+    arr(ctx,x+aw/2,80,x+aw/2,110,C.border);
+  });
+
+  // ElastiCache
+  ctx.fillStyle='#0d1117';ctx.strokeStyle=C.red;ctx.lineWidth=2;
+  rr(ctx,20,110,W-40,64,10);ctx.fill();ctx.stroke();
+  txt(ctx,W/2,132,'⚡  AWS ElastiCache',C.red,13);
+  const ep=[{l:'🔴 Primary',c:C.red2},{l:'📖 Read Replica 1',c:C.green},{l:'📖 Read Replica 2',c:C.green}];
+  const epw=(W-80)/ep.length;
+  ep.forEach((e,i)=>{
+    const px=30+i*epw;
+    ctx.fillStyle='rgba(192,57,43,0.1)';ctx.strokeStyle='rgba(192,57,43,0.25)';ctx.lineWidth=1;
+    rr(ctx,px,140,epw-8,24,5);ctx.fill();ctx.stroke();
+    txt(ctx,px+(epw-8)/2,155,e.l,e.c,10);
+  });
+  arr(ctx,W/2,174,W/2,200,C.border);
+  arr(ctx,W*0.3,174,W*0.3,200,C.border);
+
+  // DB layer
+  const dbs=[{l:'Amazon RDS',ic:'🗄️',c:C.blue},{l:'DynamoDB',ic:'⚡',c:C.orange}];
+  const dw=160,dg=(W-40-dw*2)/1;
+  dbs.forEach((d,i)=>{
+    const x=20+i*(dw+dg);
+    box(ctx,x,200,dw,52,d.c,d.l,null,d.ic);
+  });
+
+  txt(ctx,W/2,H-5,'Cache miss → DB read → cache fill → subsequent reads served from cache',C.muted,10);
+}
+
+/* DATA STRUCTURES */
+function drawDs(){
+  const s=setup('dsCanvas');if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,14,'Redis Data Structures — Visual',C.muted,11);
+
+  const types=[
+    {l:'STRING',sub:'"hello world"',c:C.green,x:20},
+    {l:'HASH',sub:'{name:indhu}',c:C.blue,x:170},
+    {l:'LIST',sub:'[a,b,c,d]',c:C.orange,x:320},
+    {l:'SET',sub:'{a,b,c}',c:C.purple,x:470},
+    {l:'ZSET',sub:'score→member',c:C.red2,x:620},
+    {l:'STREAM',sub:'id→{fields}',c:C.yellow,x:770},
+  ];
+  // only show 5 that fit
+  const bw2=Math.min(120,(W-40)/6-8);
+  const gap2=(W-40-bw2*6)/5;
+  types.forEach((t,i)=>{
+    if(i>=6)return;
+    const x=20+i*(bw2+gap2);
+    box(ctx,x,24,bw2,120,t.c,t.l,t.sub,null);
+    // small visual inside box
+    ctx.fillStyle=t.c+'22';
+    rr(ctx,x+8,52,bw2-16,50,4);ctx.fill();
+    ctx.fillStyle=t.c;ctx.font='18px sans-serif';ctx.textAlign='center';
+    const icons=['🔤','🗂️','📋','🔵','🏆','📡'];
+    ctx.fillText(icons[i],x+bw2/2,84);
+  });
+}
+
+/* REPLICATION */
+function drawRepl(){
+  const s=setup('replCanvas');if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,16,'Redis Replication & Auto-Failover',C.muted,11);
+
+  const cx=W/2, cPY=50, bw3=140,bh=56;
+
+  // Primary
+  box(ctx,cx-bw3/2,cPY,bw3,bh,C.red,'🔴 Primary','Writes here',null);
+
+  // Replicas
+  const reps=[
+    {l:'📖 Replica 1',sub:'AZ: us-east-1a',x:cx-280,y:160},
+    {l:'📖 Replica 2',sub:'AZ: us-east-1b',x:cx-70,y:160},
+    {l:'📖 Replica 3',sub:'AZ: us-east-1c',x:cx+140,y:160},
+  ];
+  reps.forEach(r=>{
+    arr(ctx,cx,cPY+bh,r.x+bw3/2,r.y,C.border);
+    box(ctx,r.x,r.y,bw3,bh,C.green,r.l,r.sub,null);
+  });
+
+  // Failover arrow
+  ctx.setLineDash([5,3]);
+  ctx.strokeStyle=C.red2;ctx.lineWidth=1.5;
+  ctx.beginPath();
+  ctx.moveTo(reps[0].x+bw3,reps[0].y+bh/2);
+  ctx.lineTo(cx-bw3/2,cPY+bh/2);ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,(reps[0].x+bw3+cx-bw3/2)/2,reps[0].y+bh/2-10,'⚡ Auto-promote on failure',C.red2,10);
+
+  // Endpoints
+  txt(ctx,W-10,cPY+20,'Primary Endpoint',C.red2,10,'right');
+  txt(ctx,W-10,cPY+38,'→ always write primary',C.muted,10,'right');
+  txt(ctx,W-10,H-30,'Reader Endpoint',C.green,10,'right');
+  txt(ctx,W-10,H-14,'→ load balanced reads',C.muted,10,'right');
+}
+
+/* CLUSTER */
+function drawCluster(){
+  const s=setup('clusterCanvas');if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,16,'Redis Cluster Mode — Hash Slot Distribution',C.muted,11);
+
+  const shards=[
+    {l:'Shard 1',slots:'0–5460',c:C.red2},
+    {l:'Shard 2',slots:'5461–10922',c:C.green},
+    {l:'Shard 3',slots:'10923–16383',c:C.blue},
+  ];
+  const sw2=Math.min(200,(W-60)/3);
+  const sg2=(W-40-sw2*3)/2;
+  shards.forEach((sh,i)=>{
+    const x=20+i*(sw2+sg2);
+    // Shard container
+    ctx.fillStyle='#0d1117';ctx.strokeStyle=sh.c;ctx.lineWidth=1.5;
+    rr(ctx,x,30,sw2,200,10);ctx.fill();ctx.stroke();
+    txt(ctx,x+sw2/2,50,sh.l,sh.c,12);
+    txt(ctx,x+sw2/2,66,'Slots: '+sh.slots,C.muted,10);
+
+    // Primary
+    ctx.fillStyle=sh.c+'22';ctx.strokeStyle=sh.c;ctx.lineWidth=1;
+    rr(ctx,x+10,76,sw2-20,38,6);ctx.fill();ctx.stroke();
+    txt(ctx,x+sw2/2,99,'🔴 Primary',C.text,11);
+
+    // Replicas
+    [130,172].forEach((ry,j)=>{
+      ctx.fillStyle='rgba(63,185,80,0.1)';ctx.strokeStyle=C.green;ctx.lineWidth=1;
+      rr(ctx,x+10,ry,sw2-20,30,6);ctx.fill();ctx.stroke();
+      txt(ctx,x+sw2/2,ry+18,'📖 Replica '+(j+1),C.green,10);
+    });
+  });
+
+  // Hash key example
+  txt(ctx,W/2,H-20,'Key "user:123" → CRC16 % 16384 → slot 8432 → Shard 2',C.muted,10);
+}
+
+/* CACHING PATTERNS */
+function drawPattern(){
+  const s=setup('patternCanvas');if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,16,'Cache-Aside Pattern (Most Common)',C.muted,11);
+
+  const bw4=110,bh4=44;
+  const nodes=[
+    {l:'App',ic:'🌐',c:C.blue,x:20,y:H/2-22},
+    {l:'ElastiCache',ic:'⚡',c:C.red,x:W/2-bw4/2,y:40},
+    {l:'Database',ic:'🗄️',c:C.green,x:W-bw4-20,y:H/2-22},
+  ];
+  nodes.forEach(n=>box(ctx,n.x,n.y,bw4,bh4,n.c,n.l,null,n.ic));
+
+  const app=nodes[0],cache=nodes[1],db=nodes[2];
+  const ax=app.x+bw4,ay=app.y+bh4/2;
+  const cx2=cache.x+bw4/2,cy2=cache.y+bh4;
+  const dx=db.x,dy=db.y+bh4/2;
+
+  // App → Cache (read)
+  arr(ctx,ax,ay,cache.x,cache.y+bh4/2,C.blue);
+  txt(ctx,(ax+cache.x)/2,ay-12,'1. GET key',C.blue,10);
+
+  // Cache miss → DB
+  arr(ctx,cx2,cy2,cx2,dy-10,C.muted);
+  txt(ctx,cx2+60,(cy2+dy)/2,'2. Cache Miss → DB read',C.muted,10,'left');
+
+  // DB → App
+  arr(ctx,dx,dy+6,cache.x+bw4/2,cy2+10,C.green);
+  txt(ctx,(dx+cx2)/2,dy+30,'3. Write to cache',C.green,10);
+
+  // Cache → App (hit)
+  arr(ctx,cache.x,cache.y+bh4/2,ax+2,ay+8,C.orange);
+  txt(ctx,(cache.x+ax)/2,cache.y+bh4/2+22,'4. Return cached value',C.orange,10);
+
+  txt(ctx,W/2,H-8,'Subsequent reads → Cache HIT (no DB call)',C.green,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,null,drawDs,drawRepl,drawCluster,null,drawPattern,null,null];
+  if(draws[idx])draws[idx]();
+});
+</script>
+</body>
+</html>
