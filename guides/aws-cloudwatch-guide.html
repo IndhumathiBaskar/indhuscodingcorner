@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS CloudWatch – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────── */
+  :root {
+    --bg:          #0d1117;
+    --surface:     #161b22;
+    --surface2:    #1c2330;
+    --border:      #30363d;
+    --accent:      #e8834a;        /* CloudWatch orange */
+    --accent2:     #f0a875;
+    --accent-dim:  rgba(232,131,74,0.12);
+    --green:       #3fb950;
+    --blue:        #58a6ff;
+    --purple:      #bc8cff;
+    --red:         #f85149;
+    --yellow:      #d29922;
+    --text:        #e6edf3;
+    --text-muted:  #8b949e;
+    --code-bg:     #0d1117;
+    --font-mono:   'Fira Code', monospace;
+    --font-sans:   'Inter', sans-serif;
+    --radius:      10px;
+    --tab-h:       48px;
+  }
+
+  /* ── RESET ──────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  .site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+  .site-header .page-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .site-header .logo {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: .5px;
+  }
+  .site-header .sep { color: var(--border); }
+  .site-header .page-title { font-size: 13px; color: var(--text-muted); }
+
+  /* ── HERO ───────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #1a1200 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 16px 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(232,131,74,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(232,131,74,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .hero h1 {
+    font-size: clamp(26px, 5vw, 44px);
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .hero h1 span { color: var(--accent); }
+  .hero p {
+    max-width: 600px;
+    margin: 0 auto 28px;
+    color: var(--text-muted);
+    font-size: clamp(13px, 2vw, 15px);
+  }
+  .hero-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    justify-content: center;
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  .hero-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ── TAB NAV ────────────────────────────────────────────── */
+  .tab-nav-wrapper {
+    position: sticky;
+    top: 49px;
+    z-index: 90;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    overflow: hidden;
+  }
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    width: 100%;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 0 18px;
+    height: var(--tab-h);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .2s, border-color .2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-btn .tab-icon { font-size: 15px; }
+
+  /* ── CONTENT ────────────────────────────────────────────── */
+  .content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 14px 80px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── SECTION HEADINGS ───────────────────────────────────── */
+  .section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .section-subtitle {
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  /* ── CARDS ──────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card p { color: var(--text-muted); font-size: 14px; margin-bottom: 8px; }
+  .card p:last-child { margin-bottom: 0; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 680px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* ── HIGHLIGHT BOX ──────────────────────────────────────── */
+  .highlight-box {
+    background: var(--accent-dim);
+    border: 1px solid rgba(232,131,74,0.25);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .highlight-box strong { color: var(--accent); }
+
+  .info-box {
+    background: rgba(88,166,255,0.08);
+    border: 1px solid rgba(88,166,255,0.2);
+    border-left: 3px solid var(--blue);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+  .info-box strong { color: var(--blue); }
+
+  /* ── CODE BLOCKS ────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    max-width: 100%;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 9px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--font-mono); }
+  .code-desc { color: var(--text-muted); }
+  .copy-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: all .15s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .kw  { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cm  { color: #8b949e; font-style: italic; }
+  .fn  { color: #d2a8ff; }
+  .num { color: #79c0ff; }
+  .var { color: #ffa657; }
+  .typ { color: #7ee787; }
+
+  /* ── FLOW DIAGRAM ───────────────────────────────────────── */
+  .flow-canvas-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .flow-canvas-wrap canvas {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto !important;
+  }
+
+  /* ── METRICS TABLE ──────────────────────────────────────── */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .metrics-table {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-bottom: 0;
+  }
+  .metrics-table th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .metrics-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    vertical-align: top;
+  }
+  .metrics-table tr:hover td { background: var(--surface2); }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-mono);
+  }
+  .tag-green { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue  { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-orange{ background: var(--accent-dim); color: var(--accent); }
+  .tag-purple{ background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-red   { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  /* ── ALARM LIFECYCLE ─────────────────────────────────────── */
+  .alarm-states {
+    display: flex;
+    gap: 0;
+    margin-bottom: 16px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .alarm-state {
+    flex: 1;
+    padding: 18px 14px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    position: relative;
+  }
+  .alarm-state.ok    { background: rgba(63,185,80,0.12); color: var(--green); border-right: 1px solid var(--border); }
+  .alarm-state.insuf { background: rgba(210,153,34,0.12); color: var(--yellow); border-right: 1px solid var(--border); }
+  .alarm-state.alarm { background: rgba(248,81,73,0.12); color: var(--red); }
+  .alarm-state .state-label { font-size: 10px; font-weight: 500; opacity: .7; display: block; margin-top: 4px; }
+  .alarm-arrows {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .arrow { color: var(--accent); font-size: 18px; }
+
+  /* ── PSEUDOCODE ─────────────────────────────────────────── */
+  .pseudo-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text-muted);
+  }
+  .pseudo-block .pk  { color: var(--purple); font-weight: 600; }
+  .pseudo-block .pc  { color: var(--text-muted); font-style: italic; }
+  .pseudo-block .pv  { color: var(--accent); }
+  .pseudo-block .pn  { color: var(--green); }
+
+  /* ── COMPLETION CARD ─────────────────────────────────────── */
+  .completion-card {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(232,131,74,0.08) 100%);
+    border: 1px solid rgba(232,131,74,0.3);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    margin-top: 32px;
+  }
+  .completion-card .ck { font-size: 40px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p  { color: var(--text-muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* ── RESPONSIVE TWEAKS ──────────────────────────────────── */
+  @media (max-width: 600px) {
+    .hero { padding: 32px 14px 28px; }
+    .content { padding: 20px 12px 60px; }
+    .section-title { font-size: 18px; }
+    .card { padding: 16px 14px; }
+    .code-header { flex-wrap: wrap; gap: 6px; }
+    pre { font-size: 11.5px; padding: 14px 12px; }
+    .pseudo-block { font-size: 11.5px; padding: 14px; }
+    .highlight-box, .info-box { font-size: 13px; padding: 13px 14px; }
+  }
+  @media (max-width: 480px) {
+    .alarm-states { flex-direction: column; }
+    .alarm-state { border-right: none !important; border-bottom: 1px solid var(--border); }
+    .alarm-state:last-child { border-bottom: none; }
+    .alarm-arrows { font-size: 12px; gap: 6px; }
+    .hero h1 { letter-spacing: -0.5px; }
+    .hero-pill { font-size: 10px; padding: 3px 9px; }
+    .tab-btn { padding: 0 12px; font-size: 12px; }
+    .metrics-table th, .metrics-table td { padding: 8px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS CloudWatch</span>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">📊 AWS Observability</div>
+  <h1>AWS <span>CloudWatch</span></h1>
+  <p>Monitor metrics, collect logs, set alarms, and gain full observability across your AWS resources — all in one place.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">📈 Metrics</span>
+    <span class="hero-pill">📋 Logs</span>
+    <span class="hero-pill">🔔 Alarms</span>
+    <span class="hero-pill">📊 Dashboards</span>
+    <span class="hero-pill">🔍 Insights</span>
+    <span class="hero-pill">⚡ Events</span>
+    <span class="hero-pill">🎯 Synthetics</span>
+  </div>
+</section>
+
+<!-- TAB NAV -->
+<nav class="tab-nav-wrapper" id="tabNav">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)" role="tab">
+      <span class="tab-icon">🏗️</span> Overview
+    </button>
+    <button class="tab-btn" onclick="switchTab(1,this)" role="tab">
+      <span class="tab-icon">📈</span> Metrics
+    </button>
+    <button class="tab-btn" onclick="switchTab(2,this)" role="tab">
+      <span class="tab-icon">📋</span> Logs
+    </button>
+    <button class="tab-btn" onclick="switchTab(3,this)" role="tab">
+      <span class="tab-icon">🔔</span> Alarms
+    </button>
+    <button class="tab-btn" onclick="switchTab(4,this)" role="tab">
+      <span class="tab-icon">📊</span> Dashboards
+    </button>
+    <button class="tab-btn" onclick="switchTab(5,this)" role="tab">
+      <span class="tab-icon">🧩</span> C# SDK
+    </button>
+    <button class="tab-btn" onclick="switchTab(6,this)" role="tab">
+      <span class="tab-icon">🔍</span> Insights
+    </button>
+    <button class="tab-btn" onclick="switchTab(7,this)" role="tab">
+      <span class="tab-icon">💡</span> Best Practices
+    </button>
+    <button class="tab-btn" onclick="switchTab(8,this)" role="tab">
+      <span class="tab-icon">🏁</span> Summary
+    </button>
+  </div>
+</nav>
+
+<main class="content">
+
+  <!-- ── TAB 0: OVERVIEW ──────────────────────────────── -->
+  <section class="tab-panel active" id="panel-0">
+    <h2 class="section-title">🏗️ What is CloudWatch?</h2>
+    <p class="section-subtitle">A native AWS monitoring and observability service that collects metrics, logs, and events in real time.</p>
+
+    <div class="highlight-box">
+      <strong>One-liner:</strong> CloudWatch = <strong>Metrics + Logs + Alarms + Dashboards + Events</strong> all under one roof for your AWS workloads.
+    </div>
+
+    <!-- Architecture Flow Diagram (Canvas) -->
+    <div class="flow-canvas-wrap">
+      <canvas id="archCanvas" width="860" height="340"></canvas>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">📈 Metrics</div>
+        <p>Time-series numeric data points (CPU, memory, requests/sec) published by AWS services or custom apps.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Logs</div>
+        <p>Centralised log storage via Log Groups &amp; Log Streams. Query with CloudWatch Logs Insights.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Alarms</div>
+        <p>Trigger SNS notifications, Auto Scaling actions, or EC2 actions when metrics cross thresholds.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Dashboards</div>
+        <p>Custom visualisations — line charts, number widgets, alarm status boards — shareable across teams.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ Events / Rules</div>
+        <p>Schedule tasks or react to AWS resource state changes via EventBridge (formerly CW Events).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Synthetics</div>
+        <p>Canary scripts that monitor APIs and UI endpoints on a schedule — catch issues before users do.</p>
+      </div>
+    </div>
+
+    <h2 class="section-title" style="margin-top:28px">⚙️ Core Architecture</h2>
+    <p class="section-subtitle">How AWS services and your apps push data into CloudWatch.</p>
+
+    <div class="card">
+      <div class="card-title">Data Flow Summary</div>
+      <p><strong style="color:var(--blue)">Sources →</strong> EC2, Lambda, RDS, ECS, EKS, API Gateway, custom apps (via SDK/agent)</p>
+      <p><strong style="color:var(--green)">Collection →</strong> CloudWatch Agent / PutMetricData API / Log Groups</p>
+      <p><strong style="color:var(--accent)">Storage →</strong> Metrics retained 15 months (1-min granularity 15 days, 5-min 63 days, 1-hr 15 months)</p>
+      <p><strong style="color:var(--purple)">Action →</strong> Alarms → SNS / Auto Scaling / SSM / Lambda; Dashboards → Visualise</p>
+    </div>
+  </section>
+
+  <!-- ── TAB 1: METRICS ────────────────────────────────── -->
+  <section class="tab-panel" id="panel-1">
+    <h2 class="section-title">📈 Metrics Deep Dive</h2>
+    <p class="section-subtitle">Every data point has a namespace, metric name, dimensions, and a timestamp.</p>
+
+    <div class="highlight-box">
+      <strong>Key terms:</strong> Namespace (e.g. <code>AWS/EC2</code>) &gt; Metric Name (e.g. <code>CPUUtilization</code>) &gt; Dimension (e.g. <code>InstanceId=i-1234</code>)
+    </div>
+
+    <!-- Metrics Lifecycle Canvas -->
+    <div class="flow-canvas-wrap">
+      <canvas id="metricsCanvas" width="820" height="200"></canvas>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Common AWS Namespaces</h3>
+    <div class="table-wrap"><table class="metrics-table">
+      <thead>
+        <tr>
+          <th>Namespace</th>
+          <th>Key Metrics</th>
+          <th>Default Resolution</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code style="color:var(--accent)">AWS/EC2</code></td>
+          <td>CPUUtilization, NetworkIn/Out, DiskReadOps</td>
+          <td><span class="tag tag-blue">5 min</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">AWS/Lambda</code></td>
+          <td>Invocations, Errors, Duration, Throttles, ConcurrentExecutions</td>
+          <td><span class="tag tag-blue">1 min</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">AWS/RDS</code></td>
+          <td>DatabaseConnections, FreeStorageSpace, ReadLatency</td>
+          <td><span class="tag tag-blue">1 min</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">AWS/ECS</code></td>
+          <td>CPUUtilization, MemoryUtilization</td>
+          <td><span class="tag tag-blue">1 min</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">AWS/ApiGateway</code></td>
+          <td>Count, 4XXError, 5XXError, Latency</td>
+          <td><span class="tag tag-blue">1 min</span></td>
+        </tr>
+        <tr>
+          <td><code style="color:var(--accent)">Custom/MyApp</code></td>
+          <td>Any metric you publish via PutMetricData</td>
+          <td><span class="tag tag-orange">1 sec – 1 min</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Statistics &amp; Periods</h3>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📐 Statistics</div>
+        <p><span class="tag tag-green">Average</span> – mean over period</p>
+        <p><span class="tag tag-blue">Sum</span> – total over period</p>
+        <p><span class="tag tag-orange">Min / Max</span> – extremes</p>
+        <p><span class="tag tag-purple">p99 / p95</span> – percentile (extended stats)</p>
+      </div>
+      <div class="card">
+        <div class="card-title">⏱️ Retention Periods</div>
+        <p><span class="tag tag-blue">1-second</span> → 3 hours</p>
+        <p><span class="tag tag-blue">1-minute</span> → 15 days</p>
+        <p><span class="tag tag-blue">5-minute</span> → 63 days</p>
+        <p><span class="tag tag-blue">1-hour</span> → 15 months</p>
+      </div>
+    </div>
+
+    <div class="pseudo-block">
+<span class="pk">ALGORITHM</span> PublishCustomMetric<br>
+&nbsp;&nbsp;<span class="pk">INPUT:</span> <span class="pv">namespace</span>, <span class="pv">metricName</span>, <span class="pv">value</span>, <span class="pv">unit</span>, <span class="pv">dimensions[]</span><br>
+&nbsp;&nbsp;<span class="pk">STEP 1:</span> Build MetricDatum { MetricName, Value, Unit, Dimensions, Timestamp }<br>
+&nbsp;&nbsp;<span class="pk">STEP 2:</span> Call PutMetricData(Namespace, [MetricDatum])<br>
+&nbsp;&nbsp;<span class="pk">STEP 3:</span> CloudWatch stores → aggregates at 1-min resolution<br>
+&nbsp;&nbsp;<span class="pk">STEP 4:</span> Alarm rules evaluate → trigger actions if threshold breached<br>
+&nbsp;&nbsp;<span class="pk">OUTPUT:</span> Metric visible in Console / GetMetricData API
+    </div>
+  </section>
+
+  <!-- ── TAB 2: LOGS ───────────────────────────────────── -->
+  <section class="tab-panel" id="panel-2">
+    <h2 class="section-title">📋 CloudWatch Logs</h2>
+    <p class="section-subtitle">Centralised log management — collect, store, query, and route logs from any AWS service or app.</p>
+
+    <!-- Logs Hierarchy Canvas -->
+    <div class="flow-canvas-wrap">
+      <canvas id="logsCanvas" width="820" height="220"></canvas>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">🗂️ Log Group</div>
+        <p>Logical container for a set of log streams, e.g. <code>/aws/lambda/myFunction</code>. Set retention (1 day – 10 years) here.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📄 Log Stream</div>
+        <p>Sequence of log events from a single source (one Lambda instance, one EC2 pod). Auto-created per resource.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📝 Log Event</div>
+        <p>A single record: <code>timestamp + message</code>. Max 256 KB per event.</p>
+      </div>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Logs Insights Query Syntax</h3>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">CloudWatch Logs Insights</span>
+        <span class="code-desc">Find Lambda errors in last 1hr</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="cm">-- Filter errors from Lambda logs</span>
+fields @timestamp, @message, @logStream
+| filter @message like /ERROR/
+| sort @timestamp desc
+| limit 50
+
+<span class="cm">-- Calculate error rate per 5 minutes</span>
+fields @timestamp, @message
+| stats count(*) as totalRequests,
+        sum(<span class="kw">if</span>(@message like /ERROR/, 1, 0)) as errors
+    by bin(5m)
+| <span class="fn">sort</span> @timestamp desc
+
+<span class="cm">-- Parse JSON structured logs</span>
+fields @timestamp, @message
+| parse @message '{"level":"*","msg":"*","duration":*}' as level, msg, dur
+| filter level = <span class="str">"ERROR"</span>
+| stats avg(dur) as avgDuration by msg</pre>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Metric Filters</h3>
+    <div class="info-box">
+      <strong>💡 Metric Filter</strong> – Extract numeric values from logs and publish them as CloudWatch metrics. E.g. count <code>ERROR</code> occurrences → create alarm on it.
+    </div>
+
+    <div class="table-wrap"><table class="metrics-table">
+      <thead>
+        <tr><th>Concept</th><th>Purpose</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Metric Filter</td>
+          <td>Log pattern → CW Metric</td>
+          <td>Count "ERROR" → <code>MyApp/ErrorCount</code></td>
+        </tr>
+        <tr>
+          <td>Subscription Filter</td>
+          <td>Stream logs to Kinesis / Lambda / OpenSearch</td>
+          <td>Real-time log analysis pipeline</td>
+        </tr>
+        <tr>
+          <td>Export Task</td>
+          <td>Bulk export to S3</td>
+          <td>Archive logs for compliance</td>
+        </tr>
+        <tr>
+          <td>Live Tail</td>
+          <td>Real-time log streaming in console</td>
+          <td>Debug running Lambda live</td>
+        </tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ── TAB 3: ALARMS ─────────────────────────────────── -->
+  <section class="tab-panel" id="panel-3">
+    <h2 class="section-title">🔔 CloudWatch Alarms</h2>
+    <p class="section-subtitle">Watch a metric over a period, compare to a threshold, and take automated actions.</p>
+
+    <h3 style="color:var(--text);font-size:15px;margin-bottom:14px">Alarm States</h3>
+    <div class="alarm-states">
+      <div class="alarm-state ok">✅ OK<span class="state-label">Metric within threshold</span></div>
+      <div class="alarm-state insuf">⚠️ INSUFFICIENT_DATA<span class="state-label">Not enough data points yet</span></div>
+      <div class="alarm-state alarm">🚨 ALARM<span class="state-label">Threshold breached</span></div>
+    </div>
+    <div class="alarm-arrows">
+      <span>OK</span><span class="arrow">⇄</span><span>INSUFFICIENT_DATA</span><span class="arrow">⇄</span><span>ALARM</span>
+    </div>
+
+    <!-- Alarm Flow Canvas -->
+    <div class="flow-canvas-wrap">
+      <canvas id="alarmCanvas" width="820" height="200"></canvas>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🎛️ Alarm Configuration</div>
+        <p><strong style="color:var(--text)">Metric</strong> – which metric to watch (namespace + name + dimensions)</p>
+        <p><strong style="color:var(--text)">Period</strong> – evaluation window (60s, 300s…)</p>
+        <p><strong style="color:var(--text)">Statistic</strong> – Average / Sum / Max / p99…</p>
+        <p><strong style="color:var(--text)">Threshold</strong> – the value to compare against</p>
+        <p><strong style="color:var(--text)">Datapoints to alarm</strong> – M out of N evaluation periods</p>
+      </div>
+      <div class="card">
+        <div class="card-title">⚡ Actions on ALARM</div>
+        <p>📢 <strong style="color:var(--text)">SNS notification</strong> → email / SMS / Lambda</p>
+        <p>📈 <strong style="color:var(--text)">Auto Scaling</strong> → scale out / in EC2 or ECS</p>
+        <p>🔌 <strong style="color:var(--text)">EC2 actions</strong> → stop / terminate / reboot / recover</p>
+        <p>🤖 <strong style="color:var(--text)">Systems Manager</strong> → run automation runbook</p>
+      </div>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Composite Alarms</h3>
+    <div class="info-box">
+      <strong>Composite Alarm</strong> – combine multiple alarms with AND/OR logic. Reduce alert noise: only fire when BOTH CPU &gt; 80% AND Latency &gt; 500ms are in ALARM state.
+    </div>
+
+    <div class="pseudo-block">
+<span class="pk">COMPOSITE ALARM LOGIC:</span><br>
+&nbsp;&nbsp;<span class="pv">HighCPU</span> = <span class="pn">CPUUtilization &gt; 80% for 3/3 periods</span><br>
+&nbsp;&nbsp;<span class="pv">HighLatency</span> = <span class="pn">Latency p99 &gt; 500ms for 2/3 periods</span><br>
+<br>
+&nbsp;&nbsp;<span class="pk">RULE:</span> <span class="pv">CriticalServiceAlarm</span> = <span class="pv">HighCPU</span> <span class="pk">AND</span> <span class="pv">HighLatency</span><br>
+&nbsp;&nbsp;<span class="pk">ACTION:</span> <span class="pn">Trigger PagerDuty via SNS only when BOTH fire</span>
+    </div>
+  </section>
+
+  <!-- ── TAB 4: DASHBOARDS ─────────────────────────────── -->
+  <section class="tab-panel" id="panel-4">
+    <h2 class="section-title">📊 Dashboards &amp; Visualisation</h2>
+    <p class="section-subtitle">Build shareable operational views — no extra cost per dashboard, only per widget API call.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📉 Widget Types</div>
+        <p><span class="tag tag-blue">Line</span> – time-series metrics over time</p>
+        <p><span class="tag tag-green">Number</span> – single metric value (live)</p>
+        <p><span class="tag tag-orange">Bar</span> – compare across dimensions</p>
+        <p><span class="tag tag-purple">Alarm status</span> – red/green board</p>
+        <p><span class="tag tag-blue">Logs table</span> – Insights query results</p>
+        <p><span class="tag tag-green">Text / Markdown</span> – annotations</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Cross-Account Dashboards</div>
+        <p>With <strong style="color:var(--text)">CloudWatch cross-account observability</strong>, link a monitoring account to source accounts. View metrics and logs from multiple AWS accounts in one dashboard — no data copying needed.</p>
+      </div>
+    </div>
+
+    <div class="info-box">
+      <strong>💡 Automatic Dashboards</strong> – AWS generates automatic dashboards for EC2, Lambda, RDS, ECS, and more — zero config. Find them under <em>CloudWatch → Dashboards → Automatic dashboards</em>.
+    </div>
+
+    <!-- Dashboard JSON snippet -->
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">JSON</span>
+        <span class="code-desc">Dashboard widget definition</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre>{
+  <span class="str">"type"</span>: <span class="str">"metric"</span>,
+  <span class="str">"properties"</span>: {
+    <span class="str">"title"</span>: <span class="str">"Lambda Error Rate"</span>,
+    <span class="str">"metrics"</span>: [
+      [<span class="str">"AWS/Lambda"</span>, <span class="str">"Errors"</span>, <span class="str">"FunctionName"</span>, <span class="str">"myFunction"</span>,
+        { <span class="str">"stat"</span>: <span class="str">"Sum"</span>, <span class="str">"period"</span>: <span class="num">60</span> }],
+      [<span class="str">"AWS/Lambda"</span>, <span class="str">"Invocations"</span>, <span class="str">"FunctionName"</span>, <span class="str">"myFunction"</span>,
+        { <span class="str">"stat"</span>: <span class="str">"Sum"</span>, <span class="str">"period"</span>: <span class="num">60</span>, <span class="str">"id"</span>: <span class="str">"invocations"</span> }]
+    ],
+    <span class="str">"view"</span>: <span class="str">"timeSeries"</span>,
+    <span class="str">"region"</span>: <span class="str">"us-east-1"</span>,
+    <span class="str">"period"</span>: <span class="num">300</span>
+  }
+}</pre>
+    </div>
+  </section>
+
+  <!-- ── TAB 5: C# SDK ─────────────────────────────────── -->
+  <section class="tab-panel" id="panel-5">
+    <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+    <p class="section-subtitle">Using AWSSDK.CloudWatch and AWSSDK.CloudWatchLogs NuGet packages.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">C#</span>
+        <span class="code-desc">Publish a custom metric</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="kw">using</span> Amazon.CloudWatch;
+<span class="kw">using</span> Amazon.CloudWatch.Model;
+
+<span class="kw">var</span> <span class="var">client</span> = <span class="kw">new</span> <span class="typ">AmazonCloudWatchClient</span>();
+
+<span class="kw">await</span> <span class="var">client</span>.<span class="fn">PutMetricDataAsync</span>(<span class="kw">new</span> <span class="typ">PutMetricDataRequest</span>
+{
+    Namespace = <span class="str">"MyApp/Orders"</span>,
+    MetricData =
+    [
+        <span class="kw">new</span> <span class="typ">MetricDatum</span>
+        {
+            MetricName = <span class="str">"OrdersPlaced"</span>,
+            Value      = <span class="num">1</span>,
+            Unit       = StandardUnit.Count,
+            Timestamp  = DateTime.UtcNow,
+            Dimensions =
+            [
+                <span class="kw">new</span> <span class="typ">Dimension</span> { Name = <span class="str">"Environment"</span>, Value = <span class="str">"Prod"</span> }
+            ]
+        }
+    ]
+});</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">C#</span>
+        <span class="code-desc">Create a CloudWatch Alarm</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="kw">await</span> <span class="var">client</span>.<span class="fn">PutMetricAlarmAsync</span>(<span class="kw">new</span> <span class="typ">PutMetricAlarmRequest</span>
+{
+    AlarmName          = <span class="str">"HighCPUAlarm"</span>,
+    AlarmDescription   = <span class="str">"Fires when EC2 CPU exceeds 80%"</span>,
+    Namespace          = <span class="str">"AWS/EC2"</span>,
+    MetricName         = <span class="str">"CPUUtilization"</span>,
+    Dimensions         =
+    [
+        <span class="kw">new</span> <span class="typ">Dimension</span> { Name = <span class="str">"InstanceId"</span>, Value = <span class="str">"i-0abc1234"</span> }
+    ],
+    Statistic          = Statistic.Average,
+    Period             = <span class="num">300</span>,               <span class="cm">// 5 minutes</span>
+    EvaluationPeriods  = <span class="num">3</span>,
+    DatapointsToAlarm  = <span class="num">2</span>,                <span class="cm">// 2 of 3 periods</span>
+    Threshold          = <span class="num">80.0</span>,
+    ComparisonOperator = ComparisonOperator.GreaterThanThreshold,
+    TreatMissingData   = <span class="str">"notBreaching"</span>,
+    AlarmActions       =
+    [
+        <span class="str">"arn:aws:sns:us-east-1:123456789:MyAlarmTopic"</span>
+    ]
+});</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">C#</span>
+        <span class="code-desc">Write logs to CloudWatch Logs</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="kw">using</span> Amazon.CloudWatchLogs;
+<span class="kw">using</span> Amazon.CloudWatchLogs.Model;
+
+<span class="kw">var</span> <span class="var">logClient</span> = <span class="kw">new</span> <span class="typ">AmazonCloudWatchLogsClient</span>();
+
+<span class="cm">// Ensure log group + stream exist</span>
+<span class="kw">await</span> <span class="var">logClient</span>.<span class="fn">CreateLogGroupAsync</span>(<span class="kw">new</span> <span class="typ">CreateLogGroupRequest</span>
+    { LogGroupName = <span class="str">"/myapp/orders"</span> });
+<span class="kw">await</span> <span class="var">logClient</span>.<span class="fn">CreateLogStreamAsync</span>(<span class="kw">new</span> <span class="typ">CreateLogStreamRequest</span>
+    { LogGroupName = <span class="str">"/myapp/orders"</span>, LogStreamName = <span class="str">"stream-1"</span> });
+
+<span class="cm">// Put log events</span>
+<span class="kw">await</span> <span class="var">logClient</span>.<span class="fn">PutLogEventsAsync</span>(<span class="kw">new</span> <span class="typ">PutLogEventsRequest</span>
+{
+    LogGroupName  = <span class="str">"/myapp/orders"</span>,
+    LogStreamName = <span class="str">"stream-1"</span>,
+    LogEvents     =
+    [
+        <span class="kw">new</span> <span class="typ">InputLogEvent</span>
+        {
+            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            Message   = <span class="str">"""{"level":"INFO","msg":"Order placed","orderId":"ORD-001"}"""</span>
+        }
+    ]
+});</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="code-lang">C#</span>
+        <span class="code-desc">Query metrics with GetMetricData</span>
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      </div>
+      <pre><span class="kw">var</span> <span class="var">response</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="fn">GetMetricDataAsync</span>(<span class="kw">new</span> <span class="typ">GetMetricDataRequest</span>
+{
+    StartTime = DateTime.UtcNow.AddHours(-<span class="num">1</span>),
+    EndTime   = DateTime.UtcNow,
+    MetricDataQueries =
+    [
+        <span class="kw">new</span> <span class="typ">MetricDataQuery</span>
+        {
+            Id    = <span class="str">"m1"</span>,
+            Label = <span class="str">"Lambda Errors"</span>,
+            MetricStat = <span class="kw">new</span> <span class="typ">MetricStat</span>
+            {
+                Metric = <span class="kw">new</span> <span class="typ">Metric</span>
+                {
+                    Namespace  = <span class="str">"AWS/Lambda"</span>,
+                    MetricName = <span class="str">"Errors"</span>,
+                    Dimensions =
+                    [
+                        <span class="kw">new</span> <span class="typ">Dimension</span> { Name = <span class="str">"FunctionName"</span>, Value = <span class="str">"myFunction"</span> }
+                    ]
+                },
+                Period = <span class="num">300</span>,
+                Stat   = <span class="str">"Sum"</span>
+            }
+        }
+    ]
+});
+
+<span class="kw">foreach</span> (<span class="kw">var</span> <span class="var">result</span> <span class="kw">in</span> <span class="var">response</span>.MetricDataResults)
+    Console.<span class="fn">WriteLine</span>($<span class="str">"[{result.Id}] Values: {string.Join(", ", result.Values)}"</span>);</pre>
+    </div>
+  </section>
+
+  <!-- ── TAB 6: INSIGHTS ───────────────────────────────── -->
+  <section class="tab-panel" id="panel-6">
+    <h2 class="section-title">🔍 Container &amp; Application Insights</h2>
+    <p class="section-subtitle">Higher-level observability features built on top of CloudWatch.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">🐳 Container Insights</div>
+        <p>Collects metrics &amp; logs from EKS, ECS, and Kubernetes clusters.</p>
+        <p>Provides performance panels for clusters, services, pods, and tasks — CPU, memory, network, and disk.</p>
+        <p><span class="tag tag-orange">Requires</span> CloudWatch agent / Fluent Bit DaemonSet</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔬 Application Insights</div>
+        <p>Automated problem detection for .NET, SQL Server, IIS, Java apps running on EC2 / ECS.</p>
+        <p>Detects anomalies, surfaces correlated metrics + logs, and creates alarms automatically.</p>
+        <p><span class="tag tag-green">Great for</span> .NET backend apps on EC2</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🌐 Internet Monitor</div>
+        <p>Monitors the health of the path between your users and your AWS-hosted app across the AWS backbone.</p>
+        <p>Identifies internet issues affecting specific cities, ISPs, or geographies.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🎯 Evidently</div>
+        <p>Feature flagging &amp; A/B testing built into CloudWatch.</p>
+        <p>Launch features gradually, measure impact on custom metrics, and roll back safely.</p>
+      </div>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:24px 0 14px">CloudWatch Synthetics (Canaries)</h3>
+    <div class="info-box">
+      <strong>Synthetics Canary</strong> – A Node.js or Python script that runs on a schedule (every 1 min) to simulate user journeys and API calls. Catches endpoint failures before real users do.
+    </div>
+
+    <div class="table-wrap"><table class="metrics-table">
+      <thead><tr><th>Canary Type</th><th>Purpose</th><th>Language</th></tr></thead>
+      <tbody>
+        <tr><td>API Canary</td><td>HTTP endpoint health checks</td><td>Node.js / Python</td></tr>
+        <tr><td>Broken Link Checker</td><td>Crawl pages for broken links</td><td>Node.js</td></tr>
+        <tr><td>Visual Monitoring</td><td>Screenshot diff for UI regressions</td><td>Node.js</td></tr>
+        <tr><td>Heartbeat Monitor</td><td>Simple URL availability check</td><td>Node.js / Python</td></tr>
+        <tr><td>Custom Script</td><td>Full Selenium-like UI interactions</td><td>Node.js</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ── TAB 7: BEST PRACTICES ─────────────────────────── -->
+  <section class="tab-panel" id="panel-7">
+    <h2 class="section-title">💡 Best Practices</h2>
+    <p class="section-subtitle">Production-grade CloudWatch setup for reliability and cost efficiency.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">✅ Metrics Best Practices</div>
+        <p>Use <strong style="color:var(--text)">dimensions wisely</strong> — high-cardinality dims (like userId) explode metric count and cost.</p>
+        <p>Prefer <strong style="color:var(--text)">EMF (Embedded Metric Format)</strong> in Lambda for structured metrics without extra API calls.</p>
+        <p>Enable <strong style="color:var(--text)">detailed monitoring</strong> on EC2 (1-min) for critical workloads; default is 5-min.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Logs Best Practices</div>
+        <p>Always set <strong style="color:var(--text)">log retention</strong> on log groups — default is "never expire" which costs money.</p>
+        <p>Use <strong style="color:var(--text)">structured JSON logs</strong> (not free-text) so Logs Insights can parse fields efficiently.</p>
+        <p>Route high-volume logs to <strong style="color:var(--text)">S3 via subscription filter</strong> for cheap long-term storage.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Alarms Best Practices</div>
+        <p>Use <strong style="color:var(--text)">M of N datapoints</strong> (e.g. 3 of 5) to avoid transient spike alerts.</p>
+        <p>Set <strong style="color:var(--text)">TreatMissingData = notBreaching</strong> for low-traffic metrics to avoid false ALARM.</p>
+        <p>Use <strong style="color:var(--text)">Composite Alarms</strong> to reduce noise — only page on-call when multiple signals align.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">✅ Cost Optimisation</div>
+        <p><strong style="color:var(--text)">Custom metrics</strong> cost $0.30/metric/month — batch PutMetricData (max 1000 per call).</p>
+        <p><strong style="color:var(--text)">Logs Insights</strong> charges per GB scanned — filter time window precisely.</p>
+        <p>Use <strong style="color:var(--text)">metric math</strong> to derive new metrics from existing ones instead of publishing new ones.</p>
+      </div>
+    </div>
+
+    <h3 style="color:var(--text);font-size:16px;margin:24px 0 14px">Recommended Alarm Set for Lambda Functions</h3>
+    <div class="table-wrap"><table class="metrics-table">
+      <thead><tr><th>Alarm</th><th>Metric</th><th>Threshold</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>High Error Rate</td>
+          <td><code>Errors / Invocations</code></td>
+          <td>&gt; 1% for 5 min</td>
+          <td><span class="tag tag-red">SNS Alert</span></td>
+        </tr>
+        <tr>
+          <td>Throttles</td>
+          <td><code>Throttles</code></td>
+          <td>&gt; 0 for 3 periods</td>
+          <td><span class="tag tag-orange">Request limit increase</span></td>
+        </tr>
+        <tr>
+          <td>Duration Spike</td>
+          <td><code>Duration p99</code></td>
+          <td>&gt; 80% of timeout</td>
+          <td><span class="tag tag-red">SNS Alert</span></td>
+        </tr>
+        <tr>
+          <td>Concurrent Executions</td>
+          <td><code>ConcurrentExecutions</code></td>
+          <td>&gt; 80% of limit</td>
+          <td><span class="tag tag-orange">Scale warning</span></td>
+        </tr>
+        <tr>
+          <td>Iterator Age (Streams)</td>
+          <td><code>IteratorAge</code></td>
+          <td>&gt; 60 seconds</td>
+          <td><span class="tag tag-red">Consumer lag alert</span></td>
+        </tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <!-- ── TAB 8: SUMMARY ─────────────────────────────────── -->
+  <section class="tab-panel" id="panel-8">
+    <h2 class="section-title">🏁 Summary</h2>
+    <p class="section-subtitle">Quick recap of CloudWatch's core pillars.</p>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">📈 Metrics</div>
+        <p>Time-series data from AWS services + custom PutMetricData. Namespace → MetricName → Dimensions. Retained up to 15 months.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Logs</div>
+        <p>Log Group → Log Stream → Log Event hierarchy. Metric filters extract metrics from logs. Insights for ad-hoc querying.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔔 Alarms</div>
+        <p>3 states: OK / INSUFFICIENT_DATA / ALARM. M-of-N evaluation. Actions: SNS, Auto Scaling, EC2, SSM. Composite alarms for noise reduction.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Dashboards</div>
+        <p>Cross-account, cross-region. Automatic dashboards per service. JSON-based widget definitions. Shareable via IAM policies.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">🔍 Insights</div>
+        <p>Container Insights (EKS/ECS), Application Insights (.NET/Java), Internet Monitor, Evidently (feature flags), Synthetics (canaries).</p>
+      </div>
+      <div class="card">
+        <div class="card-title">💰 Cost Tips</div>
+        <p>Set log retention. Batch PutMetricData. Use metric math. Filter Insights queries by time window. Avoid high-cardinality dimensions.</p>
+      </div>
+    </div>
+
+    <div class="completion-card">
+      <div class="ck">🎉</div>
+      <h3>You've mastered AWS CloudWatch!</h3>
+      <p>From publishing custom metrics and querying logs to setting production-grade alarms and building dashboards — you're now ready to build fully observable AWS workloads.</p>
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* ── TAB SWITCHING ─────────────────────────────────────── */
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+  // draw canvases lazily
+  if (idx === 0) drawArch();
+  if (idx === 1) drawMetrics();
+  if (idx === 2) drawLogs();
+  if (idx === 3) drawAlarm();
+}
+
+/* ── COPY CODE ──────────────────────────────────────────── */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+/* ── CANVAS HELPERS ─────────────────────────────────────── */
+const C = {
+  bg:      '#161b22',
+  border:  '#30363d',
+  accent:  '#e8834a',
+  blue:    '#58a6ff',
+  green:   '#3fb950',
+  purple:  '#bc8cff',
+  text:    '#e6edf3',
+  muted:   '#8b949e',
+  yellow:  '#d29922',
+};
+
+function dpr() { return window.devicePixelRatio || 1; }
+
+function setupCanvas(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const r = dpr();
+  // Use parent container width so canvas fills screen on mobile
+  const parent = el.parentElement;
+  const maxW = parent ? (parent.clientWidth - 24) : (window.innerWidth - 28);
+  const origW = parseInt(el.getAttribute('width')) || 820;
+  const origH = parseInt(el.getAttribute('height')) || 220;
+  const scale  = Math.min(1, maxW / origW);
+  const W = Math.floor(origW * scale);
+  const H = Math.floor(origH * scale);
+  el.width  = W * r;
+  el.height = H * r;
+  el.style.width  = W + 'px';
+  el.style.height = H + 'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(r * scale, r * scale);
+  ctx.clearRect(0, 0, origW, origH);
+  return { ctx, W: origW, H: origH };
+}
+
+function box(ctx, x, y, w, h, color, label, sub, icon) {
+  // shadow
+  ctx.shadowColor = color + '44';
+  ctx.shadowBlur  = 12;
+  ctx.fillStyle   = C.bg;
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.5;
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.fill();
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  if (icon) {
+    ctx.font = '18px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(icon, x + w/2, y + (sub ? 22 : h/2 - 6));
+  }
+  ctx.fillStyle = C.text;
+  ctx.font = `600 12px Inter, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x + w/2, y + (icon ? (sub ? 42 : h/2 + 10) : h/2 + 4));
+  if (sub) {
+    ctx.fillStyle = C.muted;
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillText(sub, x + w/2, y + h - 10);
+  }
+}
+
+function arrow(ctx, x1, y1, x2, y2, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(x1, y1);
+  ctx.lineTo(x2, y2);
+  ctx.stroke();
+  // arrowhead
+  const angle = Math.atan2(y2-y1, x2-x1);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - 8*Math.cos(angle-0.4), y2 - 8*Math.sin(angle-0.4));
+  ctx.lineTo(x2 - 8*Math.cos(angle+0.4), y2 - 8*Math.sin(angle+0.4));
+  ctx.closePath();
+  ctx.fill();
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r);
+  ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r);
+  ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r);
+  ctx.closePath();
+}
+
+function label(ctx, x, y, text, color) {
+  ctx.fillStyle = color || C.muted;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(text, x, y);
+}
+
+/* ── ARCH DIAGRAM ───────────────────────────────────────── */
+function drawArch() {
+  const s = setupCanvas('archCanvas');
+  if (!s) return;
+  const { ctx, W, H } = s;
+
+  // Title
+  ctx.fillStyle = C.muted;
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('CloudWatch Architecture — Data Flow', 16, 18);
+
+  // ROW 1: Sources
+  const srcs = [
+    { label:'EC2',      icon:'🖥️', color:C.blue },
+    { label:'Lambda',   icon:'λ',   color:C.accent },
+    { label:'RDS',      icon:'🗄️', color:C.green },
+    { label:'ECS/EKS',  icon:'🐳',  color:C.purple },
+    { label:'Custom App',icon:'📦', color:C.yellow },
+  ];
+  const bw = Math.min(110, (W - 80) / srcs.length - 10);
+  const gap = (W - 40 - bw * srcs.length) / (srcs.length - 1);
+  srcs.forEach((s2, i) => {
+    const x = 20 + i * (bw + gap);
+    box(ctx, x, 30, bw, 60, s2.color, s2.label, null, s2.icon);
+    arrow(ctx, x + bw/2, 90, x + bw/2, 120, C.border);
+  });
+
+  // ROW 2: CloudWatch box (spans all)
+  ctx.fillStyle = '#0d1117';
+  ctx.strokeStyle = C.accent;
+  ctx.lineWidth = 2;
+  roundRect(ctx, 20, 120, W-40, 80, 10);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = C.accent;
+  ctx.font = 'bold 13px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('☁️  AWS CloudWatch', W/2, 148);
+
+  const pillW = 105, pillH = 28, pillY = 158;
+  const pills = ['📈 Metrics','📋 Logs','🔔 Alarms','📊 Dashboards','⚡ Events'];
+  const totalPW = pills.length * pillW + (pills.length-1)*8;
+  const startX = (W - totalPW)/2;
+  pills.forEach((p, i) => {
+    const px = startX + i*(pillW+8);
+    ctx.fillStyle = 'rgba(232,131,74,0.12)';
+    ctx.strokeStyle = 'rgba(232,131,74,0.3)';
+    ctx.lineWidth = 1;
+    roundRect(ctx, px, pillY, pillW, pillH, 6);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.accent;
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(p, px + pillW/2, pillY + 18);
+  });
+
+  // ROW 3: Actions
+  arrow(ctx, W/2, 200, W/2, 228, C.border);
+  const acts = [
+    { label:'SNS / Alert', color:C.red },
+    { label:'Auto Scaling', color:C.green },
+    { label:'EC2 Action',  color:C.blue },
+    { label:'Lambda / SSM',color:C.purple },
+  ];
+  const aw = Math.min(115, (W-80)/acts.length - 8);
+  const agap = (W - 40 - aw*acts.length) / (acts.length-1);
+  acts.forEach((a, i) => {
+    const x = 20 + i*(aw+agap);
+    box(ctx, x, 228, aw, 50, a.color, a.label, null, null);
+  });
+}
+
+/* ── METRICS DIAGRAM ────────────────────────────────────── */
+function drawMetrics() {
+  const s = setupCanvas('metricsCanvas');
+  if (!s) return;
+  const { ctx, W, H } = s;
+
+  ctx.fillStyle = C.muted;
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Metric Hierarchy', 16, 18);
+
+  const items = [
+    { label:'Namespace', sub:'AWS/EC2', color:C.accent, icon:'📦' },
+    { label:'Metric Name', sub:'CPUUtilization', color:C.blue, icon:'📈' },
+    { label:'Dimensions', sub:'InstanceId=i-123', color:C.green, icon:'🔑' },
+    { label:'Statistics', sub:'Avg / Sum / p99', color:C.purple, icon:'📐' },
+    { label:'CloudWatch', sub:'Stored & Evaluated', color:C.accent, icon:'☁️' },
+  ];
+  const bw = Math.min(130, (W - 60) / items.length - 12);
+  const gap2 = (W - 40 - bw * items.length) / (items.length - 1);
+
+  items.forEach((it, i) => {
+    const x = 20 + i * (bw + gap2);
+    box(ctx, x, 35, bw, 75, it.color, it.label, it.sub, it.icon);
+    if (i < items.length - 1)
+      arrow(ctx, x + bw, 72, x + bw + gap2, 72, C.border);
+  });
+
+  label(ctx, W/2, 130, 'PutMetricData API  →  Aggregated per period  →  Alarm evaluation  →  Dashboard render', C.muted);
+}
+
+/* ── LOGS DIAGRAM ───────────────────────────────────────── */
+function drawLogs() {
+  const s = setupCanvas('logsCanvas');
+  if (!s) return;
+  const { ctx, W, H } = s;
+
+  ctx.fillStyle = C.muted;
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('CloudWatch Logs Hierarchy', 16, 18);
+
+  // Log Group
+  const lgW = W - 40, lgH = 170;
+  ctx.fillStyle = 'rgba(88,166,255,0.05)';
+  ctx.strokeStyle = C.blue;
+  ctx.lineWidth = 1.5;
+  roundRect(ctx, 20, 30, lgW, lgH, 10);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = C.blue;
+  ctx.font = '600 12px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('📂  Log Group: /aws/lambda/myFunction', 34, 50);
+  ctx.fillStyle = C.muted;
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillText('Retention: 30 days', lgW - 80, 50);
+
+  // Log Streams inside
+  const streams = ['/2024/01/01/[$LATEST]abc123', '/2024/01/01/[$LATEST]def456', '/2024/01/02/[$LATEST]ghi789'];
+  streams.forEach((s2, i) => {
+    const sx = 36, sy = 62 + i * 42, sw = lgW - 60, sh = 32;
+    ctx.fillStyle = 'rgba(63,185,80,0.08)';
+    ctx.strokeStyle = C.green;
+    ctx.lineWidth = 1;
+    roundRect(ctx, sx, sy, sw, sh, 6);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.green;
+    ctx.font = '500 11px Fira Code, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('📄  ' + s2, sx + 10, sy + 20);
+    // Events inside stream
+    ['Event1','Event2','Event3'].forEach((ev, j) => {
+      const ex = sx + sw - 200 + j*62;
+      ctx.fillStyle = 'rgba(232,131,74,0.12)';
+      ctx.strokeStyle = C.accent;
+      ctx.lineWidth = .8;
+      roundRect(ctx, ex, sy + 5, 55, 22, 4);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = C.accent;
+      ctx.font = '9px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(ev, ex + 27, sy + 19);
+    });
+  });
+
+  label(ctx, W/2, 212, 'Log Group → Log Stream (per instance) → Log Events (timestamp + message)', C.muted);
+}
+
+/* ── ALARM DIAGRAM ──────────────────────────────────────── */
+function drawAlarm() {
+  const s = setupCanvas('alarmCanvas');
+  if (!s) return;
+  const { ctx, W, H } = s;
+
+  ctx.fillStyle = C.muted;
+  ctx.font = '11px Inter, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('Alarm Evaluation Flow', 16, 18);
+
+  const steps = [
+    { label:'Metric', sub:'CPUUtilization', color:C.blue, icon:'📈' },
+    { label:'Period', sub:'300s window', color:C.muted, icon:'⏱️' },
+    { label:'Statistic', sub:'Average', color:C.purple, icon:'📐' },
+    { label:'Threshold', sub:'> 80%?', color:C.yellow, icon:'⚖️' },
+    { label:'ALARM', sub:'SNS → Alert', color:'#f85149', icon:'🚨' },
+  ];
+
+  const bw2 = Math.min(115, (W - 60) / steps.length - 10);
+  const gap3 = (W - 40 - bw2 * steps.length) / (steps.length - 1);
+
+  steps.forEach((st, i) => {
+    const x = 20 + i*(bw2 + gap3);
+    box(ctx, x, 40, bw2, 120, st.color, st.label, st.sub, st.icon);
+    if (i < steps.length - 1)
+      arrow(ctx, x + bw2 + 2, 100, x + bw2 + gap3 - 2, 100, C.border);
+  });
+}
+
+/* ── INIT ───────────────────────────────────────────────── */
+window.addEventListener('load', () => { drawArch(); });
+window.addEventListener('resize', () => {
+  // redraw the active canvas
+  const active = document.querySelector('.tab-panel.active');
+  if (!active) return;
+  const id = active.id.split('-')[1];
+  if (id === '0') drawArch();
+  if (id === '1') drawMetrics();
+  if (id === '2') drawLogs();
+  if (id === '3') drawAlarm();
+});
+</script>
+</body>
+</html>

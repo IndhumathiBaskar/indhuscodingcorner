@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS AppConfig – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  /* ── TOKENS ─────────────────────────────────────────────── */
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #3daee9;   /* AppConfig cyan-blue */
+    --accent2:    #73c6f4;
+    --accent-dim: rgba(61,174,233,0.12);
+    --green:      #3fb950;
+    --orange:     #e8834a;
+    --purple:     #bc8cff;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+
+  /* ── RESET ──────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.7;
+    min-height: 100vh;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  .site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    width: 100%;
+    overflow: hidden;
+  }
+  .site-header .logo { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .site-header .sep  { color: var(--border); flex-shrink: 0; }
+  .site-header .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ── HERO ───────────────────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, #0d1117 0%, #001a2e 50%, #0d1117 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 16px 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(61,174,233,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-dim);
+    border: 1px solid rgba(61,174,233,0.3);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .hero h1 { font-size: clamp(24px, 5vw, 42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { max-width: 580px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px, 2vw, 15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  /* ── TAB NAV ────────────────────────────────────────────── */
+  .tab-nav-wrapper {
+    position: sticky;
+    top: 49px;
+    z-index: 90;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+    overflow: hidden;
+  }
+  .tab-nav {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    scrollbar-width: none;
+    width: 100%;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 0 16px;
+    height: var(--tab-h);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color .2s, border-color .2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── CONTENT ────────────────────────────────────────────── */
+  .content {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 28px 14px 80px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── HEADINGS ───────────────────────────────────────────── */
+  .section-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-subtitle { color: var(--muted); font-size: 14px; margin-bottom: 26px; }
+
+  /* ── CARDS ──────────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 11px; display: flex; align-items: center; gap: 8px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 680px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── CALLOUT BOXES ──────────────────────────────────────── */
+  .callout {
+    border-radius: var(--radius);
+    padding: 15px 18px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-blue  { background: var(--accent-dim); border: 1px solid rgba(61,174,233,0.25); border-left: 3px solid var(--accent); }
+  .callout-blue strong { color: var(--accent); }
+  .callout-green { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-orange{ background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red   { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  /* ── TAGS ───────────────────────────────────────────────── */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--mono);
+  }
+  .tag-blue   { background: var(--accent-dim); color: var(--accent); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+  /* ── TABLE ──────────────────────────────────────────────── */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .tbl {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .tbl th {
+    background: var(--surface2);
+    color: var(--accent);
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+  }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  /* ── CODE BLOCKS ────────────────────────────────────────── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 20px;
+    overflow: hidden;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all .15s;
+  }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre {
+    margin: 0;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.75;
+    color: var(--text);
+  }
+  .kw  { color: #ff7b72; }
+  .str { color: #a5d6ff; }
+  .cm  { color: #8b949e; font-style: italic; }
+  .fn  { color: #d2a8ff; }
+  .num { color: #79c0ff; }
+  .var { color: #ffa657; }
+  .typ { color: #7ee787; }
+
+  /* ── CANVAS ─────────────────────────────────────────────── */
+  .canvas-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    margin-bottom: 22px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  /* ── PSEUDO ─────────────────────────────────────────────── */
+  .pseudo {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--purple);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.85;
+    color: var(--muted);
+    overflow-x: auto;
+  }
+  .pk { color: var(--purple); font-weight: 600; }
+  .pv { color: var(--accent); }
+  .pn { color: var(--green); }
+
+  /* ── DEPLOYMENT STRATEGY CARDS ──────────────────────────── */
+  .strategy-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+  @media (max-width: 580px) { .strategy-grid { grid-template-columns: 1fr; } }
+  .strategy-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .strategy-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--s-color, var(--accent));
+  }
+  .strategy-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .strategy-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; font-family: var(--mono); }
+  .strategy-desc { font-size: 13px; color: var(--muted); }
+
+  /* ── STEP LIST ──────────────────────────────────────────── */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .steps li:last-child { border-bottom: none; }
+  .step-num {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    border: 1px solid rgba(61,174,233,0.3);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1px;
+  }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  /* ── COMPLETION CARD ─────────────────────────────────────── */
+  .completion-card {
+    background: linear-gradient(135deg, var(--surface) 0%, rgba(61,174,233,0.08) 100%);
+    border: 1px solid rgba(61,174,233,0.3);
+    border-radius: var(--radius);
+    padding: 28px;
+    text-align: center;
+    margin-top: 32px;
+  }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p  { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* ── MOBILE ─────────────────────────────────────────────── */
+  @media (max-width: 600px) {
+    .hero { padding: 32px 14px 28px; }
+    .content { padding: 20px 12px 60px; }
+    .section-title { font-size: 18px; }
+    .card { padding: 15px 13px; }
+    pre { font-size: 11.5px; padding: 13px 11px; }
+    .pseudo { font-size: 11.5px; }
+    .callout { font-size: 13px; }
+  }
+  @media (max-width: 440px) {
+    .tab-btn { padding: 0 11px; font-size: 12px; }
+    .hero-pill { font-size: 10px; padding: 3px 9px; }
+    .tbl th, .tbl td { padding: 8px 10px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS AppConfig</span>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge">⚙️ AWS Configuration Management</div>
+  <h1>AWS <span>AppConfig</span></h1>
+  <p>Deploy, validate, and manage application configuration safely — with feature flags, gradual rollouts, and instant rollback.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🚩 Feature Flags</span>
+    <span class="hero-pill">🔄 Safe Deployments</span>
+    <span class="hero-pill">✅ Validators</span>
+    <span class="hero-pill">📦 Config Profiles</span>
+    <span class="hero-pill">🛡️ Rollback</span>
+    <span class="hero-pill">🌍 Environments</span>
+    <span class="hero-pill">⏱️ Bake Time</span>
+  </div>
+</section>
+
+<!-- TAB NAV -->
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">📦 Core Concepts</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🚩 Feature Flags</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🔄 Deployment</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">✅ Validators</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🔗 Integrations</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- ── TAB 0: OVERVIEW ─────────────────────────────────── -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS AppConfig?</h2>
+  <p class="section-subtitle">A feature of AWS Systems Manager for safe, dynamic application configuration management.</p>
+
+  <div class="callout callout-blue">
+    <strong>One-liner</strong>
+    AppConfig = deploy config changes to running apps <strong>safely</strong>, with validation, gradual rollout, bake time, and auto-rollback — no redeploy needed.
+  </div>
+
+  <!-- Architecture Canvas -->
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="320"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">📦 Application</div>
+      <p>Top-level logical grouping. e.g. <code>MyOrderService</code>. Contains environments and config profiles.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌍 Environment</div>
+      <p>A deployment target: <code>Production</code>, <code>Staging</code>, <code>Dev</code>. Each can have its own monitors and alarms.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Config Profile</div>
+      <p>Defines <em>what</em> config to deploy — JSON, YAML, feature flags, or free-form text. Linked to a source (SSM / S3 / inline).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🚀 Deployment Strategy</div>
+      <p>Controls rollout speed — linear, exponential, or all-at-once. Defines bake time between steps.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Validators</div>
+      <p>JSON Schema or Lambda validators that reject bad config <em>before</em> it reaches production.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔔 Monitors</div>
+      <p>CloudWatch alarms attached to an environment. If alarm fires during rollout → auto-rollback.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Why AppConfig over plain SSM Parameter Store / S3?</strong>
+    AppConfig adds validation, gradual rollout, bake time, automatic rollback on alarms, and a retrieval API with caching — turning raw config into a safe deployment pipeline.
+  </div>
+</section>
+
+<!-- ── TAB 1: CORE CONCEPTS ────────────────────────────── -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">📦 Core Concepts</h2>
+  <p class="section-subtitle">The building blocks of AppConfig — understand these and everything else clicks.</p>
+
+  <!-- Hierarchy Canvas -->
+  <div class="canvas-wrap">
+    <canvas id="hierCanvas" width="860" height="200"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">AppConfig Object Model</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead>
+        <tr><th>Object</th><th>What it represents</th><th>Example</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-blue">Application</span></td>
+          <td>Logical container for a service or app</td>
+          <td><code>OrderService</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-green">Environment</span></td>
+          <td>Deployment target (can have CloudWatch monitors)</td>
+          <td><code>Production</code>, <code>Staging</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-orange">Config Profile</span></td>
+          <td>The config itself + its source + validators</td>
+          <td><code>FeatureFlags</code>, <code>AppSettings</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple">Hosted Config Version</span></td>
+          <td>An immutable snapshot of config content</td>
+          <td>Version 1, 2, 3…</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">Deployment Strategy</span></td>
+          <td>How fast and in what pattern config rolls out</td>
+          <td><code>Linear 10% / 1 min</code></td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Deployment</span></td>
+          <td>A running rollout of a config version to an environment</td>
+          <td>Deploy v3 to Production</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Config Sources</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🗂️ Hosted (Inline)</div>
+      <p>Store config directly in AppConfig (Hosted Configuration). Best for feature flags and simple JSON/YAML. Version-controlled by AppConfig.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 SSM Parameter Store</div>
+      <p>Reference an SSM SecureString or StringList. Validated by AppConfig before deployment. Good for existing SSM workflows.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪣 S3 Bucket</div>
+      <p>Reference a JSON/YAML file in S3. Supports large configs. AppConfig fetches, validates, and deploys the S3 object.</p>
+    </div>
+  </div>
+
+  <div class="pseudo">
+<span class="pk">APPCONFIG OBJECT HIERARCHY:</span><br>
+<br>
+<span class="pv">Application</span> (OrderService)<br>
+&nbsp;&nbsp;├── <span class="pn">Environment</span> (Production)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="pn">Monitor</span>: CloudWatch Alarm "HighErrorRate"<br>
+&nbsp;&nbsp;├── <span class="pn">Environment</span> (Staging)<br>
+&nbsp;&nbsp;├── <span class="pv">ConfigProfile</span> (FeatureFlags)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── Source: Hosted<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── Validator: JSON Schema<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="pk">Version</span> 1, 2, 3 …<br>
+&nbsp;&nbsp;└── <span class="pv">ConfigProfile</span> (AppSettings)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Source: SSM Parameter Store
+  </div>
+</section>
+
+<!-- ── TAB 2: FEATURE FLAGS ─────────────────────────────── -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🚩 Feature Flags</h2>
+  <p class="section-subtitle">AppConfig has first-class support for feature flags — toggle features without redeploy.</p>
+
+  <div class="callout callout-blue">
+    <strong>Feature Flag Profile</strong>
+    Use config type <code>AWS.AppConfig.FeatureFlags</code> for a structured schema with built-in flag management UI in the AWS Console.
+  </div>
+
+  <!-- Feature flags flow canvas -->
+  <div class="canvas-wrap">
+    <canvas id="flagCanvas" width="860" height="190"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Feature Flag JSON Structure</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">AppConfig feature flags format</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"flags"</span>: {
+    <span class="str">"enableNewCheckout"</span>: {
+      <span class="str">"name"</span>: <span class="str">"Enable New Checkout Flow"</span>,
+      <span class="str">"description"</span>: <span class="str">"Rolls out the redesigned checkout UX"</span>
+    },
+    <span class="str">"darkModeSupport"</span>: {
+      <span class="str">"name"</span>: <span class="str">"Dark Mode Support"</span>
+    },
+    <span class="str">"maxItemsPerCart"</span>: {
+      <span class="str">"name"</span>: <span class="str">"Max Items Per Cart"</span>,
+      <span class="str">"attributes"</span>: {
+        <span class="str">"limit"</span>: { <span class="str">"constraints"</span>: { <span class="str">"type"</span>: <span class="str">"number"</span>, <span class="str">"minimum"</span>: <span class="num">1</span>, <span class="str">"maximum"</span>: <span class="num">100</span> } }
+      }
+    }
+  },
+  <span class="str">"values"</span>: {
+    <span class="str">"enableNewCheckout"</span>: { <span class="str">"enabled"</span>: <span class="kw">true</span> },
+    <span class="str">"darkModeSupport"</span>:   { <span class="str">"enabled"</span>: <span class="kw">false</span> },
+    <span class="str">"maxItemsPerCart"</span>:   { <span class="str">"enabled"</span>: <span class="kw">true</span>, <span class="str">"limit"</span>: <span class="num">50</span> }
+  },
+  <span class="str">"version"</span>: <span class="str">"1"</span>
+}</pre>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Boolean Flags</div>
+      <p>Simple on/off flags — <code>"enabled": true/false</code>. Use for feature toggles, kill switches, and A/B flags.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔢 Flags with Attributes</div>
+      <p>Flags with extra typed values (numbers, strings). E.g. toggle + set a numeric limit — all deployed atomically.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Use Cases</div>
+      <p>New feature rollout, dark launches, kill switches for buggy features, A/B testing config, gradual % rollout.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Zero Redeploy</div>
+      <p>App polls AppConfig endpoint — flag changes take effect within your configured poll interval (e.g. 30s) without any restart.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── TAB 3: DEPLOYMENT ────────────────────────────────── -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🔄 Deployment Strategies</h2>
+  <p class="section-subtitle">Control how config rolls out — from instant to very gradual with bake time in between.</p>
+
+  <!-- Deployment canvas -->
+  <div class="canvas-wrap">
+    <canvas id="deployCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="strategy-grid">
+    <div class="strategy-card" style="--s-color: var(--red)">
+      <div class="strategy-name">AllAtOnce</div>
+      <div class="strategy-meta">100% instantly · 0 min bake</div>
+      <div class="strategy-desc">Deploy to all targets immediately. Fast but risky — no gradual exposure. Use only for non-critical config or Dev environments.</div>
+    </div>
+    <div class="strategy-card" style="--s-color: var(--orange)">
+      <div class="strategy-name">Linear50PercentEvery30Seconds</div>
+      <div class="strategy-meta">50% → 100% · 30s bake</div>
+      <div class="strategy-desc">50% of traffic gets new config, waits 30s, then remainder. Good for staging. Balances speed vs safety.</div>
+    </div>
+    <div class="strategy-card" style="--s-color: var(--green)">
+      <div class="strategy-name">Canary10Percent20Minutes</div>
+      <div class="strategy-meta">10% → 100% · 20 min bake</div>
+      <div class="strategy-desc">10% of traffic first, monitors for 20 minutes, then full rollout. Safe for production — alarms can trigger rollback during the bake window.</div>
+    </div>
+    <div class="strategy-card" style="--s-color: var(--accent)">
+      <div class="strategy-name">Custom Strategy</div>
+      <div class="strategy-meta">You define %  · bake time</div>
+      <div class="strategy-desc">Define your own growth type (Linear / Exponential), growth factor (%), deployment duration, and bake time to suit your SLOs.</div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:4px 0 14px">Deployment Lifecycle</h3>
+  <ul class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-body"><strong>Start Deployment</strong>Specify app, environment, config profile, config version, deployment strategy, and optional KMS key.</div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-body"><strong>Validate</strong>JSON Schema or Lambda validator runs against the new config. Deployment is blocked if validation fails.</div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-body"><strong>Gradual Rollout</strong>Config is deployed incrementally per the strategy. Clients polling the API receive new config in waves.</div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="step-body"><strong>Bake Time</strong>AppConfig waits between steps, monitoring CloudWatch alarms. If any alarm triggers → automatic rollback.</div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div class="step-body"><strong>Complete / Rollback</strong>Deployment completes when 100% is reached and bake time passes. If alarm fires at any step, previous config is restored instantly.</div>
+    </li>
+  </ul>
+
+  <div class="callout callout-orange">
+    <strong>⏱️ Bake Time</strong>
+    The bake time is a <em>monitoring window</em> between deployment steps. During this window, AppConfig watches your CloudWatch alarms. If an alarm breaches, rollback is immediate — even if you're already at 90% rollout.
+  </div>
+</section>
+
+<!-- ── TAB 4: VALIDATORS ────────────────────────────────── -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">✅ Validators</h2>
+  <p class="section-subtitle">Prevent bad config from reaching production — validate before deployment starts.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📐 JSON Schema Validator</div>
+      <p>Attach a JSON Schema document to a config profile. AppConfig validates the new config content against the schema before deploying.</p>
+      <p>Good for: type checks, required fields, min/max values, enums.</p>
+      <p><span class="tag tag-green">Built-in</span> No Lambda needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">λ Lambda Validator</div>
+      <p>Call a Lambda function with the config content. Lambda returns pass/fail + error message. Can do complex business logic validation.</p>
+      <p>Good for: cross-field validation, external dependency checks, custom rules.</p>
+      <p><span class="tag tag-orange">Custom</span> Full flexibility.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:4px 0 14px">JSON Schema Example</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON Schema</span>
+      <span class="code-desc">Validate AppConfig content before deployment</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"$schema"</span>: <span class="str">"http://json-schema.org/draft-07/schema"</span>,
+  <span class="str">"type"</span>: <span class="str">"object"</span>,
+  <span class="str">"required"</span>: [<span class="str">"maxRetries"</span>, <span class="str">"timeoutSeconds"</span>, <span class="str">"featureEnabled"</span>],
+  <span class="str">"properties"</span>: {
+    <span class="str">"maxRetries"</span>: {
+      <span class="str">"type"</span>: <span class="str">"integer"</span>,
+      <span class="str">"minimum"</span>: <span class="num">1</span>,
+      <span class="str">"maximum"</span>: <span class="num">10</span>
+    },
+    <span class="str">"timeoutSeconds"</span>: {
+      <span class="str">"type"</span>: <span class="str">"number"</span>,
+      <span class="str">"minimum"</span>: <span class="num">1</span>,
+      <span class="str">"maximum"</span>: <span class="num">300</span>
+    },
+    <span class="str">"featureEnabled"</span>: { <span class="str">"type"</span>: <span class="str">"boolean"</span> },
+    <span class="str">"allowedRegions"</span>: {
+      <span class="str">"type"</span>: <span class="str">"array"</span>,
+      <span class="str">"items"</span>: { <span class="str">"type"</span>: <span class="str">"string"</span> }
+    }
+  },
+  <span class="str">"additionalProperties"</span>: <span class="kw">false</span>
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:4px 0 14px">Lambda Validator (C#)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Lambda validator function for AppConfig</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.Lambda.Core;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="typ">AppConfigValidator</span>
+{
+    <span class="kw">public void</span> <span class="fn">FunctionHandler</span>(<span class="typ">AppConfigValidationEvent</span> evt, <span class="typ">ILambdaContext</span> ctx)
+    {
+        <span class="kw">try</span>
+        {
+            <span class="kw">var</span> <span class="var">config</span> = <span class="typ">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="typ">AppSettings</span>&gt;(evt.Content)
+                ?? <span class="kw">throw new</span> <span class="typ">Exception</span>(<span class="str">"Config is null"</span>);
+
+            <span class="cm">// Custom business rule: timeout must be less than maxRetries * 30</span>
+            <span class="kw">if</span> (<span class="var">config</span>.TimeoutSeconds >= <span class="var">config</span>.MaxRetries * <span class="num">30</span>)
+                <span class="kw">throw new</span> <span class="typ">Exception</span>(
+                    <span class="str">$"TimeoutSeconds ({config.TimeoutSeconds}) must be less than MaxRetries*30 ({config.MaxRetries * 30})"</span>);
+
+            <span class="cm">// If we reach here, validation passes (no exception = success)</span>
+        }
+        <span class="kw">catch</span> (<span class="typ">Exception</span> ex)
+        {
+            <span class="cm">// AppConfig treats any exception as a validation failure</span>
+            ctx.Logger.<span class="fn">LogError</span>($<span class="str">"Validation failed: {ex.Message}"</span>);
+            <span class="kw">throw</span>;
+        }
+    }
+}
+
+<span class="kw">public record</span> <span class="typ">AppSettings</span>(<span class="kw">int</span> MaxRetries, <span class="kw">int</span> TimeoutSeconds, <span class="kw">bool</span> FeatureEnabled);
+<span class="kw">public record</span> <span class="typ">AppConfigValidationEvent</span>(<span class="kw">string</span> Content, <span class="kw">string</span> Uri);</pre>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>⚠️ Validation Timing</strong>
+    Validators run when you <em>start a deployment</em>, not when you save a config version. If validation fails, the deployment is blocked and no traffic receives the bad config.
+  </div>
+</section>
+
+<!-- ── TAB 5: C# SDK ────────────────────────────────────── -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+  <p class="section-subtitle">Using <code>AWSSDK.AppConfigData</code> (retrieval) and <code>AWSSDK.AppConfig</code> (management) NuGet packages.</p>
+
+  <div class="callout callout-blue">
+    <strong>Two SDKs — Different Purposes</strong>
+    <code>AWSSDK.AppConfig</code> = manage apps, environments, profiles, deployments.
+    <code>AWSSDK.AppConfigData</code> = retrieve config from a running app (the hot path).
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Retrieve config with AppConfigData (with session caching)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.AppConfigData;
+<span class="kw">using</span> Amazon.AppConfigData.Model;
+<span class="kw">using</span> System.Text.Json;
+
+<span class="kw">public class</span> <span class="typ">AppConfigService</span>
+{
+    <span class="kw">private readonly</span> <span class="typ">IAmazonAppConfigData</span> <span class="var">_client</span>;
+    <span class="kw">private</span> <span class="kw">string</span>? <span class="var">_sessionToken</span>;
+    <span class="kw">private</span> <span class="typ">AppSettings</span>? <span class="var">_cachedConfig</span>;
+
+    <span class="kw">public</span> <span class="typ">AppConfigService</span>(<span class="typ">IAmazonAppConfigData</span> client) => <span class="var">_client</span> = client;
+
+    <span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="typ">AppSettings</span>&gt; <span class="fn">GetConfigAsync</span>()
+    {
+        <span class="cm">// Step 1: Start a session (once per app lifecycle)</span>
+        <span class="kw">if</span> (<span class="var">_sessionToken</span> <span class="kw">is null</span>)
+        {
+            <span class="kw">var</span> <span class="var">session</span> = <span class="kw">await</span> <span class="var">_client</span>.<span class="fn">StartConfigurationSessionAsync</span>(
+                <span class="kw">new</span> <span class="typ">StartConfigurationSessionRequest</span>
+                {
+                    ApplicationIdentifier         = <span class="str">"OrderService"</span>,
+                    EnvironmentIdentifier         = <span class="str">"Production"</span>,
+                    ConfigurationProfileIdentifier = <span class="str">"AppSettings"</span>,
+                    RequiredMinimumPollIntervalInSeconds = <span class="num">30</span>
+                });
+            <span class="var">_sessionToken</span> = <span class="var">session</span>.InitialConfigurationToken;
+        }
+
+        <span class="cm">// Step 2: Poll for latest config</span>
+        <span class="kw">var</span> <span class="var">response</span> = <span class="kw">await</span> <span class="var">_client</span>.<span class="fn">GetLatestConfigurationAsync</span>(
+            <span class="kw">new</span> <span class="typ">GetLatestConfigurationRequest</span>
+                { ConfigurationToken = <span class="var">_sessionToken</span> });
+
+        <span class="cm">// Update token for next poll</span>
+        <span class="var">_sessionToken</span> = <span class="var">response</span>.NextPollConfigurationToken;
+
+        <span class="cm">// Step 3: Only deserialise if config changed (non-empty response)</span>
+        <span class="kw">if</span> (<span class="var">response</span>.Configuration.Length > <span class="num">0</span>)
+        {
+            <span class="kw">using var</span> <span class="var">reader</span> = <span class="kw">new</span> <span class="typ">StreamReader</span>(<span class="var">response</span>.Configuration);
+            <span class="kw">var</span> <span class="var">json</span> = <span class="kw">await</span> <span class="var">reader</span>.<span class="fn">ReadToEndAsync</span>();
+            <span class="var">_cachedConfig</span> = <span class="typ">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="typ">AppSettings</span>&gt;(<span class="var">json</span>);
+        }
+
+        <span class="kw">return</span> <span class="var">_cachedConfig</span> ?? <span class="kw">throw new</span> <span class="typ">InvalidOperationException</span>(<span class="str">"No config loaded"</span>);
+    }
+}
+
+<span class="kw">public record</span> <span class="typ">AppSettings</span>(<span class="kw">int</span> MaxRetries, <span class="kw">int</span> TimeoutSeconds, <span class="kw">bool</span> FeatureEnabled);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Create AppConfig resources programmatically</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.AppConfig;
+<span class="kw">using</span> Amazon.AppConfig.Model;
+
+<span class="kw">var</span> <span class="var">mgmt</span> = <span class="kw">new</span> <span class="typ">AmazonAppConfigClient</span>();
+
+<span class="cm">// 1. Create Application</span>
+<span class="kw">var</span> <span class="var">app</span> = <span class="kw">await</span> <span class="var">mgmt</span>.<span class="fn">CreateApplicationAsync</span>(<span class="kw">new</span> <span class="typ">CreateApplicationRequest</span>
+    { Name = <span class="str">"OrderService"</span>, Description = <span class="str">"Order processing service config"</span> });
+
+<span class="cm">// 2. Create Environment</span>
+<span class="kw">var</span> <span class="var">env</span> = <span class="kw">await</span> <span class="var">mgmt</span>.<span class="fn">CreateEnvironmentAsync</span>(<span class="kw">new</span> <span class="typ">CreateEnvironmentRequest</span>
+{
+    ApplicationId = <span class="var">app</span>.Id,
+    Name          = <span class="str">"Production"</span>,
+    Monitors      =
+    [
+        <span class="kw">new</span> <span class="typ">Monitor</span>
+        {
+            AlarmArn     = <span class="str">"arn:aws:cloudwatch:us-east-1:123:alarm:HighErrorRate"</span>,
+            AlarmRoleArn = <span class="str">"arn:aws:iam::123:role/AppConfigMonitorRole"</span>
+        }
+    ]
+});
+
+<span class="cm">// 3. Create Config Profile (hosted)</span>
+<span class="kw">var</span> <span class="var">profile</span> = <span class="kw">await</span> <span class="var">mgmt</span>.<span class="fn">CreateConfigurationProfileAsync</span>(<span class="kw">new</span> <span class="typ">CreateConfigurationProfileRequest</span>
+{
+    ApplicationId  = <span class="var">app</span>.Id,
+    Name           = <span class="str">"AppSettings"</span>,
+    LocationUri    = <span class="str">"hosted"</span>,
+    Type           = <span class="str">"AWS.Freeform"</span>,
+    Validators     =
+    [
+        <span class="kw">new</span> <span class="typ">Validator</span> { Type = ValidatorType.JSON_SCHEMA, Content = schemaJson }
+    ]
+});
+
+<span class="cm">// 4. Create a Hosted Config Version</span>
+<span class="kw">var</span> <span class="var">version</span> = <span class="kw">await</span> <span class="var">mgmt</span>.<span class="fn">CreateHostedConfigurationVersionAsync</span>(<span class="kw">new</span> <span class="typ">CreateHostedConfigurationVersionRequest</span>
+{
+    ApplicationId          = <span class="var">app</span>.Id,
+    ConfigurationProfileId = <span class="var">profile</span>.Id,
+    Content                = <span class="kw">new</span> <span class="typ">MemoryStream</span>(
+        <span class="typ">System.Text.Encoding</span>.UTF8.<span class="fn">GetBytes</span>(<span class="str">"""{"maxRetries":3,"timeoutSeconds":30,"featureEnabled":true}"""</span>)),
+    ContentType            = <span class="str">"application/json"</span>
+});
+
+<span class="cm">// 5. Start Deployment</span>
+<span class="kw">await</span> <span class="var">mgmt</span>.<span class="fn">StartDeploymentAsync</span>(<span class="kw">new</span> <span class="typ">StartDeploymentRequest</span>
+{
+    ApplicationId          = <span class="var">app</span>.Id,
+    EnvironmentId          = <span class="var">env</span>.Id,
+    ConfigurationProfileId = <span class="var">profile</span>.Id,
+    ConfigurationVersion   = <span class="var">version</span>.VersionNumber.ToString(),
+    DeploymentStrategyId   = <span class="str">"AppConfig.Canary10Percent20Minutes"</span>
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Read feature flag from retrieved config</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// After fetching config via AppConfigService...</span>
+<span class="kw">var</span> <span class="var">settings</span> = <span class="kw">await</span> <span class="var">appConfigService</span>.<span class="fn">GetConfigAsync</span>();
+
+<span class="kw">if</span> (<span class="var">settings</span>.FeatureEnabled)
+{
+    <span class="cm">// New code path</span>
+    <span class="kw">await</span> <span class="fn">ProcessOrderWithNewFlow</span>(order);
+}
+<span class="kw">else</span>
+{
+    <span class="cm">// Existing code path</span>
+    <span class="kw">await</span> <span class="fn">ProcessOrderLegacy</span>(order);
+}
+
+<span class="cm">// Use numeric attribute from config</span>
+<span class="kw">var</span> <span class="var">retryPolicy</span> = <span class="typ">Policy</span>
+    .<span class="fn">Handle</span>&lt;<span class="typ">HttpRequestException</span>&gt;()
+    .<span class="fn">RetryAsync</span>(<span class="var">settings</span>.MaxRetries);</pre>
+  </div>
+</section>
+
+<!-- ── TAB 6: INTEGRATIONS ──────────────────────────────── -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🔗 Integrations</h2>
+  <p class="section-subtitle">AppConfig plugs into the wider AWS ecosystem for config retrieval, secrets, and observability.</p>
+
+  <!-- Integrations Canvas -->
+  <div class="canvas-wrap">
+    <canvas id="intCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔑 AWS Secrets Manager</div>
+      <p>Reference Secrets Manager ARNs inside AppConfig JSON. Secrets are resolved at retrieval time. Keep credentials out of config content.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔐 AWS KMS</div>
+      <p>Encrypt hosted config versions at rest using a customer-managed KMS key. Specify the KMS key when starting a deployment.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 CloudWatch</div>
+      <p>Attach CloudWatch alarms to environments as monitors. AppConfig auto-rolls back if an alarm fires during the bake window.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂️ SSM Parameter Store</div>
+      <p>Use SSM parameters as config source. AppConfig validates and deploys the parameter value, acting as a safe wrapper around SSM.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪣 S3</div>
+      <p>Store large configs in S3. AppConfig fetches the object, validates it, and deploys. Supports versioned S3 objects.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏗️ CloudFormation / CDK</div>
+      <p>Define AppConfig resources as IaC — Application, Environment, ConfigProfile, HostedConfigVersion, and Deployment all have CFN resources.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Lambda Extension (No SDK polling needed)</h3>
+  <div class="callout callout-green">
+    <strong>AppConfig Lambda Extension</strong>
+    Add the AppConfig agent as a Lambda layer. It runs as a local HTTP proxy on port <code>2772</code> — your Lambda calls <code>localhost:2772</code> instead of the AppConfig API directly. The extension handles caching, session management, and polling automatically.
+  </div>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Retrieve config via Lambda Extension (localhost proxy)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> System.Net.Http;
+
+<span class="cm">// Lambda Extension exposes AppConfig on localhost:2772</span>
+<span class="kw">var</span> <span class="var">url</span> = <span class="str">"http://localhost:2772/applications/OrderService"</span>
+         + <span class="str">"/environments/Production"</span>
+         + <span class="str">"/configurations/AppSettings"</span>;
+
+<span class="kw">using var</span> <span class="var">http</span> = <span class="kw">new</span> <span class="typ">HttpClient</span>();
+<span class="kw">var</span> <span class="var">json</span> = <span class="kw">await</span> <span class="var">http</span>.<span class="fn">GetStringAsync</span>(<span class="var">url</span>);
+<span class="kw">var</span> <span class="var">settings</span> = <span class="typ">JsonSerializer</span>.<span class="fn">Deserialize</span>&lt;<span class="typ">AppSettings</span>&gt;(<span class="var">json</span>)!;
+
+<span class="cm">// Extension caches for 300s by default — no extra session management needed</span>
+Console.<span class="fn">WriteLine</span>($<span class="str">"MaxRetries: {settings.MaxRetries}"</span>);</pre>
+  </div>
+</section>
+
+<!-- ── TAB 7: BEST PRACTICES ────────────────────────────── -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-subtitle">Production-grade AppConfig setup for safety, performance, and cost efficiency.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Always Validate</div>
+      <p>Attach a JSON Schema validator to every config profile. For complex configs, add a Lambda validator on top. Never deploy unvalidated config.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Canary in Production</div>
+      <p>Always use <code>Canary10Percent20Minutes</code> or a custom slow strategy in production. Never use <code>AllAtOnce</code> in prod — you lose rollback protection.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Attach CloudWatch Monitors</div>
+      <p>Link your error rate / latency alarms to the production environment. AppConfig's auto-rollback only works if monitors are configured.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Cache Config in App</div>
+      <p>Don't call AppConfig on every request. Use <code>RequiredMinimumPollIntervalInSeconds</code> (min 15s). Cache in memory and refresh in background.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Lambda Extension</div>
+      <p>For Lambda functions, use the AppConfig agent extension. It handles caching, retries, and background refresh — no SDK boilerplate needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Separate Environments</div>
+      <p>Always create separate AppConfig environments for Dev, Staging, and Production — even if they share the same config profile. Gives per-environment alarm config.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Polling Strategy Comparison</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Approach</th><th>Mechanism</th><th>Pros</th><th>Cons</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>SDK (AppConfigData)</td>
+          <td>Manual session + poll in app code</td>
+          <td>Full control, works anywhere</td>
+          <td>More boilerplate, manage token yourself</td>
+        </tr>
+        <tr>
+          <td>Lambda Extension</td>
+          <td>localhost:2772 HTTP proxy</td>
+          <td>Zero SDK code, built-in caching</td>
+          <td>Lambda only</td>
+        </tr>
+        <tr>
+          <td>ECS Agent / EC2 Agent</td>
+          <td>AppConfig agent sidecar / daemon</td>
+          <td>Same localhost pattern, works on ECS/EC2</td>
+          <td>Needs agent setup</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>💰 Cost Note</strong>
+    AppConfig charges per config retrieval call — not per deployment. Caching is important both for performance <em>and</em> cost. Each GetLatestConfiguration call is billed, but if config hasn't changed, the response body is empty (reducing data transfer cost too).
+  </div>
+</section>
+
+<!-- ── TAB 8: SUMMARY ───────────────────────────────────── -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-subtitle">Everything you need to remember about AWS AppConfig.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📦 Object Model</div>
+      <p>Application → Environment → Config Profile → Hosted Version → Deployment. Each layer serves a distinct purpose.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🚩 Feature Flags</div>
+      <p>Use <code>AWS.AppConfig.FeatureFlags</code> profile type for structured flag management with typed attributes and console UI support.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 Safe Deployments</div>
+      <p>Linear, exponential, or canary rollout strategies. Bake time + CloudWatch monitors = automatic rollback on bad deployments.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Validation</div>
+      <p>JSON Schema for type/structure, Lambda for business logic. Both run before deployment starts — bad config is blocked at the gate.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🧩 Retrieval</div>
+      <p>SDK session + polling for full control. Lambda Extension (localhost:2772) for Lambda — zero boilerplate, built-in caching.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔗 Sources</div>
+      <p>Hosted (inline), SSM Parameter Store, or S3. All sources go through the same validation + deployment pipeline.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>AppConfig</th><th>SSM Parameter Store</th><th>S3 + Config file</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Validation</td>
+          <td><span class="tag tag-green">✅ Schema + Lambda</span></td>
+          <td><span class="tag tag-yellow">Partial (type only)</span></td>
+          <td><span class="tag tag-red">❌ Manual</span></td>
+        </tr>
+        <tr>
+          <td>Gradual Rollout</td>
+          <td><span class="tag tag-green">✅ Built-in</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+        </tr>
+        <tr>
+          <td>Auto Rollback</td>
+          <td><span class="tag tag-green">✅ CW Alarms</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+        </tr>
+        <tr>
+          <td>Feature Flags UI</td>
+          <td><span class="tag tag-green">✅ Console</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+          <td><span class="tag tag-red">❌ None</span></td>
+        </tr>
+        <tr>
+          <td>Versioning</td>
+          <td><span class="tag tag-green">✅ Built-in</span></td>
+          <td><span class="tag tag-green">✅ Built-in</span></td>
+          <td><span class="tag tag-yellow">S3 Versioning only</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS AppConfig!</h3>
+    <p>From feature flags and deployment strategies to validators, C# SDK integration, and the Lambda extension — you're ready to manage app config safely at scale on AWS.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ── TABS ───────────────────────────────────────────────── */
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  const draws = [drawArch, drawHier, drawFlags, drawDeploy, null, null, drawInt, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+/* ── COPY ───────────────────────────────────────────────── */
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+/* ── CANVAS HELPERS ─────────────────────────────────────── */
+const C = {
+  bg: '#161b22', bg2: '#0d1117', border: '#30363d',
+  accent: '#3daee9', green: '#3fb950', orange: '#e8834a',
+  purple: '#bc8cff', red: '#f85149', yellow: '#d29922',
+  text: '#e6edf3', muted: '#8b949e',
+};
+
+function setupCanvas(id) {
+  const el = document.getElementById(id);
+  if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const parent = el.parentElement;
+  const maxW = parent ? parent.clientWidth - 24 : window.innerWidth - 28;
+  const origW = parseInt(el.getAttribute('width')) || 860;
+  const origH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / origW);
+  const W = Math.floor(origW * sc);
+  const H = Math.floor(origH * sc);
+  el.width  = W * r;
+  el.height = H * r;
+  el.style.width  = W + 'px';
+  el.style.height = H + 'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(r * sc, r * sc);
+  ctx.clearRect(0, 0, origW, origH);
+  return { ctx, W: origW, H: origH };
+}
+
+function rr(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x+r, y); ctx.lineTo(x+w-r, y);
+  ctx.arcTo(x+w, y, x+w, y+r, r); ctx.lineTo(x+w, y+h-r);
+  ctx.arcTo(x+w, y+h, x+w-r, y+h, r); ctx.lineTo(x+r, y+h);
+  ctx.arcTo(x, y+h, x, y+h-r, r); ctx.lineTo(x, y+r);
+  ctx.arcTo(x, y, x+r, y, r); ctx.closePath();
+}
+
+function box(ctx, x, y, w, h, col, label, sub, icon) {
+  ctx.shadowColor = col + '44'; ctx.shadowBlur = 10;
+  ctx.fillStyle = C.bg2; ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+  rr(ctx, x, y, w, h, 8); ctx.fill(); ctx.stroke();
+  ctx.shadowBlur = 0;
+  if (icon) {
+    ctx.font = '16px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(icon, x+w/2, y + (sub ? 20 : h/2-4));
+  }
+  ctx.fillStyle = C.text; ctx.font = '600 12px Inter,sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText(label, x+w/2, y + (icon ? (sub?38:h/2+8) : (sub?h/2-4:h/2+4)));
+  if (sub) {
+    ctx.fillStyle = C.muted; ctx.font = '10px Inter,sans-serif';
+    ctx.fillText(sub, x+w/2, y+h-9);
+  }
+}
+
+function arr(ctx, x1, y1, x2, y2, col) {
+  col = col || C.muted;
+  ctx.strokeStyle = col; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const a = Math.atan2(y2-y1, x2-x1);
+  ctx.fillStyle = col; ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-8*Math.cos(a-.4), y2-8*Math.sin(a-.4));
+  ctx.lineTo(x2-8*Math.cos(a+.4), y2-8*Math.sin(a+.4));
+  ctx.closePath(); ctx.fill();
+}
+
+function txt(ctx, x, y, t, col, size, align) {
+  ctx.fillStyle = col || C.muted;
+  ctx.font = (size||10) + 'px Inter,sans-serif';
+  ctx.textAlign = align || 'center';
+  ctx.fillText(t, x, y);
+}
+
+/* ── ARCH DIAGRAM ───────────────────────────────────────── */
+function drawArch() {
+  const s = setupCanvas('archCanvas'); if (!s) return;
+  const { ctx, W, H } = s;
+  txt(ctx, W/2, 16, 'AppConfig — How It Works', C.muted, 11);
+
+  // Row 1: Sources
+  const srcs = [
+    {l:'Hosted Config', ic:'📝', c:C.accent},
+    {l:'SSM Parameter', ic:'🔑', c:C.green},
+    {l:'S3 Bucket',     ic:'🪣', c:C.orange},
+  ];
+  const sw = 160, sg = (W - 40 - sw*3)/2;
+  srcs.forEach((s2, i) => {
+    const x = 20 + i*(sw+sg);
+    box(ctx, x, 28, sw, 58, s2.c, s2.l, null, s2.ic);
+    arr(ctx, x+sw/2, 86, x+sw/2, 116, C.border);
+  });
+
+  // Row 2: AppConfig Pipeline
+  ctx.fillStyle = '#0d1117'; ctx.strokeStyle = C.accent; ctx.lineWidth = 2;
+  rr(ctx, 20, 116, W-40, 72, 10); ctx.fill(); ctx.stroke();
+  txt(ctx, W/2, 136, '⚙️  AWS AppConfig', C.accent, 13);
+  const pills = ['✅ Validate','🔄 Gradual Rollout','⏱️ Bake Time','🛡️ Monitor & Rollback'];
+  const pw = (W-80)/pills.length, py = 144;
+  pills.forEach((p,i) => {
+    const px = 30 + i*pw;
+    ctx.fillStyle = 'rgba(61,174,233,0.1)'; ctx.strokeStyle = 'rgba(61,174,233,0.25)'; ctx.lineWidth=1;
+    rr(ctx, px, py, pw-8, 24, 5); ctx.fill(); ctx.stroke();
+    txt(ctx, px+(pw-8)/2, py+15, p, C.accent, 10);
+  });
+  arr(ctx, W/2, 188, W/2, 210, C.border);
+
+  // Row 3: Targets
+  const tgts = [
+    {l:'Lambda', ic:'λ', c:C.orange},
+    {l:'ECS / EC2', ic:'🐳', c:C.green},
+    {l:'API Gateway', ic:'🌐', c:C.purple},
+    {l:'Any App', ic:'📦', c:C.muted},
+  ];
+  const tw = (W-80)/tgts.length, tg = 10;
+  tgts.forEach((t,i) => {
+    const x = 20 + i*(tw+tg/tgts.length*tgts.length) + i*(tw-tw);
+    const tx2 = 20 + i*((W-40)/tgts.length);
+    box(ctx, tx2, 210, (W-40)/tgts.length - 8, 50, t.c, t.l, null, t.ic);
+  });
+}
+
+/* ── HIERARCHY DIAGRAM ──────────────────────────────────── */
+function drawHier() {
+  const s = setupCanvas('hierCanvas'); if (!s) return;
+  const { ctx, W, H } = s;
+  txt(ctx, W/2, 16, 'AppConfig Object Hierarchy', C.muted, 11);
+
+  const items = [
+    {l:'Application', sub:'OrderService', ic:'🏢', c:C.accent},
+    {l:'Environment', sub:'Production', ic:'🌍', c:C.green},
+    {l:'Config Profile', sub:'AppSettings', ic:'📋', c:C.orange},
+    {l:'Config Version', sub:'v3 (hosted)', ic:'📄', c:C.purple},
+    {l:'Deployment', sub:'Canary 10%', ic:'🚀', c:C.red},
+  ];
+  const bw = Math.min(130, (W-60)/items.length - 10);
+  const gap = (W-40 - bw*items.length)/(items.length-1);
+  items.forEach((it,i) => {
+    const x = 20 + i*(bw+gap);
+    box(ctx, x, 28, bw, 80, it.c, it.l, it.sub, it.ic);
+    if (i < items.length-1) arr(ctx, x+bw+2, 68, x+bw+gap-2, 68, C.border);
+  });
+  txt(ctx, W/2, 128, 'Create → Version → Deploy → Clients poll & receive new config', C.muted, 10);
+}
+
+/* ── FEATURE FLAGS FLOW ─────────────────────────────────── */
+function drawFlags() {
+  const s = setupCanvas('flagCanvas'); if (!s) return;
+  const { ctx, W, H } = s;
+  txt(ctx, W/2, 16, 'Feature Flag Deployment Flow', C.muted, 11);
+
+  const steps = [
+    {l:'Update Flag', sub:'"enabled":true', ic:'✏️', c:C.accent},
+    {l:'Create Version', sub:'v4 (hosted)', ic:'📄', c:C.green},
+    {l:'Validate', sub:'JSON Schema', ic:'✅', c:C.orange},
+    {l:'Gradual Deploy', sub:'Canary 10%', ic:'🚀', c:C.purple},
+    {l:'Apps Poll', sub:'every 30s', ic:'🔄', c:C.green},
+    {l:'Flag Active', sub:'No redeploy!', ic:'🚩', c:C.red},
+  ];
+  const bw = Math.min(110, (W-60)/steps.length - 8);
+  const gap = (W-40 - bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i) => {
+    const x = 20 + i*(bw+gap);
+    box(ctx, x, 26, bw, 78, st.c, st.l, st.sub, st.ic);
+    if (i < steps.length-1) arr(ctx, x+bw+2, 65, x+bw+gap-2, 65, C.border);
+  });
+  txt(ctx, W/2, 122, 'Config change goes live without restarting or redeploying the app', C.muted, 10);
+}
+
+/* ── DEPLOYMENT CANVAS ──────────────────────────────────── */
+function drawDeploy() {
+  const s = setupCanvas('deployCanvas'); if (!s) return;
+  const { ctx, W, H } = s;
+  txt(ctx, W/2, 14, 'Canary Deployment Timeline', C.muted, 11);
+
+  // Timeline bar
+  const bx = 30, by = 70, bw2 = W-60, bh = 34;
+  ctx.fillStyle = C.bg2; ctx.strokeStyle = C.border; ctx.lineWidth = 1;
+  rr(ctx, bx, by, bw2, bh, 6); ctx.fill(); ctx.stroke();
+
+  // Filled portion (canary 10%)
+  ctx.fillStyle = C.green + '33'; ctx.strokeStyle = C.green; ctx.lineWidth = 1;
+  rr(ctx, bx, by, bw2*0.1, bh, 6); ctx.fill(); ctx.stroke();
+  txt(ctx, bx + bw2*0.05, by+bh/2+4, '10%', C.green, 11);
+
+  // Bake time zone
+  const bakeX = bx + bw2*0.1;
+  ctx.fillStyle = C.yellow + '22'; ctx.strokeStyle = C.yellow; ctx.lineWidth = 1;
+  rr(ctx, bakeX, by, bw2*0.35, bh, 0); ctx.fill(); ctx.stroke();
+  txt(ctx, bakeX + bw2*0.175, by+bh/2+4, '⏱️ Bake Time (20 min)', C.yellow, 10);
+
+  // Remaining 90%
+  const remX = bakeX + bw2*0.35;
+  ctx.fillStyle = C.green + '33'; ctx.strokeStyle = C.green; ctx.lineWidth = 1;
+  rr(ctx, remX, by, bw2*0.55, bh, 6); ctx.fill(); ctx.stroke();
+  txt(ctx, remX + bw2*0.275, by+bh/2+4, '90% (Full Rollout)', C.green, 11);
+
+  // Labels
+  txt(ctx, bx, by-14, 'Start', C.muted, 10);
+  txt(ctx, bakeX, by-14, '10% reached', C.yellow, 10);
+  txt(ctx, remX, by-14, 'Bake done', C.green, 10);
+  txt(ctx, bx+bw2, by-14, 'Complete ✓', C.green, 10, 'right');
+
+  // Alarm zone annotation
+  ctx.setLineDash([4,3]);
+  ctx.strokeStyle = C.red; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(bakeX, by+bh+8); ctx.lineTo(remX, by+bh+8); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx, bakeX + bw2*0.175, by+bh+22, '⚠️  If CW Alarm fires here → Auto Rollback', C.red, 10);
+
+  txt(ctx, W/2, H-8, 'Rollback restores previous config version instantly to 100% of traffic', C.muted, 10);
+}
+
+/* ── INTEGRATIONS CANVAS ────────────────────────────────── */
+function drawInt() {
+  const s = setupCanvas('intCanvas'); if (!s) return;
+  const { ctx, W, H } = s;
+  txt(ctx, W/2, 15, 'AppConfig Integration Points', C.muted, 11);
+
+  // Centre
+  const cx = W/2, cy = H/2;
+  box(ctx, cx-70, cy-28, 140, 56, C.accent, 'AppConfig', null, '⚙️');
+
+  // Satellites
+  const sats = [
+    {l:'CloudWatch', ic:'📊', c:C.orange, dx:-220, dy:0},
+    {l:'SSM Param', ic:'🔑', c:C.green, dx:0, dy:-80},
+    {l:'Secrets Mgr', ic:'🔐', c:C.red, dx:220, dy:0},
+    {l:'S3',         ic:'🪣', c:C.yellow, dx:120, dy:80},
+    {l:'KMS',        ic:'🔒', c:C.purple, dx:-120, dy:80},
+    {l:'Lambda Ext', ic:'λ', c:C.green, dx:0, dy:80},
+  ];
+  sats.forEach(sat => {
+    const sx = cx + sat.dx - 54, sy = cy + sat.dy - 24;
+    box(ctx, sx, sy, 108, 46, sat.c, sat.l, null, sat.ic);
+    arr(ctx, cx + sat.dx * 0.4, cy + sat.dy * 0.4,
+             cx + sat.dx * 0.72, cy + sat.dy * 0.72, C.border);
+  });
+}
+
+/* ── INIT ───────────────────────────────────────────────── */
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx = [...document.querySelectorAll('.tab-panel')].findIndex(p => p.classList.contains('active'));
+  const draws = [drawArch, drawHier, drawFlags, drawDeploy, null, null, drawInt, null, null];
+  if (draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>
