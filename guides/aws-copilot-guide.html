@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS Copilot CLI – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #f0883e;   /* Copilot warm orange */
+    --accent2:    #f5a623;
+    --accent-dim: rgba(240,136,62,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  /* HEADER */
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #1a0d00 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(240,136,62,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(240,136,62,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  /* TAB NAV */
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONTENT */
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* HEADINGS */
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* CALLOUTS */
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-orange { background: var(--accent-dim); border: 1px solid rgba(240,136,62,0.3); border-left: 3px solid var(--accent); }
+  .callout-orange strong { color: var(--accent); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-purple { background: rgba(188,140,255,0.08); border: 1px solid rgba(188,140,255,0.2); border-left: 3px solid var(--purple); }
+  .callout-purple strong { color: var(--purple); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-orange { background: var(--accent-dim); color: var(--accent); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .tag-teal   { background: rgba(38,166,127,0.15); color: var(--teal); }
+
+  /* TABLE */
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  /* CODE */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+  .cmd{color:#f0883e;} .flag{color:#79c0ff;} .arg{color:#a5d6ff;}
+
+  /* CANVAS */
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  /* PSEUDO */
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent); } .pn { color: var(--green); }
+
+  /* SERVICE TYPE CARDS */
+  .svc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .svc-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:440px){ .svc-grid{ grid-template-columns:1fr; } }
+  .svc-card { background: var(--surface); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+  .svc-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--sc,var(--accent)); }
+  .svc-icon { font-size: 24px; margin-bottom: 8px; }
+  .svc-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .svc-tag  { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 8px; display: block; }
+  .svc-desc { font-size: 12px; color: var(--muted); }
+
+  /* PIPELINE STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(240,136,62,0.35); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  /* MANIFEST BLOCK */
+  .manifest-note { display: flex; align-items: flex-start; gap: 10px; background: var(--surface2); border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+  .manifest-note .mn-key { color: var(--accent); font-family: var(--mono); font-weight: 600; flex-shrink: 0; min-width: 160px; }
+
+  /* COMPLETION */
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(240,136,62,0.1) 100%); border: 1px solid rgba(240,136,62,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* MOBILE */
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS Copilot CLI</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🚀 ECS / Fargate Deployments</div>
+  <h1>AWS <span>Copilot CLI</span></h1>
+  <p>Deploy and operate containerised applications on AWS ECS and Fargate in minutes — from your terminal, with sensible defaults and zero boilerplate CloudFormation.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🐳 ECS / Fargate</span>
+    <span class="hero-pill">📦 Service Types</span>
+    <span class="hero-pill">🌍 Environments</span>
+    <span class="hero-pill">🔁 Pipelines</span>
+    <span class="hero-pill">📄 Manifests</span>
+    <span class="hero-pill">🔑 Secrets</span>
+    <span class="hero-pill">📊 Observability</span>
+    <span class="hero-pill">🔗 Service Connect</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">📦 Service Types</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">📄 Manifests</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🌍 Environments</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🔁 Pipelines</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🔑 Secrets & Storage</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">⌨️ CLI Commands</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS Copilot?</h2>
+  <p class="section-sub">A CLI tool that makes deploying containerised apps on ECS and Fargate as simple as <code>copilot deploy</code>.</p>
+
+  <div class="callout callout-orange">
+    <strong>One-liner</strong>
+    AWS Copilot = opinionated CLI that abstracts ECS, Fargate, ALB, VPC, IAM, CloudWatch, and CloudFormation into simple commands. Write a manifest, run <code>copilot deploy</code> — Copilot handles the rest.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="320"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🏢 Application</div>
+      <p>Top-level grouping for all services that belong to the same product (e.g. <code>my-ecommerce-app</code>). Owns the shared VPC, service discovery namespace, and pipeline.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌍 Environment</div>
+      <p>A deployment target: <code>test</code>, <code>staging</code>, <code>production</code>. Each gets its own VPC, ECS cluster, and ALB provisioned automatically.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Service / Job</div>
+      <p>A containerised workload — Load Balanced Web Service, Backend Service, Worker Service, Scheduled Job, or Request-Driven (App Runner).</p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>What Copilot creates under the hood</strong>
+    VPC + subnets + NAT gateway · ECS Cluster · Task Definition · ECS Service · ALB + Target Group · Security Groups · IAM Roles · CloudWatch Log Groups · Service Discovery · CloudFormation stacks — all from a single manifest file.
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Copilot vs Manual ECS Setup</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Task</th><th>Manual</th><th>Copilot</th></tr></thead>
+      <tbody>
+        <tr><td>Set up VPC + networking</td><td>~2 hrs, 200+ lines CFN</td><td><span class="tag tag-green">Auto (copilot env init)</span></td></tr>
+        <tr><td>Create ECS cluster</td><td>Console / CLI steps</td><td><span class="tag tag-green">Auto</span></td></tr>
+        <tr><td>Configure ALB + target group</td><td>~30 min</td><td><span class="tag tag-green">Auto for LBWebService</span></td></tr>
+        <tr><td>IAM roles for tasks</td><td>Manual policy authoring</td><td><span class="tag tag-green">Auto + extensible</span></td></tr>
+        <tr><td>Deploy new image</td><td>Update task def + service</td><td><span class="tag tag-orange">copilot svc deploy</span></td></tr>
+        <tr><td>Multi-env promotion</td><td>Manual per env</td><td><span class="tag tag-orange">copilot pipeline deploy</span></td></tr>
+        <tr><td>View logs</td><td>CloudWatch console</td><td><span class="tag tag-orange">copilot svc logs</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 1: SERVICE TYPES -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">📦 Service &amp; Job Types</h2>
+  <p class="section-sub">Copilot offers 6 workload types — each maps to a different ECS / App Runner pattern.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="svcCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="svc-grid">
+    <div class="svc-card" style="--sc:#f0883e">
+      <div class="svc-icon">🌐</div>
+      <div class="svc-name">Load Balanced Web Service</div>
+      <span class="svc-tag">type: Load Balanced Web Service</span>
+      <div class="svc-desc">Internet-facing service behind an ALB or NLB. HTTPS, path-based routing, health checks. Most common type for APIs and web apps.</div>
+    </div>
+    <div class="svc-card" style="--sc:#58a6ff">
+      <div class="svc-icon">⚙️</div>
+      <div class="svc-name">Backend Service</div>
+      <span class="svc-tag">type: Backend Service</span>
+      <div class="svc-desc">Private service — no public endpoint. Reachable by other services via Service Connect / service discovery. For internal APIs, data processors.</div>
+    </div>
+    <div class="svc-card" style="--sc:#3fb950">
+      <div class="svc-icon">📨</div>
+      <div class="svc-name">Worker Service</div>
+      <span class="svc-tag">type: Worker Service</span>
+      <div class="svc-desc">Consumes messages from SQS queues. Copilot auto-creates the queue and dead-letter queue. Scale based on queue depth.</div>
+    </div>
+    <div class="svc-card" style="--sc:#bc8cff">
+      <div class="svc-icon">⏰</div>
+      <div class="svc-name">Scheduled Job</div>
+      <span class="svc-tag">type: Scheduled Job</span>
+      <div class="svc-desc">Runs on a cron or rate schedule via EventBridge. Container runs to completion and exits. For batch processing, reports, cleanup tasks.</div>
+    </div>
+    <div class="svc-card" style="--sc:#26a67f">
+      <div class="svc-icon">🚀</div>
+      <div class="svc-name">Request-Driven Web Service</div>
+      <span class="svc-tag">type: Request-Driven Web Service</span>
+      <div class="svc-desc">Backed by AWS App Runner — scales to zero, pay per request. No ALB. Best for low-traffic services or variable workloads.</div>
+    </div>
+    <div class="svc-card" style="--sc:#d29922">
+      <div class="svc-icon">🏃</div>
+      <div class="svc-name">Static Site</div>
+      <span class="svc-tag">type: Static Site</span>
+      <div class="svc-desc">Host a static website on S3 + CloudFront. Copilot provisions the bucket, CloudFront distribution, and optionally a custom domain.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>Service Connect vs Service Discovery</strong>
+    Copilot supports both. <strong>Service Connect</strong> (recommended) uses ECS Service Connect — built-in service mesh with metrics and retries. <strong>Service Discovery</strong> uses Route 53 private hosted zones. Backend Services are reachable at <code>http://&lt;svc-name&gt;:&lt;port&gt;</code> from other services in the same environment.
+  </div>
+</section>
+
+<!-- TAB 2: MANIFESTS -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">📄 Manifest Files</h2>
+  <p class="section-sub">The manifest is the single source of truth for your service — Copilot generates CloudFormation from it.</p>
+
+  <div class="callout callout-orange">
+    <strong>Manifest = Your Service Contract</strong>
+    Stored at <code>copilot/&lt;svc-name&gt;/manifest.yml</code>. Commit it to git. Copilot translates it into CloudFormation stacks. Override per-environment using the <code>environments:</code> block.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">Load Balanced Web Service manifest — full example</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># copilot/order-api/manifest.yml</span>
+<span class="var">name</span>: order-api
+<span class="var">type</span>: Load Balanced Web Service
+
+<span class="cm"># Container image</span>
+<span class="var">image</span>:
+  <span class="var">build</span>: Dockerfile          <span class="cm"># or use location: ECR URI</span>
+  <span class="var">port</span>: <span class="num">8080</span>
+
+<span class="cm"># CPU and memory (Fargate)</span>
+<span class="var">cpu</span>: <span class="num">512</span>                    <span class="cm"># 0.5 vCPU</span>
+<span class="var">memory</span>: <span class="num">1024</span>               <span class="cm"># 1 GB</span>
+
+<span class="cm"># HTTP routing</span>
+<span class="var">http</span>:
+  <span class="var">path</span>: <span class="str">'/'</span>
+  <span class="var">healthcheck</span>:
+    <span class="var">path</span>: <span class="str">'/health'</span>
+    <span class="var">healthy_threshold</span>: <span class="num">3</span>
+    <span class="var">interval</span>: <span class="num">10</span>
+
+<span class="cm"># Auto-scaling</span>
+<span class="var">count</span>:
+  <span class="var">range</span>: <span class="num">1</span>-<span class="num">10</span>
+  <span class="var">cooldown</span>:
+    <span class="var">in</span>: <span class="num">30</span>s
+    <span class="var">out</span>: <span class="num">60</span>s
+  <span class="var">cpu_percentage</span>: <span class="num">70</span>         <span class="cm"># scale at 70% CPU</span>
+  <span class="var">requests</span>: <span class="num">1000</span>             <span class="cm"># or by ALB request count</span>
+
+<span class="cm"># Environment variables</span>
+<span class="var">variables</span>:
+  LOG_LEVEL: info
+  NODE_ENV: production
+
+<span class="cm"># Secrets from SSM Parameter Store or Secrets Manager</span>
+<span class="var">secrets</span>:
+  DB_PASSWORD: /order-api/db-password       <span class="cm"># SSM SecureString</span>
+  JWT_SECRET:
+    <span class="var">from</span>: arn:aws:secretsmanager:us-east-1:123:secret:jwt-xyz
+
+<span class="cm"># IAM permissions for the task role</span>
+<span class="var">taskdef_overrides</span>:
+  - <span class="var">path</span>: <span class="str">"ContainerDefinitions[0].Environment[-]"</span>
+    <span class="var">value</span>:
+      <span class="var">Name</span>: REGION
+      <span class="var">Value</span>: !<span class="var">Ref</span> AWS::Region
+
+<span class="cm"># Environment-specific overrides</span>
+<span class="var">environments</span>:
+  <span class="var">production</span>:
+    <span class="var">cpu</span>: <span class="num">1024</span>               <span class="cm"># 1 vCPU in prod</span>
+    <span class="var">memory</span>: <span class="num">2048</span>
+    <span class="var">count</span>:
+      <span class="var">range</span>: <span class="num">3</span>-<span class="num">20</span>
+      <span class="var">cpu_percentage</span>: <span class="num">60</span>
+  <span class="var">test</span>:
+    <span class="var">count</span>: <span class="num">1</span>                <span class="cm"># fixed count in test</span>
+    <span class="var">cpu</span>: <span class="num">256</span>
+    <span class="var">memory</span>: <span class="num">512</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">Worker Service manifest — SQS consumer</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">name</span>: order-processor
+<span class="var">type</span>: Worker Service
+
+<span class="var">image</span>:
+  <span class="var">build</span>: Dockerfile
+<span class="var">cpu</span>: <span class="num">256</span>
+<span class="var">memory</span>: <span class="num">512</span>
+
+<span class="cm"># SQS subscription — Copilot creates queue + DLQ automatically</span>
+<span class="var">subscribe</span>:
+  <span class="var">topics</span>:
+    - <span class="var">name</span>: orderPlaced
+      <span class="var">service</span>: order-api      <span class="cm"># SNS topic published by order-api</span>
+  <span class="var">queue</span>:
+    <span class="var">timeout</span>: <span class="num">30</span>s
+    <span class="var">dead_letter</span>:
+      <span class="var">tries</span>: <span class="num">3</span>               <span class="cm"># move to DLQ after 3 failures</span>
+
+<span class="cm"># Scale by queue depth</span>
+<span class="var">count</span>:
+  <span class="var">range</span>: <span class="num">0</span>-<span class="num">5</span>
+  <span class="var">queue_delay</span>:
+    <span class="var">acceptable_backlog</span>: <span class="num">100</span>
+    <span class="var">cooldown</span>:
+      <span class="var">in</span>: <span class="num">60</span>s</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Key Manifest Fields</h3>
+  <div class="manifest-note"><span class="mn-key">image.build</span><span>Path to Dockerfile — Copilot builds and pushes to ECR automatically</span></div>
+  <div class="manifest-note"><span class="mn-key">image.location</span><span>Use existing ECR URI instead of building — great for pre-built images</span></div>
+  <div class="manifest-note"><span class="mn-key">cpu / memory</span><span>Fargate task size — valid combos: 256/512, 512/1024, 1024/2048, 2048/4096, 4096/8192…</span></div>
+  <div class="manifest-note"><span class="mn-key">count.range</span><span>Min–Max for Auto Scaling. Use with cpu_percentage, memory_percentage, or requests</span></div>
+  <div class="manifest-note"><span class="mn-key">secrets</span><span>Inject SSM or Secrets Manager values as env vars at container startup — never in image</span></div>
+  <div class="manifest-note"><span class="mn-key">environments</span><span>Override any top-level key per environment — great for prod/test size differences</span></div>
+  <div class="manifest-note"><span class="mn-key">network.vpc</span><span>Import an existing VPC instead of letting Copilot create one</span></div>
+  <div class="manifest-note"><span class="mn-key">storage</span><span>Mount EFS volumes or create S3 buckets / DynamoDB tables managed by Copilot</span></div>
+</section>
+
+<!-- TAB 3: ENVIRONMENTS -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🌍 Environments</h2>
+  <p class="section-sub">Each environment is an isolated deployment target with its own VPC, ECS cluster, and ALB.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="envCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>One command — full environment</strong>
+    <code>copilot env init --name production --profile prod-aws-profile</code> provisions a complete VPC, public/private subnets, NAT gateways, ECS cluster, ALB, security groups, and CloudWatch log groups — all via CloudFormation. Takes about 5 minutes.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🏗️ What Each Environment Gets</div>
+      <p>🌐 <strong style="color:var(--text)">VPC</strong> — /16 CIDR with public + private subnets across 2 AZs</p>
+      <p>🔀 <strong style="color:var(--text)">NAT Gateway</strong> — for private subnet outbound traffic</p>
+      <p>⚖️ <strong style="color:var(--text)">ALB</strong> — internet-facing or internal, shared across services</p>
+      <p>🐳 <strong style="color:var(--text)">ECS Cluster</strong> — Fargate capacity provider</p>
+      <p>🔒 <strong style="color:var(--text)">Security Groups</strong> — ALB → service, service → service</p>
+      <p>📊 <strong style="color:var(--text)">CloudWatch</strong> — log groups per service</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 Environment Customisation</div>
+      <p><strong style="color:var(--text)">Import VPC</strong> — use existing VPC instead of Copilot-created</p>
+      <p><strong style="color:var(--text)">Import certs</strong> — attach ACM certificate to ALB for HTTPS</p>
+      <p><strong style="color:var(--text)">Internal ALB</strong> — private environments (no internet-facing LB)</p>
+      <p><strong style="color:var(--text)">Multi-account</strong> — deploy to separate AWS accounts per env</p>
+      <p><strong style="color:var(--text)">Custom CIDR</strong> — specify VPC CIDR range</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Environment Manifest (env.yml)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">copilot/environments/production/manifest.yml</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">name</span>: production
+<span class="var">type</span>: Environment
+
+<span class="var">network</span>:
+  <span class="var">vpc</span>:
+    <span class="var">id</span>: vpc-0abc123          <span class="cm"># import existing VPC</span>
+    <span class="var">public_subnets</span>:
+      <span class="var">ids</span>: [subnet-aaa, subnet-bbb]
+    <span class="var">private_subnets</span>:
+      <span class="var">ids</span>: [subnet-ccc, subnet-ddd]
+
+<span class="var">http</span>:
+  <span class="var">public</span>:
+    <span class="var">certificates</span>:
+      - arn:aws:acm:us-east-1:123:certificate/abc   <span class="cm"># HTTPS cert</span>
+
+<span class="var">observability</span>:
+  <span class="var">container_insights</span>: <span class="kw">true</span>   <span class="cm"># ECS Container Insights</span></pre>
+  </div>
+</section>
+
+<!-- TAB 4: PIPELINES -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🔁 CI/CD Pipelines</h2>
+  <p class="section-sub">Copilot can generate a CodePipeline that builds, tests, and deploys across environments automatically.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="pipeCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>One command pipeline</strong>
+    <code>copilot pipeline init</code> generates a <code>pipeline.yml</code> and a <code>buildspec.yml</code>. Push to git → CodePipeline triggers → CodeBuild builds image → deploys to test → approval → deploys to production.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">copilot/pipeline.yml — multi-env pipeline</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">name</span>: order-api-pipeline
+<span class="var">version</span>: <span class="num">1</span>
+
+<span class="var">source</span>:
+  <span class="var">provider</span>: GitHub
+  <span class="var">properties</span>:
+    <span class="var">branch</span>: main
+    <span class="var">repository</span>: https://github.com/indhu/order-api
+    <span class="var">connection_arn</span>: arn:aws:codestar-connections:...
+
+<span class="var">build</span>:
+  <span class="var">buildspec</span>: copilot/buildspec.yml
+
+<span class="var">stages</span>:
+  - <span class="var">name</span>: test
+    <span class="var">test_commands</span>:
+      - <span class="str">dotnet test --logger trx</span>
+
+  - <span class="var">name</span>: staging
+    <span class="var">requires_approval</span>: <span class="kw">false</span>
+
+  - <span class="var">name</span>: production
+    <span class="var">requires_approval</span>: <span class="kw">true</span>   <span class="cm"># manual approval gate</span></pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Pipeline Stages</h3>
+  <ul class="steps">
+    <li><div class="step-num">1</div><div class="step-body"><strong>Source</strong>Git push to main branch triggers CodePipeline via CodeStar Connection (GitHub / GitLab / Bitbucket).</div></li>
+    <li><div class="step-num">2</div><div class="step-body"><strong>Build</strong>CodeBuild runs <code>buildspec.yml</code> — builds Docker image, pushes to ECR, runs unit tests, packages Copilot artifacts.</div></li>
+    <li><div class="step-num">3</div><div class="step-body"><strong>Deploy to Test</strong>Copilot deploys new image to the <code>test</code> environment. Runs integration test commands if defined.</div></li>
+    <li><div class="step-num">4</div><div class="step-body"><strong>Deploy to Staging</strong>Automatic promotion to staging. Runs E2E test commands.</div></li>
+    <li><div class="step-num">5</div><div class="step-body"><strong>Manual Approval</strong>Pipeline pauses — a team member reviews and approves in CodePipeline console or via SNS notification.</div></li>
+    <li><div class="step-num">6</div><div class="step-body"><strong>Deploy to Production</strong>Copilot deploys to production with ECS rolling update (or blue/green if configured).</div></li>
+  </ul>
+</section>
+
+<!-- TAB 5: SECRETS & STORAGE -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🔑 Secrets &amp; Storage</h2>
+  <p class="section-sub">Inject secrets safely and attach persistent storage — EFS, S3, DynamoDB — managed by Copilot.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔒 Secrets Injection</div>
+      <p>Reference SSM Parameter Store or Secrets Manager values in the manifest <code>secrets:</code> block. Copilot grants the task role permission to read them and injects values as environment variables at container startup.</p>
+      <p><span class="tag tag-green">Never in image</span> <span class="tag tag-blue">Auto IAM grants</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Managed Storage</div>
+      <p>Declare S3 buckets, DynamoDB tables, or RDS databases in the <code>storage:</code> block. Copilot creates the resource, grants the task role access, and injects the ARN/name as env vars.</p>
+      <p><span class="tag tag-orange">Auto IAM grants</span> <span class="tag tag-teal">Auto env vars</span></p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">CLI</span>
+      <span class="code-desc">Add a secret to SSM and reference in manifest</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># 1. Store secret in SSM via Copilot</span>
+<span class="cmd">copilot secret init</span> \
+  <span class="flag">--name</span> <span class="arg">DB_PASSWORD</span> \
+  <span class="flag">--values</span> <span class="arg">test=supersecret123,production=ultrasecret456</span>
+
+<span class="cm"># Copilot stores as /copilot/{app}/{env}/secrets/DB_PASSWORD</span>
+
+<span class="cm"># 2. Reference in manifest.yml</span>
+<span class="cm"># secrets:</span>
+<span class="cm">#   DB_PASSWORD: /copilot/${COPILOT_APPLICATION_NAME}/${COPILOT_ENVIRONMENT_NAME}/secrets/DB_PASSWORD</span>
+
+<span class="cm"># 3. Deploy — secret injected automatically</span>
+<span class="cmd">copilot svc deploy</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">Storage — S3 bucket + DynamoDB table in manifest</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">name</span>: order-api
+<span class="var">type</span>: Load Balanced Web Service
+
+<span class="var">storage</span>:
+  <span class="var">volumes</span>:
+    <span class="cm"># EFS volume for shared file storage</span>
+    <span class="var">myEFS</span>:
+      <span class="var">path</span>: /var/data
+      <span class="var">read_only</span>: <span class="kw">false</span>
+      <span class="var">efs</span>:
+        <span class="var">id</span>: fs-abc123
+
+<span class="cm"># In copilot/order-api/addons/ — CloudFormation addon for DynamoDB</span>
+<span class="cm"># Copilot auto-grants task role access and injects ARN as env var</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">copilot/order-api/addons/orders-table.yml — DynamoDB addon</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">Parameters</span>:
+  <span class="var">App</span>:
+    <span class="var">Type</span>: String
+  <span class="var">Env</span>:
+    <span class="var">Type</span>: String
+  <span class="var">Name</span>:
+    <span class="var">Type</span>: String
+
+<span class="var">Resources</span>:
+  <span class="var">OrdersTable</span>:
+    <span class="var">Type</span>: AWS::DynamoDB::Table
+    <span class="var">Properties</span>:
+      <span class="var">TableName</span>: !<span class="fn">Sub</span> <span class="str">'${App}-${Env}-${Name}-orders'</span>
+      <span class="var">BillingMode</span>: PAY_PER_REQUEST
+      <span class="var">AttributeDefinitions</span>:
+        - <span class="var">AttributeName</span>: orderId
+          <span class="var">AttributeType</span>: S
+      <span class="var">KeySchema</span>:
+        - <span class="var">AttributeName</span>: orderId
+          <span class="var">KeyType</span>: HASH
+
+<span class="var">Outputs</span>:
+  <span class="var">OrdersTableName</span>:
+    <span class="var">Value</span>: !<span class="fn">Ref</span> OrdersTable
+    <span class="var">Export</span>:
+      <span class="var">Name</span>: !<span class="fn">Sub</span> <span class="str">'${App}-${Env}-${Name}-OrdersTableName'</span></pre>
+  </div>
+</section>
+
+<!-- TAB 6: CLI COMMANDS -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">⌨️ Essential CLI Commands</h2>
+  <p class="section-sub">The Copilot CLI commands you'll use every day — from init to debugging.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">CLI</span>
+      <span class="code-desc">Initial setup — app, environment, service</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Install Copilot (macOS)</span>
+brew install aws/tap/copilot-cli
+
+<span class="cm"># Install (Linux)</span>
+curl -Lo copilot https://github.com/aws/copilot-cli/releases/latest/download/copilot-linux
+chmod +x copilot && sudo mv copilot /usr/local/bin/copilot
+
+<span class="cm"># 1. Initialise application</span>
+<span class="cmd">copilot app init</span> <span class="arg">my-ecommerce-app</span>
+
+<span class="cm"># 2. Create environment (provisions VPC, ECS cluster, ALB)</span>
+<span class="cmd">copilot env init</span> \
+  <span class="flag">--name</span> <span class="arg">production</span> \
+  <span class="flag">--profile</span> <span class="arg">prod-aws-profile</span> \
+  <span class="flag">--app</span> <span class="arg">my-ecommerce-app</span>
+
+<span class="cm"># Deploy the environment infrastructure</span>
+<span class="cmd">copilot env deploy</span> <span class="flag">--name</span> <span class="arg">production</span>
+
+<span class="cm"># 3. Initialise a service (walks you through type selection)</span>
+<span class="cmd">copilot svc init</span> \
+  <span class="flag">--name</span> <span class="arg">order-api</span> \
+  <span class="flag">--svc-type</span> <span class="str">"Load Balanced Web Service"</span> \
+  <span class="flag">--dockerfile</span> <span class="arg">./Dockerfile</span>
+
+<span class="cm"># 4. Deploy service to environment</span>
+<span class="cmd">copilot svc deploy</span> \
+  <span class="flag">--name</span> <span class="arg">order-api</span> \
+  <span class="flag">--env</span> <span class="arg">production</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">CLI</span>
+      <span class="code-desc">Day-to-day operations</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># View service status</span>
+<span class="cmd">copilot svc status</span> <span class="flag">--name</span> <span class="arg">order-api</span> <span class="flag">--env</span> <span class="arg">production</span>
+
+<span class="cm"># Tail live logs (like CloudWatch Logs Insights)</span>
+<span class="cmd">copilot svc logs</span> \
+  <span class="flag">--name</span> <span class="arg">order-api</span> \
+  <span class="flag">--env</span> <span class="arg">production</span> \
+  <span class="flag">--follow</span>             <span class="cm"># live tail</span>
+
+<span class="cm"># Open interactive shell in a running container</span>
+<span class="cmd">copilot svc exec</span> \
+  <span class="flag">--name</span> <span class="arg">order-api</span> \
+  <span class="flag">--env</span> <span class="arg">production</span> \
+  <span class="flag">--command</span> <span class="str">"/bin/sh"</span>
+
+<span class="cm"># Show service info (endpoint, task count, CPU/mem)</span>
+<span class="cmd">copilot svc show</span> <span class="flag">--name</span> <span class="arg">order-api</span>
+
+<span class="cm"># List all services in app</span>
+<span class="cmd">copilot svc ls</span>
+
+<span class="cm"># List all environments</span>
+<span class="cmd">copilot env ls</span>
+
+<span class="cm"># Pause / resume a service</span>
+<span class="cmd">copilot svc pause</span> <span class="flag">--name</span> <span class="arg">order-api</span> <span class="flag">--env</span> <span class="arg">test</span>
+<span class="cmd">copilot svc resume</span> <span class="flag">--name</span> <span class="arg">order-api</span> <span class="flag">--env</span> <span class="arg">test</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">CLI</span>
+      <span class="code-desc">Pipeline commands</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Initialise a pipeline (generates pipeline.yml + buildspec.yml)</span>
+<span class="cmd">copilot pipeline init</span>
+
+<span class="cm"># Deploy the pipeline (creates CodePipeline)</span>
+<span class="cmd">copilot pipeline deploy</span>
+
+<span class="cm"># View pipeline status</span>
+<span class="cmd">copilot pipeline status</span>
+
+<span class="cm"># Show pipeline info</span>
+<span class="cmd">copilot pipeline show</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">CLI</span>
+      <span class="code-desc">Secrets, jobs, and cleanup</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Add secret (stores in SSM per environment)</span>
+<span class="cmd">copilot secret init</span> \
+  <span class="flag">--name</span> <span class="arg">API_KEY</span> \
+  <span class="flag">--values</span> <span class="arg">test=key123,production=key456</span>
+
+<span class="cm"># Run a one-off task (like kubectl run)</span>
+<span class="cmd">copilot task run</span> \
+  <span class="flag">--dockerfile</span> <span class="arg">./Dockerfile</span> \
+  <span class="flag">--env</span> <span class="arg">production</span> \
+  <span class="flag">--command</span> <span class="str">"dotnet ef database update"</span>
+
+<span class="cm"># Trigger scheduled job manually</span>
+<span class="cmd">copilot job run</span> <span class="flag">--name</span> <span class="arg">report-generator</span> <span class="flag">--env</span> <span class="arg">production</span>
+
+<span class="cm"># View job logs</span>
+<span class="cmd">copilot job logs</span> <span class="flag">--name</span> <span class="arg">report-generator</span> <span class="flag">--env</span> <span class="arg">production</span>
+
+<span class="cm"># Delete a service</span>
+<span class="cmd">copilot svc delete</span> <span class="flag">--name</span> <span class="arg">order-api</span>
+
+<span class="cm"># Delete entire app (all envs, services, pipelines)</span>
+<span class="cmd">copilot app delete</span></pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">CLI Cheat Sheet</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Command</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>copilot app init</code></td><td>Create new Copilot application</td></tr>
+        <tr><td><code>copilot env init / deploy</code></td><td>Create + provision environment (VPC, cluster, ALB)</td></tr>
+        <tr><td><code>copilot svc init</code></td><td>Scaffold service manifest</td></tr>
+        <tr><td><code>copilot svc deploy</code></td><td>Build image, push to ECR, update ECS service</td></tr>
+        <tr><td><code>copilot svc logs --follow</code></td><td>Live tail CloudWatch logs</td></tr>
+        <tr><td><code>copilot svc exec</code></td><td>Shell into running container (ECS Exec)</td></tr>
+        <tr><td><code>copilot svc status</code></td><td>Task health, running count, alarms</td></tr>
+        <tr><td><code>copilot secret init</code></td><td>Store secret in SSM per env</td></tr>
+        <tr><td><code>copilot pipeline init / deploy</code></td><td>Create CodePipeline for CI/CD</td></tr>
+        <tr><td><code>copilot task run</code></td><td>One-off container task (DB migrations, scripts)</td></tr>
+        <tr><td><code>copilot app delete</code></td><td>Tear down entire app + all infrastructure</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production-grade Copilot setup for reliability, security, and team workflows.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Commit Manifests to Git</div>
+      <p>Treat the <code>copilot/</code> directory as infrastructure code. Commit all manifest files and addons. Use pull requests for config changes — full audit trail via git history.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Environment Overrides</div>
+      <p>Set smaller CPU/memory in <code>test</code> and larger in <code>production</code> via the manifest <code>environments:</code> block. Keeps costs low in non-prod without separate manifests.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Never Hardcode Secrets</div>
+      <p>Use <code>copilot secret init</code> + manifest <code>secrets:</code> block. Secrets stored in SSM SecureString, injected at container start — never baked into Docker images.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Addons for Resources</div>
+      <p>Don't manually create DynamoDB, S3, RDS resources. Use Copilot addons (CloudFormation in <code>copilot/&lt;svc&gt;/addons/</code>) — Copilot auto-grants IAM and injects ARNs.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Health Check First</div>
+      <p>Always define a proper <code>http.healthcheck</code> path in manifests. Without it, ECS may route traffic to unhealthy tasks during deployments. Use a dedicated <code>/health</code> endpoint.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Enable Container Insights</div>
+      <p>Set <code>observability.container_insights: true</code> in environment manifest. Get CPU, memory, network metrics per task and per service in CloudWatch — essential for production tuning.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Separate AWS Accounts per Env</div>
+      <p>Use different AWS accounts for test and production. Copilot supports multi-account via AWS profiles. Stronger blast radius isolation than separate VPCs in the same account.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use copilot task run for Migrations</div>
+      <p>Run DB migrations with <code>copilot task run --command "dotnet ef database update"</code> before deploying the service. Runs in the same VPC with the same secrets injected.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Copilot vs Other ECS Tools</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Tool</th><th>Best For</th><th>Complexity</th><th>Abstraction</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--accent)">AWS Copilot</strong></td><td>Teams new to ECS, fast deployments</td><td><span class="tag tag-green">Low</span></td><td><span class="tag tag-green">High</span></td></tr>
+        <tr><td>AWS CDK</td><td>Full control, complex infra</td><td><span class="tag tag-red">High</span></td><td><span class="tag tag-orange">Medium</span></td></tr>
+        <tr><td>Terraform ECS</td><td>Multi-cloud, existing TF state</td><td><span class="tag tag-red">High</span></td><td><span class="tag tag-orange">Medium</span></td></tr>
+        <tr><td>ECS CLI</td><td>Docker Compose → ECS (deprecated)</td><td><span class="tag tag-orange">Medium</span></td><td><span class="tag tag-orange">Medium</span></td></tr>
+        <tr><td>AWS Console</td><td>One-off tasks, debugging</td><td><span class="tag tag-orange">Medium</span></td><td><span class="tag tag-red">Low</span></td></tr>
+        <tr><td>Amazon EKS / Helm</td><td>Kubernetes, max flexibility</td><td><span class="tag tag-red">Very High</span></td><td><span class="tag tag-red">Low</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">AWS Copilot CLI — the full picture at a glance.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🏢 App / Env / Service</div>
+      <p>Application groups services. Each Environment gets its own VPC + cluster + ALB. Services/Jobs define what runs.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 6 Service Types</div>
+      <p>LB Web Service · Backend Service · Worker (SQS) · Scheduled Job · Request-Driven (App Runner) · Static Site.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📄 Manifest-Driven</div>
+      <p>One YAML file per service. Commit to git. Environment overrides for prod/test size differences. Copilot generates CloudFormation.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 Pipelines</div>
+      <p>CodePipeline + CodeBuild auto-generated. Git push → build → test → staging → manual approval → production.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 Secrets & Storage</div>
+      <p>SSM / Secrets Manager injection via <code>secrets:</code>. Addons for DynamoDB, S3, RDS — auto IAM grants + env var injection.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⌨️ Key Commands</div>
+      <p><code>svc deploy</code> · <code>svc logs --follow</code> · <code>svc exec</code> · <code>secret init</code> · <code>task run</code> · <code>pipeline deploy</code></p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Concept</th><th>What Copilot creates</th><th>Command</th></tr></thead>
+      <tbody>
+        <tr><td>Application</td><td>ECR repos, SSM params for app metadata</td><td><code>copilot app init</code></td></tr>
+        <tr><td>Environment</td><td>VPC, subnets, NAT GW, ECS cluster, ALB, SGs</td><td><code>copilot env init + deploy</code></td></tr>
+        <tr><td>LB Web Service</td><td>ECS Service, Task Def, ALB listener rule, CW logs</td><td><code>copilot svc init + deploy</code></td></tr>
+        <tr><td>Worker Service</td><td>ECS Service, SQS queue, DLQ, subscription</td><td><code>copilot svc init + deploy</code></td></tr>
+        <tr><td>Scheduled Job</td><td>ECS Task, EventBridge rule, CW logs</td><td><code>copilot job init + deploy</code></td></tr>
+        <tr><td>Pipeline</td><td>CodePipeline, CodeBuild, CodeStar Connection</td><td><code>copilot pipeline init + deploy</code></td></tr>
+        <tr><td>Secret</td><td>SSM SecureString per environment</td><td><code>copilot secret init</code></td></tr>
+        <tr><td>Addon</td><td>Any CloudFormation resource + auto IAM</td><td>Add to <code>copilot/&lt;svc&gt;/addons/</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS Copilot CLI!</h3>
+    <p>From service types and manifest files to environments, pipelines, secrets, and production best practices — you're ready to deploy and operate containerised apps on ECS Fargate like a pro.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawSvc, null, drawEnv, drawPipe, null, null, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  accent:'#f0883e', accent2:'#f5a623', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', red:'#f85149',
+  yellow:'#d29922', teal:'#26a67f', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?35:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+/* ARCH */
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'AWS Copilot — How It Works',C.muted,11);
+
+  // Developer
+  box(ctx,20,30,110,50,C.blue,'👩‍💻 Developer','manifest.yml',null);
+  arr(ctx,130,55,200,55,C.blue);
+
+  // Copilot CLI
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.accent; ctx.lineWidth=2;
+  rr(ctx,200,30,160,50,8); ctx.fill(); ctx.stroke();
+  txt(ctx,280,52,'🚀 Copilot CLI',C.accent,13);
+  txt(ctx,280,67,'copilot svc deploy',C.muted,10);
+  arr(ctx,360,55,430,55,C.accent);
+
+  // CloudFormation
+  box(ctx,430,30,140,50,C.purple,'☁️ CloudFormation','Generates stacks',null);
+  arr(ctx,570,55,620,40,C.border);
+  arr(ctx,570,55,620,80,C.border);
+  arr(ctx,570,55,620,120,C.border);
+
+  // AWS Resources
+  const res=[
+    {l:'ECS Cluster',ic:'🐳',c:C.orange,y:24},
+    {l:'ALB + SG',ic:'⚖️',c:C.green,y:64},
+    {l:'VPC + Subnets',ic:'🌐',c:C.blue,y:104},
+    {l:'IAM Roles',ic:'🔑',c:C.yellow,y:144},
+    {l:'ECR + CW Logs',ic:'📊',c:C.teal,y:184},
+  ];
+  res.forEach(r=>{
+    box(ctx,620,r.y,W-640,34,r.c,r.l,null,r.ic);
+  });
+
+  // ECR push
+  arr(ctx,130,55,130,200,C.border);
+  box(ctx,20,200,110,50,C.teal,'📦 ECR','Docker image',null);
+  arr(ctx,130,215,620,215,C.border);
+  txt(ctx,375,208,'docker build + push',C.muted,9);
+
+  txt(ctx,W/2,H-8,'copilot svc deploy = build → push ECR → update task def → rolling update ECS service',C.muted,10);
+}
+
+/* SERVICE TYPES */
+function drawSvc(){
+  const s=setup('svcCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Copilot Service Types — Traffic Patterns',C.muted,11);
+
+  // Internet
+  box(ctx,20,80,90,40,C.blue,'🌍 Internet',null,null);
+
+  // LB Web
+  arr(ctx,110,100,180,70,C.blue);
+  box(ctx,180,50,140,44,C.accent,'LB Web Service','ALB → ECS',null);
+
+  // Backend (private)
+  arr(ctx,320,72,390,72,C.accent);
+  box(ctx,390,50,130,44,C.green,'Backend Service','Private ECS',null);
+
+  // Worker
+  arr(ctx,110,100,180,150,C.blue);
+  box(ctx,180,130,120,44,C.purple,'📨 SQS Queue',null,null);
+  arr(ctx,300,152,370,152,C.purple);
+  box(ctx,370,130,130,44,C.purple,'Worker Service','SQS consumer',null);
+
+  // Scheduled Job
+  box(ctx,W-190,50,170,44,C.yellow,'⏰ EventBridge','cron schedule',null);
+  arr(ctx,W-190,72,W-60,72,C.border);
+  box(ctx,W-58,50,50,44,C.yellow,'Job',null,null);
+
+  // App Runner
+  arr(ctx,110,100,180,200,C.teal);
+  box(ctx,180,186,160,40,C.teal,'Request-Driven','App Runner',null);
+
+  txt(ctx,W/2,H-6,'Each type maps to a different AWS pattern — choose based on trigger and visibility needs',C.muted,10);
+}
+
+/* ENVIRONMENTS */
+function drawEnv(){
+  const s=setup('envCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Copilot Environments — Isolated Infrastructure per Env',C.muted,11);
+
+  const envs=[
+    {l:'test',c:C.yellow,x:20},
+    {l:'staging',c:C.blue,x:W/2-130},
+    {l:'production',c:C.green,x:W-280},
+  ];
+  const ew=250;
+  envs.forEach(e=>{
+    // Env container
+    ctx.fillStyle=e.c+'08'; ctx.strokeStyle=e.c; ctx.lineWidth=1.5;
+    rr(ctx,e.x,28,ew,H-45,10); ctx.fill(); ctx.stroke();
+    txt(ctx,e.x+ew/2,46,e.l.toUpperCase()+' Environment',e.c,11);
+
+    // Inside resources
+    const items=['VPC + Subnets','ECS Cluster','ALB','ECS Services','CW Log Groups'];
+    items.forEach((item,i)=>{
+      ctx.fillStyle=e.c+'15'; ctx.strokeStyle=e.c+'44'; ctx.lineWidth=1;
+      rr(ctx,e.x+12,54+i*34,ew-24,26,5); ctx.fill(); ctx.stroke();
+      txt(ctx,e.x+ew/2,54+i*34+16,item,C.muted,10);
+    });
+  });
+
+  txt(ctx,W/2,H-10,'Each environment is a separate CloudFormation stack — fully isolated VPC, cluster, and ALB',C.muted,10);
+}
+
+/* PIPELINE */
+function drawPipe(){
+  const s=setup('pipeCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Copilot Pipeline — Git Push to Production',C.muted,11);
+
+  const stages=[
+    {l:'Git Push',sub:'main branch',ic:'📤',c:C.blue},
+    {l:'CodeBuild',sub:'Build + ECR push',ic:'🔨',c:C.purple},
+    {l:'Test Env',sub:'Deploy + tests',ic:'🧪',c:C.yellow},
+    {l:'Staging',sub:'Auto deploy',ic:'🚀',c:C.teal},
+    {l:'✋ Approve',sub:'Manual gate',ic:'👤',c:C.accent},
+    {l:'Production',sub:'Rolling update',ic:'✅',c:C.green},
+  ];
+  const bw=Math.min(110,(W-60)/stages.length-10);
+  const gap=(W-40-bw*stages.length)/(stages.length-1);
+  stages.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,30,bw,110,st.c,st.l,st.sub,st.ic);
+    if(i<stages.length-1) arr(ctx,x+bw+2,85,x+bw+gap-2,85,C.border);
+  });
+
+  // CodePipeline bracket
+  ctx.fillStyle='rgba(240,136,62,0.05)'; ctx.strokeStyle=C.accent; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  rr(ctx,12,155,W-24,42,6); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx,W/2,179,'⚙️  AWS CodePipeline orchestrates all stages automatically — triggered by git push to main',C.accent,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawSvc,null,drawEnv,drawPipe,null,null,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

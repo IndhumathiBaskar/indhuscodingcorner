@@ -1,0 +1,1196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS Systems Manager – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #1a7f64;   /* SSM teal-green */
+    --accent2:    #26a67f;
+    --accent-dim: rgba(26,127,100,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  /* HEADER */
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent2); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #001a12 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(26,127,100,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(26,127,100,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent2); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px, 5vw, 42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px, 2vw, 15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  /* TAB NAV */
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  /* CONTENT */
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* HEADINGS */
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  @media(max-width:720px){ .grid-3,.grid-4{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3,.grid-4{ grid-template-columns:1fr; } }
+
+  /* CAPABILITY PILLAR CARDS */
+  .pillar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; transition: border-color .2s; }
+  .pillar::before { content: ''; position: absolute; top:0;left:0;right:0;height:3px; background: var(--pc,var(--accent2)); }
+  .pillar:hover { border-color: var(--pc, var(--accent2)); }
+  .pillar-icon { font-size: 26px; margin-bottom: 10px; }
+  .pillar-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .pillar-desc { font-size: 13px; color: var(--muted); }
+
+  /* CALLOUTS */
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-teal   { background: var(--accent-dim); border: 1px solid rgba(26,127,100,0.3); border-left: 3px solid var(--accent2); }
+  .callout-teal strong { color: var(--accent2); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-teal   { background: var(--accent-dim); color: var(--accent2); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+  /* TABLE */
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent2); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  /* CODE */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent2); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw { color: #ff7b72; } .str { color: #a5d6ff; } .cm { color: #8b949e; font-style: italic; }
+  .fn { color: #d2a8ff; } .num { color: #79c0ff; } .var { color: #ffa657; } .typ { color: #7ee787; }
+
+  /* CANVAS */
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  /* PSEUDO */
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent2); } .pn { color: var(--green); }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(26,127,100,0.35); color: var(--accent2); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  /* COMPLETION */
+  .completion-card { background: linear-gradient(135deg, var(--surface) 0%, rgba(26,127,100,0.1) 100%); border: 1px solid rgba(26,127,100,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* MOBILE */
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS Systems Manager</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🛠️ AWS Operations</div>
+  <h1>AWS <span>Systems Manager</span></h1>
+  <p>Unified operations hub for AWS — manage, configure, patch, automate, and troubleshoot your infrastructure at scale without SSH or RDP.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🔑 Parameter Store</span>
+    <span class="hero-pill">🤖 Run Command</span>
+    <span class="hero-pill">📋 Session Manager</span>
+    <span class="hero-pill">🔧 Patch Manager</span>
+    <span class="hero-pill">📜 Automation</span>
+    <span class="hero-pill">📦 Inventory</span>
+    <span class="hero-pill">🗺️ State Manager</span>
+    <span class="hero-pill">🔍 OpsCenter</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🔑 Parameter Store</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🤖 Run Command</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">📋 Session Manager</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🔧 Patch Manager</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">📜 Automation</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS Systems Manager?</h2>
+  <p class="section-sub">A collection of capabilities that gives you visibility and control over your AWS infrastructure — no bastion hosts needed.</p>
+
+  <div class="callout callout-teal">
+    <strong>One-liner</strong>
+    SSM = unified control plane for EC2, on-prem, and ECS/EKS nodes — run commands, manage config, patch OS, store secrets, automate ops, and open secure shell sessions <strong>without opening inbound ports</strong>.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="320"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Core Capability Pillars</h3>
+  <div class="grid-4">
+    <div class="pillar" style="--pc:#26a67f">
+      <div class="pillar-icon">🔑</div>
+      <div class="pillar-name">Parameter Store</div>
+      <div class="pillar-desc">Hierarchical config & secrets storage. Free (Standard) or pay for Advanced + higher throughput.</div>
+    </div>
+    <div class="pillar" style="--pc:#58a6ff">
+      <div class="pillar-icon">🤖</div>
+      <div class="pillar-name">Run Command</div>
+      <div class="pillar-desc">Run scripts on fleets of EC2 or on-prem instances without SSH. Target by tag, resource group, or list.</div>
+    </div>
+    <div class="pillar" style="--pc:#bc8cff">
+      <div class="pillar-icon">📋</div>
+      <div class="pillar-name">Session Manager</div>
+      <div class="pillar-desc">Browser or CLI shell into EC2/on-prem without port 22. Full audit trail in CloudTrail + S3.</div>
+    </div>
+    <div class="pillar" style="--pc:#e8834a">
+      <div class="pillar-icon">🔧</div>
+      <div class="pillar-name">Patch Manager</div>
+      <div class="pillar-desc">Automated OS & app patching with patch baselines, maintenance windows, and compliance reporting.</div>
+    </div>
+    <div class="pillar" style="--pc:#3fb950">
+      <div class="pillar-icon">📜</div>
+      <div class="pillar-name">Automation</div>
+      <div class="pillar-desc">Runbooks (SSM Documents) that orchestrate multi-step ops workflows — AMI builds, instance remediation, DR.</div>
+    </div>
+    <div class="pillar" style="--pc:#d29922">
+      <div class="pillar-icon">📦</div>
+      <div class="pillar-name">Inventory</div>
+      <div class="pillar-desc">Collect software, network config, OS patches, and application metadata from managed nodes.</div>
+    </div>
+    <div class="pillar" style="--pc:#f85149">
+      <div class="pillar-icon">🗺️</div>
+      <div class="pillar-name">State Manager</div>
+      <div class="pillar-desc">Keep nodes in a defined configuration state. Apply associations on schedule — config drift prevention.</div>
+    </div>
+    <div class="pillar" style="--pc:#58a6ff">
+      <div class="pillar-icon">🔍</div>
+      <div class="pillar-name">OpsCenter</div>
+      <div class="pillar-desc">Centralised ops issue tracking. OpsItems aggregated from CloudWatch, Config, and Security Hub.</div>
+    </div>
+  </div>
+
+  <div class="callout callout-green" style="margin-top:8px">
+    <strong>SSM Agent</strong>
+    A lightweight agent pre-installed on Amazon Linux 2, Amazon Linux 2023, Windows Server 2016+, and Ubuntu 18.04+ AMIs. Communicates with SSM service over HTTPS (port 443 outbound only) — no inbound ports required.
+  </div>
+</section>
+
+<!-- TAB 1: PARAMETER STORE -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🔑 Parameter Store</h2>
+  <p class="section-sub">Hierarchical, versioned storage for config values and secrets — free tier available, integrates natively with IAM and KMS.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="paramCanvas" width="860" height="210"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📁 Parameter Types</div>
+      <p><span class="tag tag-green">String</span> — plain text value. Free.</p>
+      <p><span class="tag tag-blue">StringList</span> — comma-separated list. Free.</p>
+      <p><span class="tag tag-purple">SecureString</span> — KMS-encrypted at rest. Free (default KMS) or pay for CMK.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Standard vs Advanced</div>
+      <p><span class="tag tag-teal">Standard</span> — Up to 10,000 params, max 4 KB value, free, no parameter policies.</p>
+      <p><span class="tag tag-orange">Advanced</span> — 100,000+ params, max 8 KB, parameter policies (TTL, expiry notification), paid.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Hierarchy Structure</h3>
+  <div class="callout callout-teal">
+    <strong>Use path-based hierarchy for organisation</strong>
+    Parameters are organised like a file system: <code>/app/env/name</code>. You can fetch an entire path at once with <code>GetParametersByPath</code> and apply IAM policies at the path level.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Parameter Hierarchy</span>
+      <span class="code-desc">Recommended naming convention</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Hierarchy: /app/environment/key</span>
+
+/OrderService/Production/DatabaseConnectionString   <span class="cm"># SecureString</span>
+/OrderService/Production/MaxRetries                 <span class="cm"># String</span>
+/OrderService/Production/FeatureFlags               <span class="cm"># String (JSON)</span>
+
+/OrderService/Staging/DatabaseConnectionString
+/OrderService/Staging/MaxRetries
+
+/Shared/JwtSecret                                   <span class="cm"># SecureString — shared across apps</span>
+/Shared/SnsTopicArn</pre>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔄 Versioning</div>
+      <p>Every parameter update creates a new version automatically. Retrieve a specific version with <code>GetParameter</code> + version suffix. Rollback by referencing an older version in code.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔔 Parameter Policies (Advanced)</div>
+      <p><strong style="color:var(--text)">Expiration</strong> — auto-delete parameter after date.</p>
+      <p><strong style="color:var(--text)">ExpirationNotification</strong> — SNS alert N days before expiry.</p>
+      <p><strong style="color:var(--text)">NoChangeNotification</strong> — alert if param unchanged for N days.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>Parameter Store</th><th>Secrets Manager</th></tr></thead>
+      <tbody>
+        <tr><td>Cost</td><td><span class="tag tag-green">Free (Standard)</span></td><td><span class="tag tag-orange">$0.40/secret/month</span></td></tr>
+        <tr><td>Secret Rotation</td><td><span class="tag tag-red">Manual only</span></td><td><span class="tag tag-green">Automatic (Lambda)</span></td></tr>
+        <tr><td>Cross-account</td><td><span class="tag tag-red">No</span></td><td><span class="tag tag-green">Yes</span></td></tr>
+        <tr><td>Max value size</td><td>4 KB / 8 KB (Advanced)</td><td>64 KB</td></tr>
+        <tr><td>Hierarchy / path</td><td><span class="tag tag-green">Yes</span></td><td><span class="tag tag-red">No</span></td></tr>
+        <tr><td>Best for</td><td>App config + non-rotating secrets</td><td>DB passwords, API keys that rotate</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 2: RUN COMMAND -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🤖 Run Command</h2>
+  <p class="section-sub">Execute scripts and commands across fleets of managed instances — no SSH, no bastion host.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="runCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>How it works</strong>
+    SSM Agent on each instance polls the SSM service endpoint over HTTPS. When a Run Command is sent, the agent receives the command, executes it locally, and sends output back to SSM (and optionally S3 / CloudWatch Logs).
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🎯 Target Selection</div>
+      <p>Target instances by <strong style="color:var(--text)">Instance ID</strong>, <strong style="color:var(--text)">Tag</strong> (e.g. Env=Prod), <strong style="color:var(--text)">Resource Group</strong>, or <strong style="color:var(--text)">All managed instances</strong>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📄 SSM Documents</div>
+      <p>Commands are defined in SSM Documents (JSON/YAML). AWS provides 100+ built-in docs. You can create custom documents.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Output Options</div>
+      <p>Last 2,500 chars in console. Full output to <strong style="color:var(--text)">S3 bucket</strong> or <strong style="color:var(--text)">CloudWatch Logs</strong>. SNS notification on completion/failure.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Common Built-in Documents</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Document</th><th>Purpose</th><th>Platform</th></tr></thead>
+      <tbody>
+        <tr><td><code>AWS-RunShellScript</code></td><td>Run any shell/bash script</td><td>Linux</td></tr>
+        <tr><td><code>AWS-RunPowerShellScript</code></td><td>Run PowerShell script</td><td>Windows</td></tr>
+        <tr><td><code>AWS-UpdateSSMAgent</code></td><td>Update the SSM agent itself</td><td>Both</td></tr>
+        <tr><td><code>AWS-RunPatchBaseline</code></td><td>Apply patch baseline to instance</td><td>Both</td></tr>
+        <tr><td><code>AWS-InstallApplication</code></td><td>Install MSI / RPM packages</td><td>Both</td></tr>
+        <tr><td><code>AWS-GatherSoftwareInventory</code></td><td>Collect installed software list</td><td>Both</td></tr>
+        <tr><td><code>AWS-ConfigureCloudWatch</code></td><td>Configure CloudWatch agent</td><td>Both</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pseudo">
+<span class="pk">RUN COMMAND FLOW:</span><br>
+<br>
+User / EventBridge <span class="pn">→ SendCommand API</span><br>
+&nbsp;&nbsp;├── Target: <span class="pv">Tag: Env=Production</span><br>
+&nbsp;&nbsp;├── Document: <span class="pv">AWS-RunShellScript</span><br>
+&nbsp;&nbsp;└── Command: <span class="pv">"systemctl restart myapp"</span><br>
+<br>
+SSM Service <span class="pn">→ SSM Agent on each matched instance</span><br>
+&nbsp;&nbsp;├── Agent polls endpoint (HTTPS 443 outbound)<br>
+&nbsp;&nbsp;├── Executes command locally<br>
+&nbsp;&nbsp;└── Reports: <span class="pk">Success</span> / <span class="pk">Failed</span> / <span class="pk">TimedOut</span><br>
+<br>
+Output <span class="pn">→ S3 + CloudWatch Logs + SNS notification</span>
+  </div>
+</section>
+
+<!-- TAB 3: SESSION MANAGER -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">📋 Session Manager</h2>
+  <p class="section-sub">Secure, auditable shell access to EC2 and on-prem instances — zero open ports, zero bastion hosts.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="sessionCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <div class="callout callout-teal">
+    <strong>Why Session Manager over SSH?</strong>
+    No inbound port 22 needed. No key pair management. Full session audit log to CloudTrail + S3 + CloudWatch Logs. Access controlled entirely via IAM policies. Works for EC2, on-prem, and ECS Exec.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔐 Access via IAM</div>
+      <p>Grant or deny session access with IAM policies. Can restrict to specific instances, specific users, or specific tags — no OS-level user management needed.</p>
+      <p><span class="tag tag-green">No SSH keys</span> <span class="tag tag-teal">No port 22</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">📝 Audit Logging</div>
+      <p>Every session is logged. Session <strong style="color:var(--text)">metadata</strong> (start/end, user, instance) → CloudTrail. Full <strong style="color:var(--text)">session transcript</strong> → S3 or CloudWatch Logs.</p>
+      <p><span class="tag tag-blue">Compliance ready</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🚇 Port Forwarding</div>
+      <p>Forward local port to a remote port on the instance or beyond (RDS, internal services). No VPN or bastion needed — all through SSM tunnel.</p>
+      <pre style="font-size:11px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">aws ssm start-session \
+  --target i-0abc1234 \
+  --document-name \
+    AWS-StartPortForwardingSession \
+  --parameters \
+    '{"portNumber":["3306"],
+      "localPortNumber":["13306"]}'</pre>
+    </div>
+    <div class="card">
+      <div class="card-title">🐳 ECS Exec</div>
+      <p>Drop into a running ECS task container using Session Manager under the hood. No need to expose container ports or exec via SSH.</p>
+      <pre style="font-size:11px;margin-top:8px;padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border)">aws ecs execute-command \
+  --cluster prod-cluster \
+  --task abc123 \
+  --container app \
+  --interactive \
+  --command "/bin/sh"</pre>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">IAM Policy for Session Manager</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">Minimum IAM policy to allow SSM Session Manager</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Effect"</span>: <span class="str">"Allow"</span>,
+      <span class="str">"Action"</span>: [
+        <span class="str">"ssm:StartSession"</span>,
+        <span class="str">"ssm:TerminateSession"</span>,
+        <span class="str">"ssm:ResumeSession"</span>,
+        <span class="str">"ssm:DescribeSessions"</span>,
+        <span class="str">"ssm:GetConnectionStatus"</span>
+      ],
+      <span class="str">"Resource"</span>: [
+        <span class="str">"arn:aws:ec2:*:*:instance/*"</span>,
+        <span class="str">"arn:aws:ssm:*:*:session/${aws:username}/*"</span>
+      ],
+      <span class="str">"Condition"</span>: {
+        <span class="str">"StringLike"</span>: {
+          <span class="str">"ssm:resourceTag/Environment"</span>: [<span class="str">"Production"</span>]
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 4: PATCH MANAGER -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🔧 Patch Manager</h2>
+  <p class="section-sub">Automate OS and application patching across your fleet with baselines, maintenance windows, and compliance dashboards.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="patchCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">📋 Patch Baseline</div>
+      <p>Defines <em>which</em> patches are approved. Default baselines exist for Amazon Linux, Windows, Ubuntu, RHEL, SUSE. Custom baselines override defaults.</p>
+      <p>Rules: Auto-approve after N days, severity filter, classification filter.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪟 Maintenance Window</div>
+      <p>Defines <em>when</em> patching runs — cron expression, duration, cutoff. Targets instances by tag. Prevents patching during business hours.</p>
+      <p>Also used for Run Command and Automation tasks.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Patch Compliance</div>
+      <p>After patching, SSM reports each instance's patch state: <span class="tag tag-green">Compliant</span> or <span class="tag tag-red">Non-Compliant</span>. View in SSM console or query via AWS Config.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Patch Lifecycle</h3>
+  <ul class="steps">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-body"><strong>Define Patch Baseline</strong>Set approval rules: auto-approve Critical + Important patches after 7 days. Reject patches with known issues.</div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-body"><strong>Create Maintenance Window</strong>Schedule: every Sunday 02:00 UTC. Duration: 4 hours. Cutoff: 1 hour before end (stop new tasks).</div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-body"><strong>Register Targets</strong>Add instances to the maintenance window by tag (e.g. PatchGroup=WebServers). Associate the patch baseline.</div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="step-body"><strong>Run AWS-RunPatchBaseline</strong>SSM runs this document on all targets. Scans, downloads, installs approved patches, reboots if needed.</div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div class="step-body"><strong>Check Compliance</strong>View patch compliance in SSM Patch Manager dashboard or query with <code>DescribeInstancePatchStates</code> API.</div>
+    </li>
+  </ul>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Patch Groups</strong>
+    Tag instances with <code>Patch Group</code> (exact key name) to assign them to a specific patch baseline. One instance → one patch group → one baseline. Use this to patch dev/staging/prod at different times.
+  </div>
+</section>
+
+<!-- TAB 5: AUTOMATION -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">📜 Automation (Runbooks)</h2>
+  <p class="section-sub">Orchestrate multi-step operational workflows using SSM Documents — from AMI creation to DR failover.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="autoCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-teal">
+    <strong>Automation vs Run Command</strong>
+    Run Command = run a script on instances. Automation = orchestrate a multi-step workflow across AWS services (EC2, Lambda, SNS, Step Functions, wait for approval, branch on conditions). Automation runbooks are SSM Documents of type <code>Automation</code>.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">⚙️ Automation Actions</div>
+      <p><code>aws:runInstances</code> — launch EC2 instance</p>
+      <p><code>aws:createImage</code> — create AMI snapshot</p>
+      <p><code>aws:executeScript</code> — run Python/Node inline</p>
+      <p><code>aws:invokeLambdaFunction</code> — call Lambda</p>
+      <p><code>aws:approve</code> — pause for human approval</p>
+      <p><code>aws:waitForAwsResourceProperty</code> — poll until ready</p>
+      <p><code>aws:branch</code> — conditional branching</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🚀 Common Use Cases</div>
+      <p>🖼️ <strong style="color:var(--text)">Golden AMI pipeline</strong> — launch, configure, test, create AMI, deregister old</p>
+      <p>🔄 <strong style="color:var(--text)">Instance remediation</strong> — detect non-compliant → fix → verify</p>
+      <p>💾 <strong style="color:var(--text)">Backup automation</strong> — snapshot RDS/EBS on schedule</p>
+      <p>🆙 <strong style="color:var(--text)">Blue/Green deploy</strong> — launch new, test, swap, terminate old</p>
+      <p>🚨 <strong style="color:var(--text)">Incident response</strong> — isolate instance, capture forensics</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Sample Automation Document (YAML)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">SSM Automation — Stop, snapshot, restart EC2</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">schemaVersion</span>: <span class="str">"0.3"</span>
+<span class="var">description</span>: <span class="str">"Stop EC2, create snapshot, restart"</span>
+<span class="var">parameters</span>:
+  <span class="var">InstanceId</span>:
+    <span class="var">type</span>: <span class="str">String</span>
+    <span class="var">description</span>: <span class="str">"EC2 instance to snapshot"</span>
+<span class="var">mainSteps</span>:
+  - <span class="var">name</span>: stopInstance
+    <span class="var">action</span>: <span class="str">aws:changeInstanceState</span>
+    <span class="var">inputs</span>:
+      <span class="var">InstanceIds</span>: [<span class="str">"{{ InstanceId }}"</span>]
+      <span class="var">DesiredState</span>: <span class="str">stopped</span>
+
+  - <span class="var">name</span>: waitForStop
+    <span class="var">action</span>: <span class="str">aws:waitForAwsResourceProperty</span>
+    <span class="var">inputs</span>:
+      <span class="var">Service</span>: <span class="str">ec2</span>
+      <span class="var">Api</span>: <span class="str">DescribeInstanceStatus</span>
+      <span class="var">InstanceIds</span>: [<span class="str">"{{ InstanceId }}"</span>]
+      <span class="var">PropertySelector</span>: <span class="str">$.InstanceStatuses[0].InstanceState.Name</span>
+      <span class="var">DesiredValues</span>: [<span class="str">"stopped"</span>]
+
+  - <span class="var">name</span>: createAmi
+    <span class="var">action</span>: <span class="str">aws:createImage</span>
+    <span class="var">inputs</span>:
+      <span class="var">InstanceId</span>: <span class="str">"{{ InstanceId }}"</span>
+      <span class="var">ImageName</span>: <span class="str">"Backup-{{ InstanceId }}-{{ global:DATE }}"</span>
+      <span class="var">NoReboot</span>: <span class="kw">true</span>
+
+  - <span class="var">name</span>: restartInstance
+    <span class="var">action</span>: <span class="str">aws:changeInstanceState</span>
+    <span class="var">inputs</span>:
+      <span class="var">InstanceIds</span>: [<span class="str">"{{ InstanceId }}"</span>]
+      <span class="var">DesiredState</span>: <span class="str">running</span></pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Execution Modes</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">⚡ Simple Execution</div>
+      <p>Run once on a single target. Manual trigger from console or CLI. Good for one-off operational tasks.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Rate Control</div>
+      <p>Run on a fleet with concurrency and error thresholds. E.g. patch 10% of fleet at a time, stop if >5% fail.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Change Manager</div>
+      <p>Approval workflow before automation runs. Integrates with ServiceNow / Jira. Full change record for compliance.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 6: C# SDK -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+  <p class="section-sub">Using <code>AWSSDK.SimpleSystemsManagement</code> NuGet package.</p>
+
+  <div class="callout callout-teal">
+    <strong>NuGet</strong>
+    <code>dotnet add package AWSSDK.SimpleSystemsManagement</code>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Get a parameter from Parameter Store</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.SimpleSystemsManagement;
+<span class="kw">using</span> Amazon.SimpleSystemsManagement.Model;
+
+<span class="kw">var</span> <span class="var">ssm</span> = <span class="kw">new</span> <span class="typ">AmazonSimpleSystemsManagementClient</span>();
+
+<span class="cm">// Get a single parameter (WithDecryption=true for SecureString)</span>
+<span class="kw">var</span> <span class="var">response</span> = <span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">GetParameterAsync</span>(<span class="kw">new</span> <span class="typ">GetParameterRequest</span>
+{
+    Name            = <span class="str">"/OrderService/Production/DatabaseConnectionString"</span>,
+    WithDecryption  = <span class="kw">true</span>   <span class="cm">// decrypt SecureString with KMS</span>
+});
+
+<span class="kw">var</span> <span class="var">connStr</span> = <span class="var">response</span>.Parameter.Value;
+Console.<span class="fn">WriteLine</span>($<span class="str">"Version: {response.Parameter.Version}"</span>);
+Console.<span class="fn">WriteLine</span>($<span class="str">"LastModified: {response.Parameter.LastModifiedDate}"</span>);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Get all parameters under a path hierarchy</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Fetch entire /OrderService/Production/ path at once</span>
+<span class="kw">var</span> <span class="var">allParams</span> = <span class="kw">new</span> <span class="typ">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt;();
+<span class="kw">string</span>? <span class="var">nextToken</span> = <span class="kw">null</span>;
+
+<span class="kw">do</span>
+{
+    <span class="kw">var</span> <span class="var">page</span> = <span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">GetParametersByPathAsync</span>(<span class="kw">new</span> <span class="typ">GetParametersByPathRequest</span>
+    {
+        Path           = <span class="str">"/OrderService/Production/"</span>,
+        Recursive      = <span class="kw">true</span>,
+        WithDecryption = <span class="kw">true</span>,
+        NextToken      = <span class="var">nextToken</span>
+    });
+
+    <span class="kw">foreach</span> (<span class="kw">var</span> <span class="var">p</span> <span class="kw">in</span> <span class="var">page</span>.Parameters)
+        <span class="var">allParams</span>[<span class="var">p</span>.Name] = <span class="var">p</span>.Value;
+
+    <span class="var">nextToken</span> = <span class="var">page</span>.NextToken;
+}
+<span class="kw">while</span> (<span class="var">nextToken</span> <span class="kw">is not null</span>);
+
+<span class="cm">// Access like a dictionary</span>
+<span class="kw">var</span> <span class="var">maxRetries</span> = <span class="kw">int</span>.<span class="fn">Parse</span>(<span class="var">allParams</span>[<span class="str">"/OrderService/Production/MaxRetries"</span>]);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Put / update a parameter</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">PutParameterAsync</span>(<span class="kw">new</span> <span class="typ">PutParameterRequest</span>
+{
+    Name        = <span class="str">"/OrderService/Production/MaxRetries"</span>,
+    Value       = <span class="str">"5"</span>,
+    Type        = ParameterType.String,
+    Overwrite   = <span class="kw">true</span>,   <span class="cm">// update existing</span>
+    Description = <span class="str">"Max retry count for order API calls"</span>,
+    Tags        =
+    [
+        <span class="kw">new</span> <span class="typ">Tag</span> { Key = <span class="str">"App"</span>,         Value = <span class="str">"OrderService"</span> },
+        <span class="kw">new</span> <span class="typ">Tag</span> { Key = <span class="str">"Environment"</span>, Value = <span class="str">"Production"</span>  }
+    ]
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Send Run Command to tagged instances</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">cmd</span> = <span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">SendCommandAsync</span>(<span class="kw">new</span> <span class="typ">SendCommandRequest</span>
+{
+    DocumentName    = <span class="str">"AWS-RunShellScript"</span>,
+    Targets         =
+    [
+        <span class="kw">new</span> <span class="typ">Target</span>
+        {
+            Key    = <span class="str">"tag:Environment"</span>,
+            Values = [<span class="str">"Production"</span>]
+        }
+    ],
+    Parameters      = <span class="kw">new</span> <span class="typ">Dictionary</span>&lt;<span class="kw">string</span>, <span class="typ">List</span>&lt;<span class="kw">string</span>&gt;&gt;
+    {
+        [<span class="str">"commands"</span>] = [<span class="str">"systemctl restart orderservice"</span>, <span class="str">"systemctl status orderservice"</span>]
+    },
+    OutputS3BucketName = <span class="str">"my-ssm-output-bucket"</span>,
+    OutputS3KeyPrefix  = <span class="str">"run-command-output/"</span>,
+    CloudWatchOutputConfig = <span class="kw">new</span> <span class="typ">CloudWatchOutputConfig</span>
+    {
+        CloudWatchOutputEnabled = <span class="kw">true</span>,
+        CloudWatchLogGroupName  = <span class="str">"/ssm/run-command"</span>
+    }
+});
+
+Console.<span class="fn">WriteLine</span>($<span class="str">"CommandId: {cmd.Command.CommandId}"</span>);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Start SSM Automation execution</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">exec</span> = <span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">StartAutomationExecutionAsync</span>(<span class="kw">new</span> <span class="typ">StartAutomationExecutionRequest</span>
+{
+    DocumentName    = <span class="str">"AWS-CreateImage"</span>,
+    Parameters      = <span class="kw">new</span> <span class="typ">Dictionary</span>&lt;<span class="kw">string</span>, <span class="typ">List</span>&lt;<span class="kw">string</span>&gt;&gt;
+    {
+        [<span class="str">"InstanceId"</span>] = [<span class="str">"i-0abc123456"</span>],
+        [<span class="str">"NoReboot"</span>]   = [<span class="str">"true"</span>]
+    }
+});
+
+<span class="cm">// Poll for completion</span>
+<span class="kw">while</span> (<span class="kw">true</span>)
+{
+    <span class="kw">var</span> <span class="var">status</span> = <span class="kw">await</span> <span class="var">ssm</span>.<span class="fn">GetAutomationExecutionAsync</span>(
+        <span class="kw">new</span> <span class="typ">GetAutomationExecutionRequest</span>
+            { AutomationExecutionId = <span class="var">exec</span>.AutomationExecutionId });
+
+    <span class="kw">var</span> <span class="var">state</span> = <span class="var">status</span>.AutomationExecution.AutomationExecutionStatus;
+    Console.<span class="fn">WriteLine</span>($<span class="str">"Status: {state}"</span>);
+
+    <span class="kw">if</span> (<span class="var">state</span> <span class="kw">is</span> <span class="str">"Success"</span> <span class="kw">or</span> <span class="str">"Failed"</span> <span class="kw">or</span> <span class="str">"Cancelled"</span>) <span class="kw">break</span>;
+    <span class="kw">await</span> <span class="typ">Task</span>.<span class="fn">Delay</span>(<span class="num">5000</span>);
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production-grade SSM setup for security, operations, and cost efficiency.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Use Parameter Hierarchy</div>
+      <p>Always structure as <code>/App/Env/Key</code>. Fetch entire env config in one <code>GetParametersByPath</code> call. Apply IAM path-level policies for environment isolation.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Replace SSH with Session Manager</div>
+      <p>Remove port 22 from all EC2 security groups. Use Session Manager for all interactive access. Gain full audit trail without bastion host cost.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Tag Instances for Targeting</div>
+      <p>Tag EC2 with <code>Environment</code>, <code>App</code>, <code>PatchGroup</code>. Use tags in Run Command and Patch Manager targets — avoid hardcoding instance IDs.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Least Privilege for SSM</div>
+      <p>Attach <code>AmazonSSMManagedInstanceCore</code> policy to EC2 instance role — minimum needed for SSM agent. Don't use <code>AmazonSSMFullAccess</code> on instances.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ SecureString for Secrets</div>
+      <p>Never store passwords or API keys as plain <code>String</code>. Use <code>SecureString</code> with a customer-managed KMS key (CMK) for sensitive values.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Cache Parameters in App</div>
+      <p>Don't call SSM on every request — cache parameters in memory at startup. Refresh periodically or on config change event. SSM has API rate limits.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Patch in Waves</div>
+      <p>Create separate maintenance windows for Dev (weekly), Staging (weekly+1 day), Production (bi-weekly). Test patches in lower envs before prod.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Monitor with Inventory</div>
+      <p>Enable Inventory collection on all managed nodes. Track installed software, config changes, and OS versions. Integrate with AWS Config for drift detection.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Required IAM Permissions Cheat Sheet</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>EC2 Instance Role Needs</th><th>User/Role Needs</th></tr></thead>
+      <tbody>
+        <tr><td>SSM Agent connectivity</td><td><code>AmazonSSMManagedInstanceCore</code></td><td>N/A</td></tr>
+        <tr><td>Session Manager</td><td><code>AmazonSSMManagedInstanceCore</code></td><td><code>ssm:StartSession</code></td></tr>
+        <tr><td>Run Command</td><td><code>AmazonSSMManagedInstanceCore</code></td><td><code>ssm:SendCommand</code></td></tr>
+        <tr><td>Parameter Store read</td><td><code>ssm:GetParameter(s)</code></td><td><code>ssm:GetParameter(s)</code></td></tr>
+        <tr><td>Parameter Store write</td><td>Rarely needed on instance</td><td><code>ssm:PutParameter</code></td></tr>
+        <tr><td>Patch Manager</td><td><code>AmazonSSMManagedInstanceCore</code></td><td><code>ssm:StartAutomationExecution</code></td></tr>
+        <tr><td>Automation</td><td>Depends on steps (EC2, Lambda…)</td><td><code>ssm:StartAutomationExecution</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">AWS Systems Manager — the full picture at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔑 Parameter Store</div>
+      <p>Hierarchical <code>/App/Env/Key</code> config + secrets. String / StringList / SecureString. Standard (free) vs Advanced. Versioned with optional policies.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🤖 Run Command</div>
+      <p>Run scripts on any fleet without SSH. Target by tag, resource group, or ID. Output to S3 + CloudWatch. No inbound ports needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Session Manager</div>
+      <p>Secure shell with zero open ports. IAM-controlled access. Full audit log. Port forwarding. Works for EC2, on-prem, ECS Exec.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 Patch Manager</div>
+      <p>Baseline → Maintenance Window → Targets → Run AWS-RunPatchBaseline → Compliance report. Patch Dev → Staging → Prod in waves.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📜 Automation</div>
+      <p>Multi-step operational runbooks. Actions: launch, snapshot, wait, branch, approve, invoke Lambda. Rate-controlled fleet execution.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Inventory + State Manager</div>
+      <p>Inventory: collect software/config metadata. State Manager: enforce desired config on schedule — prevent config drift across your fleet.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Capability</th><th>Problem Solved</th><th>Key API / Doc</th></tr></thead>
+      <tbody>
+        <tr><td>Parameter Store</td><td>Config & secrets management</td><td><code>GetParameter</code>, <code>PutParameter</code></td></tr>
+        <tr><td>Run Command</td><td>Fleet script execution without SSH</td><td><code>SendCommand</code>, <code>AWS-RunShellScript</code></td></tr>
+        <tr><td>Session Manager</td><td>Secure interactive shell, no port 22</td><td><code>StartSession</code>, <code>ssm:StartSession</code></td></tr>
+        <tr><td>Patch Manager</td><td>Automated OS patching + compliance</td><td><code>AWS-RunPatchBaseline</code></td></tr>
+        <tr><td>Automation</td><td>Multi-step operational workflows</td><td><code>StartAutomationExecution</code></td></tr>
+        <tr><td>Inventory</td><td>Software & config metadata collection</td><td><code>AWS-GatherSoftwareInventory</code></td></tr>
+        <tr><td>State Manager</td><td>Config drift prevention on schedule</td><td>Association + SSM Document</td></tr>
+        <tr><td>OpsCenter</td><td>Centralised ops issue management</td><td>OpsItems from CW + Config + SecHub</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS Systems Manager!</h3>
+    <p>From Parameter Store hierarchies and Session Manager shell access to Patch Manager baselines, Automation runbooks, and C# SDK integration — you're ready to operate AWS infrastructure like a pro.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* TABS */
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawParam, drawRun, drawSession, drawPatch, drawAuto, null, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+/* CANVAS */
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  teal:'#1a7f64', teal2:'#26a67f', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', orange:'#e8834a',
+  red:'#f85149', yellow:'#d29922', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d');
+  ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+
+function rr(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.arcTo(x+w,y,x+w,y+r,r);
+  ctx.lineTo(x+w,y+h-r);ctx.arcTo(x+w,y+h,x+w-r,y+h,r);
+  ctx.lineTo(x+r,y+h);ctx.arcTo(x,y+h,x,y+h-r,r);
+  ctx.lineTo(x,y+r);ctx.arcTo(x,y,x+r,y,r);ctx.closePath();
+}
+
+function box(ctx,x,y,w,h,col,label,sub,icon){
+  ctx.shadowColor=col+'44'; ctx.shadowBlur=10;
+  ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5;
+  rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+  if(icon){ctx.font='15px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));}
+  ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center';
+  ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-2:h/2+4)));
+  if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);}
+}
+
+function arr(ctx,x1,y1,x2,y2,col){
+  col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.fillStyle=col; ctx.beginPath();
+  ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4));
+  ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill();
+}
+
+function txt(ctx,x,y,t,col,size,align){
+  ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif';
+  ctx.textAlign=align||'center'; ctx.fillText(t,x,y);
+}
+
+/* ARCH */
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'AWS Systems Manager — Capability Overview',C.muted,11);
+
+  // Centre hub
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.teal2; ctx.lineWidth=2;
+  rr(ctx,W/2-90,H/2-30,180,60,10); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,H/2-8,'🛠️ Systems Manager',C.teal2,13);
+  txt(ctx,W/2,H/2+10,'SSM Agent (HTTPS)',C.muted,10);
+
+  // Capabilities around
+  const caps=[
+    {l:'Parameter Store',ic:'🔑',c:C.teal2,dx:-280,dy:-80},
+    {l:'Run Command',    ic:'🤖',c:C.blue,  dx:0,   dy:-90},
+    {l:'Session Mgr',   ic:'📋',c:C.purple, dx:280, dy:-80},
+    {l:'Patch Manager', ic:'🔧',c:C.orange, dx:280, dy:80},
+    {l:'Automation',    ic:'📜',c:C.green,  dx:0,   dy:90},
+    {l:'Inventory',     ic:'📦',c:C.yellow, dx:-280,dy:80},
+  ];
+  const cw=120,ch=52;
+  caps.forEach(c2=>{
+    const x=W/2+c2.dx-cw/2, y=H/2+c2.dy-ch/2;
+    box(ctx,x,y,cw,ch,c2.c,c2.l,null,c2.ic);
+    const ex= c2.dx===0 ? W/2 : W/2+(c2.dx>0?90:-90);
+    const ey= c2.dy===0 ? H/2 : H/2+(c2.dy>0?30:-30);
+    const tx2= c2.dx===0 ? x+cw/2 : (c2.dx>0?x:x+cw);
+    const ty2= c2.dy===0 ? y+ch/2 : (c2.dy>0?y:y+ch);
+    arr(ctx,ex,ey,tx2,ty2,C.border);
+  });
+
+  // Managed nodes at bottom
+  const nodes=[{l:'EC2 Fleet',ic:'🖥️'},{l:'On-Premises',ic:'🏢'},{l:'ECS/EKS',ic:'🐳'}];
+  const nw=110, ng=(W-40-nw*3)/2;
+  txt(ctx,W/2,H-58,'Managed Nodes',C.muted,10);
+  nodes.forEach((n,i)=>{
+    const x=20+i*(nw+ng);
+    box(ctx,x,H-48,nw,36,C.muted,n.l,null,n.ic);
+  });
+}
+
+/* PARAM STORE */
+function drawParam(){
+  const s=setup('paramCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Parameter Store — Hierarchy & Types',C.muted,11);
+
+  // Root
+  box(ctx,W/2-50,24,100,36,C.teal2,'/ (root)',null,'📁');
+
+  // Apps
+  const apps=[
+    {l:'/OrderService',c:C.blue,x:W*0.25},
+    {l:'/Shared',c:C.green,x:W*0.75},
+  ];
+  apps.forEach(a=>{
+    arr(ctx,W/2,60,a.x,90,C.border);
+    box(ctx,a.x-60,90,120,36,a.c,a.l,null,'📁');
+  });
+
+  // Envs under OrderService
+  const envs=[
+    {l:'/Production',c:C.orange,x:W*0.15,p:W*0.25},
+    {l:'/Staging',c:C.yellow,x:W*0.38,p:W*0.25},
+  ];
+  envs.forEach(e=>{
+    arr(ctx,e.p,126,e.x,155,C.border);
+    box(ctx,e.x-55,155,110,34,e.c,e.l,null,'📁');
+  });
+
+  // Params
+  const params=[
+    {l:'DbConnStr',t:'SecureString 🔒',c:C.red,x:W*0.08,p:W*0.15},
+    {l:'MaxRetries',t:'String',c:C.green,x:W*0.25,p:W*0.15},
+    {l:'DbConnStr',t:'SecureString 🔒',c:C.red,x:W*0.34,p:W*0.38},
+  ];
+  params.forEach(p2=>{
+    arr(ctx,p2.p,189,p2.x,210,C.border);
+    ctx.fillStyle=p2.c+'22'; ctx.strokeStyle=p2.c; ctx.lineWidth=1;
+    rr(ctx,p2.x-48,210,96,28,5); ctx.fill(); ctx.stroke();
+    txt(ctx,p2.x,221,p2.l,C.text,10);
+    txt(ctx,p2.x,232,p2.t,p2.c,9);
+  });
+
+  // Shared params
+  const shared=[{l:'JwtSecret',t:'SecureString 🔒',c:C.red},{l:'SnsTopicArn',t:'String',c:C.green}];
+  shared.forEach((sp,i)=>{
+    const sx=W*0.68+i*110;
+    arr(ctx,W*0.75,126,sx,155,C.border);
+    ctx.fillStyle=sp.c+'22'; ctx.strokeStyle=sp.c; ctx.lineWidth=1;
+    rr(ctx,sx-48,155,96,28,5); ctx.fill(); ctx.stroke();
+    txt(ctx,sx,166,sp.l,C.text,10); txt(ctx,sx,177,sp.t,sp.c,9);
+  });
+}
+
+/* RUN COMMAND */
+function drawRun(){
+  const s=setup('runCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Run Command — No SSH Required',C.muted,11);
+
+  box(ctx,20,30,130,50,C.blue,'Console/CLI','SendCommand',null);
+  arr(ctx,150,55,220,55,C.blue);
+  box(ctx,220,30,140,50,C.teal2,'SSM Service','HTTPS 443',null);
+  arr(ctx,360,55,430,55,C.teal2);
+
+  // Instances
+  const insts=[
+    {l:'EC2 (Env=Prod)',y:28},{l:'EC2 (Env=Prod)',y:88},{l:'On-Prem Node',y:148}
+  ];
+  insts.forEach(inst=>{
+    arr(ctx,430,55,430+60,inst.y+20,C.teal2);
+    box(ctx,490,inst.y,170,40,C.green,inst.l,'SSM Agent',null);
+  });
+
+  // Output
+  arr(ctx,W-200,95,W-120,95,C.orange);
+  box(ctx,W-118,68,110,54,C.orange,'Output','S3 / CW Logs',null);
+
+  txt(ctx,W/2,H-8,'Agent polls SSM endpoint (HTTPS outbound only) — no port 22 inbound needed',C.muted,10);
+}
+
+/* SESSION MANAGER */
+function drawSession(){
+  const s=setup('sessionCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Session Manager — Zero Open Ports',C.muted,11);
+
+  // User
+  box(ctx,20,80,100,50,C.blue,'Developer','IAM Auth',null);
+  arr(ctx,120,105,200,105,C.blue);
+
+  // SSM Service
+  box(ctx,200,80,140,50,C.teal2,'SSM Service','HTTPS 443',null);
+  arr(ctx,340,105,420,105,C.teal2);
+
+  // Instance
+  box(ctx,420,80,140,50,C.green,'EC2 Instance','SSM Agent',null);
+
+  // No port 22
+  ctx.strokeStyle=C.red; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(420,140); ctx.lineTo(120,140); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,270,156,'❌  No port 22 / No bastion host needed',C.red,10);
+
+  // Audit trail
+  arr(ctx,270,130,270,175,C.purple);
+  const logs=[{l:'CloudTrail',c:C.purple,x:160},{l:'S3 Logs',c:C.orange,x:270},{l:'CW Logs',c:C.blue,x:380}];
+  logs.forEach(lg=>{
+    box(ctx,lg.x-50,175,100,34,lg.c,lg.l,null,null);
+    arr(ctx,270,175,lg.x,175,C.border);
+  });
+  txt(ctx,W/2,H-8,'Full session transcript → S3 | Session metadata → CloudTrail',C.muted,10);
+}
+
+/* PATCH MANAGER */
+function drawPatch(){
+  const s=setup('patchCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Patch Manager — Lifecycle',C.muted,11);
+
+  const steps=[
+    {l:'Patch Baseline',sub:'Approve rules',ic:'📋',c:C.blue},
+    {l:'Maintenance\nWindow',sub:'When to patch',ic:'🗓️',c:C.purple},
+    {l:'Register Targets',sub:'Tag: PatchGroup',ic:'🎯',c:C.orange},
+    {l:'Run Baseline',sub:'AWS-RunPatch...',ic:'⚙️',c:C.teal2},
+    {l:'Compliance',sub:'Compliant / Not',ic:'📊',c:C.green},
+  ];
+  const bw=Math.min(130,(W-60)/steps.length-10);
+  const gap=(W-40-bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,30,bw,100,st.c,st.l,st.sub,st.ic);
+    if(i<steps.length-1) arr(ctx,x+bw+2,80,x+bw+gap-2,80,C.border);
+  });
+
+  // Compliance result
+  const cy=155;
+  txt(ctx,W*0.3,cy+18,'✅ Compliant',C.green,11);
+  ctx.fillStyle='rgba(63,185,80,0.1)'; ctx.strokeStyle=C.green; ctx.lineWidth=1;
+  rr(ctx,W*0.2,cy,160,30,6); ctx.fill(); ctx.stroke();
+
+  txt(ctx,W*0.7,cy+18,'❌ Non-Compliant → Alert',C.red,11);
+  ctx.fillStyle='rgba(248,81,73,0.1)'; ctx.strokeStyle=C.red; ctx.lineWidth=1;
+  rr(ctx,W*0.58,cy,200,30,6); ctx.fill(); ctx.stroke();
+
+  txt(ctx,W/2,H-8,'Dev → Staging → Production patch waves via separate maintenance windows',C.muted,10);
+}
+
+/* AUTOMATION */
+function drawAuto(){
+  const s=setup('autoCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Automation Runbook — Execution Flow',C.muted,11);
+
+  const steps=[
+    {l:'Trigger',sub:'Console/API/\nEventBridge',ic:'⚡',c:C.blue},
+    {l:'Validate\nParams',sub:'Input check',ic:'✅',c:C.teal2},
+    {l:'Step 1',sub:'aws:runInstances',ic:'🖥️',c:C.green},
+    {l:'Step 2',sub:'aws:waitFor...',ic:'⏳',c:C.yellow},
+    {l:'Step 3',sub:'aws:approve',ic:'👤',c:C.orange},
+    {l:'Step 4',sub:'aws:createImage',ic:'🖼️',c:C.purple},
+    {l:'Complete',sub:'Success/Failed',ic:'🏁',c:C.green},
+  ];
+  const bw=Math.min(100,(W-60)/steps.length-8);
+  const gap=(W-40-bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,30,bw,110,st.c,st.l,st.sub,st.ic);
+    if(i<steps.length-1) arr(ctx,x+bw+2,85,x+bw+gap-2,85,C.border);
+  });
+
+  // Rate control banner
+  ctx.fillStyle='rgba(232,131,74,0.07)'; ctx.strokeStyle=C.orange; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  rr(ctx,20,155,W-40,40,6); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx,W/2,179,'⚙️  Rate Control: max 20% concurrency · stop if >5% error rate · Change Manager approval optional',C.orange,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawParam,drawRun,drawSession,drawPatch,drawAuto,null,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

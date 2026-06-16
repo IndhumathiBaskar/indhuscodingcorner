@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS S3 Glacier – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #5b6ee8;   /* Glacier blue-violet */
+    --accent2:    #7b8ef0;
+    --accent-dim: rgba(91,110,232,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  /* HEADER */
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent2); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* HERO */
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #060818 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(91,110,232,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(91,110,232,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent2); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  /* TAB NAV */
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  /* CONTENT */
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* HEADINGS */
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  /* STORAGE CLASS CARDS */
+  .sc-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .sc-grid{ grid-template-columns:1fr; } }
+  .sc-card { background: var(--surface); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+  .sc-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--sc-col,var(--accent2)); }
+  .sc-name { font-size: 13px; font-weight: 800; margin-bottom: 4px; color: var(--sc-col, var(--accent2)); }
+  .sc-retrieval { font-size: 11px; font-family: var(--mono); color: var(--muted); margin-bottom: 10px; }
+  .sc-price { font-size: 12px; color: var(--green); font-weight: 600; margin-bottom: 8px; font-family: var(--mono); }
+  .sc-desc { font-size: 12px; color: var(--muted); }
+
+  /* CALLOUTS */
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-violet { background: var(--accent-dim); border: 1px solid rgba(91,110,232,0.3); border-left: 3px solid var(--accent2); }
+  .callout-violet strong { color: var(--accent2); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  /* TAGS */
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-violet { background: var(--accent-dim); color: var(--accent2); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .tag-teal   { background: rgba(38,166,127,0.15); color: var(--teal); }
+
+  /* TABLE */
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent2); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  /* CODE */
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent2); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+
+  /* CANVAS */
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  /* PSEUDO */
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent2); } .pn { color: var(--green); }
+
+  /* RETRIEVAL TIMELINE */
+  .timeline { display: flex; flex-direction: column; gap: 0; margin-bottom: 20px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .tl-row { display: grid; grid-template-columns: 180px 1fr; gap: 0; border-bottom: 1px solid var(--border); }
+  .tl-row:last-child { border-bottom: none; }
+  .tl-label { padding: 13px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-right: 1px solid var(--border); }
+  .tl-bar-wrap { padding: 12px 16px; display: flex; align-items: center; }
+  .tl-bar { height: 22px; border-radius: 4px; display: flex; align-items: center; padding: 0 10px; font-size: 11px; font-weight: 600; white-space: nowrap; min-width: 60px; }
+  @media(max-width:500px){ .tl-row{ grid-template-columns:130px 1fr; } .tl-label{ font-size:11px; padding:10px 10px; } }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(91,110,232,0.35); color: var(--accent2); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  /* COMPLETION */
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(91,110,232,0.1) 100%); border: 1px solid rgba(91,110,232,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  /* MOBILE */
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS S3 Glacier</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🧊 Long-Term Archive Storage</div>
+  <h1>AWS S3 <span>Glacier</span></h1>
+  <p>Ultra-low-cost cloud archive storage for data that is rarely accessed — built for compliance, backup, and long-term retention at cents per GB per month.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🧊 Instant Retrieval</span>
+    <span class="hero-pill">⏱️ Flexible Retrieval</span>
+    <span class="hero-pill">🏔️ Deep Archive</span>
+    <span class="hero-pill">🔒 Vault Lock</span>
+    <span class="hero-pill">📋 Lifecycle Policies</span>
+    <span class="hero-pill">🔍 Inventory</span>
+    <span class="hero-pill">📦 Multipart Upload</span>
+    <span class="hero-pill">🔑 KMS Encryption</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🧊 Storage Classes</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">⏱️ Retrieval</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">📋 Lifecycle Policies</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🔒 Vault Lock</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">💰 Pricing</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is S3 Glacier?</h2>
+  <p class="section-sub">Three archive storage classes inside Amazon S3 — designed for data you keep for years but rarely need to access.</p>
+
+  <div class="callout callout-violet">
+    <strong>One-liner</strong>
+    S3 Glacier = archive storage at <strong>$0.004–$0.00099/GB/month</strong> (vs S3 Standard $0.023/GB). Trade retrieval speed for massive cost savings. Three tiers: Instant, Flexible, and Deep Archive.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="310"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🧊 Glacier Instant Retrieval</div>
+      <p>Millisecond access like S3 Standard — but <strong style="color:var(--text)">68% cheaper</strong> for storage. Access once per quarter. Same retrieval latency as S3.</p>
+      <p><span class="tag tag-green">$0.004/GB/month</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">⏱️ Glacier Flexible Retrieval</div>
+      <p>Formerly "S3 Glacier". Minutes to hours retrieval. Three speeds: Expedited (1–5 min), Standard (3–5 hr), Bulk (5–12 hr).</p>
+      <p><span class="tag tag-blue">$0.0036/GB/month</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏔️ Glacier Deep Archive</div>
+      <p>Lowest cost storage on AWS. 7–12 hour retrieval. For data accessed once or twice a year. Ideal for regulatory archives kept 7–10 years.</p>
+      <p><span class="tag tag-violet">$0.00099/GB/month</span></p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>Key Concepts</strong>
+    <strong style="color:var(--text)">Archive</strong> — a single object stored in Glacier (up to 40 TB). 
+    <strong style="color:var(--text)">Vault</strong> — container for archives (like an S3 bucket, legacy Glacier API only). 
+    <strong style="color:var(--text)">S3 Storage Class</strong> — modern way: store in S3 bucket, set storage class to Glacier. 
+    <strong style="color:var(--text)">Vault Lock</strong> — immutable compliance policy (WORM).
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Two Ways to Use Glacier</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Via S3 (Recommended)</div>
+      <p>Upload to S3 bucket, set object storage class to <code>GLACIER</code> or <code>DEEP_ARCHIVE</code>. Use S3 Lifecycle rules to automatically transition objects. Use S3 API (<code>RestoreObject</code>) for retrieval. Full S3 feature set — versioning, replication, inventory.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Via Glacier API (Legacy)</div>
+      <p>Direct Glacier API with Vaults and Archives. Separate namespace from S3. Requires job-based retrieval (async). Used for legacy integrations. <strong style="color:var(--text)">New workloads should use S3 + Glacier storage class.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 1: STORAGE CLASSES -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🧊 Glacier Storage Classes</h2>
+  <p class="section-sub">Three tiers — choose based on how often you need access and how fast you need it back.</p>
+
+  <div class="sc-grid">
+    <div class="sc-card" style="--sc-col:#3fb950">
+      <div class="sc-name">S3 Glacier Instant Retrieval</div>
+      <div class="sc-retrieval">⚡ Retrieval: Milliseconds</div>
+      <div class="sc-price">~$0.004 / GB / month</div>
+      <div class="sc-desc">For archive data accessed once per quarter. Same retrieval latency as S3 Standard-IA. Minimum storage duration: 90 days. Best for medical images, news media, user-generated content archives.</div>
+    </div>
+    <div class="sc-card" style="--sc-col:#58a6ff">
+      <div class="sc-name">S3 Glacier Flexible Retrieval</div>
+      <div class="sc-retrieval">⏱️ Retrieval: 1 min – 12 hr</div>
+      <div class="sc-price">~$0.0036 / GB / month</div>
+      <div class="sc-desc">For archive data accessed 1–2× per year. Three retrieval speeds. Free bulk retrievals. Minimum storage duration: 90 days. Best for backup, DR, yearly audits, compliance archives.</div>
+    </div>
+    <div class="sc-card" style="--sc-col:#7b8ef0">
+      <div class="sc-name">S3 Glacier Deep Archive</div>
+      <div class="sc-retrieval">🐢 Retrieval: 12 – 48 hr</div>
+      <div class="sc-price">~$0.00099 / GB / month</div>
+      <div class="sc-desc">Lowest cost AWS storage. For data accessed once or twice a year, retained 7–10+ years. Replaces magnetic tape. Minimum storage duration: 180 days. Best for financial records, healthcare data, legal archives.</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="classCanvas" width="860" height="200"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Full S3 Storage Class Comparison</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead>
+        <tr><th>Storage Class</th><th>Retrieval Time</th><th>Storage Cost</th><th>Min Duration</th><th>AZs</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>S3 Standard</td><td>Milliseconds</td><td>$0.023/GB</td><td>None</td><td>≥3</td></tr>
+        <tr><td>S3 Standard-IA</td><td>Milliseconds</td><td>$0.0125/GB</td><td>30 days</td><td>≥3</td></tr>
+        <tr><td>S3 One Zone-IA</td><td>Milliseconds</td><td>$0.01/GB</td><td>30 days</td><td>1</td></tr>
+        <tr><td>S3 Intelligent-Tiering</td><td>ms – hours</td><td>$0.023–$0.00099/GB</td><td>None</td><td>≥3</td></tr>
+        <tr><td><strong style="color:var(--green)">Glacier Instant</strong></td><td><strong style="color:var(--green)">Milliseconds</strong></td><td><strong style="color:var(--green)">$0.004/GB</strong></td><td>90 days</td><td>≥3</td></tr>
+        <tr><td><strong style="color:var(--blue)">Glacier Flexible</strong></td><td><strong style="color:var(--blue)">1 min – 12 hr</strong></td><td><strong style="color:var(--blue)">$0.0036/GB</strong></td><td>90 days</td><td>≥3</td></tr>
+        <tr><td><strong style="color:var(--accent2)">Glacier Deep Archive</strong></td><td><strong style="color:var(--accent2)">12 – 48 hr</strong></td><td><strong style="color:var(--accent2)">$0.00099/GB</strong></td><td>180 days</td><td>≥3</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Minimum Storage Duration Charges</strong>
+    If you delete, overwrite, or transition an object before its minimum duration, you're still charged for the full minimum period. E.g. delete a Glacier Deep Archive object after 60 days → charged for 180 days.
+  </div>
+</section>
+
+<!-- TAB 2: RETRIEVAL -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">⏱️ Retrieval Options</h2>
+  <p class="section-sub">How to get your data back from Glacier — speed vs cost trade-off.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="retrievalCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Retrieval Tiers by Storage Class</h3>
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--green)">🧊 Instant<br><small style="color:var(--muted);font-weight:400">Retrieval</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(63,185,80,0.2);color:var(--green);width:8%">ms</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">Standard only — milliseconds, like S3. No retrieval tiers.</span></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--orange)">⏱️ Flexible<br><small style="color:var(--muted);font-weight:400">Expedited</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(232,131,74,0.2);color:var(--orange);width:12%">1–5 min</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">On-demand. Higher cost. Use for urgent retrieval. Provisioned capacity available.</span></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--blue)">⏱️ Flexible<br><small style="color:var(--muted);font-weight:400">Standard</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(88,166,255,0.2);color:var(--blue);width:35%">3–5 hours</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">Default. Moderate cost. Most common for planned restores.</span></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--teal)">⏱️ Flexible<br><small style="color:var(--muted);font-weight:400">Bulk</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(38,166,127,0.2);color:var(--teal);width:60%">5–12 hours</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">Free retrieval. Lowest cost. For non-urgent large batch restores.</span></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--blue)">🏔️ Deep Archive<br><small style="color:var(--muted);font-weight:400">Standard</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(88,166,255,0.2);color:var(--blue);width:70%">12 hours</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">Default. Cost per GB retrieved.</span></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label" style="color:var(--accent2)">🏔️ Deep Archive<br><small style="color:var(--muted);font-weight:400">Bulk</small></div>
+      <div class="tl-bar-wrap"><div class="tl-bar" style="background:rgba(91,110,232,0.2);color:var(--accent2);width:90%">48 hours</div><span style="margin-left:10px;font-size:12px;color:var(--muted)">Lowest cost. For very large batch restores within 48 hrs.</span></div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">S3 RestoreObject — How It Works</h3>
+  <div class="callout callout-blue">
+    <strong>Glacier objects in S3 are not directly readable</strong>
+    You must first initiate a restore job via <code>RestoreObject</code>. AWS creates a temporary copy in S3 Standard for the duration you specify (days). After that window expires, the temporary copy is deleted — the original Glacier object remains.
+  </div>
+
+  <ul class="steps">
+    <li><div class="step-num">1</div><div class="step-body"><strong>Initiate Restore (RestoreObject)</strong>Call <code>RestoreObject</code> with retrieval tier and number of days to keep the restored copy available.</div></li>
+    <li><div class="step-num">2</div><div class="step-body"><strong>Wait for Restore</strong>Poll <code>HeadObject</code> for <code>x-amz-restore</code> header. Or set up S3 Event Notification → SNS/SQS/Lambda on <code>s3:ObjectRestore:Completed</code>.</div></li>
+    <li><div class="step-num">3</div><div class="step-body"><strong>Download Restored Copy</strong>Once restored, use <code>GetObject</code> as normal. The temporary copy is available in S3 Standard for the specified number of days.</div></li>
+    <li><div class="step-num">4</div><div class="step-body"><strong>Restore Expires</strong>After the restore window closes, the temporary copy is deleted. The original archive in Glacier remains intact and can be restored again.</div></li>
+  </ul>
+
+  <div class="pseudo">
+<span class="pk">RESTORE FLOW (S3 + Glacier Flexible):</span><br>
+<br>
+App → <span class="pn">RestoreObject</span>(<span class="pv">bucket, key, days=7, tier=Standard</span>)<br>
+&nbsp;&nbsp;└── Glacier job created → queued<br>
+<br>
+<span class="pk">Wait 3–5 hours</span> (Standard tier)<br>
+<br>
+Glacier job completes →<br>
+&nbsp;&nbsp;├── Temp copy created in S3 Standard<br>
+&nbsp;&nbsp;└── <span class="pn">s3:ObjectRestore:Completed</span> event → SNS → Lambda<br>
+<br>
+App → <span class="pn">GetObject</span>(<span class="pv">bucket, key</span>) <span class="cm">← downloads temp copy</span><br>
+<br>
+After 7 days → temp copy deleted <span class="cm">(original Glacier archive intact)</span>
+  </div>
+</section>
+
+<!-- TAB 3: LIFECYCLE POLICIES -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">📋 S3 Lifecycle Policies</h2>
+  <p class="section-sub">Automatically transition objects between storage classes and expire them — set it once, save forever.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="lifecycleCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <div class="callout callout-violet">
+    <strong>Lifecycle Rules = Automatic Cost Optimisation</strong>
+    Define rules on an S3 bucket: after N days, move objects to a cheaper class. After M days, move to Glacier. After Y days, delete. Objects transition automatically — no code needed.
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Common Lifecycle Pattern — 3-Tier Archive</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">S3 Lifecycle configuration — transition to Glacier then Deep Archive</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"Rules"</span>: [
+    {
+      <span class="str">"ID"</span>: <span class="str">"ArchiveAndExpire"</span>,
+      <span class="str">"Status"</span>: <span class="str">"Enabled"</span>,
+      <span class="str">"Filter"</span>: { <span class="str">"Prefix"</span>: <span class="str">"logs/"</span> },
+      <span class="str">"Transitions"</span>: [
+        {
+          <span class="str">"Days"</span>: <span class="num">30</span>,
+          <span class="str">"StorageClass"</span>: <span class="str">"STANDARD_IA"</span>
+        },
+        {
+          <span class="str">"Days"</span>: <span class="num">90</span>,
+          <span class="str">"StorageClass"</span>: <span class="str">"GLACIER_IR"</span>    <span class="cm">// Glacier Instant Retrieval</span>
+        },
+        {
+          <span class="str">"Days"</span>: <span class="num">180</span>,
+          <span class="str">"StorageClass"</span>: <span class="str">"GLACIER"</span>        <span class="cm">// Glacier Flexible Retrieval</span>
+        },
+        {
+          <span class="str">"Days"</span>: <span class="num">365</span>,
+          <span class="str">"StorageClass"</span>: <span class="str">"DEEP_ARCHIVE"</span>   <span class="cm">// Glacier Deep Archive</span>
+        }
+      ],
+      <span class="str">"Expiration"</span>: {
+        <span class="str">"Days"</span>: <span class="num">2555</span>   <span class="cm">// Delete after 7 years</span>
+      },
+      <span class="str">"NoncurrentVersionTransitions"</span>: [
+        {
+          <span class="str">"NoncurrentDays"</span>: <span class="num">30</span>,
+          <span class="str">"StorageClass"</span>: <span class="str">"GLACIER"</span>
+        }
+      ],
+      <span class="str">"NoncurrentVersionExpiration"</span>: {
+        <span class="str">"NoncurrentDays"</span>: <span class="num">90</span>
+      }
+    }
+  ]
+}</pre>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🎯 Lifecycle Filter Options</div>
+      <p><strong style="color:var(--text)">Prefix</strong> — apply to objects with key prefix (e.g. <code>logs/</code>)</p>
+      <p><strong style="color:var(--text)">Tag</strong> — apply to objects with specific tags (e.g. <code>archive=true</code>)</p>
+      <p><strong style="color:var(--text)">Object size</strong> — min/max size filter (e.g. only objects &gt; 128 KB)</p>
+      <p><strong style="color:var(--text)">No filter</strong> — apply to entire bucket</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚙️ Lifecycle Actions</div>
+      <p><strong style="color:var(--text)">Transition</strong> — move to cheaper storage class after N days</p>
+      <p><strong style="color:var(--text)">Expiration</strong> — permanently delete object after N days</p>
+      <p><strong style="color:var(--text)">NoncurrentVersion</strong> — manage old versions (versioned bucket)</p>
+      <p><strong style="color:var(--text)">AbortIncompleteMultipartUpload</strong> — clean up stuck uploads</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 4: VAULT LOCK -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🔒 Vault Lock &amp; Object Lock</h2>
+  <p class="section-sub">Enforce immutability — prevent deletion or modification of archived data for compliance (WORM).</p>
+
+  <div class="canvas-wrap">
+    <canvas id="lockCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔒 S3 Glacier Vault Lock (Legacy API)</div>
+      <p>Attach a Vault Lock policy to a Glacier vault. Policy is locked — cannot be changed or deleted once confirmed. Enforces WORM (Write Once Read Many) compliance.</p>
+      <p>Supports conditions like minimum retention period, MFA delete, and deny all deletes.</p>
+      <p><span class="tag tag-violet">Legacy Glacier API</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔐 S3 Object Lock (Modern)</div>
+      <p>Per-object immutability on S3 buckets with versioning enabled. Two modes: <strong style="color:var(--text)">Governance</strong> (admin can override) and <strong style="color:var(--text)">Compliance</strong> (no one can delete — not even root).</p>
+      <p>Works with Glacier storage classes. The recommended approach for new workloads.</p>
+      <p><span class="tag tag-green">Modern S3 API</span></p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">S3 Object Lock Modes</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Mode</th><th>Who Can Delete?</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-yellow">Governance Mode</span></td>
+          <td>Users with <code>s3:BypassGovernanceRetention</code> permission</td>
+          <td>Internal compliance with admin override ability</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-red">Compliance Mode</span></td>
+          <td><strong>Nobody</strong> — not even AWS root account</td>
+          <td>SEC 17a-4, FINRA, HIPAA — strict regulatory WORM</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-blue">Legal Hold</span></td>
+          <td>Nobody while hold active — no expiry date</td>
+          <td>Litigation holds — turn on/off without retention date</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Vault Lock Policy Example</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">Glacier Vault Lock — deny all deletes (WORM)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"Version"</span>: <span class="str">"2012-10-17"</span>,
+  <span class="str">"Statement"</span>: [
+    {
+      <span class="str">"Sid"</span>: <span class="str">"DenyDeletion"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+      <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+      <span class="str">"Action"</span>: [
+        <span class="str">"glacier:DeleteArchive"</span>,
+        <span class="str">"glacier:DeleteVault"</span>
+      ],
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>
+    },
+    {
+      <span class="str">"Sid"</span>: <span class="str">"EnforceMinRetention"</span>,
+      <span class="str">"Effect"</span>: <span class="str">"Deny"</span>,
+      <span class="str">"Principal"</span>: <span class="str">"*"</span>,
+      <span class="str">"Action"</span>: <span class="str">"glacier:DeleteArchive"</span>,
+      <span class="str">"Resource"</span>: <span class="str">"*"</span>,
+      <span class="str">"Condition"</span>: {
+        <span class="str">"NumericLessThan"</span>: {
+          <span class="str">"glacier:ArchiveAgeInDays"</span>: <span class="str">"365"</span>
+        }
+      }
+    }
+  ]
+}</pre>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>⚠️ Vault Lock is PERMANENT</strong>
+    Once a Vault Lock policy is completed (confirmed), it <strong>cannot be changed or deleted</strong>. You have a 24-hour window after initiating to abort the lock. After confirmation — it's permanent, even for the AWS account root user.
+  </div>
+</section>
+
+<!-- TAB 5: C# SDK -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+  <p class="section-sub">Using <code>AWSSDK.S3</code> for S3 + Glacier storage classes (recommended approach).</p>
+
+  <div class="callout callout-violet">
+    <strong>NuGet</strong>
+    <code>dotnet add package AWSSDK.S3</code> — use S3 API with Glacier storage classes. For legacy Glacier API: <code>AWSSDK.Glacier</code>.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Upload directly to Glacier Instant Retrieval</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.S3;
+<span class="kw">using</span> Amazon.S3.Model;
+
+<span class="kw">var</span> <span class="var">s3</span> = <span class="kw">new</span> <span class="typ">AmazonS3Client</span>();
+
+<span class="cm">// Upload with Glacier Instant Retrieval storage class</span>
+<span class="kw">await</span> <span class="var">s3</span>.<span class="fn">PutObjectAsync</span>(<span class="kw">new</span> <span class="typ">PutObjectRequest</span>
+{
+    BucketName   = <span class="str">"my-archive-bucket"</span>,
+    Key          = <span class="str">"backups/2024/annual-report.pdf"</span>,
+    FilePath     = <span class="str">"C:\\Reports\\annual-report.pdf"</span>,
+    StorageClass = S3StorageClass.GlacierInstantRetrieval,  <span class="cm">// GLACIER_IR</span>
+    ServerSideEncryptionMethod = ServerSideEncryptionMethod.AWSKMS,
+    ServerSideEncryptionKeyManagementServiceKeyId = <span class="str">"arn:aws:kms:..."</span>
+});
+
+<span class="cm">// Other storage class options:</span>
+<span class="cm">// S3StorageClass.Glacier          → Glacier Flexible Retrieval</span>
+<span class="cm">// S3StorageClass.DeepArchive      → Glacier Deep Archive</span>
+<span class="cm">// S3StorageClass.IntelligentTiering</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Initiate restore from Glacier Flexible Retrieval</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Step 1: Initiate restore job</span>
+<span class="kw">await</span> <span class="var">s3</span>.<span class="fn">RestoreObjectAsync</span>(<span class="kw">new</span> <span class="typ">RestoreObjectRequest</span>
+{
+    BucketName = <span class="str">"my-archive-bucket"</span>,
+    Key        = <span class="str">"backups/2024/annual-report.pdf"</span>,
+    Days       = <span class="num">7</span>,   <span class="cm">// keep temp copy available for 7 days</span>
+    RestoreRequestType = RestoreRequestType.SELECT,
+    RetrievalTier      = GlacierJobTier.Standard  <span class="cm">// Expedited | Standard | Bulk</span>
+});
+
+<span class="cm">// Step 2: Poll until restored</span>
+<span class="kw">while</span> (<span class="kw">true</span>)
+{
+    <span class="kw">var</span> <span class="var">meta</span> = <span class="kw">await</span> <span class="var">s3</span>.<span class="fn">GetObjectMetadataAsync</span>(<span class="kw">new</span> <span class="typ">GetObjectMetadataRequest</span>
+        { BucketName = <span class="str">"my-archive-bucket"</span>, Key = <span class="str">"backups/2024/annual-report.pdf"</span> });
+
+    <span class="kw">var</span> <span class="var">restoreHeader</span> = <span class="var">meta</span>.RestoreInProgress;
+
+    <span class="kw">if</span> (!<span class="var">restoreHeader</span>)
+    {
+        Console.<span class="fn">WriteLine</span>(<span class="str">"✅ Restore complete — object is now readable"</span>);
+        <span class="kw">break</span>;
+    }
+
+    Console.<span class="fn">WriteLine</span>(<span class="str">"⏳ Restore in progress..."</span>);
+    <span class="kw">await</span> <span class="typ">Task</span>.<span class="fn">Delay</span>(<span class="typ">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">5</span>));
+}
+
+<span class="cm">// Step 3: Download restored object</span>
+<span class="kw">var</span> <span class="var">obj</span> = <span class="kw">await</span> <span class="var">s3</span>.<span class="fn">GetObjectAsync</span>(<span class="str">"my-archive-bucket"</span>, <span class="str">"backups/2024/annual-report.pdf"</span>);
+<span class="kw">using var</span> <span class="var">fs</span> = <span class="typ">File</span>.<span class="fn">Create</span>(<span class="str">"restored-report.pdf"</span>);
+<span class="kw">await</span> <span class="var">obj</span>.ResponseStream.<span class="fn">CopyToAsync</span>(<span class="var">fs</span>);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Set S3 Lifecycle rules via SDK</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.S3.Model;
+
+<span class="kw">await</span> <span class="var">s3</span>.<span class="fn">PutLifecycleConfigurationAsync</span>(<span class="kw">new</span> <span class="typ">PutLifecycleConfigurationRequest</span>
+{
+    BucketName = <span class="str">"my-archive-bucket"</span>,
+    Configuration = <span class="kw">new</span> <span class="typ">LifecycleConfiguration</span>
+    {
+        Rules =
+        [
+            <span class="kw">new</span> <span class="typ">LifecycleRule</span>
+            {
+                Id     = <span class="str">"ArchiveLogs"</span>,
+                Status = LifecycleRuleStatus.Enabled,
+                Filter = <span class="kw">new</span> <span class="typ">LifecycleFilter</span>
+                {
+                    LifecycleFilterPredicate = <span class="kw">new</span> <span class="typ">LifecyclePrefixPredicate</span>
+                        { Prefix = <span class="str">"logs/"</span> }
+                },
+                Transitions =
+                [
+                    <span class="kw">new</span> <span class="typ">LifecycleTransition</span>
+                        { Days = <span class="num">90</span>,  StorageClassTransition = S3StorageClass.GlacierInstantRetrieval },
+                    <span class="kw">new</span> <span class="typ">LifecycleTransition</span>
+                        { Days = <span class="num">365</span>, StorageClassTransition = S3StorageClass.DeepArchive }
+                ],
+                Expiration = <span class="kw">new</span> <span class="typ">LifecycleRuleExpiration</span> { Days = <span class="num">2555</span> }
+            }
+        ]
+    }
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Enable S3 Object Lock on upload (WORM)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Bucket must have Object Lock enabled at creation</span>
+<span class="kw">await</span> <span class="var">s3</span>.<span class="fn">PutObjectAsync</span>(<span class="kw">new</span> <span class="typ">PutObjectRequest</span>
+{
+    BucketName   = <span class="str">"my-compliant-archive"</span>,
+    Key          = <span class="str">"financial/2024/q4-report.pdf"</span>,
+    FilePath     = <span class="str">"q4-report.pdf"</span>,
+    StorageClass = S3StorageClass.DeepArchive,
+    ObjectLockMode            = ObjectLockMode.Compliance,
+    ObjectLockRetainUntilDate = DateTime.UtcNow.AddYears(<span class="num">7</span>)  <span class="cm">// lock for 7 years</span>
+});
+
+<span class="cm">// Add Legal Hold (no expiry date)</span>
+<span class="kw">await</span> <span class="var">s3</span>.<span class="fn">PutObjectLegalHoldAsync</span>(<span class="kw">new</span> <span class="typ">PutObjectLegalHoldRequest</span>
+{
+    BucketName = <span class="str">"my-compliant-archive"</span>,
+    Key        = <span class="str">"financial/2024/q4-report.pdf"</span>,
+    LegalHold  = <span class="kw">new</span> <span class="typ">ObjectLockLegalHold</span>
+        { Status = ObjectLockLegalHoldStatus.On }
+});</pre>
+  </div>
+</section>
+
+<!-- TAB 6: PRICING -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">💰 Pricing Breakdown</h2>
+  <p class="section-sub">Understanding Glacier costs — storage is cheap, retrieval and early deletion have hidden costs.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="priceCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-violet">
+    <strong>Glacier Cost = Storage + Retrieval + Requests + Early Deletion Penalty</strong>
+    Storage cost is tiny. The cost levers are retrieval fees (per GB retrieved), retrieval request fees, and early deletion charges if you delete before minimum duration. Plan your access patterns carefully.
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Cost Component</th><th>Glacier Instant</th><th>Glacier Flexible</th><th>Deep Archive</th></tr></thead>
+      <tbody>
+        <tr><td>Storage</td><td>$0.004/GB/mo</td><td>$0.0036/GB/mo</td><td>$0.00099/GB/mo</td></tr>
+        <tr><td>Retrieval (data)</td><td>$0.03/GB</td><td>Expedited: $0.03/GB<br>Standard: $0.01/GB<br>Bulk: Free</td><td>Standard: $0.02/GB<br>Bulk: $0.0025/GB</td></tr>
+        <tr><td>Retrieval (request)</td><td>$0.01/1000 reqs</td><td>Expedited: $10/1000<br>Standard: $0.05/1000<br>Bulk: $0.025/1000</td><td>Standard: $0.10/1000<br>Bulk: $0.025/1000</td></tr>
+        <tr><td>Minimum duration</td><td>90 days</td><td>90 days</td><td>180 days</td></tr>
+        <tr><td>Min object size billed</td><td>128 KB</td><td>40 KB</td><td>40 KB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Cost Savings Example</h3>
+  <div class="card">
+    <div class="card-title">📊 Storing 100 TB of Log Archives</div>
+    <p><span class="tag tag-blue">S3 Standard</span> → 100 TB × $0.023 = <strong style="color:var(--red)">$2,300/month</strong></p>
+    <p><span class="tag tag-green">Glacier Instant</span> → 100 TB × $0.004 = <strong style="color:var(--green)">$400/month</strong> <span style="color:var(--green)">↓ 83% saving</span></p>
+    <p><span class="tag tag-blue">Glacier Flexible</span> → 100 TB × $0.0036 = <strong style="color:var(--green)">$360/month</strong> <span style="color:var(--green)">↓ 84% saving</span></p>
+    <p><span class="tag tag-violet">Deep Archive</span> → 100 TB × $0.00099 = <strong style="color:var(--green)">$99/month</strong> <span style="color:var(--green)">↓ 96% saving</span></p>
+    <p style="margin-top:8px;color:var(--muted);font-size:13px">Plus retrieval costs when needed. Deep Archive saves ~$2,200/month vs S3 Standard for rarely accessed logs.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">💡 Provisioned Capacity (Flexible)</div>
+      <p>Purchase provisioned retrieval capacity units for Glacier Flexible to guarantee Expedited retrievals within 1–5 minutes even during peak demand. Each unit = 3 retrievals/min up to 250 MB/s. $100/unit/month.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠️ Free Tier Monthly</div>
+      <p>Glacier Flexible: <strong style="color:var(--text)">10 GB free</strong> Standard retrieval per month. Bulk retrievals are always free. Deep Archive: no free retrieval tier.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Get the most out of Glacier — cost, compliance, and retrieval efficiency.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Use Lifecycle Rules</div>
+      <p>Never manually move objects to Glacier. Define lifecycle rules at bucket or prefix level — automatic, consistent, zero operational overhead.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Choose the Right Tier</div>
+      <p>Access quarterly? → Glacier Instant. Access 1–2× per year, tolerate hours? → Glacier Flexible. Access once per year, tolerate days? → Deep Archive.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Avoid Early Deletion</div>
+      <p>Don't delete Glacier objects before minimum duration (90/180 days). You'll be charged for the full minimum. Use lifecycle expiration to manage deletions automatically after the minimum.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use S3 Event Notifications</div>
+      <p>Don't poll for restore completion. Set up <code>s3:ObjectRestore:Completed</code> event → SNS or Lambda. Notification arrives when restore is ready — no wasted API calls.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Tag Archives for Governance</div>
+      <p>Tag objects with <code>retention-years</code>, <code>compliance-type</code>, <code>data-owner</code>. Use tag-based lifecycle rules and cost allocation tags to track archive costs by project.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Enable S3 Inventory</div>
+      <p>Enable S3 Inventory to get a daily/weekly CSV of all objects + their storage class, size, encryption status. Query with Athena for audit reports.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Encrypt Everything</div>
+      <p>Enable SSE-S3 or SSE-KMS on the bucket. For compliance data, use CMK (customer-managed key) so you control key rotation and can audit key usage in CloudTrail.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Test Restores Regularly</div>
+      <p>Schedule quarterly restore drills. Verify that archived data is actually retrievable before you need it in a real DR or compliance audit scenario. Document restore time per tier.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Use Case → Glacier Tier Decision Tree</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Data Type</th><th>Access Frequency</th><th>Max Wait Time</th><th>Recommended Tier</th></tr></thead>
+      <tbody>
+        <tr><td>Medical imaging archives</td><td>Once per quarter</td><td>Milliseconds</td><td><span class="tag tag-green">Glacier Instant</span></td></tr>
+        <tr><td>Application log archives</td><td>Once per year</td><td>3–5 hours</td><td><span class="tag tag-blue">Glacier Flexible</span></td></tr>
+        <tr><td>Database backups (DR)</td><td>Rarely (emergency only)</td><td>Hours</td><td><span class="tag tag-blue">Glacier Flexible</span></td></tr>
+        <tr><td>Financial records (7 yr)</td><td>Once per year (audit)</td><td>12–48 hours</td><td><span class="tag tag-violet">Deep Archive</span></td></tr>
+        <tr><td>Video/raw media masters</td><td>Rarely</td><td>12–48 hours</td><td><span class="tag tag-violet">Deep Archive</span></td></tr>
+        <tr><td>Compliance / legal hold</td><td>Litigation only</td><td>48 hours OK</td><td><span class="tag tag-violet">Deep Archive + Object Lock</span></td></tr>
+        <tr><td>Active ML training data</td><td>Weekly</td><td>Milliseconds</td><td><span class="tag tag-orange">S3 Standard-IA instead</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">Everything you need to know about AWS S3 Glacier at a glance.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🧊 Instant Retrieval</div>
+      <p>Millisecond access. $0.004/GB/mo. 90-day min. Best for quarterly access — medical images, news archives.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⏱️ Flexible Retrieval</div>
+      <p>1 min–12 hr. $0.0036/GB/mo. 3 speeds. Bulk is free. Best for yearly audits, DR backups.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏔️ Deep Archive</div>
+      <p>12–48 hr. $0.00099/GB/mo. 180-day min. Cheapest on AWS. Best for 7+ year regulatory retention.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 Lifecycle Policies</div>
+      <p>Auto-transition objects: Standard → IA → Glacier IR → Glacier Flexible → Deep Archive → Expire. Set once, run forever.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 Object Lock / Vault Lock</div>
+      <p>WORM compliance. Governance (admin override) vs Compliance (nobody can delete). Legal Hold (no expiry). SEC 17a-4, HIPAA, FINRA ready.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⏬ Restore Flow</div>
+      <p>RestoreObject → wait (ms–48hr) → GetObject (temp copy, N days) → original archive stays intact in Glacier.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Topic</th><th>Key Point</th></tr></thead>
+      <tbody>
+        <tr><td>Min storage charge</td><td>90 days (Instant/Flexible), 180 days (Deep Archive)</td></tr>
+        <tr><td>Min object size billed</td><td>128 KB (Instant), 40 KB (Flexible/Deep Archive)</td></tr>
+        <tr><td>Free retrieval</td><td>Bulk tier on Glacier Flexible is always free</td></tr>
+        <tr><td>Restore API</td><td><code>RestoreObject</code> → poll <code>HeadObject</code> or use S3 event notification</td></tr>
+        <tr><td>Encryption</td><td>SSE-S3 default; SSE-KMS with CMK for compliance</td></tr>
+        <tr><td>WORM compliance</td><td>S3 Object Lock Compliance mode — no one can delete, not even root</td></tr>
+        <tr><td>Best integration</td><td>S3 bucket + Glacier storage class (not legacy Glacier API)</td></tr>
+        <tr><td>Audit / reporting</td><td>S3 Inventory → Athena for object-level archive reports</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS S3 Glacier!</h3>
+    <p>From choosing the right archive tier and setting up lifecycle policies, to restore flows, Vault Lock WORM compliance, and C# SDK integration — you're ready to build cost-efficient, compliant long-term archives on AWS.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawClass, drawRetrieval, drawLifecycle, drawLock, null, drawPrice, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  violet:'#5b6ee8', violet2:'#7b8ef0', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', orange:'#e8834a',
+  red:'#f85149', yellow:'#d29922', teal:'#26a67f',
+  text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='15px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-2:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+/* ARCH */
+function drawArch(){
+  const s=setup('archCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,15,'S3 Glacier — Storage Architecture',C.muted,11);
+
+  // S3 bucket
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.blue; ctx.lineWidth=2;
+  rr(ctx,20,30,W-40,60,10); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,52,'🪣  Amazon S3 Bucket',C.blue,13);
+  txt(ctx,W/2,70,'Objects stored with any storage class — including Glacier tiers',C.muted,10);
+
+  arr(ctx,W/2,90,W/2,110,C.border);
+
+  // Three glacier boxes
+  const tiers=[
+    {l:'🧊 Glacier Instant',sub:'$0.004/GB · ms access',c:C.green},
+    {l:'⏱️ Glacier Flexible',sub:'$0.0036/GB · min-hrs',c:C.blue},
+    {l:'🏔️ Deep Archive',sub:'$0.00099/GB · 12-48hr',c:C.violet2},
+  ];
+  const tw=(W-60)/3, tg=10;
+  tiers.forEach((t,i)=>{
+    const x=20+i*(tw+tg);
+    box(ctx,x,110,tw,64,t.c,t.l,t.sub,null);
+    if(i<2) arr(ctx,x+tw,142,x+tw+tg,142,C.border);
+  });
+
+  // Restore flow
+  arr(ctx,W/2,174,W/2,200,C.border);
+  box(ctx,20,200,W-40,52,C.orange,'RestoreObject → Wait → GetObject (temp copy, N days)','Original archive stays in Glacier',null);
+
+  // Lifecycle
+  ctx.fillStyle='rgba(91,110,232,0.06)'; ctx.strokeStyle=C.violet2; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  rr(ctx,12,22,W-24,220,12); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx,W-14,32,'S3 Lifecycle Policy auto-transitions objects between tiers',C.violet2,10,'right');
+}
+
+/* STORAGE CLASS VISUAL */
+function drawClass(){
+  const s=setup('classCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,16,'Cost vs Access Speed — Trade-off',C.muted,11);
+
+  // Axes
+  ctx.strokeStyle=C.border; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(60,H-30); ctx.lineTo(W-20,H-30); ctx.stroke(); // x-axis
+  ctx.beginPath(); ctx.moveTo(60,25); ctx.lineTo(60,H-30); ctx.stroke(); // y-axis
+  txt(ctx,W/2,H-10,'Storage Cost ($/GB/month) — lower is better →',C.muted,10);
+  txt(ctx,20,H/2,'Speed',C.muted,10,'center');
+
+  const pts=[
+    {l:'S3 Standard',x:0.85,y:0.12,c:C.orange},
+    {l:'Standard-IA',x:0.65,y:0.28,c:C.yellow},
+    {l:'Glacier IR',x:0.28,y:0.42,c:C.green},
+    {l:'Glacier Flex',x:0.22,y:0.68,c:C.blue},
+    {l:'Deep Archive',x:0.06,y:0.90,c:C.violet2},
+  ];
+  const pw=W-80, ph=H-55;
+  pts.forEach(p=>{
+    const px=60+p.x*pw, py=25+p.y*ph;
+    ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2); ctx.fillStyle=p.c+'44'; ctx.fill();
+    ctx.beginPath(); ctx.arc(px,py,7,0,Math.PI*2); ctx.strokeStyle=p.c; ctx.lineWidth=2; ctx.stroke();
+    const lx=p.x>0.5?px-10:px+10, align=p.x>0.5?'right':'left';
+    txt(ctx,lx,py-10,p.l,p.c,10,align);
+  });
+}
+
+/* RETRIEVAL CANVAS */
+function drawRetrieval(){
+  const s=setup('retrievalCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,16,'Retrieval Timeline Comparison',C.muted,11);
+
+  const tiers=[
+    {l:'Glacier Instant',t:'ms',w:0.02,c:C.green},
+    {l:'Flexible Expedited',t:'1-5 min',w:0.05,c:C.orange},
+    {l:'Flexible Standard',t:'3-5 hrs',w:0.35,c:C.blue},
+    {l:'Flexible Bulk',t:'5-12 hrs',w:0.60,c:C.teal},
+    {l:'Deep Archive Std',t:'12 hrs',w:0.70,c:C.violet2},
+    {l:'Deep Archive Bulk',t:'48 hrs',w:0.95,c:C.purple},
+  ];
+  const barH=22, startY=30, gap=6, maxW=W-220;
+  tiers.forEach((t,i)=>{
+    const y=startY+i*(barH+gap);
+    txt(ctx,140,y+barH/2+4,t.l,C.muted,10,'right');
+    const bw=Math.max(t.w*maxW,30);
+    ctx.fillStyle=t.c+'22'; ctx.strokeStyle=t.c; ctx.lineWidth=1;
+    rr(ctx,150,y,bw,barH,4); ctx.fill(); ctx.stroke();
+    txt(ctx,150+bw+6,y+barH/2+4,t.t,t.c,10,'left');
+  });
+  txt(ctx,W/2,H-6,'Time increases left → right. Cost decreases as time increases.',C.muted,10);
+}
+
+/* LIFECYCLE CANVAS */
+function drawLifecycle(){
+  const s=setup('lifecycleCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,15,'S3 Lifecycle — Automatic Transition Flow',C.muted,11);
+
+  const stages=[
+    {l:'S3 Standard',sub:'Day 0',c:C.orange,p:'$0.023'},
+    {l:'Standard-IA',sub:'Day 30',c:C.yellow,p:'$0.0125'},
+    {l:'Glacier IR',sub:'Day 90',c:C.green,p:'$0.004'},
+    {l:'Glacier Flex',sub:'Day 180',c:C.blue,p:'$0.0036'},
+    {l:'Deep Archive',sub:'Day 365',c:C.violet2,p:'$0.00099'},
+    {l:'💀 Deleted',sub:'Day 2555',c:C.red,p:'$0'},
+  ];
+  const bw=Math.min(110,(W-60)/stages.length-8);
+  const gap=(W-40-bw*stages.length)/(stages.length-1);
+  stages.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,28,bw,80,st.c,st.l,st.sub,null);
+    txt(ctx,x+bw/2,120,st.p,st.c,11);
+    if(i<stages.length-1){
+      arr(ctx,x+bw+2,68,x+bw+gap-2,68,C.border);
+      txt(ctx,x+bw+gap/2,58,'auto',C.muted,9);
+    }
+  });
+  txt(ctx,W/2,H-8,'Objects automatically transition — no code needed, set once in bucket lifecycle config',C.muted,10);
+}
+
+/* VAULT LOCK CANVAS */
+function drawLock(){
+  const s=setup('lockCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,15,'S3 Object Lock — WORM Compliance',C.muted,11);
+
+  // Upload
+  box(ctx,20,40,120,50,C.blue,'Upload','PutObject',null);
+  arr(ctx,140,65,210,65,C.blue);
+
+  // Object Lock
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.red; ctx.lineWidth=2;
+  rr(ctx,210,30,260,80,8); ctx.fill(); ctx.stroke();
+  txt(ctx,340,55,'🔒 Object Lock',C.red,13);
+  txt(ctx,340,70,'Compliance Mode',C.red,10);
+  arr(ctx,470,65,530,65,C.border);
+
+  // Two outcomes
+  box(ctx,530,30,140,50,C.green,'✅ Read','Allowed anytime',null);
+  box(ctx,530,90,140,50,C.red,'❌ Delete','DENIED (7 years)',null);
+
+  // Retention bar
+  ctx.fillStyle='rgba(248,81,73,0.08)'; ctx.strokeStyle=C.red; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  rr(ctx,210,118,320,32,6); ctx.fill(); ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx,370,137,'Retention: Until ' + new Date(Date.now()+7*365*86400000).getFullYear(),C.red,10);
+
+  txt(ctx,W/2,H-8,'Legal Hold: switch on/off with no expiry date | Governance Mode: admin can override',C.muted,10);
+}
+
+/* PRICE CANVAS */
+function drawPrice(){
+  const s=setup('priceCanvas'); if(!s) return;
+  const {ctx,W,H}=s;
+  txt(ctx,W/2,15,'100 TB Storage Cost Comparison (per month)',C.muted,11);
+
+  const bars=[
+    {l:'S3 Standard',v:2300,max:2300,c:C.red},
+    {l:'Standard-IA',v:1250,max:2300,c:C.orange},
+    {l:'Glacier IR',v:400,max:2300,c:C.green},
+    {l:'Glacier Flex',v:360,max:2300,c:C.blue},
+    {l:'Deep Archive',v:99,max:2300,c:C.violet2},
+  ];
+  const bw2=Math.min(120,(W-80)/bars.length-14);
+  const gap2=(W-40-bw2*bars.length)/(bars.length-1);
+  const maxH=H-80;
+  bars.forEach((b,i)=>{
+    const x=20+i*(bw2+gap2);
+    const h=Math.max((b.v/b.max)*maxH,8);
+    const y=H-40-h;
+    ctx.fillStyle=b.c+'22'; ctx.strokeStyle=b.c; ctx.lineWidth=1.5;
+    rr(ctx,x,y,bw2,h,4); ctx.fill(); ctx.stroke();
+    txt(ctx,x+bw2/2,y-8,'$'+b.v,b.c,11);
+    txt(ctx,x+bw2/2,H-24,b.l,C.muted,10);
+  });
+  txt(ctx,W/2,H-6,'Storage only — excludes retrieval costs. 100 TB = 102,400 GB.',C.muted,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawClass,drawRetrieval,drawLifecycle,drawLock,null,drawPrice,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>
