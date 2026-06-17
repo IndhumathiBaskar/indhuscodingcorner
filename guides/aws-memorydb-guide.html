@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS MemoryDB – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #c0392b;
+    --accent2:    #e74c3c;
+    --accent3:    #8e44ad;
+    --accent-dim: rgba(192,57,43,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent2); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #1a0500 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(192,57,43,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(192,57,43,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent2); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-red    { background: var(--accent-dim); border: 1px solid rgba(192,57,43,0.3); border-left: 3px solid var(--accent2); }
+  .callout-red strong { color: var(--accent2); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-purple { background: rgba(188,140,255,0.08); border: 1px solid rgba(188,140,255,0.2); border-left: 3px solid var(--purple); }
+  .callout-purple strong { color: var(--purple); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-red    { background: var(--accent-dim); color: var(--accent2); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .tag-teal   { background: rgba(38,166,127,0.15); color: var(--teal); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent2); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent2); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent2); } .pn { color: var(--green); }
+
+  /* COMPARE CARDS */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .compare-grid{ grid-template-columns:1fr; } }
+  .compare-card { background: var(--surface); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; }
+  .compare-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--cc,var(--accent2)); }
+  .compare-name { font-size: 15px; font-weight: 800; margin-bottom: 4px; color: var(--cc,var(--accent2)); }
+  .compare-sub  { font-size: 11px; color: var(--muted); margin-bottom: 12px; font-family: var(--mono); }
+  .feat-list { list-style: none; padding: 0; }
+  .feat-list li { font-size: 13px; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .feat-list li:last-child { border-bottom: none; }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(192,57,43,0.35); color: var(--accent2); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(192,57,43,0.08) 100%); border: 1px solid rgba(192,57,43,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS MemoryDB for Redis</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🧠 In-Memory Database</div>
+  <h1>AWS <span>MemoryDB</span></h1>
+  <p>A Redis-compatible, durable, in-memory database — microsecond reads, millisecond writes, Multi-AZ transactions, and zero data loss. Not just a cache — a primary database.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">⚡ Microsecond Reads</span>
+    <span class="hero-pill">🔴 Redis Compatible</span>
+    <span class="hero-pill">💾 Durable</span>
+    <span class="hero-pill">🔁 Multi-AZ</span>
+    <span class="hero-pill">📋 Transactions</span>
+    <span class="hero-pill">📦 Cluster Mode</span>
+    <span class="hero-pill">🔒 TLS + KMS</span>
+    <span class="hero-pill">📸 Snapshots</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🆚 vs ElastiCache</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🏛️ Architecture</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🗂️ Data Structures</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">📦 Cluster Mode</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🔒 Security</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS MemoryDB?</h2>
+  <p class="section-sub">A fully managed, Redis-compatible, durable in-memory database service — built for ultra-fast, persistent primary database workloads.</p>
+
+  <div class="callout callout-red">
+    <strong>One-liner</strong>
+    MemoryDB = Redis speed (microsecond reads) + database durability (Multi-AZ transaction log, zero data loss) + fully managed. Use it as a <strong>primary database</strong>, not just a cache.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="310"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">⚡ Ultra-Fast Performance</div>
+      <p>Microsecond read latency. Single-digit millisecond write latency. All data served from memory — no disk I/O on the hot path. Handles millions of operations per second per shard.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 True Durability</div>
+      <p>Writes are persisted to a Multi-AZ transaction log <strong style="color:var(--text)">before</strong> acknowledging success. Zero data loss on node failure. Data survives complete cluster restarts.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔴 Redis Compatible</div>
+      <p>Full Redis API compatibility — all commands, data structures, Lua scripting, transactions (MULTI/EXEC), pub/sub, Sorted Sets, Streams. Drop-in replacement using StackExchange.Redis.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔁 Multi-AZ HA</div>
+      <p>Automatic failover across AZs. Primary node failure → replica promoted in seconds. Transaction log replicated synchronously across AZs before write acknowledged.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Cluster Mode</div>
+      <p>Up to 500 shards. Each shard: 1 primary + up to 5 replicas. Horizontal scaling for both reads and writes. Online resharding — add/remove shards without downtime.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📸 Snapshots & Restore</div>
+      <p>Daily automatic snapshots retained up to 35 days. Manual snapshots retained indefinitely. Restore to new cluster from any snapshot. Export snapshot to S3.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>MemoryDB vs ElastiCache — The Key Difference</strong>
+    ElastiCache Redis = cache in front of a database (data loss acceptable, eventual consistency OK). MemoryDB = the primary database itself (zero data loss, strong consistency, durability guaranteed).
+  </div>
+</section>
+
+<!-- TAB 1: VS ELASTICACHE -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🆚 MemoryDB vs ElastiCache Redis</h2>
+  <p class="section-sub">They both run Redis — but serve very different purposes. Choosing the wrong one is expensive.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="compareCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="--cc:#e74c3c">
+      <div class="compare-name">🧠 MemoryDB</div>
+      <div class="compare-sub">Primary Database</div>
+      <ul class="feat-list">
+        <li><span>✅</span> Durable — Multi-AZ transaction log</li>
+        <li><span>✅</span> Zero data loss on failure</li>
+        <li><span>✅</span> Strong consistency</li>
+        <li><span>✅</span> Primary database use case</li>
+        <li><span>✅</span> Snapshots (daily auto + manual)</li>
+        <li><span>✅</span> Full Redis API compatibility</li>
+        <li><span>✅</span> Cluster mode (500 shards)</li>
+        <li><span>⚠️</span> Higher cost than ElastiCache</li>
+        <li><span>⚠️</span> Slightly higher write latency (ms)</li>
+      </ul>
+    </div>
+    <div class="compare-card" style="--cc:#58a6ff">
+      <div class="compare-name">⚡ ElastiCache Redis</div>
+      <div class="compare-sub">Cache / Ephemeral Store</div>
+      <ul class="feat-list">
+        <li><span>✅</span> Sub-ms read and write latency</li>
+        <li><span>✅</span> Lower cost per GB</li>
+        <li><span>✅</span> Async replication (faster writes)</li>
+        <li><span>✅</span> Full Redis API compatibility</li>
+        <li><span>✅</span> Cluster mode (500 shards)</li>
+        <li><span>❌</span> Data loss possible on failure</li>
+        <li><span>❌</span> Eventual consistency on replicas</li>
+        <li><span>❌</span> Not designed as primary DB</li>
+        <li><span>❌</span> RDB/AOF persistence optional only</li>
+      </ul>
+    </div>
+    <div class="compare-card" style="--cc:#3fb950">
+      <div class="compare-name">🗃️ RDS / Aurora</div>
+      <div class="compare-sub">Traditional RDBMS</div>
+      <ul class="feat-list">
+        <li><span>✅</span> Full ACID transactions</li>
+        <li><span>✅</span> Complex SQL queries / joins</li>
+        <li><span>✅</span> Strong consistency</li>
+        <li><span>✅</span> Mature tooling / ORMs</li>
+        <li><span>❌</span> ms to 10s of ms latency</li>
+        <li><span>❌</span> Disk-based (slower hot reads)</li>
+        <li><span>❌</span> No native Redis data structures</li>
+        <li><span>❌</span> Complex schema management</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Decision Table</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Requirement</th><th>Use</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>Cache DB query results</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Data loss OK, lower cost, already in DB</td></tr>
+        <tr><td>Session storage (tolerate loss)</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Cheaper, fast, session loss = re-login only</td></tr>
+        <tr><td>Primary leaderboard / game state</td><td><span class="tag tag-red">MemoryDB</span></td><td>Data loss = lost progress, unacceptable</td></tr>
+        <tr><td>Financial order book / trading</td><td><span class="tag tag-red">MemoryDB</span></td><td>Zero data loss + microsecond latency required</td></tr>
+        <tr><td>Real-time inventory (source of truth)</td><td><span class="tag tag-red">MemoryDB</span></td><td>Durable, consistent, fast enough for inventory ops</td></tr>
+        <tr><td>Pub/Sub messaging (ephemeral)</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Messages don't need durability, lower cost</td></tr>
+        <tr><td>User profile store (primary)</td><td><span class="tag tag-red">MemoryDB</span></td><td>Durable, fast reads for auth hot path</td></tr>
+        <tr><td>Transient rate limiting counters</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Loss of counter = minor, not worth MemoryDB cost</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>💰 Cost Difference</strong>
+    MemoryDB costs roughly 2–3× more than ElastiCache for the same node size. The premium pays for the durability guarantee and the Multi-AZ transaction log. Only pay it when you genuinely need MemoryDB as a primary database.
+  </div>
+</section>
+
+<!-- TAB 2: ARCHITECTURE -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🏛️ Architecture Deep Dive</h2>
+  <p class="section-sub">How MemoryDB achieves both Redis speed and database-grade durability simultaneously.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="durCanvas" width="860" height="270"></canvas>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>The Secret: Multi-AZ Transaction Log</strong>
+    Every write to MemoryDB is written to a distributed, Multi-AZ transaction log <strong>synchronously before the write is acknowledged</strong> to the client. The primary node serves reads from memory at microsecond speed, but writes aren't confirmed until the transaction log is persisted across AZs. This gives you Redis speed for reads + database durability for writes.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📝 Write Path (Durable)</div>
+      <p><strong style="color:var(--text)">Step 1:</strong> Client sends write command to primary node</p>
+      <p><strong style="color:var(--text)">Step 2:</strong> Primary writes to in-memory store</p>
+      <p><strong style="color:var(--text)">Step 3:</strong> Write is simultaneously persisted to Multi-AZ transaction log (synchronous)</p>
+      <p><strong style="color:var(--text)">Step 4:</strong> ACK returned to client only after log persisted</p>
+      <p><strong style="color:var(--text)">Step 5:</strong> Async replication propagates to replica nodes</p>
+      <p><span class="tag tag-red">Latency:</span> Single-digit milliseconds (due to sync log write)</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Read Path (Ultra-Fast)</div>
+      <p><strong style="color:var(--text)">Step 1:</strong> Client sends read command</p>
+      <p><strong style="color:var(--text)">Step 2:</strong> Primary (or replica for read scale) serves from in-memory data</p>
+      <p><strong style="color:var(--text)">Step 3:</strong> Returns result — no disk I/O</p>
+      <p><span class="tag tag-green">Latency:</span> Microseconds (sub-millisecond)</p>
+      <p style="margin-top:8px;font-size:13px;color:var(--muted)">Reads from replicas may lag slightly behind primary (async propagation). Use primary endpoint for strong consistency reads.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Node Recovery Flow</h3>
+  <div class="pseudo">
+<span class="pk">SCENARIO:</span> Primary node in Shard 1 fails<br>
+<br>
+<span class="num">1.</span> MemoryDB detects primary node failure (~10 seconds)<br>
+<span class="num">2.</span> Replica with most up-to-date transaction log is elected<br>
+<span class="num">3.</span> Replica replays any missing transactions from Multi-AZ log<br>
+<span class="num">4.</span> Replica promoted to primary (~60 seconds total)<br>
+<span class="num">5.</span> DNS endpoint updated → clients reconnect automatically<br>
+<span class="num">6.</span> New replica provisioned to replace failed node<br>
+<br>
+<span class="pk">RESULT:</span> <span class="pn">Zero data loss</span> — all committed writes are in transaction log<br>
+<span class="pk">DOWNTIME:</span> ~60 seconds for failover (automatic, no manual steps)
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📸 Snapshots</div>
+      <p><strong style="color:var(--text)">Automatic:</strong> Daily snapshot, retained 0–35 days (configurable).</p>
+      <p><strong style="color:var(--text)">Manual:</strong> Trigger anytime, retained indefinitely.</p>
+      <p><strong style="color:var(--text)">Export:</strong> Export snapshot to S3 as RDB file. Import into self-managed Redis.</p>
+      <p><strong style="color:var(--text)">Restore:</strong> Create a new cluster from any snapshot point.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌍 Multi-AZ Topology</div>
+      <p>Each shard spreads its primary and replicas across multiple AZs automatically. Transaction log is replicated across AZs — one AZ failure cannot cause data loss.</p>
+      <p>Replicas in different AZs serve read traffic, reducing primary load while maintaining geographic resilience.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 3: DATA STRUCTURES -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🗂️ Redis Data Structures in MemoryDB</h2>
+  <p class="section-sub">Full Redis API — all data structures work exactly as in self-managed Redis, now with durability.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="dsCanvas" width="860" height="190"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🔤 STRING</div>
+      <p>Plain key-value. Text, numbers, binary (up to 512 MB). Atomic INCR/DECR. SETEX for TTL. GET/SET/MGET/MSET.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Counters, tokens, cached HTML, config values, feature flags.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂️ HASH</div>
+      <p>Map of field → value pairs. Memory-efficient for structured objects. HGET/HSET/HMGET/HGETALL/HINCRBY.</p>
+      <p><strong style="color:var(--text)">Use:</strong> User profiles, product catalogs, session data, config objects.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 LIST</div>
+      <p>Ordered linked list. O(1) push/pop from head or tail. LPUSH/RPUSH/LPOP/RPOP/LRANGE/LLEN. Max 2^32-1 elements.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Activity feeds, queues, recent items, timelines.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔵 SET</div>
+      <p>Unordered unique values. O(1) add/remove/check. SADD/SMEMBERS/SISMEMBER/SINTER/SUNION/SDIFF.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Tags, unique visitor tracking, friend lists, deduplication.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏆 SORTED SET (ZSet)</div>
+      <p>Set with float score per member. Always ordered by score. ZADD/ZRANGE/ZRANGEBYSCORE/ZRANK/ZINCRBY.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Leaderboards, priority queues, rate limiting, time-based queries.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📡 STREAM</div>
+      <p>Append-only log with consumer groups. XADD/XREAD/XGROUP/XACK. Fan-out, replay, exactly-once with ACKs. Now durable in MemoryDB!</p>
+      <p><strong style="color:var(--text)">Use:</strong> Event sourcing, IoT data, durable message bus.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📍 GEO</div>
+      <p>Store lat/long coordinates. Query by radius. GEOADD/GEODIST/GEOSEARCH/GEOPOS. Internally a Sorted Set.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Nearby drivers, store locator, delivery tracking, geo-fencing.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔢 BITMAP</div>
+      <p>Bit-level operations. SETBIT/GETBIT/BITCOUNT/BITOP. Extremely space-efficient. 1 bit per user for 100M users = 12.5 MB.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Daily active users, feature flags, attendance tracking.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 HyperLogLog</div>
+      <p>Probabilistic cardinality estimation. PFADD/PFCOUNT/PFMERGE. ~0.81% error. Always uses &lt;12 KB regardless of input size.</p>
+      <p><strong style="color:var(--text)">Use:</strong> Unique visitor count, distinct query count at massive scale.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>💡 Transactions — MULTI/EXEC in MemoryDB</strong>
+    MemoryDB supports Redis transactions via <code>MULTI/EXEC/DISCARD/WATCH</code>. Commands queued inside MULTI execute atomically — no other client can interleave. Now durable: if the primary fails mid-transaction, the transaction log ensures committed transactions survive.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Redis Commands</span>
+      <span class="code-desc">MULTI/EXEC transaction — atomically update balance + log</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Watch key for optimistic locking</span>
+WATCH user:123:balance
+
+MULTI
+  DECRBY user:123:balance <span class="num">500</span>
+  INCR   user:123:txcount
+  LPUSH  user:123:txlog <span class="str">"debit:500:2024-01-15"</span>
+EXEC
+
+<span class="cm"># If balance was modified between WATCH and EXEC → returns nil (retry)</span>
+<span class="cm"># All 3 commands execute atomically if EXEC succeeds</span></pre>
+  </div>
+</section>
+
+<!-- TAB 4: CLUSTER MODE -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">📦 Cluster Mode &amp; Scaling</h2>
+  <p class="section-sub">MemoryDB always runs in cluster mode — distribute data across shards for horizontal scale.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="clusterCanvas" width="860" height="270"></canvas>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>MemoryDB always uses cluster mode</strong>
+    Unlike ElastiCache which has both cluster-disabled and cluster-enabled options, MemoryDB always runs as a cluster. Minimum is a single shard (1 primary + optional replicas). Scale to 500 shards online without downtime.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔢 Hash Slot Distribution</div>
+      <p>Redis Cluster uses <strong style="color:var(--text)">16,384 hash slots</strong>. Key's slot = <code>CRC16(key) % 16384</code>. Slots distributed evenly across shards.</p>
+      <p><strong style="color:var(--text)">3 shards example:</strong><br>
+      Shard 1: slots 0–5460<br>
+      Shard 2: slots 5461–10922<br>
+      Shard 3: slots 10923–16383</p>
+      <p>Use <strong style="color:var(--text)">hash tags</strong> <code>{user:123}</code> to colocate related keys on same shard.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📈 Online Scaling</div>
+      <p><strong style="color:var(--text)">Scale out:</strong> Add shards → slot migration happens online. No downtime, no client changes.</p>
+      <p><strong style="color:var(--text)">Scale in:</strong> Remove shards → slots migrated off before removal.</p>
+      <p><strong style="color:var(--text)">Scale up:</strong> Change node type (e.g. r7g.large → r7g.xlarge). Rolling update — no downtime.</p>
+      <p><strong style="color:var(--text)">Read scale:</strong> Add replicas per shard (up to 5). Reader endpoint load-balances.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Node Types &amp; Sizing</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Node Type</th><th>vCPU</th><th>Memory</th><th>Network</th><th>Use Case</th></tr></thead>
+      <tbody>
+        <tr><td><code>t4g.small</code></td><td>2</td><td>1.37 GB</td><td>Low</td><td>Dev/test, small datasets</td></tr>
+        <tr><td><code>r7g.large</code></td><td>2</td><td>13.07 GB</td><td>Up to 12.5 Gbps</td><td>Production start point</td></tr>
+        <tr><td><code>r7g.xlarge</code></td><td>4</td><td>26.32 GB</td><td>Up to 12.5 Gbps</td><td>Medium production</td></tr>
+        <tr><td><code>r7g.2xlarge</code></td><td>8</td><td>52.82 GB</td><td>Up to 12.5 Gbps</td><td>Large datasets</td></tr>
+        <tr><td><code>r7g.4xlarge</code></td><td>16</td><td>105.81 GB</td><td>Up to 12.5 Gbps</td><td>Very large datasets</td></tr>
+        <tr><td><code>r7g.8xlarge</code></td><td>32</td><td>209.55 GB</td><td>25 Gbps</td><td>Massive in-memory DB</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Sizing Rule of Thumb</strong>
+    Total dataset size × 1.3 (overhead) = required memory. Divide by node memory to get shard count. Add 1–2 replicas per shard for HA. Use <code>r7g</code> family (Graviton) — best price/performance ratio for memory-optimised workloads.
+  </div>
+</section>
+
+<!-- TAB 5: C# SDK -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+  <p class="section-sub">MemoryDB is fully Redis-compatible — use <code>StackExchange.Redis</code> exactly as with ElastiCache.</p>
+
+  <div class="callout callout-red">
+    <strong>NuGet</strong>
+    <code>dotnet add package StackExchange.Redis</code> — same client as ElastiCache Redis. Connect to the cluster endpoint with TLS enabled. MemoryDB requires TLS (in-transit encryption is mandatory).
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Connect to MemoryDB cluster</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> StackExchange.Redis;
+
+<span class="cm">// MemoryDB requires TLS — ssl=true is mandatory</span>
+<span class="kw">var</span> <span class="var">config</span> = <span class="kw">new</span> <span class="typ">ConfigurationOptions</span>
+{
+    EndPoints        = { <span class="str">"clustercfg.my-memorydb.abc123.memorydb.us-east-1.amazonaws.com:6379"</span> },
+    Ssl              = <span class="kw">true</span>,             <span class="cm">// mandatory for MemoryDB</span>
+    AbortOnConnectFail = <span class="kw">false</span>,
+    ConnectRetry     = <span class="num">5</span>,
+    ConnectTimeout   = <span class="num">5000</span>,
+    SyncTimeout      = <span class="num">3000</span>,
+    Password         = <span class="str">"your-auth-token"</span>, <span class="cm">// ACL user password</span>
+};
+
+<span class="cm">// Singleton — reuse for the lifetime of the app</span>
+<span class="kw">var</span> <span class="var">redis</span> = <span class="kw">await</span> <span class="typ">ConnectionMultiplexer</span>.<span class="fn">ConnectAsync</span>(<span class="var">config</span>);
+<span class="kw">var</span> <span class="var">db</span>    = <span class="var">redis</span>.<span class="fn">GetDatabase</span>();</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Durable primary database — user profile store</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// MemoryDB as PRIMARY database — no separate DB needed</span>
+<span class="kw">public class</span> <span class="typ">UserProfileStore</span>
+{
+    <span class="kw">private readonly</span> <span class="typ">IDatabase</span> <span class="var">_db</span>;
+
+    <span class="kw">public</span> <span class="typ">UserProfileStore</span>(<span class="typ">IDatabase</span> db) => <span class="var">_db</span> = db;
+
+    <span class="kw">public async</span> <span class="typ">Task</span> <span class="fn">SaveProfileAsync</span>(<span class="typ">UserProfile</span> profile)
+    {
+        <span class="kw">var</span> <span class="var">key</span> = $<span class="str">"user:{profile.Id}"</span>;
+        <span class="cm">// Stored durably in MemoryDB — survives node failure</span>
+        <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">HashSetAsync</span>(<span class="var">key</span>,
+        [
+            <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"name"</span>,      profile.Name),
+            <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"email"</span>,     profile.Email),
+            <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"tier"</span>,      profile.Tier),
+            <span class="kw">new</span> <span class="typ">HashEntry</span>(<span class="str">"createdAt"</span>, profile.CreatedAt.ToString(<span class="str">"O"</span>))
+        ]);
+    }
+
+    <span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="typ">UserProfile</span>?&gt; <span class="fn">GetProfileAsync</span>(<span class="kw">string</span> userId)
+    {
+        <span class="kw">var</span> <span class="var">key</span> = $<span class="str">"user:{userId}"</span>;
+        <span class="kw">var</span> <span class="var">fields</span> = <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">HashGetAllAsync</span>(<span class="var">key</span>);
+        <span class="kw">if</span> (<span class="var">fields</span>.Length == <span class="num">0</span>) <span class="kw">return null</span>;
+
+        <span class="kw">return new</span> <span class="typ">UserProfile</span>
+        {
+            Id        = userId,
+            Name      = <span class="var">fields</span>.<span class="fn">FirstOrDefault</span>(f => f.Name == <span class="str">"name"</span>).Value!,
+            Email     = <span class="var">fields</span>.<span class="fn">FirstOrDefault</span>(f => f.Name == <span class="str">"email"</span>).Value!,
+            Tier      = <span class="var">fields</span>.<span class="fn">FirstOrDefault</span>(f => f.Name == <span class="str">"tier"</span>).Value!,
+        };
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Durable leaderboard with Sorted Set</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Leaderboard as primary data — scores survive restarts</span>
+<span class="kw">public class</span> <span class="typ">LeaderboardService</span>
+{
+    <span class="kw">private readonly</span> <span class="typ">IDatabase</span> <span class="var">_db</span>;
+    <span class="kw">private const string</span> <span class="var">Key</span> = <span class="str">"leaderboard:global"</span>;
+
+    <span class="kw">public</span> <span class="typ">LeaderboardService</span>(<span class="typ">IDatabase</span> db) => <span class="var">_db</span> = db;
+
+    <span class="cm">// Upsert score — atomic, durable</span>
+    <span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="kw">double</span>&gt; <span class="fn">AddScoreAsync</span>(<span class="kw">string</span> playerId, <span class="kw">double</span> score)
+        => <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">SortedSetAddAsync</span>(<span class="var">Key</span>, playerId, score)
+             ? score
+             : (<span class="kw">double</span>)<span class="kw">await</span> <span class="var">_db</span>.<span class="fn">SortedSetScoreAsync</span>(<span class="var">Key</span>, playerId);
+
+    <span class="cm">// Top N players (highest score first)</span>
+    <span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="typ">LeaderboardEntry</span>[]&gt; <span class="fn">GetTopAsync</span>(<span class="kw">int</span> n = <span class="num">10</span>)
+    {
+        <span class="kw">var</span> <span class="var">entries</span> = <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">SortedSetRangeByRankWithScoresAsync</span>(
+            <span class="var">Key</span>, <span class="num">0</span>, n - <span class="num">1</span>, <span class="typ">Order</span>.Descending);
+
+        <span class="kw">return</span> <span class="var">entries</span>.<span class="fn">Select</span>((e, i) => <span class="kw">new</span> <span class="typ">LeaderboardEntry</span>
+        {
+            Rank     = i + <span class="num">1</span>,
+            PlayerId = e.Element!,
+            Score    = e.Score
+        }).<span class="fn">ToArray</span>();
+    }
+
+    <span class="cm">// Player's current rank (1-indexed)</span>
+    <span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="kw">long</span>&gt; <span class="fn">GetRankAsync</span>(<span class="kw">string</span> playerId)
+    {
+        <span class="kw">var</span> <span class="var">rank</span> = <span class="kw">await</span> <span class="var">_db</span>.<span class="fn">SortedSetRankAsync</span>(<span class="var">Key</span>, playerId, <span class="typ">Order</span>.Descending);
+        <span class="kw">return</span> (<span class="var">rank</span> ?? <span class="num">-1</span>) + <span class="num">1</span>;
+    }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Durable event stream with Redis Streams</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Redis Streams in MemoryDB — durable event log</span>
+<span class="kw">var</span> <span class="var">streamKey</span> = <span class="str">"events:orders"</span>;
+
+<span class="cm">// Publish event — auto-generates stream ID (timestamp-based)</span>
+<span class="kw">var</span> <span class="var">id</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StreamAddAsync</span>(<span class="var">streamKey</span>,
+[
+    <span class="kw">new</span> <span class="typ">NameValueEntry</span>(<span class="str">"orderId"</span>,   <span class="str">"ORD-001"</span>),
+    <span class="kw">new</span> <span class="typ">NameValueEntry</span>(<span class="str">"userId"</span>,    <span class="str">"USR-123"</span>),
+    <span class="kw">new</span> <span class="typ">NameValueEntry</span>(<span class="str">"amount"</span>,    <span class="str">"99.99"</span>),
+    <span class="kw">new</span> <span class="typ">NameValueEntry</span>(<span class="str">"eventType"</span>, <span class="str">"ORDER_PLACED"</span>)
+]);
+
+<span class="cm">// Create consumer group for fan-out</span>
+<span class="kw">await</span> <span class="var">db</span>.<span class="fn">StreamCreateConsumerGroupAsync</span>(<span class="var">streamKey</span>, <span class="str">"payment-svc"</span>, <span class="str">"$"</span>);
+
+<span class="cm">// Consumer reads and acknowledges</span>
+<span class="kw">var</span> <span class="var">msgs</span> = <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StreamReadGroupAsync</span>(
+    <span class="var">streamKey</span>, <span class="str">"payment-svc"</span>, <span class="str">"consumer-1"</span>, <span class="str">">"</span>, <span class="num">10</span>);
+
+<span class="kw">foreach</span> (<span class="kw">var</span> <span class="var">msg</span> <span class="kw">in</span> <span class="var">msgs</span>)
+{
+    <span class="kw">await</span> <span class="fn">ProcessPaymentAsync</span>(<span class="var">msg</span>);
+    <span class="kw">await</span> <span class="var">db</span>.<span class="fn">StreamAcknowledgeAsync</span>(<span class="var">streamKey</span>, <span class="str">"payment-svc"</span>, <span class="var">msg</span>.Id);
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">MULTI/EXEC transaction — atomic balance transfer</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Atomic, durable balance transfer using Redis transactions</span>
+<span class="kw">public async</span> <span class="typ">Task</span>&lt;<span class="kw">bool</span>&gt; <span class="fn">TransferAsync</span>(<span class="kw">string</span> from, <span class="kw">string</span> to, <span class="kw">decimal</span> amount)
+{
+    <span class="kw">var</span> <span class="var">fromKey</span> = $<span class="str">"wallet:{from}"</span>;
+    <span class="kw">var</span> <span class="var">toKey</span>   = $<span class="str">"wallet:{to}"</span>;
+
+    <span class="cm">// WATCH for optimistic locking</span>
+    <span class="kw">var</span> <span class="var">tran</span> = <span class="var">db</span>.<span class="fn">CreateTransaction</span>();
+    <span class="var">tran</span>.<span class="fn">AddCondition</span>(<span class="typ">Condition</span>.<span class="fn">HashEqual</span>(<span class="var">fromKey</span>, <span class="str">"balance"</span>,
+        (<span class="kw">await</span> <span class="var">db</span>.<span class="fn">HashGetAsync</span>(<span class="var">fromKey</span>, <span class="str">"balance"</span>)).ToString()));
+
+    <span class="cm">// Queue commands — execute atomically</span>
+    _ = <span class="var">tran</span>.<span class="fn">HashDecrementAsync</span>(<span class="var">fromKey</span>, <span class="str">"balance"</span>, (<span class="kw">double</span>)amount);
+    _ = <span class="var">tran</span>.<span class="fn">HashIncrementAsync</span>(<span class="var">toKey</span>,   <span class="str">"balance"</span>, (<span class="kw">double</span>)amount);
+    _ = <span class="var">tran</span>.<span class="fn">ListLeftPushAsync</span>($<span class="str">"txlog:{from}"</span>,
+            $<span class="str">"transfer:{amount}:{to}:{DateTime.UtcNow:O}"</span>);
+
+    <span class="cm">// Execute — returns false if condition failed (retry)</span>
+    <span class="kw">return await</span> <span class="var">tran</span>.<span class="fn">ExecuteAsync</span>();
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 6: SECURITY -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🔒 Security</h2>
+  <p class="section-sub">MemoryDB is designed for primary database workloads — security is non-negotiable.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="secCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔐 TLS In-Transit Encryption</div>
+      <p>TLS is <strong style="color:var(--text)">mandatory</strong> for MemoryDB — cannot be disabled. All client-to-node and node-to-node communication is encrypted. Minimum TLS 1.2.</p>
+      <p>Clients must connect with <code>ssl=true</code> in connection string. AWS manages TLS certificates automatically.</p>
+      <p><span class="tag tag-green">Always on</span> <span class="tag tag-red">Cannot disable</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔑 Encryption at Rest (KMS)</div>
+      <p>All data encrypted at rest using AWS KMS. Choose between AWS-managed key (default) or customer-managed CMK for full key control and audit trail in CloudTrail.</p>
+      <p>Encryption covers: in-memory data, transaction log, snapshots, replicas.</p>
+      <p><span class="tag tag-blue">CMK recommended</span> for compliance workloads</p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 ACL (Access Control Lists)</div>
+      <p>Redis 6+ ACL support. Create named users with specific permissions — restrict which commands and keyspaces each user can access.</p>
+      <p><strong style="color:var(--text)">Default user:</strong> <code>default</code> — disable or restrict for production.</p>
+      <p>Assign ACL users to clusters. Authenticate with <code>AUTH username password</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌐 VPC Isolation</div>
+      <p>MemoryDB runs inside your VPC. No public endpoint — accessible only from within the VPC or via VPC peering/Transit Gateway.</p>
+      <p>Restrict Security Group inbound to port 6379 from your app's SG only. Never expose to 0.0.0.0/0.</p>
+      <p><span class="tag tag-green">No public internet exposure</span></p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">ACL User Configuration Example</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">AWS CLI</span>
+      <span class="code-desc">Create ACL user for order service — restricted permissions</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Create ACL user with specific command and key permissions</span>
+aws memorydb create-user \
+  --user-name order-service \
+  --authentication-mode Type=password,Passwords=SecurePass123! \
+  --access-string <span class="str">"on ~order:* ~leaderboard:* +GET +SET +HGET +HSET +ZADD +ZRANGE"</span>
+
+<span class="cm"># Create ACL (group of users)</span>
+aws memorydb create-acl \
+  --acl-name prod-acl \
+  --user-names order-service admin-user
+
+<span class="cm"># Attach ACL to cluster</span>
+aws memorydb update-cluster \
+  --cluster-name my-memorydb-cluster \
+  --acl-name prod-acl
+
+<span class="cm"># ACL access string syntax:</span>
+<span class="cm"># on        = user is enabled</span>
+<span class="cm"># ~order:*  = can only access keys starting with "order:"</span>
+<span class="cm"># +GET      = allow GET command</span>
+<span class="cm"># -DEBUG    = deny DEBUG command</span>
+<span class="cm"># allcommands = allow all commands</span>
+<span class="cm"># allkeys   = allow access to all keys</span></pre>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Security Layer</th><th>MemoryDB Feature</th><th>Recommendation</th></tr></thead>
+      <tbody>
+        <tr><td>In-transit encryption</td><td>TLS (mandatory)</td><td>Always on — no action needed</td></tr>
+        <tr><td>At-rest encryption</td><td>KMS (default or CMK)</td><td>Use CMK for compliance workloads</td></tr>
+        <tr><td>Authentication</td><td>ACL users</td><td>Create per-service users, disable default</td></tr>
+        <tr><td>Network isolation</td><td>VPC + Security Groups</td><td>Port 6379 from app SG only</td></tr>
+        <tr><td>Key access control</td><td>ACL key patterns</td><td>Restrict each service to its own key prefix</td></tr>
+        <tr><td>Audit logging</td><td>CloudTrail (API calls)</td><td>Enable CloudTrail for all MemoryDB API calls</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production-grade MemoryDB setup for durability, performance, and cost efficiency.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Use MemoryDB Only When You Need Durability</div>
+      <p>Don't replace ElastiCache with MemoryDB everywhere. If your use case tolerates data loss (caching, rate limiting, ephemeral sessions) → stay with ElastiCache. MemoryDB's premium pays for the durability guarantee.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Key Naming Convention</div>
+      <p>Use colon-separated namespaces: <code>user:{id}:profile</code>, <code>order:{id}:state</code>, <code>leaderboard:weekly</code>. Consistent naming enables ACL key-pattern restrictions per service and easier debugging.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Always Enable Replicas in Production</div>
+      <p>At least 1 replica per shard (ideally 2 for read-heavy workloads). Replicas in different AZs. Multi-AZ failover only works if replicas exist. Without replicas, failover requires creating a new node from the transaction log.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Singleton ConnectionMultiplexer</div>
+      <p>Create one <code>ConnectionMultiplexer</code> at app startup and reuse it. Never create a new connection per request — very expensive with TLS handshake overhead. Register as singleton in DI container.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Set TTLs Appropriately</div>
+      <p>Even as a primary database, set TTLs on transient data (sessions, tokens, temp state). MemoryDB charges per GB stored — expired keys that don't get TTLs accumulate and cost money.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Hash Tags for Transactions</div>
+      <p>If you use MULTI/EXEC across multiple keys, ensure all keys share the same hash tag: <code>order:{orderId}:state</code> and <code>order:{orderId}:log</code> — both land on the same shard, enabling atomic transactions.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Monitor Key Metrics</div>
+      <p><code>DatabaseMemoryUsagePercentage</code> (alert at 80%) · <code>EngineCPUUtilization</code> · <code>ReplicationLag</code> · <code>CurrConnections</code> · <code>Evictions</code> (should be 0 in MemoryDB as primary DB).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Test Failover Regularly</div>
+      <p>Use the <code>FailoverShard</code> API or AWS Fault Injection Service (FIS) to test failover. Verify your app reconnects automatically. Measure actual failover time vs your RTO requirement.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">CloudWatch Alarms for MemoryDB</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Metric</th><th>Threshold</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><code>DatabaseMemoryUsagePercentage</code></td><td>&gt; 80%</td><td>Scale up node type or add shards</td></tr>
+        <tr><td><code>EngineCPUUtilization</code></td><td>&gt; 90%</td><td>Scale up or add shards for write distribution</td></tr>
+        <tr><td><code>ReplicationLag</code></td><td>&gt; 100ms</td><td>Check replica node health / network</td></tr>
+        <tr><td><code>CurrConnections</code></td><td>Near max for node type</td><td>Add connection pooling, scale up</td></tr>
+        <tr><td><code>Evictions</code></td><td>&gt; 0</td><td>CRITICAL — MemoryDB should never evict as primary DB. Scale immediately.</td></tr>
+        <tr><td><code>BytesUsedForCache</code></td><td>Trending up</td><td>Review TTL strategy, plan capacity increase</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>⚠️ Evictions in MemoryDB = Data Loss</strong>
+    Unlike ElastiCache where evictions are expected behaviour for a cache, evictions in MemoryDB mean you are losing primary database records. Configure <code>maxmemory-policy noeviction</code> (default) and alarm on any eviction. Scale before you run out of memory.
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">AWS MemoryDB for Redis — the complete picture.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🎯 What Makes MemoryDB Unique</div>
+      <p>Redis speed (μs reads) + database durability (Multi-AZ transaction log) + fully managed. The only Redis-compatible service you can use as a primary database.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🆚 vs ElastiCache</div>
+      <p>ElastiCache = cache (data loss OK, cheaper). MemoryDB = primary database (zero data loss, 2–3× price). Don't pay the MemoryDB premium unless you need durability.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 Durability Mechanism</div>
+      <p>Multi-AZ transaction log written synchronously before write ACK. Node failure → replay log → zero data loss. Daily auto-snapshots + manual snapshots to S3.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🗂️ Data Structures</div>
+      <p>Full Redis API: String, Hash, List, Set, Sorted Set, Stream, Geo, Bitmap, HyperLogLog. MULTI/EXEC transactions. Lua scripting. All now durable.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Cluster Mode</div>
+      <p>Always cluster mode. Up to 500 shards × 6 nodes = 3000 nodes. 16,384 hash slots. Online resharding. Use hash tags for cross-key transactions.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 Security</div>
+      <p>TLS mandatory (in-transit). KMS at-rest. ACL per-user command + key restrictions. VPC-only — no public endpoint. Disable default user in production.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Use Case</th><th>MemoryDB or ElastiCache?</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Leaderboard (game state)</td><td><span class="tag tag-red">MemoryDB</span></td><td>Score loss = unacceptable user experience</td></tr>
+        <tr><td>Financial order book</td><td><span class="tag tag-red">MemoryDB</span></td><td>Zero data loss required, regulatory</td></tr>
+        <tr><td>Inventory (source of truth)</td><td><span class="tag tag-red">MemoryDB</span></td><td>Overselling due to data loss = costly</td></tr>
+        <tr><td>Durable event stream</td><td><span class="tag tag-red">MemoryDB</span></td><td>Streams survive restarts, consumer groups durable</td></tr>
+        <tr><td>API response cache</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Cache miss = DB fallback, loss acceptable</td></tr>
+        <tr><td>Session storage</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Session loss = re-login, acceptable</td></tr>
+        <tr><td>Rate limiting counters</td><td><span class="tag tag-blue">ElastiCache</span></td><td>Counter loss = minor, not worth MemoryDB cost</td></tr>
+        <tr><td>User profile (primary store)</td><td><span class="tag tag-red">MemoryDB</span></td><td>Profile loss = data integrity failure</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS MemoryDB!</h3>
+    <p>From the Multi-AZ transaction log and durability architecture to data structures, cluster mode, C# SDK patterns, ACL security, and best practices — you're ready to use MemoryDB as a lightning-fast, durable primary database on AWS.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawCompare, drawDur, drawDs, drawCluster, null, drawSec, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  red:'#c0392b', red2:'#e74c3c', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', orange:'#e8834a',
+  yellow:'#d29922', teal:'#26a67f', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'AWS MemoryDB — Architecture Overview',C.muted,11);
+
+  // App layer
+  const apps=[{l:'Web API',ic:'🌐',c:C.blue},{l:'.NET Service',ic:'⚙️',c:C.orange},{l:'Lambda',ic:'λ',c:C.purple}];
+  const aw=110, ag=(W-40-aw*3)/2;
+  apps.forEach((a,i)=>{ const x=20+i*(aw+ag); box(ctx,x,28,aw,48,a.c,a.l,null,a.ic); arr(ctx,x+aw/2,76,x+aw/2,104,C.border); });
+
+  // MemoryDB cluster box
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.red2; ctx.lineWidth=2;
+  rr(ctx,20,104,W-40,72,10); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,122,'🧠  AWS MemoryDB Cluster',C.red2,13);
+
+  // Shard items inside
+  const shards=[{l:'🔴 Primary (AZ-a)',c:C.red2},{l:'📖 Replica (AZ-b)',c:C.green},{l:'📖 Replica (AZ-c)',c:C.green}];
+  const sw=(W-80)/3;
+  shards.forEach((sh,i)=>{ const px=30+i*sw; ctx.fillStyle='rgba(192,57,43,0.1)'; ctx.strokeStyle='rgba(192,57,43,0.25)'; ctx.lineWidth=1; rr(ctx,px,130,sw-8,36,5); ctx.fill(); ctx.stroke(); txt(ctx,px+(sw-8)/2,151,sh.l,sh.c,10); });
+
+  // Transaction log
+  arr(ctx,W/2,176,W/2,202,C.border);
+  ctx.fillStyle='rgba(88,166,255,0.08)'; ctx.strokeStyle=C.blue; ctx.lineWidth=1.5;
+  rr(ctx,20,202,W-40,46,8); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,220,'📋  Multi-AZ Transaction Log — Synchronous write before ACK',C.blue,11);
+  txt(ctx,W/2,236,'AZ-a log replica  ·  AZ-b log replica  ·  AZ-c log replica',C.muted,10);
+
+  // Snapshots
+  arr(ctx,W-60,140,W-20,140,C.border);
+  txt(ctx,W-10,H-10,'📸 S3 Snapshots',C.teal,10,'right');
+}
+
+function drawCompare(){
+  const s=setup('compareCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'MemoryDB vs ElastiCache — Write Path Comparison',C.muted,11);
+
+  // MemoryDB write
+  const mw=W/2-20;
+  txt(ctx,mw/2+10,34,'🧠 MemoryDB Write Path (Durable)',C.red2,11);
+  const mSteps=[{l:'Client WRITE',c:C.blue},{l:'In-Memory',c:C.orange},{l:'Tx Log (sync)',c:C.red2},{l:'ACK ✅',c:C.green}];
+  const msw=(mw-20)/mSteps.length-8;
+  mSteps.forEach((st,i)=>{ const x=10+i*(msw+8); box(ctx,x,46,msw,44,st.c,st.l,null,null); if(i<mSteps.length-1) arr(ctx,x+msw+2,68,x+msw+8-2,68,C.border); });
+  txt(ctx,mw/2,105,'Write latency: ~1–3ms (sync log write)',C.red2,10);
+
+  // ElastiCache write
+  const ex=W/2+10;
+  txt(ctx,(ex+W-20)/2,34,'⚡ ElastiCache Write Path (Cache)',C.blue,11);
+  const eSteps=[{l:'Client WRITE',c:C.blue},{l:'In-Memory',c:C.orange},{l:'ACK ✅',c:C.green},{l:'Async Repl',c:C.muted}];
+  const esw=((W-20)-ex)/eSteps.length-8;
+  eSteps.forEach((st,i)=>{ const x=ex+i*(esw+8); box(ctx,x,46,esw,44,st.c,st.l,null,null); if(i<eSteps.length-1) arr(ctx,x+esw+2,68,x+esw+8-2,68,C.border); });
+  txt(ctx,(ex+W-20)/2,105,'Write latency: sub-ms (async replication)',C.blue,10);
+
+  // Divider
+  ctx.strokeStyle=C.border; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(W/2,26); ctx.lineTo(W/2,H-16); ctx.stroke(); ctx.setLineDash([]);
+
+  txt(ctx,mw/2+10,H-10,'✅ Zero data loss on failure',C.green,10);
+  txt(ctx,(ex+W-20)/2,H-10,'⚠️ Possible data loss on failure',C.orange,10);
+}
+
+function drawDur(){
+  const s=setup('durCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Multi-AZ Transaction Log — Durability Mechanism',C.muted,11);
+
+  // Client
+  box(ctx,20,H/2-22,90,44,C.blue,'Client',null,'👤');
+  arr(ctx,110,H/2,170,H/2,C.blue);
+
+  // Primary
+  box(ctx,170,H/2-26,120,52,C.red2,'🔴 Primary','In-Memory',null);
+
+  // Two paths from primary
+  // Path 1: immediate ack after log
+  arr(ctx,230,H/2+26,230,H/2+70,C.border);
+
+  // Transaction log across AZs
+  ctx.fillStyle='rgba(88,166,255,0.08)'; ctx.strokeStyle=C.blue; ctx.lineWidth=1.5;
+  rr(ctx,80,H/2+70,W-100,50,8); ctx.fill(); ctx.stroke();
+  txt(ctx,80+(W-100)/2,H/2+90,'📋 Multi-AZ Transaction Log',C.blue,12);
+  txt(ctx,80+(W-100)/2,H/2+108,'AZ-a  ·  AZ-b  ·  AZ-c  — Synchronous write',C.muted,10);
+
+  // ACK back after log
+  arr(ctx,170,H/2,110,H/2,C.green);
+  txt(ctx,140,H/2-12,'ACK after log',C.green,9);
+
+  // Async replication to replicas
+  const reps=[{l:'📖 Replica',sub:'AZ-b',x:W-220,y:H/2-56},{l:'📖 Replica',sub:'AZ-c',x:W-100,y:H/2-56}];
+  reps.forEach(r=>{ arr(ctx,290,H/2,r.x+60,r.y+44,C.border); box(ctx,r.x,r.y,100,44,C.green,r.l,r.sub,null); txt(ctx,r.x+50,r.y-8,'async',C.muted,9); });
+
+  txt(ctx,W/2,H-8,'Writes durably committed before ACK — reads served from memory at microsecond speed',C.muted,10);
+}
+
+function drawDs(){
+  const s=setup('dsCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Redis Data Structures — All Durable in MemoryDB',C.muted,11);
+  const types=[
+    {l:'STRING',ic:'🔤',c:C.green},{l:'HASH',ic:'🗂️',c:C.blue},
+    {l:'LIST',ic:'📋',c:C.orange},{l:'SET',ic:'🔵',c:C.purple},
+    {l:'SORTED SET',ic:'🏆',c:C.red2},{l:'STREAM',ic:'📡',c:C.teal},
+    {l:'GEO',ic:'📍',c:C.yellow},{l:'BITMAP',ic:'🔢',c:C.blue},
+    {l:'HyperLogLog',ic:'📊',c:C.purple},
+  ];
+  const bw=Math.min(82,(W-40)/types.length-6);
+  const gap=(W-40-bw*types.length)/(types.length-1);
+  types.forEach((t,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,26,bw,130,t.c,t.l,null,t.ic);
+    ctx.fillStyle=t.c+'15'; rr(ctx,x+6,52,bw-12,70,4); ctx.fill();
+    ctx.font='20px sans-serif'; ctx.textAlign='center'; ctx.fillText(t.ic,x+bw/2,92);
+  });
+  txt(ctx,W/2,H-6,'All structures are durable — data persists across node failures via Multi-AZ transaction log',C.muted,10);
+}
+
+function drawCluster(){
+  const s=setup('clusterCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'MemoryDB Cluster — Always Cluster Mode',C.muted,11);
+
+  const shards=[{l:'Shard 1',slots:'0–5460',c:C.red2},{l:'Shard 2',slots:'5461–10922',c:C.green},{l:'Shard 3',slots:'10923–16383',c:C.blue}];
+  const sw=Math.min(210,(W-60)/3);
+  const sg=(W-40-sw*3)/2;
+  shards.forEach((sh,i)=>{
+    const x=20+i*(sw+sg);
+    ctx.fillStyle='#0d1117'; ctx.strokeStyle=sh.c; ctx.lineWidth=1.5;
+    rr(ctx,x,28,sw,210,10); ctx.fill(); ctx.stroke();
+    txt(ctx,x+sw/2,46,sh.l,sh.c,12); txt(ctx,x+sw/2,60,'Slots: '+sh.slots,C.muted,9);
+
+    // Primary
+    ctx.fillStyle=sh.c+'22'; ctx.strokeStyle=sh.c; ctx.lineWidth=1;
+    rr(ctx,x+10,68,sw-20,36,6); ctx.fill(); ctx.stroke();
+    txt(ctx,x+sw/2,89,'🔴 Primary (AZ-a)',C.text,10);
+
+    // Replicas
+    [114,154,194].forEach((ry,j)=>{
+      ctx.fillStyle='rgba(63,185,80,0.1)'; ctx.strokeStyle=C.green; ctx.lineWidth=1;
+      rr(ctx,x+10,ry,sw-20,30,6); ctx.fill(); ctx.stroke();
+      txt(ctx,x+sw/2,ry+18,'📖 Replica '+(j+1)+' (AZ-'+(j===0?'b':j===1?'c':'d')+')',C.green,10);
+    });
+  });
+
+  txt(ctx,W/2,H-8,'Key → CRC16 % 16384 → hash slot → shard · Use {hashtag} to colocate keys',C.muted,10);
+}
+
+function drawSec(){
+  const s=setup('secCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'MemoryDB Security Layers',C.muted,11);
+
+  const layers=[
+    {l:'VPC + Security Groups — Network isolation',c:C.blue,r:H/2-24},
+    {l:'TLS (mandatory) — In-transit encryption',c:C.orange,r:H/2-50},
+    {l:'KMS — At-rest encryption',c:C.purple,r:H/2-76},
+    {l:'ACL Users — Command + key permissions',c:C.red2,r:H/2-98},
+  ];
+  const cx=W/2, cy=H/2+20;
+  const maxR=H/2-10;
+  layers.forEach(l=>{
+    const r=l.r/layers[0].r*maxR;
+    ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2);
+    ctx.fillStyle=l.c+'0d'; ctx.fill();
+    ctx.strokeStyle=l.c+'55'; ctx.lineWidth=1.5; ctx.stroke();
+    txt(ctx,cx,cy-r+14,l.l,l.c,10);
+  });
+  // Core
+  ctx.beginPath(); ctx.arc(cx,cy,24,0,Math.PI*2);
+  ctx.fillStyle=C.red2+'22'; ctx.fill();
+  ctx.strokeStyle=C.red2; ctx.lineWidth=2; ctx.stroke();
+  txt(ctx,cx,cy+4,'🧠',C.red2,14);
+  txt(ctx,cx,cy+18,'Data',C.red2,9);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawCompare,drawDur,drawDs,drawCluster,null,drawSec,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>
