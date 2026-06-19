@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignalR — Beginner to Advanced</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --sg:#5a2abf;--sg-l:#ece0f8;--sg-d:#3a1580;
+  --hub:#0e8abf;--hub-l:#d4ecf8;--hub-d:#085c8a;
+  --grp:#1a8a5a;--grp-l:#d4f0e0;--grp-d:#085c38;
+  --life:#bf6a0e;--life-l:#f8f0d4;--life-d:#8a4500;
+  --scale:#bf2a1a;--scale-l:#f8d8d4;--scale-d:#8a1500;
+  --adv:#bf2a7a;--adv-l:#f8d6ec;--adv-d:#8a0050;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(90,42,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+.header{background:linear-gradient(135deg,#0a0618 0%,#1a0e38 45%,#1e1240 100%);border-bottom:1px solid #1a0e30;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(90,42,191,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,191,.25) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(26,138,90,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#c4b5fd,#7dd3fc,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-why.active{background:var(--sg-l);color:var(--sg-d);}
+.t-hub.active{background:var(--hub-l);color:var(--hub-d);}
+.t-grp.active{background:var(--grp-l);color:var(--grp-d);}
+.t-life.active{background:var(--life-l);color:var(--life-d);}
+.t-scale.active{background:var(--scale-l);color:var(--scale-d);}
+.t-adv.active{background:var(--adv-l);color:var(--adv-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-why h2,.ph-why h3{color:var(--sg-d);}     .ph-why h2{border-bottom:3px solid var(--sg-l);}
+.ph-hub h2,.ph-hub h3{color:var(--hub-d);}    .ph-hub h2{border-bottom:3px solid var(--hub-l);}
+.ph-grp h2,.ph-grp h3{color:var(--grp-d);}    .ph-grp h2{border-bottom:3px solid var(--grp-l);}
+.ph-life h2,.ph-life h3{color:var(--life-d);} .ph-life h2{border-bottom:3px solid var(--life-l);}
+.ph-scale h2,.ph-scale h3{color:var(--scale-d);} .ph-scale h2{border-bottom:3px solid var(--scale-l);}
+.ph-adv h2,.ph-adv h3{color:var(--adv-d);}    .ph-adv h2{border-bottom:3px solid var(--adv-l);}
+
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.scene{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin:14px 0;border-left:4px solid var(--border2);}
+.scene-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.scene p{color:var(--text2);font-size:.88rem;margin:0;}
+.aha{background:linear-gradient(135deg,#fff9e6,#fef3c7);border:1.5px solid rgba(217,160,15,.25);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.aha-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#92660a;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.aha p{color:#5c4a10;font-size:.88rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.why-c{border-left:4px solid var(--sg);}
+.code-block.hub-c{border-left:4px solid var(--hub);}
+.code-block.grp-c{border-left:4px solid var(--grp);}
+.code-block.life-c{border-left:4px solid var(--life);}
+.code-block.scale-c{border-left:4px solid var(--scale);}
+.code-block.adv-c{border-left:4px solid var(--adv);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.why-l{color:#c4b5fd;}.code-label.hub-l{color:#7dd3fc;}.code-label.grp-l{color:#6ee7b7;}
+.code-label.life-l{color:#fcd34d;}.code-label.scale-l{color:#fca5a5;}.code-label.adv-l{color:#f9a8d4;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.iface{color:#89dceb;font-style:italic;}.at{color:#fab387;}
+code{background:rgba(90,42,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--sg-d);}
+
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-why li{border-left:3px solid var(--sg);} .cl-why li:before{content:"✓ ";color:var(--sg);font-weight:700;}
+.cl-hub li{border-left:3px solid var(--hub);} .cl-hub li:before{content:"✓ ";color:var(--hub);font-weight:700;}
+.cl-grp li{border-left:3px solid var(--grp);} .cl-grp li:before{content:"✓ ";color:var(--grp);font-weight:700;}
+.cl-life li{border-left:3px solid var(--life);} .cl-life li:before{content:"✓ ";color:var(--life);font-weight:700;}
+.cl-scale li{border-left:3px solid var(--scale);} .cl-scale li:before{content:"✓ ";color:var(--scale);font-weight:700;}
+.cl-adv li{border-left:3px solid var(--adv);} .cl-adv li:before{content:"✓ ";color:var(--adv);font-weight:700;}
+
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin:14px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--sg-d);}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;}
+
+.completion{background:linear-gradient(135deg,#0a0618,#1a0e38);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.stat-grid{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">.NET / C# · Real-Time Communication</div>
+    <h1>SignalR — <span>Beginner to Advanced</span></h1>
+    <p>How browsers and servers actually push data to each other in real-time, and how to build it in ASP.NET Core</p>
+    <div class="header-chips">
+      <span class="chip">WebSockets</span>
+      <span class="chip">Hubs</span>
+      <span class="chip">Groups</span>
+      <span class="chip">Connection Lifecycle</span>
+      <span class="chip">Scaling Out</span>
+      <span class="chip">Streaming</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-why active" onclick="T('why',this)">① Why SignalR Exists</button>
+      <button class="tab-btn t-hub"   onclick="T('hub',this)">② Your First Hub</button>
+      <button class="tab-btn t-grp"   onclick="T('grp',this)">③ Groups</button>
+      <button class="tab-btn t-life"  onclick="T('life',this)">④ Connection Lifecycle</button>
+      <button class="tab-btn t-scale" onclick="T('scale',this)">⑤ Scaling Out</button>
+      <button class="tab-btn t-adv"   onclick="T('adv',this)">⑥ Advanced Patterns</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — WHY SIGNALR EXISTS
+══════════════════════════════════ -->
+<div id="tab-why" class="tab-panel active ph-why"><div class="section">
+  <h2>⚡ Why Does SignalR Even Exist?</h2>
+
+  <div class="story">Think about how a normal web request works: your browser asks for something, the server answers, done. The server never speaks unless spoken to. Now imagine you're building a live sports score app — when the score changes, you want every single person watching to see it update INSTANTLY, without them refreshing the page. The server needs to be the one to start the conversation this time. Nothing about normal HTTP lets it do that.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Couldn't the browser just keep asking "any updates?" every second?</div>
+    <p class="qa-a">Yes, and that's actually the first thing everyone tries — it's called <strong>polling</strong>. Your browser sends a request every second asking "anything new?" Most of the time the answer is "nope," so you're burning requests and server resources on mostly-empty responses. And there's an unavoidable delay — if the score changes right after you asked, you won't know for up to a second. For a sports score, mildly annoying. For a stock trading app or a multiplayer game, that delay is a dealbreaker.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What if the browser just... holds the request open and waits for something to happen?</div>
+    <p class="qa-a">That's the next idea people land on, called <strong>long polling</strong>. The browser sends a request, and instead of the server replying immediately, it just holds the connection open until there's actually something to say — then responds, and the browser immediately opens a new one. It's better than naive polling, but you're still paying the overhead of opening a fresh HTTP connection over and over, and there's still a small gap between one request ending and the next one starting.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 What If the Connection Just... Stayed Open?</div>
+    <p>This is the idea behind a <strong>WebSocket</strong> — instead of the request/response back-and-forth, the browser and server open ONE connection and just keep it alive. Either side can send a message down that pipe at any moment, with no "asking permission" first. The server can push the score update the INSTANT it happens, because the pipe to your browser is just sitting there, open, ready.</p>
+  </div>
+
+  <h3>So Why Not Just Use WebSockets Directly?</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> If WebSockets solve the problem, why does SignalR need to exist at all?</div>
+    <p class="qa-a">Because raw WebSockets only solve the "keep a pipe open" part — they leave you to handle a long list of real-world problems yourself: what if the browser is an old one that doesn't support WebSockets? What if a corporate firewall blocks them (this genuinely happens)? What happens when the connection drops — does your code reconnect automatically? How do you call a specific C# method on the server from JavaScript, with proper method names and arguments, instead of just shoving raw text down a pipe? None of that comes for free with a bare WebSocket.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 SignalR's Actual Job</div>
+    <p>SignalR is a library that gives you the real-time "server can push to client" capability, while automatically picking the best transport available (WebSockets if possible, falling back to Server-Sent Events, then long polling, without you writing that fallback logic), automatically reconnecting when a connection drops, and letting you write code that LOOKS like you're just calling a normal method — <code>hub.SendMessage("hello")</code> — even though under the hood it's serializing that call and sending it across whatever transport got negotiated.</p>
+  </div>
+
+  <h3>Where This Actually Matters</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">💬</span><h4>Chat Apps</h4><p>Messages appear instantly for everyone in the conversation, no refresh needed.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Live Dashboards</h4><p>Stock prices, sports scores, server metrics updating in real-time.</p></div>
+    <div class="icon-item"><span class="emoji">🔔</span><h4>Notifications</h4><p>"New comment on your post" appearing the instant it happens.</p></div>
+    <div class="icon-item"><span class="emoji">🎮</span><h4>Collaborative Tools</h4><p>Seeing someone else's cursor move in a shared document, live.</p></div>
+    <div class="icon-item"><span class="emoji">📍</span><h4>Live Tracking</h4><p>Watching a delivery driver's position update on a map in real time.</p></div>
+    <div class="icon-item"><span class="emoji">🔄</span><h4>Progress Updates</h4><p>A long-running server job reporting "60% done..." back to the browser.</p></div>
+  </div>
+
+  <h3>The Three Pieces You'll Keep Hearing About</h3>
+  <ul class="checklist cl-why">
+    <li><strong>Hub</strong> — a class on your server that's the meeting point for real-time communication; clients call methods on it, and it can call methods back on connected clients</li>
+    <li><strong>Connection</strong> — one client's link to the hub, identified by a unique connection ID, which exists for as long as that browser tab stays connected</li>
+    <li><strong>Transport</strong> — the actual mechanism moving the data (WebSocket, Server-Sent Events, or long polling) — SignalR picks the best one automatically and you usually don't need to think about it</li>
+  </ul>
+
+  <div class="tip">
+    <h4>💡 You Don't Need to Pick a Transport Yourself</h4>
+    <p>SignalR negotiates this automatically when a client connects: try WebSockets first, and only fall back to something else if the browser or network doesn't support them. Your C# and JavaScript code stays exactly the same regardless of which transport actually got used underneath — that's the whole point of the abstraction.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — YOUR FIRST HUB
+══════════════════════════════════ -->
+<div id="tab-hub" class="tab-panel ph-hub"><div class="section">
+  <h2>🛠️ Your First Hub</h2>
+
+  <div class="story">Let's actually build the simplest possible real-time thing: a counter that goes up for EVERYONE watching, the instant anyone clicks a button — no refresh, no polling. This is small enough to hold in your head completely, but it contains every core SignalR concept you'll use in much bigger projects.</div>
+
+  <h3>Step 1 — The Hub Itself</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What actually IS a Hub, mechanically?</div>
+    <p class="qa-a">It's just a regular C# class that inherits from SignalR's <code>Hub</code> base class. Any PUBLIC method you write on it becomes something JavaScript can call directly from the browser — SignalR handles the wiring. Think of it as the server-side "phone number" that clients dial into.</p>
+  </div>
+
+  <div class="code-block hub-c">
+    <div class="code-label hub-l">C# — The simplest possible Hub</div>
+    <pre><span class="kw">public class</span> <span class="tp">CounterHub</span> : <span class="tp">Hub</span>
+{
+    <span class="kw">private static int</span> _count = <span class="num">0</span>;
+
+    <span class="cm">// Called by JavaScript when the button is clicked.
+    // "public" + inside a Hub = automatically callable from the client.</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">Increment</span>()
+    {
+        _count++;
+
+        <span class="cm">// Push the new value to EVERY connected client — not just whoever clicked.
+        // "Clients.All" means "everyone currently connected to this hub".
+        // "ReceiveCount" is just a NAME — the client decides what to do with it.</span>
+        <span class="kw">await</span> Clients.All.<span class="fn">SendAsync</span>(<span class="str">"ReceiveCount"</span>, _count);
+    }
+}</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> "ReceiveCount" isn't a method I defined anywhere — where does it come from?</div>
+    <p class="qa-a">Good catch, and this trips people up the first time. It's not a real C# method — it's just a STRING that acts as a label. On the JavaScript side, you'll register a handler that listens for messages labeled "ReceiveCount" and the names just have to match between server and client. There's no compiler checking this for you in the basic setup (we'll see a stricter, strongly-typed version later in Advanced Patterns).</p>
+  </div>
+
+  <h3>Step 2 — Wiring It Into Your App</h3>
+
+  <div class="code-block hub-c">
+    <div class="code-label hub-l">C# — Program.cs registration</div>
+    <pre><span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+builder.Services.<span class="fn">AddSignalR</span>();   <span class="cm">// 1. Register SignalR services</span>
+
+<span class="kw">var</span> app = builder.<span class="fn">Build</span>();
+
+app.<span class="fn">MapHub</span>&lt;<span class="tp">CounterHub</span>&gt;(<span class="str">"/counterhub"</span>);  <span class="cm">// 2. Expose the hub at this URL</span>
+
+app.<span class="fn">Run</span>();</pre>
+  </div>
+
+  <h3>Step 3 — The Browser Side</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> How does JavaScript even talk to a C# class?</div>
+    <p class="qa-a">Through the SignalR JavaScript client library, which gives you a <code>HubConnection</code> object. You point it at the URL you mapped the hub to, start the connection, and from then on you can call server methods by NAME (as a string) and listen for server-pushed messages by name too. It feels a bit like calling a remote API, except the connection stays open the whole time.</p>
+  </div>
+
+  <div class="code-block hub-c">
+    <div class="code-label hub-l">JavaScript — Connecting and using the hub</div>
+    <pre><span class="kw">const</span> connection = <span class="kw">new</span> signalR.HubConnectionBuilder()
+    .withUrl(<span class="str">"/counterhub"</span>)
+    .build();
+
+<span class="cm">// Listen for the server calling "ReceiveCount" — name must match the SendAsync call in C#</span>
+connection.on(<span class="str">"ReceiveCount"</span>, (newCount) => {
+    document.getElementById(<span class="str">"counterDisplay"</span>).innerText = newCount;
+});
+
+<span class="kw">await</span> connection.start();   <span class="cm">// Opens the actual connection</span>
+
+document.getElementById(<span class="str">"incrementBtn"</span>).addEventListener(<span class="str">"click"</span>, () => {
+    <span class="cm">// Calls the C# "Increment" method by name — matches the public method on CounterHub</span>
+    connection.invoke(<span class="str">"Increment"</span>);
+});</pre>
+  </div>
+
+  <h3>Seeing the Whole Loop</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🛠️ One Click, Everyone Updates</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrhub" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e8abf"/>
+          </marker>
+          <marker id="arrhubp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <rect x="20" y="20" width="120" height="55" rx="8" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="2"/>
+        <text x="80" y="43" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c8a" text-anchor="middle">Browser A</text>
+        <text x="80" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">clicks button</text>
+
+        <line x1="140" y1="48" x2="280" y2="105" stroke="#0e8abf" stroke-width="2" marker-end="url(#arrhub)"/>
+        <text x="190" y="90" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e8abf" text-anchor="middle">invoke("Increment")</text>
+
+        <rect x="285" y="100" width="150" height="65" rx="8" fill="#ede0f8" stroke="rgba(90,42,191,.35)" stroke-width="2.5"/>
+        <text x="360" y="125" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#3a1580" text-anchor="middle">CounterHub</text>
+        <text x="360" y="142" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">_count++</text>
+        <text x="360" y="157" font-family="JetBrains Mono,monospace" font-size="8" fill="#3a1580" text-anchor="middle">Clients.All.SendAsync(...)</text>
+
+        <line x1="285" y1="125" x2="155" y2="200" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrhubp)"/>
+        <line x1="435" y1="125" x2="565" y2="200" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrhubp)"/>
+
+        <rect x="90" y="205" width="130" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="155" y="228" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">Browser A</text>
+        <text x="155" y="244" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">on("ReceiveCount")</text>
+
+        <rect x="500" y="205" width="130" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="565" y="228" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">Browser B</text>
+        <text x="565" y="244" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">on("ReceiveCount")</text>
+
+        <text x="565" y="75" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Never clicked anything —</text>
+        <text x="565" y="90" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">still gets the update pushed to it</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 The Part That Should Feel Surprising</h4>
+    <p>Browser B never asked for anything. It just sat there with an open connection, and the server pushed data to it the instant Browser A clicked. That's the entire point of everything we just built — and it's the thing plain HTTP could never do.</p>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ That Static Counter Won't Survive Multiple Servers</h4>
+    <p>Notice <code>_count</code> is a <code>static</code> field living in server memory. This works fine on ONE server. The moment you run two server instances behind a load balancer, each has its OWN separate <code>_count</code>, and clients connected to different servers will see different numbers. We'll hit this exact problem properly in the Scaling Out tab — for now, just notice that it's lurking.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — GROUPS
+══════════════════════════════════ -->
+<div id="tab-grp" class="tab-panel ph-grp"><div class="section">
+  <h2>👥 Groups — Sending to Some People, Not Everyone</h2>
+
+  <div class="story">The counter example pushed updates to absolutely everyone connected — fine for a public counter, but imagine a chat app with 10,000 active conversations on the same server. If Alice sends a message in her conversation with Bob, you definitely don't want that pushed to all 10,000 conversations' worth of connected users. You need a way to say "just THESE people."</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Couldn't I just keep my own list of "which connection IDs are in which conversation" and loop through it myself?</div>
+    <p class="qa-a">You could build that yourself, and it's not a crazy idea — but you'd be reinventing something SignalR already gives you for free, with extra bookkeeping (what happens when someone disconnects? do you remember to remove them from your list?). SignalR's built-in <strong>Groups</strong> feature is exactly this: a named bucket of connections, managed for you, that you can add a connection to, remove it from, and send messages to as a unit.</p>
+  </div>
+
+  <h3>Adding Connections to a Group</h3>
+
+  <div class="code-block grp-c">
+    <div class="code-label grp-l">C# — Joining and messaging a group</div>
+    <pre><span class="kw">public class</span> <span class="tp">ChatHub</span> : <span class="tp">Hub</span>
+{
+    <span class="cm">// Called by a client when they open a specific conversation</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">JoinConversation</span>(<span class="kw">string</span> conversationId)
+    {
+        <span class="cm">// Context.ConnectionId = THIS specific connection's unique ID
+        // Groups.AddToGroupAsync just files this connection under that group name</span>
+        <span class="kw">await</span> Groups.<span class="fn">AddToGroupAsync</span>(Context.ConnectionId, conversationId);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SendMessage</span>(<span class="kw">string</span> conversationId, <span class="kw">string</span> message)
+    {
+        <span class="cm">// Only connections that joined THIS conversation's group receive it —
+        // everyone in other conversations is completely unaffected</span>
+        <span class="kw">await</span> Clients.Group(conversationId).<span class="fn">SendAsync</span>(<span class="str">"ReceiveMessage"</span>, message);
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">LeaveConversation</span>(<span class="kw">string</span> conversationId)
+    {
+        <span class="kw">await</span> Groups.<span class="fn">RemoveFromGroupAsync</span>(Context.ConnectionId, conversationId);
+    }
+}</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What if I want to message everyone EXCEPT the person who triggered it?</div>
+    <p class="qa-a">That's an extremely common need — you usually don't want to echo a message back to the person who just sent it (their own UI already shows it locally). SignalR has a few of these targeted options built in, which save you from manually filtering lists yourself.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>📍 Common Targeting Options</h4>
+      <ul>
+        <li><code>Clients.All</code> — every connected client</li>
+        <li><code>Clients.Caller</code> — only the connection that called this method</li>
+        <li><code>Clients.Others</code> — everyone EXCEPT the caller</li>
+        <li><code>Clients.Group("name")</code> — everyone in that group</li>
+        <li><code>Clients.OthersInGroup("name")</code> — group members except the caller</li>
+        <li><code>Clients.Client(connectionId)</code> — one specific connection</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🤔 Why So Many Options?</h4>
+      <p>Each one maps to a real, common scenario: <code>Others</code> for "don't echo back to sender," <code>Group</code> for "this room/conversation only," <code>Client</code> for "send a private notification to one specific connection." Having these built in means you're rarely writing manual filtering logic.</p>
+    </div>
+  </div>
+
+  <h3>Seeing Group Isolation in Action</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">👥 Two Conversations, Completely Isolated</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrgrp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a5a"/>
+          </marker>
+        </defs>
+        <rect x="20" y="20" width="130" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="85" y="43" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Alice</text>
+        <text x="85" y="59" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">sends in "conv-1"</text>
+
+        <line x1="150" y1="45" x2="290" y2="100" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrgrp)"/>
+
+        <rect x="295" y="80" width="160" height="50" rx="8" fill="#ede0f8" stroke="rgba(90,42,191,.35)" stroke-width="2.5"/>
+        <text x="375" y="103" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#3a1580" text-anchor="middle">ChatHub</text>
+        <text x="375" y="118" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Clients.Group("conv-1")</text>
+
+        <line x1="295" y1="105" x2="155" y2="155" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrgrp)"/>
+
+        <rect x="90" y="155" width="130" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="155" y="178" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">Bob</text>
+        <text x="155" y="194" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">in group "conv-1" ✅</text>
+
+        <rect x="450" y="20" width="130" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="515" y="43" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Carol</text>
+        <text x="515" y="59" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">in "conv-2" only</text>
+
+        <rect x="450" y="155" width="130" height="50" rx="8" fill="#f8d8d4" stroke="rgba(191,42,26,.3)" stroke-width="1.5"/>
+        <text x="515" y="178" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a1500" text-anchor="middle">Dave</text>
+        <text x="515" y="194" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">in group "conv-2" only</text>
+        <text x="515" y="210" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf2a1a" text-anchor="middle" font-weight="700">❌ never receives Alice's message</text>
+
+        <text x="360" y="250" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Carol and Dave are connected to the SAME hub on the SAME server,</text>
+        <text x="360" y="266" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">but group membership keeps Alice and Bob's conversation completely invisible to them</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Group Membership Doesn't Automatically Survive a Reconnect</h4>
+    <p>If a client's connection drops and SignalR reconnects them, they get a brand NEW connection ID — and group membership was tied to the OLD connection ID. This means you typically need to re-join groups after reconnecting (often inside an <code>OnConnectedAsync</code> override or a reconnect handler), which we'll cover properly in the next tab.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 4 — CONNECTION LIFECYCLE
+══════════════════════════════════ -->
+<div id="tab-life" class="tab-panel ph-life"><div class="section">
+  <h2>🔄 Connection Lifecycle &amp; State</h2>
+
+  <div class="story">Someone opens your chat app. You want to show "Bob is online" to his friends. Later, Bob closes his laptop without clicking any "logout" button — his wifi just dies. How does your server even find out Bob is gone, if nobody told it?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> If nobody explicitly says "I'm leaving," how would the server ever know?</div>
+    <p class="qa-a">This is exactly what the Hub lifecycle methods are for. SignalR automatically detects when a connection drops — whether that's a clean disconnect or wifi dying — and calls a method on your Hub when it happens. You don't poll for this or guess; SignalR's underlying transport notices the connection is gone and tells you.</p>
+  </div>
+
+  <h3>The Two Methods You'll Override Constantly</h3>
+
+  <div class="code-block life-c">
+    <div class="code-label life-l">C# — Tracking who's online</div>
+    <pre><span class="kw">public class</span> <span class="tp">ChatHub</span> : <span class="tp">Hub</span>
+{
+    <span class="kw">private static readonly</span> <span class="tp">ConcurrentDictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt; _onlineUsers = <span class="kw">new</span>();
+
+    <span class="cm">// Called automatically the moment a client's connection is established</span>
+    <span class="kw">public override async</span> <span class="tp">Task</span> <span class="fn">OnConnectedAsync</span>()
+    {
+        <span class="kw">var</span> userId = Context.UserIdentifier ?? Context.ConnectionId;
+        _onlineUsers[Context.ConnectionId] = userId;
+
+        <span class="cm">// Tell everyone else this person just came online</span>
+        <span class="kw">await</span> Clients.Others.<span class="fn">SendAsync</span>(<span class="str">"UserOnline"</span>, userId);
+        <span class="kw">await base</span>.<span class="fn">OnConnectedAsync</span>();
+    }
+
+    <span class="cm">// Called automatically when the connection ends, for ANY reason —
+    // clean logout, wifi dying, browser tab closed, server restart</span>
+    <span class="kw">public override async</span> <span class="tp">Task</span> <span class="fn">OnDisconnectedAsync</span>(<span class="tp">Exception</span>? exception)
+    {
+        <span class="kw">if</span> (_onlineUsers.<span class="fn">TryRemove</span>(Context.ConnectionId, <span class="kw">out var</span> userId))
+        {
+            <span class="kw">await</span> Clients.Others.<span class="fn">SendAsync</span>(<span class="str">"UserOffline"</span>, userId);
+        }
+        <span class="kw">await base</span>.<span class="fn">OnDisconnectedAsync</span>(exception);
+    }
+}</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why does <code>OnDisconnectedAsync</code> take an Exception parameter?</div>
+    <p class="qa-a">Because it gets called for BOTH a graceful disconnect (parameter is <code>null</code>) and an abrupt one — network failure, crash, wifi dropping (parameter holds details about what went wrong). You usually don't need to inspect it for normal logic like "mark them offline," but it's there if you want to log or react differently to ungraceful disconnects specifically.</p>
+  </div>
+
+  <h3>Reconnection — What Happens When Wifi Blips for 3 Seconds</h3>
+
+  <div class="scene">
+    <div class="scene-tag">📡 The Scenario</div>
+    <p>Someone's on a train, wifi cuts out for a few seconds, then comes back. Did they get logged out? Did they lose their group memberships? Does the app show a scary error?</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Does SignalR automatically try to reconnect, or do I have to write that myself?</div>
+    <p class="qa-a">It can do it automatically, but you have to explicitly opt in by calling <code>.withAutomaticReconnect()</code> when building the connection on the client side — it's not the default. Once enabled, if the connection drops the client will keep attempting to reconnect using a backoff pattern, and your code hooks into events for what's currently happening: reconnecting, successfully reconnected, or given up entirely.</p>
+  </div>
+
+  <div class="code-block life-c">
+    <div class="code-label life-l">JavaScript — Handling reconnection explicitly</div>
+    <pre><span class="kw">const</span> connection = <span class="kw">new</span> signalR.HubConnectionBuilder()
+    .withUrl(<span class="str">"/chathub"</span>)
+    .withAutomaticReconnect()   <span class="cm">// opt in — not automatic by default</span>
+    .build();
+
+connection.onreconnecting((error) => {
+    <span class="cm">// Connection just dropped — SignalR is retrying in the background</span>
+    showBanner(<span class="str">"Reconnecting..."</span>);
+});
+
+connection.onreconnected((connectionId) => {
+    <span class="cm">// Success! But note: this is a BRAND NEW connection ID.
+    // Group membership tied to the old ID is gone — re-establish it here.</span>
+    showBanner(<span class="str">"Back online"</span>);
+    connection.invoke(<span class="str">"JoinConversation"</span>, currentConversationId);
+});
+
+connection.onclose((error) => {
+    <span class="cm">// Gave up entirely — show a real error, offer a "Retry" button</span>
+    showBanner(<span class="str">"Connection lost. Please refresh."</span>);
+});</pre>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The Detail That Catches People Off Guard</div>
+    <p>A reconnect gives you a NEW connection ID, not the old one back. Anything keyed by the old connection ID — group membership, any per-connection state you were tracking — is gone and needs to be rebuilt. This is exactly why we flagged it as a warning back in the Groups tab.</p>
+  </div>
+
+  <h3>Storing Per-Connection State Safely</h3>
+
+  <div class="warn">
+    <h4>⚠️ Don't Store State as Instance Fields on the Hub</h4>
+    <p>A new instance of your Hub class is created for EVERY method call — Hubs are not long-lived objects sitting around between requests. If you write <code>private string _username;</code> as a field and set it in one method, it'll be gone by the next method call, because that's a completely different instance. Use <code>Context.Items</code> for per-connection data that needs to persist across calls within the same connection lifetime.</p>
+  </div>
+
+  <div class="code-block life-c">
+    <div class="code-label life-l">C# — Context.Items for per-connection scratch space</div>
+    <pre><span class="kw">public override async</span> <span class="tp">Task</span> <span class="fn">OnConnectedAsync</span>()
+{
+    <span class="cm">// Survives across multiple method calls FROM THIS SAME CONNECTION
+    // (gone the instant this connection disconnects — that's the point)</span>
+    Context.Items[<span class="str">"JoinedAt"</span>] = <span class="tp">DateTime</span>.UtcNow;
+    <span class="kw">await base</span>.<span class="fn">OnConnectedAsync</span>();
+}
+
+<span class="kw">public</span> <span class="tp">TimeSpan</span> <span class="fn">GetSessionDuration</span>()
+{
+    <span class="kw">var</span> joinedAt = (<span class="tp">DateTime</span>)Context.Items[<span class="str">"JoinedAt"</span>]!;
+    <span class="kw">return</span> <span class="tp">DateTime</span>.UtcNow - joinedAt;
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — SCALING OUT
+══════════════════════════════════ -->
+<div id="tab-scale" class="tab-panel ph-scale"><div class="section">
+  <h2>📈 Scaling Out — The Backplane Problem</h2>
+
+  <div class="story">Your chat app is a hit. One server isn't enough anymore, so you spin up a second instance behind a load balancer. Alice connects — routed to Server 1. Bob connects — routed to Server 2. Alice sends Bob a message. Nothing happens on Bob's screen. What went wrong?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Wasn't the whole point of Groups and Clients.All that SignalR handles routing for us?</div>
+    <p class="qa-a">It does — but only among connections that THAT SAME SERVER PROCESS knows about. Server 1's in-memory list of "who's connected" only contains Alice — it has never heard of Bob, because Bob's connection lives entirely in Server 2's memory. When Alice's message triggers <code>Clients.Group(...).SendAsync(...)</code> on Server 1, it can only reach connections Server 1 knows about. Bob is invisible to it.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Multiple Servers Need a Shared Communication Channel</div>
+    <p>SignalR's answer is called a <strong>backplane</strong> — a shared message bus (typically Redis pub/sub) that every server both publishes to AND subscribes to. When Server 1 wants to send a message, it publishes to Redis. Every OTHER server (including Server 2, which holds Bob's connection) is subscribed and receives it — then Server 2 forwards it on to Bob through his open WebSocket. Your Hub code doesn't change at all.</p>
+  </div>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📈 Without a Backplane vs With One</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrsc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a1a"/>
+          </marker>
+          <marker id="arrscg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a5a"/>
+          </marker>
+        </defs>
+        <text x="180" y="20" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a1500" text-anchor="middle">❌ Without a Backplane — Message Gets Stuck</text>
+        <rect x="20" y="35" width="110" height="50" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="75" y="55" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#0a4280" text-anchor="middle">Alice</text>
+        <text x="75" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">→ Server 1</text>
+        <line x1="130" y1="60" x2="195" y2="60" stroke="#bf2a1a" stroke-width="2" marker-end="url(#arrsc)"/>
+        <rect x="200" y="35" width="140" height="50" rx="6" fill="#f8d8d4" stroke="rgba(191,42,26,.3)" stroke-width="1.5"/>
+        <text x="270" y="55" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a1500" text-anchor="middle">Server 1</text>
+        <text x="270" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">only knows Alice — dead end</text>
+        <rect x="420" y="35" width="140" height="50" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="490" y="55" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a4500" text-anchor="middle">Server 2</text>
+        <text x="490" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">knows Bob — unreachable</text>
+        <rect x="580" y="35" width="110" height="50" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="635" y="55" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#0a4280" text-anchor="middle">Bob</text>
+        <text x="635" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf2a1a" text-anchor="middle">❌ never gets it</text>
+        <line x1="20" y1="105" x2="700" y2="105" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="180" y="128" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">✅ With a Redis Backplane — Message Reaches Bob</text>
+        <rect x="20" y="145" width="100" height="50" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="70" y="168" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#0a4280" text-anchor="middle">Alice</text>
+        <line x1="120" y1="170" x2="175" y2="170" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrscg)"/>
+        <rect x="180" y="145" width="120" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="240" y="165" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">Server 1</text>
+        <text x="240" y="181" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">publishes to Redis</text>
+        <line x1="300" y1="170" x2="355" y2="170" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrscg)"/>
+        <rect x="360" y="145" width="140" height="50" rx="6" fill="#ede0f8" stroke="rgba(90,42,191,.35)" stroke-width="2"/>
+        <text x="430" y="165" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#3a1580" text-anchor="middle">Redis pub/sub</text>
+        <text x="430" y="181" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">all servers subscribed</text>
+        <line x1="500" y1="170" x2="555" y2="170" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrscg)"/>
+        <rect x="560" y="145" width="100" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="610" y="165" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">Server 2</text>
+        <text x="610" y="181" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">forwards to Bob</text>
+        <line x1="610" y1="195" x2="610" y2="220" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrscg)"/>
+        <rect x="560" y="225" width="100" height="40" rx="6" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="1.5"/>
+        <text x="610" y="248" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#0a4280" text-anchor="middle">Bob ✅</text>
+        <text x="360" y="295" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Message sent on any server reaches connections on every server</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Adding the Redis Backplane — One Line of Config</h3>
+
+  <div class="code-block scale-c">
+    <div class="code-label scale-l">C# — Program.cs</div>
+    <pre><span class="kw">var</span> builder = <span class="tp">WebApplication</span>.<span class="fn">CreateBuilder</span>(args);
+
+builder.Services
+    .<span class="fn">AddSignalR</span>()
+    .<span class="fn">AddStackExchangeRedis</span>(<span class="str">"localhost:6379"</span>, options =>
+    {
+        options.Configuration.ChannelPrefix = <span class="tp">RedisChannel</span>.<span class="fn">Literal</span>(<span class="str">"MyApp"</span>);
+    });
+
+<span class="cm">// Your Hub code stays EXACTLY the same.
+// Clients.All, Clients.Group(...), Clients.Others — all now correctly
+// reach connections on every server instance, not just the current one.</span>
+
+<span class="cm">// NuGet package needed:
+// Microsoft.AspNetCore.SignalR.StackExchangeRedis</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Your Hub Code Never Needs to Know Scaling Exists</h4>
+    <p>Write Hub logic once, assuming a single server. Adding horizontal scale later is purely a configuration change — not a rewrite of your real-time logic. This is the whole point of the backplane abstraction.</p>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ The Backplane Fixes Message Routing — Not Shared State</h4>
+    <p>Remember that <code>private static int _count</code> from the counter in Tab 2? A Redis backplane does NOT fix that — each server still has its own separate memory for it. If you need actual shared application state across servers, you store it in Redis (or a database) yourself, separately from the backplane. These are two different concerns.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ Other Things to Know</h4>
+      <ul>
+        <li><strong>Redis becomes a dependency</strong> — if it goes down, cross-server messaging breaks even if each server individually is fine</li>
+        <li><strong>Sticky sessions matter less</strong> with a backplane, since any server can now route to any connection — but long polling fallback still benefits from routing the same session to the same server</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 The Trade-off</h4>
+      <ul>
+        <li>The backplane adds a small hop through Redis for every cross-server message. For most apps imperceptible, but not literally free — you're trading a tiny bit of latency for the ability to run multiple servers at all</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — ADVANCED PATTERNS
+══════════════════════════════════ -->
+<div id="tab-adv" class="tab-panel ph-adv"><div class="section">
+  <h2>🎯 Advanced Patterns</h2>
+
+  <div class="story">Everything so far used string-based method names — "ReceiveMessage", "UserOnline" — which work, but typo a name and you get a silent failure with no compiler warning. As your hub grows, that gets risky. Let's tighten this up, then look at streaming and authentication, which come up as soon as you're past the basics.</div>
+
+  <h3>Strongly-Typed Hubs</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Can the compiler actually catch a typo'd method name?</div>
+    <p class="qa-a">Yes — if you define an interface describing what methods exist on the client, and have your Hub inherit from <code>Hub&lt;TInterface&gt;</code> instead of plain <code>Hub</code>. Now <code>Clients.All</code> isn't a generic "send anything by string name" object — it's typed to that interface. Calling a method that doesn't exist, or passing wrong argument types, is a compile error instead of a silent runtime miss.</p>
+  </div>
+
+  <div class="code-block adv-c">
+    <div class="code-label adv-l">C# — Strongly-typed hub</div>
+    <pre><span class="cm">// Define exactly what the client can be told to do</span>
+<span class="kw">public interface</span> <span class="iface">IChatClient</span>
+{
+    <span class="tp">Task</span> <span class="fn">ReceiveMessage</span>(<span class="kw">string</span> user, <span class="kw">string</span> message);
+    <span class="tp">Task</span> <span class="fn">UserOnline</span>(<span class="kw">string</span> userId);
+    <span class="tp">Task</span> <span class="fn">UserOffline</span>(<span class="kw">string</span> userId);
+}
+
+<span class="kw">public class</span> <span class="tp">ChatHub</span> : <span class="tp">Hub</span>&lt;<span class="iface">IChatClient</span>&gt;
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SendMessage</span>(<span class="kw">string</span> conversationId, <span class="kw">string</span> message)
+    {
+        <span class="cm">// Autocompletes, and a typo here is a COMPILE ERROR, not a silent miss</span>
+        <span class="kw">await</span> Clients.Group(conversationId)
+            .<span class="fn">ReceiveMessage</span>(Context.UserIdentifier!, message);
+    }
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Worth Adopting Once a Hub Grows Past a Few Methods</h4>
+    <p>For the tiny counter example, plain <code>SendAsync</code> is fine. Once you have a Hub with a dozen different message types flowing both directions, strongly-typed pays for itself the first time it catches a renamed method before it ships.</p>
+  </div>
+
+  <h3>Calling Hub Methods From Outside a Hub (IHubContext)</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What if I want to push a notification from a background job or a controller — not from inside a Hub method?</div>
+    <p class="qa-a">This comes up all the time — a background worker finishes processing an order and needs to push "your order is ready!" to the right user. You can't just call Hub methods directly from outside a Hub, but ASP.NET Core's DI system gives you <code>IHubContext&lt;THub&gt;</code>, which lets any class in your app send messages to connected clients without being a Hub itself.</p>
+  </div>
+
+  <div class="code-block adv-c">
+    <div class="code-label adv-l">C# — Pushing from a background service</div>
+    <pre><span class="kw">public class</span> <span class="tp">OrderProcessingService</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IHubContext</span>&lt;<span class="tp">ChatHub</span>, <span class="iface">IChatClient</span>&gt; _hubContext;
+
+    <span class="kw">public</span> <span class="fn">OrderProcessingService</span>(<span class="tp">IHubContext</span>&lt;<span class="tp">ChatHub</span>, <span class="iface">IChatClient</span>&gt; hubContext)
+    {
+        _hubContext = hubContext;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">OnOrderCompletedAsync</span>(<span class="kw">string</span> userId, <span class="kw">string</span> orderId)
+    {
+        <span class="cm">// Pushes directly to all connections belonging to this userId —
+        // no need to be inside a Hub method to do this</span>
+        <span class="kw">await</span> _hubContext.Clients
+            .<span class="fn">User</span>(userId)
+            .<span class="fn">ReceiveMessage</span>(<span class="str">"system"</span>, <span class="str">$"Order {orderId} is ready!"</span>);
+    }
+}</pre>
+  </div>
+
+  <h3>Streaming — When the Server Has a Lot to Send</h3>
+
+  <div class="scene">
+    <div class="scene-tag">📊 The Scenario</div>
+    <p>A server-side report is generating thousands of rows. Sending them all as one giant response means the client waits for everything before seeing anything, and holds the whole result in memory at once.</p>
+  </div>
+
+  <div class="code-block adv-c">
+    <div class="code-label adv-l">C# — Streaming results to the client</div>
+    <pre><span class="kw">public class</span> <span class="tp">ReportHub</span> : <span class="tp">Hub</span>
+{
+    <span class="cm">// Returns IAsyncEnumerable — SignalR streams each yielded value
+    // to the client as it becomes available, not all at the end</span>
+    <span class="kw">public async</span> <span class="tp">IAsyncEnumerable</span>&lt;<span class="kw">string</span>&gt; <span class="fn">StreamReportRows</span>(
+        <span class="kw">string</span> reportId,
+        [<span class="at">EnumeratorCancellation</span>] <span class="tp">CancellationToken</span> token)
+    {
+        <span class="kw">await foreach</span> (<span class="kw">var</span> row <span class="kw">in</span> _reportService.<span class="fn">GetRowsAsync</span>(reportId, token))
+        {
+            <span class="kw">yield return</span> row;  <span class="cm">// sent to client immediately — no buffering</span>
+        }
+    }
+}</pre>
+  </div>
+
+  <div class="code-block adv-c">
+    <div class="code-label adv-l">JavaScript — Consuming the stream</div>
+    <pre><span class="kw">const</span> stream = connection.stream(<span class="str">"StreamReportRows"</span>, reportId);
+
+stream.subscribe({
+    next: (row) => appendRow(row),        <span class="cm">// called for EACH row as it arrives</span>
+    complete: () => showMessage(<span class="str">"Done"</span>), <span class="cm">// all rows received</span>
+    error: (err) => showError(err)
+});</pre>
+  </div>
+
+  <h3>Authentication on Hubs</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Does standard ASP.NET Core <code>[Authorize]</code> work on a Hub?</div>
+    <p class="qa-a">Yes, the same attribute works the same way — apply it to the Hub class or individual methods and unauthenticated connections get rejected. The one wrinkle: for WebSocket connections specifically, browsers can't attach custom Authorization headers the way a normal HTTP request can, so the typical pattern is passing the JWT token via query string instead, and telling the JWT middleware to also look there.</p>
+  </div>
+
+  <div class="code-block adv-c">
+    <div class="code-label adv-l">C# — Securing a Hub + accepting token from query string</div>
+    <pre>[<span class="at">Authorize</span>]
+<span class="kw">public class</span> <span class="tp">ChatHub</span> : <span class="tp">Hub</span>&lt;<span class="iface">IChatClient</span>&gt;
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">SendMessage</span>(<span class="kw">string</span> message)
+    {
+        <span class="cm">// Context.User populated from auth token, same as in a controller</span>
+        <span class="kw">var</span> username = Context.User?.Identity?.Name ?? <span class="str">"unknown"</span>;
+        <span class="kw">await</span> Clients.All.<span class="fn">ReceiveMessage</span>(username, message);
+    }
+}
+
+<span class="cm">// In Program.cs — also accept the JWT from ?access_token= query string
+// (needed because browsers can't set headers on WebSocket handshake)</span>
+.<span class="fn">AddJwtBearer</span>(options =>
+{
+    options.Events = <span class="kw">new</span> <span class="tp">JwtBearerEvents</span>
+    {
+        OnMessageReceived = ctx =>
+        {
+            <span class="kw">var</span> token = ctx.Request.Query[<span class="str">"access_token"</span>];
+            <span class="kw">if</span> (!<span class="tp">string</span>.IsNullOrEmpty(token))
+                ctx.Token = token;
+            <span class="kw">return</span> <span class="tp">Task</span>.CompletedTask;
+        }
+    };
+});</pre>
+  </div>
+
+  <div class="completion">
+    <h3>SignalR — Beginner to Advanced Complete! 🎉</h3>
+    <p>Why SignalR Exists — polling vs long polling vs WebSockets, and what SignalR adds on top (transports, fallback, reconnection, method-call abstraction) · Your First Hub — Hub classes, Clients.All, the JavaScript client, seeing server-push happen live · Groups — isolating messages to subsets of connections, all the targeting options · Connection Lifecycle — OnConnectedAsync / OnDisconnectedAsync, automatic reconnection, why connection IDs change on reconnect, safe per-connection state with Context.Items · Scaling Out — why multiple servers break naive Clients calls, and how a one-line Redis backplane fixes message routing (but not shared state) · Advanced Patterns — strongly-typed hubs for compile-time safety, IHubContext for pushing from outside a Hub, server-to-client streaming, [Authorize] with query-string token support</p>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

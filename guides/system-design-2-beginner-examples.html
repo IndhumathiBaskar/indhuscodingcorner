@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Part 2: Beginner Examples</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --sd:#1a5abf;--sd-l:#d6e8f8;--sd-d:#0e3a8a;
+  --url:#0e8a5a;--url-l:#d4f0e8;--url-d:#085c38;
+  --rl:#bf3a1a;--rl-l:#f8e0d4;--rl-d:#8a2000;
+  --paste:#8a2abf;--paste-l:#ede0f8;--paste-d:#4a1580;
+  --park:#bf6a0e;--park-l:#f8f0d4;--park-d:#8a4500;
+  --chat:#0e6abf;--chat-l:#d6ebf8;--chat-d:#0a4280;
+  --notif:#1a8a7a;--notif-l:#d0f0ec;--notif-d:#0d5c52;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --aws:#bf6a0e;--aws-l:#f8f0d4;
+  --azure:#0e6abf;--azure-l:#d6ebf8;
+  --gcp:#bf2a5a;--gcp-l:#f8d6e4;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(14,138,90,.3) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(26,90,191,.25) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(191,58,26,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#34d399,#60a5fa,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(96,165,250,.25);border:1px solid rgba(96,165,250,.4);color:#93c5fd;}
+.pb-inactive{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.4);}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-over.active{background:var(--sd-l);color:var(--sd-d);}
+.t-url.active{background:var(--url-l);color:var(--url-d);}
+.t-rl.active{background:var(--rl-l);color:var(--rl-d);}
+.t-paste.active{background:var(--paste-l);color:var(--paste-d);}
+.t-park.active{background:var(--park-l);color:var(--park-d);}
+.t-chat.active{background:var(--chat-l);color:var(--chat-d);}
+.t-notif.active{background:var(--notif-l);color:var(--notif-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--sd-d);}     .ph-over h2{border-bottom:3px solid var(--sd-l);}
+.ph-url h2,.ph-url h3{color:var(--url-d);}       .ph-url h2{border-bottom:3px solid var(--url-l);}
+.ph-rl h2,.ph-rl h3{color:var(--rl-d);}          .ph-rl h2{border-bottom:3px solid var(--rl-l);}
+.ph-paste h2,.ph-paste h3{color:var(--paste-d);} .ph-paste h2{border-bottom:3px solid var(--paste-l);}
+.ph-park h2,.ph-park h3{color:var(--park-d);}    .ph-park h2{border-bottom:3px solid var(--park-l);}
+.ph-chat h2,.ph-chat h3{color:var(--chat-d);}    .ph-chat h2{border-bottom:3px solid var(--chat-l);}
+.ph-notif h2,.ph-notif h3{color:var(--notif-d);} .ph-notif h2{border-bottom:3px solid var(--notif-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--sd);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sd-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-url{background:var(--url-l);border:1.5px solid rgba(14,138,90,.2);border-left:4px solid var(--url);}    .an-url .analogy-tag{color:var(--url-d);}
+.an-rl{background:var(--rl-l);border:1.5px solid rgba(191,58,26,.2);border-left:4px solid var(--rl);}        .an-rl .analogy-tag{color:var(--rl-d);}
+.an-paste{background:var(--paste-l);border:1.5px solid rgba(138,42,191,.2);border-left:4px solid var(--paste);} .an-paste .analogy-tag{color:var(--paste-d);}
+.an-park{background:var(--park-l);border:1.5px solid rgba(191,106,14,.2);border-left:4px solid var(--park);} .an-park .analogy-tag{color:var(--park-d);}
+.an-chat{background:var(--chat-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--chat);} .an-chat .analogy-tag{color:var(--chat-d);}
+.an-notif{background:var(--notif-l);border:1.5px solid rgba(26,138,122,.2);border-left:4px solid var(--notif);} .an-notif .analogy-tag{color:var(--notif-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;position:relative;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.scene{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin:14px 0;border-left:4px solid var(--border2);}
+.scene-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.scene p{color:var(--text2);font-size:.88rem;margin:0;}
+.aha{background:linear-gradient(135deg,#fff9e6,#fef3c7);border:1.5px solid rgba(217,160,15,.25);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.aha-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#92660a;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.aha p{color:#5c4a10;font-size:.88rem;margin:0;}
+
+/* STEP */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:13px;}
+.step-num{color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.step-body{background:var(--surface);padding:13px 15px;border-radius:var(--r);flex:1;}
+.step-body h4{margin-bottom:5px;font-size:.9rem;}
+.step-body p{color:var(--muted);font-size:.84rem;margin:0;}
+.s-url .step-num{background:var(--url);} .s-url .step-body{border-left:3px solid var(--url);} .s-url .step-body h4{color:var(--url-d);}
+.s-rl .step-num{background:var(--rl);} .s-rl .step-body{border-left:3px solid var(--rl);} .s-rl .step-body h4{color:var(--rl-d);}
+.s-paste .step-num{background:var(--paste);} .s-paste .step-body{border-left:3px solid var(--paste);} .s-paste .step-body h4{color:var(--paste-d);}
+.s-park .step-num{background:var(--park);} .s-park .step-body{border-left:3px solid var(--park);} .s-park .step-body h4{color:var(--park-d);}
+.s-chat .step-num{background:var(--chat);} .s-chat .step-body{border-left:3px solid var(--chat);} .s-chat .step-body h4{color:var(--chat-d);}
+.s-notif .step-num{background:var(--notif);} .s-notif .step-body{border-left:3px solid var(--notif);} .s-notif .step-body h4{color:var(--notif-d);}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.url-c{border-left:4px solid var(--url);}
+.code-block.rl-c{border-left:4px solid var(--rl);}
+.code-block.paste-c{border-left:4px solid var(--paste);}
+.code-block.park-c{border-left:4px solid var(--park);}
+.code-block.chat-c{border-left:4px solid var(--chat);}
+.code-block.notif-c{border-left:4px solid var(--notif);}
+.code-block.neutral{border-left:4px solid var(--sd);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.url-l{color:#6ee7b7;}.code-label.rl-l{color:#fdba74;}.code-label.paste-l{color:#d8b4fe;}
+.code-label.park-l{color:#fde68a;}.code-label.chat-l{color:#93c5fd;}.code-label.notif-l{color:#99f6e4;}
+.code-label.neutral{color:#93c5fd;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--sd-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-url li{border-left:3px solid var(--url);} .cl-url li:before{content:"✓ ";color:var(--url);font-weight:700;}
+.cl-rl li{border-left:3px solid var(--rl);} .cl-rl li:before{content:"✓ ";color:var(--rl);font-weight:700;}
+.cl-paste li{border-left:3px solid var(--paste);} .cl-paste li:before{content:"✓ ";color:var(--paste);font-weight:700;}
+.cl-park li{border-left:3px solid var(--park);} .cl-park li:before{content:"✓ ";color:var(--park);font-weight:700;}
+.cl-chat li{border-left:3px solid var(--chat);} .cl-chat li:before{content:"✓ ";color:var(--chat);font-weight:700;}
+.cl-notif li{border-left:3px solid var(--notif);} .cl-notif li:before{content:"✓ ";color:var(--notif);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);} .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);} .cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN OVERVIEW CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-url{background:var(--url-l);border-color:rgba(14,138,90,.25);}
+.pc-rl{background:var(--rl-l);border-color:rgba(191,58,26,.25);}
+.pc-paste{background:var(--paste-l);border-color:rgba(138,42,191,.25);}
+.pc-park{background:var(--park-l);border-color:rgba(191,106,14,.25);}
+.pc-chat{background:var(--chat-l);border-color:rgba(14,106,191,.25);}
+.pc-notif{background:var(--notif-l);border-color:rgba(26,138,122,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-url .pc-name{color:var(--url-d);} .pc-rl .pc-name{color:var(--rl-d);}
+.pc-paste .pc-name{color:var(--paste-d);} .pc-park .pc-name{color:var(--park-d);}
+.pc-chat .pc-name{color:var(--chat-d);} .pc-notif .pc-name{color:var(--notif-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);line-height:1.5;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* CLOUD COMPARISON */
+.cloud-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(210px,100%),1fr));gap:10px;margin:14px 0;}
+.cloud-card{border-radius:var(--r);padding:13px;border:1.5px solid;box-shadow:var(--sh);}
+.cloud-card.aws{background:var(--aws-l);border-color:rgba(191,106,14,.25);}
+.cloud-card.azure{background:var(--azure-l);border-color:rgba(14,106,191,.25);}
+.cloud-card.gcp{background:var(--gcp-l);border-color:rgba(191,42,90,.25);}
+.cloud-card.generic{background:var(--surface);border-color:var(--border);}
+.cloud-name{font-weight:800;font-size:.78rem;letter-spacing:.04em;margin-bottom:6px;font-family:'JetBrains Mono',monospace;}
+.cloud-card.aws .cloud-name{color:#8a4500;}
+.cloud-card.azure .cloud-name{color:#0a4280;}
+.cloud-card.gcp .cloud-name{color:#8a003a;}
+.cloud-card.generic .cloud-name{color:var(--text2);}
+.cloud-item{font-size:.78rem;color:var(--text2);margin-bottom:3px;}
+.cloud-item b{font-family:'JetBrains Mono',monospace;font-size:.74rem;}
+
+/* COMPONENT TABLE */
+.comp-table{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+.comp-table table{min-width:600px;}
+.comp-table th{font-size:.66rem;}
+.comp-table td{font-size:.78rem;}
+.comp-table .role-cell{font-weight:700;color:var(--text);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(96,165,250,.2);border:1px solid rgba(96,165,250,.3);color:#93c5fd;}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin:14px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--sd-d);}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;}
+
+/* REQ BADGE */
+.req-badges{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.rb{padding:4px 11px;border-radius:100px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.rb-func{background:rgba(14,138,90,.12);color:#085c38;border:1px solid rgba(14,138,90,.2);}
+.rb-nonfunc{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.pattern-cards,.cloud-grid,.stat-grid{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">System Design Series · Part 2 of 3</div>
+    <div class="part-badge">
+      <span class="pb pb-done">✅ Core Concepts</span>
+      <span class="pb pb-active">② Beginner Examples</span>
+      <span class="pb pb-inactive">③ Advanced Examples</span>
+    </div>
+    <h1>System Design — <span>Beginner Examples</span></h1>
+    <p>URL Shortener · Rate Limiter · Pastebin · Parking Lot · Chat App · Notification System — step by step with AWS / Azure / GCP options</p>
+    <div class="header-chips">
+      <span class="chip">Requirements</span>
+      <span class="chip">Estimation</span>
+      <span class="chip">Step-by-Step Design</span>
+      <span class="chip">Architecture Diagram</span>
+      <span class="chip">AWS · Azure · GCP</span>
+      <span class="chip">Trade-offs</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① How to Approach</button>
+      <button class="tab-btn t-url"   onclick="T('url',this)">② URL Shortener</button>
+      <button class="tab-btn t-rl"    onclick="T('rl',this)">③ Rate Limiter</button>
+      <button class="tab-btn t-paste" onclick="T('paste',this)">④ Pastebin</button>
+      <button class="tab-btn t-park"  onclick="T('park',this)">⑤ Parking Lot</button>
+      <button class="tab-btn t-chat"  onclick="T('chat',this)">⑥ Chat App</button>
+      <button class="tab-btn t-notif" onclick="T('notif',this)">⑦ Notifications</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW / HOW TO APPROACH
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🧭 How to Approach Any System Design Problem</h2>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — Every Example Follows the Same Recipe</div>
+    <p>System design can feel overwhelming because the problems are open-ended. But almost every problem — from a URL shortener to Netflix — can be approached with the <strong>same 5-step framework</strong>. Once you know the framework, you just apply it to whatever system you're asked about. Every example in this guide follows these exact steps.</p>
+  </div>
+
+  <h3>The 5-Step Framework</h3>
+
+  <div class="step s-url">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h4>Clarify Requirements</h4>
+      <p>Split into <strong>Functional</strong> (what the system does — "users can shorten a URL") and <strong>Non-Functional</strong> (qualities — "must be highly available, low latency"). Ask: how many users? Read-heavy or write-heavy? Do we need real-time updates?</p>
+    </div>
+  </div>
+  <div class="step s-url">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h4>Estimate Scale (Back-of-Envelope)</h4>
+      <p>Rough numbers for: requests per second, storage needed per year, bandwidth. These numbers drive every design decision — a system for 100 users looks completely different from one for 100 million.</p>
+    </div>
+  </div>
+  <div class="step s-url">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h4>High-Level Design</h4>
+      <p>Draw the main boxes: client, API/load balancer, application servers, database, cache. Show how a request flows through the system for the main use cases.</p>
+    </div>
+  </div>
+  <div class="step s-url">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h4>Deep Dive into Components</h4>
+      <p>Pick the 1-2 most interesting/critical parts and go deeper — e.g., "how exactly do we generate a unique short code?" or "how does the database schema look?"</p>
+    </div>
+  </div>
+  <div class="step s-url">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <h4>Identify Bottlenecks &amp; Trade-offs</h4>
+      <p>What breaks first as scale grows? What did we sacrifice (consistency, cost, complexity) for what we gained (speed, availability)? There's no perfect design — only good tradeoffs for the stated requirements.</p>
+    </div>
+  </div>
+
+  <h3>Functional vs Non-Functional Requirements</h3>
+  <div class="req-badges">
+    <span class="rb rb-func">FUNCTIONAL</span>
+    <span class="rb rb-nonfunc">NON-FUNCTIONAL</span>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Functional Requirements</h4>
+      <p>What the system DOES — the features.</p>
+      <ul style="margin-top:8px;">
+        <li>"User can create a short URL from a long URL"</li>
+        <li>"User can send a message to another user"</li>
+        <li>"System sends an email when an order is placed"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>⚙️ Non-Functional Requirements</h4>
+      <p>HOW WELL the system does it — the qualities.</p>
+      <ul style="margin-top:8px;">
+        <li>"99.9% availability" (uptime)</li>
+        <li>"Redirect must respond within 100ms"</li>
+        <li>"Must support 10,000 writes per second"</li>
+        <li>"Data must be durable — never lost"</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>About the Cloud Provider Boxes in This Guide</h3>
+  <div class="cloud-grid">
+    <div class="cloud-card aws">
+      <div class="cloud-name">☁️ AWS</div>
+      <div class="cloud-item">Amazon Web Services — largest market share, broadest service catalogue</div>
+    </div>
+    <div class="cloud-card azure">
+      <div class="cloud-name">☁️ AZURE</div>
+      <div class="cloud-item">Microsoft Azure — strong in enterprise, .NET, hybrid cloud</div>
+    </div>
+    <div class="cloud-card gcp">
+      <div class="cloud-name">☁️ GCP</div>
+      <div class="cloud-item">Google Cloud Platform — strong in data analytics, Kubernetes (origin)</div>
+    </div>
+  </div>
+  <div class="tip">
+    <h4>💡 The Concepts Matter More Than the Product Names</h4>
+    <p>Every cloud provider has equivalent services for "load balancer", "object storage", "managed cache", "relational database" — they just use different names. This guide shows all three side-by-side so you recognise the SAME underlying concept whichever cloud you end up using. The architecture diagrams use generic terms (e.g., "Object Storage") — the cloud tables tell you what that's called on each provider.</p>
+  </div>
+
+  <h3>What Each Example Covers</h3>
+  <div class="pattern-cards">
+    <div class="pc pc-url">
+      <span class="pc-emoji">🔗</span>
+      <div class="pc-name">URL Shortener</div>
+      <div class="pc-intent">Read-heavy system. Covers: encoding schemes, database choice, caching, redirects.</div>
+    </div>
+    <div class="pc pc-rl">
+      <span class="pc-emoji">🚦</span>
+      <div class="pc-name">Rate Limiter</div>
+      <div class="pc-intent">Middleware/infrastructure component. Covers: algorithms, distributed counting, Redis.</div>
+    </div>
+    <div class="pc pc-paste">
+      <span class="pc-emoji">📋</span>
+      <div class="pc-name">Pastebin</div>
+      <div class="pc-intent">Content storage system. Covers: object storage, expiration, content addressing.</div>
+    </div>
+    <div class="pc pc-park">
+      <span class="pc-emoji">🅿️</span>
+      <div class="pc-name">Parking Lot System</div>
+      <div class="pc-intent">Object-oriented design + concurrency. Covers: data modelling, concurrent updates.</div>
+    </div>
+    <div class="pc pc-chat">
+      <span class="pc-emoji">💬</span>
+      <div class="pc-name">Chat Application</div>
+      <div class="pc-intent">Real-time system. Covers: WebSockets, message delivery, online presence.</div>
+    </div>
+    <div class="pc pc-notif">
+      <span class="pc-emoji">🔔</span>
+      <div class="pc-name">Notification System</div>
+      <div class="pc-intent">Fan-out system. Covers: multi-channel delivery, templates, retries, preferences.</div>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — URL SHORTENER
+══════════════════════════════════ -->
+<div id="tab-url" class="tab-panel ph-url"><div class="section">
+  <h2>🔗 URL Shortener (like bit.ly / TinyURL)</h2>
+
+  <div class="story">Let's say you're building this. Someone pastes a long ugly link, you give them back something short like <code>short.ly/aZ9kP2</code>, and when anyone opens that short link, they land on the original page. That's the whole product. Let's build it the dumbest way possible first, and see what happens.</div>
+
+  <h3>Version 1 — The Simplest Thing That Could Work</h3>
+
+  <div class="scene">
+    <div class="scene-tag">🏗️ The Naive Build</div>
+    <p>One server. One database table called <code>urls</code> with two columns: <code>short_code</code> and <code>long_url</code>. When someone creates a link, you generate a random 6-character code, save the row. When someone visits <code>/aZ9kP2</code>, you run <code>SELECT long_url FROM urls WHERE short_code = 'aZ9kP2'</code>, and redirect them there. Done. You launch it.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Wait — does this actually work?</div>
+    <p class="qa-a">Yes! Genuinely. For a small project, a side tool, a few hundred users — this is completely fine. Don't let anyone tell you "you need Redis and microservices to build a URL shortener". You don't. The interesting part is what happens if it gets <strong>popular</strong>.</p>
+  </div>
+
+  <h3>Version 1 Goes Viral — Now What?</h3>
+
+  <div class="scene">
+    <div class="scene-tag">📈 Six Months Later</div>
+    <p>Someone famous starts using your shortener in their social media bio. Suddenly your links are everywhere. You check your server dashboard one morning and your database CPU is sitting at 95%. Pages are loading slowly. You're getting emails saying "your links are broken / slow".</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> But it's just one tiny SELECT query — why would that be slow?</div>
+    <p class="qa-a">Because of HOW MANY TIMES it's happening. One query is nothing. But if your shortener now gets <strong>4,000 redirect requests every single second</strong>, that's 4,000 identical-shaped database queries per second, all day, every day. Your database isn't doing anything complicated — it's just being asked the SAME question over and over, millions of times an hour, and every single one of those questions involves a disk lookup.</p>
+  </div>
+
+  <p style="font-size:.86rem;color:var(--muted);">Let's actually put numbers on this, because the numbers are what tell you whether you have a problem at all — and they're what every system design conversation starts with.</p>
+
+  <h3>Step 1 — What Does "Done" Even Mean? (Requirements)</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL — what it DOES</span></div>
+  <ul class="checklist cl-url">
+    <li>User submits a long URL and gets back a short one</li>
+    <li>Visiting the short URL redirects to the original</li>
+    <li>(Optional) custom aliases, expiry dates, click counts</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL — how WELL it needs to do it</span></div>
+  <ul class="checklist cl-url">
+    <li>Redirects must basically never fail — that's the entire product</li>
+    <li>Redirects should feel instant (~50ms or less)</li>
+    <li>WAY more people click links than create them — this is the key fact that shapes everything</li>
+  </ul>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why split requirements into these two boxes — isn't this just... a list of features?</div>
+    <p class="qa-a">Because they lead to completely different decisions. "Users can create short URLs" (functional) is satisfied by literally Version 1 above — a database table. But "redirects must feel instant even under heavy load" (non-functional) is the requirement that's currently BREAKING. The functional requirements tell you WHAT to build. The non-functional ones tell you WHERE it'll hurt.</p>
+  </div>
+
+  <h3>Step 2 — Putting Real Numbers On The Problem</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">100M</div><div class="stat-label">New URLs / month</div></div>
+    <div class="stat"><div class="stat-num">~40</div><div class="stat-label">Writes / second avg</div></div>
+    <div class="stat"><div class="stat-num">10B</div><div class="stat-label">Redirects / month</div></div>
+    <div class="stat"><div class="stat-num">~4,000</div><div class="stat-label">Reads / second avg</div></div>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The "Aha" Moment</div>
+    <p>Look at that ratio: <strong>4,000 reads per second vs only 40 writes per second</strong> — that's 100 reads for every 1 write. Your database isn't struggling because it's storing too much data (600GB total is tiny — any database handles that easily). It's struggling because it's getting <strong>hammered with the same type of read, over and over, far more often than anything is ever written</strong>.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Okay so... just get a bigger/faster database server?</div>
+    <p class="qa-a">You could — that's "vertical scaling" from Part 1, and it buys you time. But think about WHAT'S actually happening: the same handful of popular short links (that famous person's bio link) are being looked up thousands of times per second, and the database keeps re-finding the EXACT SAME ANSWER each time. A bigger database is still doing repeated, wasteful work. What if, instead, the most popular answers were just... sitting somewhere super fast, ready to hand out instantly, without bothering the database at all?</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 That Idea Has a Name</div>
+    <p>That's a <strong>cache</strong>. You already met this concept in Part 1 — it's just memory that sits in front of your database and holds onto recently/frequently-asked-for answers. Once you add one, here's what changes: when someone visits <code>/aZ9kP2</code>, your app first asks the cache "do you know this one?" If yes (a <strong>cache hit</strong>) — instant answer, database never touched. If no (a <strong>cache miss</strong>) — ask the database, then ALSO save that answer in the cache so next time it's a hit.</p>
+  </div>
+
+  <p style="font-size:.86rem;color:var(--muted);">Now — and only now — does the architecture diagram below make sense. Notice it's basically Version 1 (browser → server → database) with ONE new box added, because that's the ONE problem we actually have.</p>
+
+  <h3>Step 3 — The Design, Now That We Know Why Every Box Is There</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🔗 URL Shortener — High-Level Architecture</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrurl" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e8a5a"/>
+          </marker>
+          <marker id="arrurlr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+        </defs>
+        <!-- User -->
+        <rect x="20" y="120" width="110" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="145" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">User Browser</text>
+        <text x="75" y="162" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">GET /aZ9kP2</text>
+
+        <!-- arrow to LB -->
+        <line x1="130" y1="150" x2="195" y2="150" stroke="#1a5abf" stroke-width="2" marker-end="url(#arrurl)"/>
+
+        <!-- Load Balancer -->
+        <rect x="200" y="125" width="120" height="50" rx="8" fill="#ede0f8" stroke="rgba(122,42,191,.3)" stroke-width="2"/>
+        <text x="260" y="146" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#4a1580" text-anchor="middle">Load Balancer</text>
+        <text x="260" y="163" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Layer 7</text>
+
+        <!-- arrow to App -->
+        <line x1="320" y1="150" x2="385" y2="150" stroke="#1a5abf" stroke-width="2" marker-end="url(#arrurl)"/>
+
+        <!-- App servers -->
+        <rect x="390" y="100" width="140" height="42" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="460" y="125" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">App Server 1</text>
+        <rect x="390" y="148" width="140" height="42" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="460" y="173" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">App Server 2</text>
+        <rect x="390" y="196" width="140" height="42" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5" stroke-dasharray="3,3"/>
+        <text x="460" y="221" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">App Server N...</text>
+
+        <!-- arrow to cache (1. check cache) -->
+        <line x1="530" y1="120" x2="600" y2="75" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrurl)"/>
+        <text x="575" y="90" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">1. cache?</text>
+
+        <!-- Cache -->
+        <rect x="555" y="30" width="150" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.35)" stroke-width="2"/>
+        <text x="630" y="51" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">Cache (Redis)</text>
+        <text x="630" y="68" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">short_code → long_url</text>
+
+        <!-- arrow to db (2. on miss) -->
+        <line x1="530" y1="180" x2="600" y2="225" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrurlr)"/>
+        <text x="575" y="215" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">2. on miss</text>
+
+        <!-- DB -->
+        <rect x="555" y="230" width="150" height="55" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.35)" stroke-width="2"/>
+        <text x="630" y="252" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Database</text>
+        <text x="630" y="269" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">urls table (key-value)</text>
+
+        <!-- redirect response -->
+        <text x="260" y="290" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">App returns HTTP 301/302 redirect → browser navigates to long URL</text>
+        <text x="260" y="305" font-family="Sora,sans-serif" font-size="10" fill="#085c38" font-weight="700" text-anchor="middle">~95%+ of redirects served entirely from cache — never touch the database</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Step 4 — A Different Question: How Do We Even MAKE "aZ9kP2"?</h3>
+
+  <div class="story">We've sorted out the read problem. But let's rewind to the write side for a second — when someone submits a URL, where does that random-looking 6-character code actually come from? This is a smaller problem, but it's a classic "wait, how do two different approaches even compare?" moment.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Could we just... number them? URL #1, #2, #3...?</div>
+    <p class="qa-a">You could, and that's exactly Approach 1 below — take the database's auto-increment number (1, 2, 3...) and convert it into a short string using more characters than just 0-9. That's literally all "Base62" means: instead of only digits 0-9 (base 10), use a-z, A-Z, AND 0-9 (62 symbols total), so the same number takes fewer characters to write down. It's the same trick as why hexadecimal colour codes are shorter than writing the number in decimal.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So what's the downside of just numbering them sequentially?</div>
+    <p class="qa-a">Two things. First — it's <strong>guessable</strong>. If short.ly/3 exists, someone can guess short.ly/4, /5, /6... and scrape through everyone's links. Second, and more subtly: if you ever run MULTIPLE servers handling URL creation at the same time, they all need to agree on "what's the next number?" — that shared counter becomes its own bottleneck and a single point of failure. The fix people usually reach for instead is Approach 2: just generate something random, and check the database "does this already exist? No? Great, use it."</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>🔢 Approach 1 — Base62 of an Auto-Increment Number</h4>
+      <ul>
+        <li>Database gives each new URL the next number: 1, 2, 3...</li>
+        <li>Convert that number to Base62 (a-z, A-Z, 0-9)</li>
+        <li>Number 125 → "21" — much shorter to write</li>
+        <li>7 Base62 characters covers ~3.5 trillion codes</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🎲 Approach 2 — Just Pick Something Random</h4>
+      <ul>
+        <li>Generate a random 7-character string</li>
+        <li>Check the database: does this code already exist?</li>
+        <li>If yes (extremely rare), try again</li>
+        <li>No shared counter needed — works fine across many servers</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="code-block url-c">
+    <div class="code-label url-l">C# — Base62 encoding example</div>
+    <pre><span class="kw">public static class</span> <span class="tp">Base62</span>
+{
+    <span class="kw">private const string</span> Chars = <span class="str">"0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"</span>;
+
+    <span class="kw">public static string</span> <span class="fn">Encode</span>(<span class="kw">long</span> id)
+    {
+        <span class="kw">if</span> (id == <span class="num">0</span>) <span class="kw">return</span> <span class="str">"0"</span>;
+        <span class="kw">var</span> sb = <span class="kw">new</span> <span class="tp">StringBuilder</span>();
+        <span class="kw">while</span> (id > <span class="num">0</span>)
+        {
+            sb.<span class="fn">Insert</span>(<span class="num">0</span>, Chars[(<span class="kw">int</span>)(id % <span class="num">62</span>)]);
+            id /= <span class="num">62</span>;
+        }
+        <span class="kw">return</span> sb.<span class="fn">ToString</span>();
+    }
+}
+
+<span class="cm">// Usage: Base62.Encode(125) → "21"
+// Database auto-increment ID 1,000,000,000 → Base62 → "15ftgG" (only 6 chars!)</span></pre>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Which One Would You Actually Use?</div>
+    <p>For most real systems, Approach 2 (random + check) wins — mainly because of that "multiple servers" problem. Notice this is a SMALL decision compared to the caching one — it affects how URLs are CREATED (40/sec, remember?), not how they're READ (4,000/sec). That's worth remembering: not every decision in a system carries equal weight. Spend your thinking time on the high-traffic paths.</p>
+  </div>
+
+  <h3>Step 4b — Where Does All This Actually Live? (Database Schema)</h3>
+  <p style="font-size:.86rem;color:var(--muted);">Just to make it concrete — here's literally what the database table looks like. Nothing fancy: one row per short URL, and the <code>short_code</code> is the primary key (which is also, conveniently, exactly what we look up on every redirect).</p>
+  <div class="code-block url-c">
+    <div class="code-label url-l">SQL — Simple schema for the urls table</div>
+    <pre><span class="kw">CREATE TABLE</span> urls (
+    short_code   VARCHAR(<span class="num">10</span>)  PRIMARY KEY,   <span class="cm">-- "aZ9kP2"</span>
+    long_url     VARCHAR(<span class="num">2048</span>) NOT NULL,
+    created_at   TIMESTAMP   NOT NULL DEFAULT NOW(),
+    expires_at   TIMESTAMP   NULL,         <span class="cm">-- optional expiration</span>
+    created_by   BIGINT      NULL,         <span class="cm">-- optional: user who created it</span>
+    click_count  BIGINT      NOT NULL DEFAULT 0
+);
+
+<span class="cm">-- Index on short_code is automatic (it's the primary key)
+-- This is the ONLY lookup pattern that matters for redirects: O(1) lookup</span></pre>
+  </div>
+
+  <h3>Step 5 — "Okay, But What Do I Actually Click in AWS/Azure/GCP?"</h3>
+  <p style="font-size:.86rem;color:var(--muted);">Everything above was concepts — "a cache", "a database", "a load balancer". In real life you don't build these from scratch, you pick a managed product from whichever cloud you're using. Same idea, different brand names — here's the translation:</p>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Load Balancer</td><td>Application Load Balancer (ALB)</td><td>Azure Load Balancer / App Gateway</td><td>Cloud Load Balancing</td></tr>
+      <tr><td class="role-cell">App Servers</td><td>EC2 / ECS / Lambda</td><td>App Service / VM Scale Sets</td><td>Compute Engine / Cloud Run</td></tr>
+      <tr><td class="role-cell">Cache</td><td>ElastiCache (Redis)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Database</td><td>RDS / DynamoDB</td><td>Azure SQL / Cosmos DB</td><td>Cloud SQL / Firestore</td></tr>
+      <tr><td class="role-cell">Auto-scaling</td><td>Auto Scaling Groups</td><td>VM Scale Sets</td><td>Managed Instance Groups</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — What Would Go Wrong NEXT?</h3>
+  <div class="story">We fixed the "4,000 reads/sec hammering the database" problem with a cache. Good systems design isn't "now it's perfect" — it's "now THIS is fixed, what breaks next?" Here's what an experienced engineer would immediately start worrying about:</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First as Scale Grows</h4>
+      <ul>
+        <li><strong>Cache too small?</strong> If you can't fit all the "popular" links in cache memory, you start getting cache misses again — you'd increase cache size or be smarter about what gets evicted</li>
+        <li><strong>One MASSIVELY viral link</strong> — if literally everyone is hitting one single cache entry, even the cache server itself can get overwhelmed; the fix is having multiple copies of the cache (replication)</li>
+        <li><strong>301 vs 302 redirects</strong>: a 301 ("permanent redirect") lets the USER'S BROWSER remember it — meaning next time they don't even ask your server at all. Even less load! But then you can't count clicks anymore, since the browser skips you entirely</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 Decisions With No "Correct" Answer</h4>
+      <ul>
+        <li><strong>SQL vs NoSQL:</strong> this data is just key→value (code→URL), so either works fine. NoSQL options tend to scale out to more servers more easily if you ever need that</li>
+        <li><strong>301 vs 302 again:</strong> it's a genuine trade — speed/cost (301) vs analytics (302). Pick based on what the business actually cares about</li>
+        <li><strong>Custom aliases:</strong> a "nice to have" feature that adds a small cost — every write now needs to check "is this alias already taken?"</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So... is this "done" now?</div>
+    <p class="qa-a">For the scale we estimated (4,000 reads/sec), yes — a cache in front of a database comfortably handles this. The honest answer in system design is always "done for THIS scale, with THESE trade-offs". If the numbers were 100x bigger, we'd be having a different conversation (probably about sharding the database, from Part 1). That's the whole game: match the solution to the actual numbers, not to what sounds impressive.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — RATE LIMITER
+══════════════════════════════════ -->
+<div id="tab-rl" class="tab-panel ph-rl"><div class="section">
+  <h2>🚦 Rate Limiter Service</h2>
+
+  <div class="story">Imagine you run a public API — maybe a weather API, maybe something you built for other developers to use. It's free to use, and it's great... until one developer accidentally writes a loop with no delay, and suddenly their app is hitting your API 10,000 times per second. Your servers fall over, and now EVERYONE'S requests are failing — not just theirs.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Can't we just tell that one developer to stop?</div>
+    <p class="qa-a">Sure, after the fact — but by then the damage is done. What you actually want is something that says, automatically, in real-time: "you've made 100 requests in the last minute, that's your limit, come back in a bit" — BEFORE it ever reaches your actual servers. That's a <strong>rate limiter</strong>. It's less of a "system" on its own and more of a bouncer standing in front of your API.</p>
+  </div>
+
+  <h3>Step 1 — What Are We Actually Asking This Bouncer To Do?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-rl">
+    <li>For every request, check: has this client made too many requests recently?</li>
+    <li>If over the limit → reject with <code>429 Too Many Requests</code></li>
+    <li>Different limits for different people (free users vs paying users)</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-rl">
+    <li>This check happens on EVERY single request — it must be nearly instant</li>
+    <li>If you run multiple servers, they all need to agree on "how many requests has this client made?"</li>
+  </ul>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> That second non-functional point — why is it tricky?</div>
+    <p class="qa-a">Picture this: you have 5 servers behind a load balancer. A client makes 100 requests. The load balancer spreads them roughly evenly — 20 requests to each server. If each server keeps its OWN little counter in its own memory, each one thinks "this client has only made 20 requests, that's fine!" — and lets them all through. The client just made 100 requests despite a limit of, say, 80. <strong>The counter needs to be SHARED across all servers.</strong></p>
+  </div>
+
+  <h3>Step 2 — How Often Does This Check Even Happen?</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">50,000</div><div class="stat-label">Requests / second (peak)</div></div>
+    <div class="stat"><div class="stat-num">1M</div><div class="stat-label">Active API keys</div></div>
+    <div class="stat"><div class="stat-num">~1ms</div><div class="stat-label">Budget for this check</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So... could we just store each client's count in our normal SQL database, shared by all servers?</div>
+    <p class="qa-a">Technically yes — that solves the "shared" problem. But think about the cost: 50,000 times PER SECOND, every server needs to do "read the current count, add 1, write it back, compare to the limit". A regular database, designed for durability (safely writing to disk), is just not built to be hammered at that rate for something this trivial. We need something that lives in memory, is shared across servers, and can do "add 1 and tell me the new total" as ONE instant operation.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Enter Redis</div>
+    <p>This is the textbook use case for <strong>Redis</strong> — an in-memory data store that every server can connect to, and which has a built-in <code>INCREMENT</code> command that's "atomic" (meaning: even if two servers call it at the EXACT same microsecond, Redis handles them one at a time correctly — no double-counting). Each client gets a tiny counter in Redis. Every request increments it. If the result is over the limit, reject.</p>
+  </div>
+
+  <h3>Step 3 — Putting It in Front of the API</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🚦 Rate Limiter — Sits Between Client and API</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrrl2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf3a1a"/>
+          </marker>
+          <marker id="arrrlg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <!-- Client -->
+        <rect x="20" y="100" width="110" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="125" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Client</text>
+        <text x="75" y="142" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">API Key: abc123</text>
+
+        <!-- arrow to gateway -->
+        <line x1="130" y1="130" x2="195" y2="130" stroke="#bf3a1a" stroke-width="2" marker-end="url(#arrrl2)"/>
+
+        <!-- Gateway with rate limiter -->
+        <rect x="200" y="60" width="180" height="140" rx="8" fill="#f8e0d4" stroke="rgba(191,58,26,.35)" stroke-width="2.5"/>
+        <text x="290" y="85" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a2000" text-anchor="middle">API Gateway</text>
+        <text x="290" y="102" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">Rate Limiter Middleware</text>
+        <rect x="218" y="113" width="144" height="26" rx="4" fill="rgba(191,58,26,.1)"/>
+        <text x="290" y="130" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a2000" text-anchor="middle">1. INCR counter:abc123</text>
+        <rect x="218" y="143" width="144" height="26" rx="4" fill="rgba(191,58,26,.1)"/>
+        <text x="290" y="160" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a2000" text-anchor="middle">2. compare to limit</text>
+        <rect x="218" y="173" width="144" height="20" rx="4" fill="rgba(191,58,26,.1)"/>
+        <text x="290" y="187" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a2000" text-anchor="middle">3. allow or 429</text>
+
+        <!-- arrow to redis -->
+        <line x1="380" y1="105" x2="450" y2="80" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrrlg)"/>
+        <text x="415" y="80" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">~0.5ms</text>
+
+        <!-- Redis -->
+        <rect x="455" y="35" width="180" height="90" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.35)" stroke-width="2.5"/>
+        <text x="545" y="60" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">Redis</text>
+        <text x="545" y="78" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">counter:abc123 = 47</text>
+        <text x="545" y="95" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c38" text-anchor="middle">TTL = 60s (resets itself)</text>
+        <text x="545" y="112" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">shared across all gateway instances</text>
+
+        <!-- allowed -->
+        <line x1="380" y1="160" x2="450" y2="180" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrrlg)"/>
+        <rect x="455" y="160" width="180" height="40" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="545" y="184" font-family="JetBrains Mono,monospace" font-size="10" fill="#085c38" text-anchor="middle">✅ Backend Service</text>
+
+        <!-- rejected -->
+        <text x="290" y="225" font-family="Sora,sans-serif" font-size="10" fill="#b02a37" font-weight="700" text-anchor="middle">❌ Over limit → 429 (never reaches backend)</text>
+        <text x="290" y="243" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Redis's atomic INCR is what makes this safe with 50,000 req/sec from many gateways at once</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What's that "TTL = 60s" thing in the Redis box?</div>
+    <p class="qa-a">TTL = "Time To Live". We're setting each counter to automatically delete itself after 60 seconds. That's how the limit "resets" — without us writing any cleanup code. Client makes their first request → counter created, set to expire in 60s → counter increments with each request → after 60 seconds with no NEW counter, Redis just throws it away → next request starts a fresh counter at 1. This gives us a rolling "100 requests per minute" limit almost for free.</p>
+  </div>
+
+  <h3>Step 4 — Let's See the Actual Code</h3>
+  <p style="font-size:.86rem;color:var(--muted);">This is exactly the conversation above, turned into C#. Notice it's genuinely short — the "increment, check, set expiry once" logic is maybe 10 lines. The complexity in rate limiting is less about the code and more about the THINKING we just did.</p>
+
+  <div class="code-block rl-c">
+    <div class="code-label rl-l">C# — Distributed rate limiter using Redis</div>
+    <pre><span class="kw">public class</span> <span class="tp">RedisRateLimiter</span>
+{
+    <span class="kw">private readonly</span> <span class="tp">IConnectionMultiplexer</span> _redis;
+    <span class="kw">private const int</span> LimitPerWindow = <span class="num">100</span>;
+    <span class="kw">private static readonly</span> <span class="tp">TimeSpan</span> Window = <span class="tp">TimeSpan</span>.<span class="fn">FromMinutes</span>(<span class="num">1</span>);
+
+    <span class="kw">public</span> <span class="fn">RedisRateLimiter</span>(<span class="tp">IConnectionMultiplexer</span> redis) => _redis = redis;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">RateLimitResult</span>&gt; <span class="fn">CheckAsync</span>(<span class="kw">string</span> clientId)
+    {
+        <span class="kw">var</span> db  = _redis.<span class="fn">GetDatabase</span>();
+        <span class="kw">var</span> key = <span class="str">$"ratelimit:{clientId}"</span>;
+
+        <span class="cm">// Atomically increment the counter — this is the "shared" part</span>
+        <span class="kw">long</span> count = <span class="kw">await</span> db.<span class="fn">StringIncrementAsync</span>(key);
+
+        <span class="cm">// First request in this window — set it to expire in 60s</span>
+        <span class="kw">if</span> (count == <span class="num">1</span>)
+            <span class="kw">await</span> db.<span class="fn">KeyExpireAsync</span>(key, Window);
+
+        <span class="kw">var</span> ttl = <span class="kw">await</span> db.<span class="fn">KeyTimeToLiveAsync</span>(key) ?? Window;
+
+        <span class="kw">return new</span> <span class="tp">RateLimitResult</span>
+        {
+            Allowed   = count <= LimitPerWindow,
+            Limit     = LimitPerWindow,
+            Remaining = <span class="tp">Math</span>.<span class="fn">Max</span>(<span class="num">0</span>, LimitPerWindow - count),
+            ResetIn   = ttl
+        };
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">RateLimitResult</span>
+{
+    <span class="kw">public bool</span>     Allowed   { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public long</span>     Limit     { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public long</span>     Remaining { <span class="kw">get</span>; <span class="kw">set</span>; }
+    <span class="kw">public</span> <span class="tp">TimeSpan</span> ResetIn   { <span class="kw">get</span>; <span class="kw">set</span>; }
+}
+
+<span class="cm">// Middleware usage — this runs before every request reaches the real API:</span>
+<span class="kw">var</span> result = <span class="kw">await</span> rateLimiter.<span class="fn">CheckAsync</span>(apiKey);
+<span class="kw">if</span> (!result.Allowed)
+{
+    context.Response.StatusCode = <span class="num">429</span>;
+    context.Response.Headers[<span class="str">"X-RateLimit-Limit"</span>]     = result.Limit.<span class="fn">ToString</span>();
+    context.Response.Headers[<span class="str">"X-RateLimit-Remaining"</span>] = <span class="str">"0"</span>;
+    context.Response.Headers[<span class="str">"Retry-After"</span>]           = result.ResetIn.TotalSeconds.<span class="fn">ToString</span>(<span class="str">"0"</span>);
+    <span class="kw">return</span>;
+}
+<span class="kw">await</span> <span class="fn">next</span>();  <span class="cm">// continue to the backend</span></pre>
+  </div>
+
+  <h3>Step 5 — Do People Actually Build This Themselves?</h3>
+  <p style="font-size:.86rem;color:var(--muted);">Often, no! This is worth knowing: rate limiting is SO common that most API Gateway products have it built in as a checkbox/config option — no code at all. Here's where that lives on each cloud, alongside the "build it yourself with Redis" option for when you need custom rules (e.g., different limits per subscription plan stored in your own database):</p>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Built-in rate limiting</td><td>API Gateway throttling / WAF rate-based rules</td><td>API Management policies / Front Door rate limit</td><td>Cloud Armor rate limiting / Apigee</td></tr>
+      <tr><td class="role-cell">Shared counter (DIY approach)</td><td>ElastiCache (Redis)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Gateway / Middleware Host</td><td>API Gateway / ALB + Lambda</td><td>API Management / App Gateway</td><td>API Gateway / Cloud Endpoints</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — One Important "What If"</h3>
+  <div class="story">Here's a question that trips a lot of people up: what happens to your ENTIRE API if Redis — this thing we just made critical to every single request — goes down for a minute?</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>🅰️ "Fail Closed" — Reject Everything</h4>
+      <p>If we can't check the limit, assume the worst and block all requests. Your rate limiter just took down your whole API because of a tiny outage in a side component. Safer for abuse, terrible for uptime.</p>
+    </div>
+    <div class="card">
+      <h4>🅱️ "Fail Open" — Allow Everything</h4>
+      <p>If we can't check the limit, just let requests through (and alert someone). For the brief duration of the Redis blip, you're temporarily unprotected — but your core API stays up.</p>
+    </div>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 What Most Real Systems Choose</div>
+    <p><strong>Fail open, with alerting.</strong> The reasoning: a rate limiter is a PROTECTION mechanism — it shouldn't become a bigger outage risk than the thing it's protecting against. A short window of "unprotected" is usually far less damaging than your entire API returning errors to every legitimate user.</p>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ Other Things That Break First</h4>
+      <ul>
+        <li><strong>One client's traffic overwhelms a single Redis key</strong> — even though Redis is fast, if ONE client is making 10,000 req/sec, that single counter key gets very "hot"</li>
+        <li><strong>Clock differences between servers</strong> can cause small inconsistencies in exactly when a window resets — usually not worth worrying about for most apps</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 Recap of the Big Decision</h4>
+      <ul>
+        <li>The entire design exists because of ONE constraint: many servers need to agree on ONE shared count, fast</li>
+        <li>Redis + atomic increment + TTL solves exactly that, in about 10 lines of code</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════════════════════════
+     TAB 4 — PASTEBIN
+══════════════════════════════════ -->
+<div id="tab-paste" class="tab-panel ph-paste"><div class="section">
+  <h2>📋 Pastebin (Text/Code Sharing Service)</h2>
+
+  <div class="story">You're a developer and you want to share a 200-line error log with a colleague on Slack. Pasting it directly makes the chat unreadable. So instead, you paste it into a tool, hit submit, and get back a link: <code>paste.ly/x7Bq2</code>. You send THAT link instead. Your colleague clicks it, sees the nicely formatted text. That's a pastebin.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Isn't this basically the URL shortener again?</div>
+    <p class="qa-a">Good instinct — it RHYMES with the URL shortener (short code → "thing"), but there's one big difference. The URL shortener stores a tiny string (a URL, maybe 100 characters) and just redirects. A pastebin needs to store the actual CONTENT — which could be 50KB of log output, or a 2MB code dump. That difference in size changes where we should store it.</p>
+  </div>
+
+  <h3>Step 1 — What's the Job Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-paste">
+    <li>User submits text, gets back a shareable link</li>
+    <li>Anyone with the link can view it</li>
+    <li>Optional: the paste auto-deletes after a set time (1 day, 1 week, etc.)</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-paste">
+    <li>Content can be sizeable — KBs up to a few MB</li>
+    <li>Once created, a paste shouldn't just vanish (unless it was meant to expire)</li>
+  </ul>
+
+  <h3>Step 2 — Let's Just Try the Obvious Thing First</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">1M</div><div class="stat-label">New pastes / day</div></div>
+    <div class="stat"><div class="stat-num">10KB</div><div class="stat-label">Average paste size</div></div>
+    <div class="stat"><div class="stat-num">~10GB</div><div class="stat-label">New data / day</div></div>
+  </div>
+
+  <div class="scene">
+    <div class="scene-tag">🏗️ The Naive Build</div>
+    <p>One table: <code>id, content, created_at, expires_at</code>. The <code>content</code> column is a big text field. Just like the URL shortener — generate an ID, save the row, done.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So what's actually wrong with that? 10GB/day doesn't sound huge.</div>
+    <p class="qa-a">It's not WRONG exactly — it would work. But here's the thing: <strong>databases are optimized for small, structured rows that you search, filter, and join</strong>. They're not great at being a dumping ground for big blobs of text. Every time the database backs itself up, replicates to another server, or runs a query that happens to scan this table, it's now dragging around megabytes of raw text content that it doesn't need to "understand" at all — it's just dead weight. There's a much better home for "just store these bytes and give them back later, unchanged".</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Split It Into Two Different Jobs</div>
+    <p>Think about what we ACTUALLY need to look up vs what we just need to STORE. We need to look up: "does paste x7Bq2 exist? Is it expired? What language is it?" — small, structured facts. That's a database's job. We need to store: the actual 50KB of text — we never search inside it, never filter by it, just fetch the whole thing and hand it back. That's a job for <strong>object storage</strong> (think: a giant filing cabinet of files, identified by name) — the same kind of storage that holds images and videos on the internet.</p>
+  </div>
+
+  <h3>Step 3 — Two Storage Systems, One Request</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📋 Pastebin — Metadata in DB, Content in Object Storage</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrps" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#8a2abf"/>
+          </marker>
+        </defs>
+        <!-- User -->
+        <rect x="20" y="105" width="110" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="130" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">User</text>
+        <text x="75" y="147" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">POST /paste</text>
+
+        <!-- arrow to app -->
+        <line x1="130" y1="135" x2="195" y2="135" stroke="#8a2abf" stroke-width="2" marker-end="url(#arrps)"/>
+
+        <!-- App -->
+        <rect x="200" y="100" width="150" height="70" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="275" y="125" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#4a1580" text-anchor="middle">App Server</text>
+        <text x="275" y="143" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">1. generate short ID</text>
+        <text x="275" y="158" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">2. save in BOTH places</text>
+
+        <!-- arrow to object storage -->
+        <line x1="350" y1="125" x2="425" y2="80" stroke="#bf6a0e" stroke-width="2" marker-end="url(#arrps)"/>
+        <text x="390" y="90" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf6a0e" text-anchor="middle">the actual text</text>
+
+        <!-- Object Storage -->
+        <rect x="430" y="35" width="180" height="60" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.35)" stroke-width="2.5"/>
+        <text x="520" y="58" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Object Storage</text>
+        <text x="520" y="76" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">pastes/x7Bq2.txt</text>
+        <text x="520" y="91" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">"a filing cabinet for files"</text>
+
+        <!-- arrow to db -->
+        <line x1="350" y1="150" x2="425" y2="195" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrps)"/>
+        <text x="390" y="185" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">just the FACTS</text>
+
+        <!-- DB -->
+        <rect x="430" y="155" width="180" height="90" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.35)" stroke-width="2.5"/>
+        <text x="520" y="178" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">Database</text>
+        <rect x="448" y="188" width="144" height="22" rx="4" fill="rgba(14,106,191,.1)"/>
+        <text x="520" y="203" font-family="JetBrains Mono,monospace" font-size="8" fill="#0a4280" text-anchor="middle">id: x7Bq2</text>
+        <rect x="448" y="213" width="144" height="22" rx="4" fill="rgba(14,106,191,.1)"/>
+        <text x="520" y="228" font-family="JetBrains Mono,monospace" font-size="8" fill="#0a4280" text-anchor="middle">"file is at pastes/x7Bq2.txt", expires_at</text>
+
+        <!-- Read path -->
+        <text x="275" y="225" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">To VIEW a paste, two quick steps:</text>
+        <text x="275" y="242" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">1. ask DB "does x7Bq2 exist / is it expired?"</text>
+        <text x="275" y="259" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">2. if OK, fetch the file from object storage</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Isn't two lookups slower than one?</div>
+    <p class="qa-a">Marginally, yes — but both are fast (a tiny database row lookup, then a direct file fetch by exact name — no searching involved). What we get in return: the database stays small and fast (it's only ever storing tiny rows of metadata, even if you have BILLIONS of pastes), and object storage is purpose-built to serve files of any size cheaply and reliably. We're using each tool for what it's actually good at.</p>
+  </div>
+
+  <h3>Step 4 — What About Pastes That Expire?</h3>
+  <div class="story">Someone creates a paste and picks "delete after 1 day". A day passes. What ACTUALLY makes it disappear?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Does something need to actively go delete it?</div>
+    <p class="qa-a">There are two options. Option A: write a background job that runs every hour, asks the database "find me everything where <code>expires_at</code> is in the past", and deletes those rows AND their files. Option B (much less work): most object storage services have a built-in "lifecycle rule" — you literally just configure "delete files in this folder after N days" and the CLOUD does it for you, no code required. The schema below supports either approach.</p>
+  </div>
+
+  <div class="code-block paste-c">
+    <div class="code-label paste-l">SQL — Metadata table + expiration cleanup</div>
+    <pre><span class="kw">CREATE TABLE</span> pastes (
+    id            VARCHAR(<span class="num">10</span>)  PRIMARY KEY,        <span class="cm">-- "x7Bq2"</span>
+    storage_path  VARCHAR(<span class="num">255</span>) NOT NULL,        <span class="cm">-- "pastes/x7Bq2.txt"</span>
+    language      VARCHAR(<span class="num">30</span>)  NULL,            <span class="cm">-- "csharp", "python", null = plain</span>
+    size_bytes    INT          NOT NULL,
+    created_at    TIMESTAMP    NOT NULL DEFAULT NOW(),
+    expires_at    TIMESTAMP    NULL,             <span class="cm">-- NULL = never expires</span>
+    view_count    BIGINT       NOT NULL DEFAULT 0
+);
+
+<span class="cm">-- Index for the cleanup job to find expired pastes efficiently</span>
+<span class="kw">CREATE INDEX</span> idx_expires_at <span class="kw">ON</span> pastes(expires_at)
+    <span class="kw">WHERE</span> expires_at <span class="kw">IS NOT NULL</span>;
+
+<span class="cm">-- Option A: a background job runs periodically (e.g., every hour):
+DELETE FROM pastes WHERE expires_at IS NOT NULL AND expires_at < NOW();
+-- (plus delete the matching file from object storage)
+-- Option B: configure the object storage bucket to auto-delete old files
+-- — much less code, but you'd still tidy up the small metadata rows separately</span></pre>
+  </div>
+
+  <div class="code-block paste-c">
+    <div class="code-label paste-l">C# — Create and retrieve a paste (the two-step dance from the diagram)</div>
+    <pre><span class="kw">public class</span> <span class="tp">PasteService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IObjectStorage</span> _storage;   <span class="cm">// abstracts S3 / Blob / GCS</span>
+    <span class="kw">private readonly</span> <span class="iface">IPasteRepository</span> _repo;
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>&gt; <span class="fn">CreatePasteAsync</span>(<span class="kw">string</span> content, <span class="kw">string</span>? language, <span class="tp">TimeSpan</span>? ttl)
+    {
+        <span class="kw">var</span> id   = <span class="fn">GenerateShortId</span>();              <span class="cm">// same idea as the URL shortener</span>
+        <span class="kw">var</span> path = <span class="str">$"pastes/{id}.txt"</span>;
+
+        <span class="cm">// 1. Put the actual text in object storage</span>
+        <span class="kw">await</span> _storage.<span class="fn">UploadAsync</span>(path, content);
+
+        <span class="cm">// 2. Put the FACTS about it in the database</span>
+        <span class="kw">await</span> _repo.<span class="fn">AddAsync</span>(<span class="kw">new</span> <span class="tp">PasteMetadata</span>
+        {
+            Id          = id,
+            StoragePath = path,
+            Language    = language,
+            SizeBytes   = <span class="tp">Encoding</span>.UTF8.<span class="fn">GetByteCount</span>(content),
+            ExpiresAt   = ttl.HasValue ? <span class="tp">DateTime</span>.UtcNow.<span class="fn">Add</span>(ttl.Value) : (<span class="tp">DateTime</span>?)<span class="kw">null</span>
+        });
+
+        <span class="kw">return</span> id;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">string</span>?&gt; <span class="fn">GetPasteContentAsync</span>(<span class="kw">string</span> id)
+    {
+        <span class="kw">var</span> meta = <span class="kw">await</span> _repo.<span class="fn">GetByIdAsync</span>(id);
+
+        <span class="cm">// Check it exists and hasn't expired — cheap, since it's just one small row</span>
+        <span class="kw">if</span> (meta == <span class="kw">null</span> || (meta.ExpiresAt.HasValue && meta.ExpiresAt < <span class="tp">DateTime</span>.UtcNow))
+            <span class="kw">return null</span>;
+
+        <span class="kw">await</span> _repo.<span class="fn">IncrementViewCountAsync</span>(id);
+        <span class="kw">return</span> <span class="kw">await</span> _storage.<span class="fn">DownloadAsync</span>(meta.StoragePath);  <span class="cm">// fetch the actual text</span>
+    }
+}</pre>
+  </div>
+
+  <h3>Step 5 — Where Does "Object Storage" Live in Each Cloud?</h3>
+  <p style="font-size:.86rem;color:var(--muted);">"Object storage" isn't one specific brand — every cloud has their own version of "a giant filing cabinet for files":</p>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Object Storage (the actual text)</td><td>S3</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+      <tr><td class="role-cell">Metadata Database</td><td>RDS (Postgres/MySQL) / DynamoDB</td><td>Azure SQL / Cosmos DB</td><td>Cloud SQL / Firestore</td></tr>
+      <tr><td class="role-cell">CDN for popular pastes</td><td>CloudFront</td><td>Azure CDN / Front Door</td><td>Cloud CDN</td></tr>
+      <tr><td class="role-cell">Auto-expiry (Option B)</td><td>S3 Lifecycle Rules</td><td>Blob Storage lifecycle management</td><td>Object Lifecycle Management</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — What's Next to Worry About?</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>Someone pastes a 50MB file</strong> — without a size limit, one user could dominate your storage costs or slow down the page trying to render it</li>
+        <li><strong>A paste goes viral</strong> (e.g., shared on a forum) — suddenly thousands of people fetch the SAME object storage file; a CDN in front absorbs this, same trick as the URL shortener's cache</li>
+        <li><strong>Abuse</strong> — people using your free pastebin to host spam or malware links</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Genuinely Interesting Trade-off</h4>
+      <ul>
+        <li><strong>What if MOST pastes are tiny</strong> (a one-line error message)? Then the "two storage systems" approach adds an extra network hop for the common case. Some real systems handle this with a hybrid: pastes under ~1KB get stored directly IN the database row (cheap, one lookup); bigger ones go to object storage. Neither approach is "wrong" — it depends on your actual usage pattern</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — PARKING LOT
+══════════════════════════════════ -->
+<div id="tab-park" class="tab-panel ph-park"><div class="section">
+  <h2>🅿️ Parking Lot Management System</h2>
+
+  <div class="story">Here's one that surprises a lot of people: designing a parking lot system is a popular system design question — and its difficulty has nothing to do with scale. There are maybe 2,000 parking spots and a few hundred cars coming and going per day. That's almost nothing. The tricky part is something completely different.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> If scale isn't the problem, what IS the problem?</div>
+    <p class="qa-a">Picture this: it's 8:58am on a Monday morning, rush hour. Ten cars are approaching the ten different entry gates of the car park, all at the same time. Each gate's computer asks the system "is there a free car spot?" All ten get back "yes, spot 42 is free." All ten try to assign spot 42. Now ten cars think they have the same parking spot. That's not a scale problem — it's a <strong>correctness under concurrency</strong> problem. Two things trying to grab the same resource at the same moment.</p>
+  </div>
+
+  <h3>Step 1 — What Does This System Need to Do?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-park">
+    <li>Car arrives → find a free spot (right size for the vehicle) → print a ticket → mark spot as taken</li>
+    <li>Car leaves → scan ticket → calculate how long they stayed → charge them → free the spot</li>
+    <li>Display boards at the entrance show "Floor 2: 14 spaces available"</li>
+    <li>Support different vehicle sizes — motorcycle, car, large/van (they don't fit in each other's spots)</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-park">
+    <li><strong>Never assign the same spot to two vehicles</strong> — this is THE requirement that shapes everything</li>
+    <li>Traffic is tiny by web standards — a few hundred cars per day, not millions of requests per second</li>
+  </ul>
+
+  <h3>Step 2 — Numbers That Immediately Tell Us Something Useful</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">2,000</div><div class="stat-label">Total spots</div></div>
+    <div class="stat"><div class="stat-num">~5,000</div><div class="stat-label">Entry/exit events / day</div></div>
+    <div class="stat"><div class="stat-num">~0.06</div><div class="stat-label">Events / second avg</div></div>
+    <div class="stat"><div class="stat-num">10</div><div class="stat-label">Entry/exit gates</div></div>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 This Changes Everything About What We're Solving</div>
+    <p>0.06 events per second means one event every 17 seconds on average. We are NOT building for massive traffic — we're building for correctness. No need for caching layers, CDNs, horizontal scaling, sharding, or any of the big-scale tricks. We need one reliable database that handles concurrent requests correctly. That's it.</p>
+  </div>
+
+  <h3>Step 3 — How the Pieces Fit Together</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🅿️ Parking Lot — Entities and How They Connect</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrpk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf6a0e"/>
+          </marker>
+        </defs>
+        <rect x="270" y="15" width="180" height="55" rx="8" fill="#f8f0d4" stroke="rgba(191,106,14,.35)" stroke-width="2.5"/>
+        <text x="360" y="38" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">ParkingLot</text>
+        <text x="360" y="56" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">has many Levels</text>
+        <line x1="360" y1="70" x2="360" y2="95" stroke="#bf6a0e" stroke-width="1.5" marker-end="url(#arrpk)"/>
+        <rect x="270" y="100" width="180" height="55" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="2"/>
+        <text x="360" y="123" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">Level</text>
+        <text x="360" y="141" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">levelNumber · has many Spots</text>
+        <line x1="360" y1="155" x2="360" y2="180" stroke="#bf6a0e" stroke-width="1.5" marker-end="url(#arrpk)"/>
+        <rect x="270" y="185" width="180" height="60" rx="8" fill="#fff" stroke="rgba(191,106,14,.25)" stroke-width="2"/>
+        <text x="360" y="208" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">ParkingSpot</text>
+        <text x="360" y="225" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">spotId · type · isOccupied</text>
+        <text x="360" y="240" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">enum: Motorcycle | Car | Large</text>
+        <rect x="40" y="100" width="180" height="80" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="130" y="123" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c38" text-anchor="middle">Ticket</text>
+        <text x="130" y="141" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">ticketId · entryTime</text>
+        <text x="130" y="156" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">exitTime · fee</text>
+        <text x="130" y="172" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c38" text-anchor="middle">linked to SpotId</text>
+        <line x1="220" y1="155" x2="270" y2="200" stroke="#1f7a52" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrpk)"/>
+        <text x="245" y="185" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">assigned to</text>
+        <rect x="500" y="100" width="180" height="80" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="590" y="123" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">Vehicle</text>
+        <text x="590" y="141" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">licensePlate · type</text>
+        <text x="590" y="158" font-family="JetBrains Mono,monospace" font-size="8" fill="#0a4280" text-anchor="middle">enum: Motorcycle | Car | Large</text>
+        <line x1="500" y1="155" x2="450" y2="200" stroke="#0e6abf" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrpk)"/>
+        <text x="475" y="185" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">issued for</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Step 4 — Solving the "Two Cars, Same Spot" Problem</h3>
+
+  <div class="story">Back to that Monday morning rush. Ten gates simultaneously asking "give me a free car spot." Here's why the naive approach fails and why the fix is actually just one SQL keyword.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why does "SELECT then UPDATE" fail?</div>
+    <p class="qa-a">Between the moment you SELECT a free spot and the moment you UPDATE it to "occupied", another gate's request can slip in and SELECT the SAME spot. They're reading the same "free" status at nearly the same instant. This tiny gap between read and write is where the bug lives. The fix: <strong>do it in one atomic operation</strong> so there's no gap for anyone to slip through.</p>
+  </div>
+
+  <div class="code-block park-c">
+    <div class="code-label park-l">SQL — Why two steps fails, and how one step fixes it</div>
+    <pre><span class="cm">-- ❌ THE BUG: Two separate steps
+-- Gate 1 runs this: SELECT spot_id FROM spots WHERE type='Car' AND is_occupied=false LIMIT 1
+-- Gate 2 runs this AT THE SAME TIME: gets the SAME spot_id (both see it as free)
+-- Gate 1 runs: UPDATE spots SET is_occupied=true WHERE spot_id = 42
+-- Gate 2 runs: UPDATE spots SET is_occupied=true WHERE spot_id = 42
+-- Result: both gates think they own spot 42. Two cars, one spot. Chaos.</span>
+
+<span class="cm">-- ✅ THE FIX: One atomic operation — no gap to slip through
+-- FOR UPDATE SKIP LOCKED means: "lock this row for me, and if it's
+-- already locked by someone else, just skip it and find the next one"
+-- The database engine handles this correctly even with many concurrent requests</span>
+<span class="kw">UPDATE</span> spots
+<span class="kw">SET</span> is_occupied = <span class="kw">true</span>, occupied_by_ticket = @ticketId
+<span class="kw">WHERE</span> spot_id = (
+    <span class="kw">SELECT</span> spot_id <span class="kw">FROM</span> spots
+    <span class="kw">WHERE</span> type = @vehicleType <span class="kw">AND</span> is_occupied = <span class="kw">false</span>
+    <span class="kw">LIMIT</span> 1
+    <span class="kw">FOR UPDATE SKIP LOCKED</span>
+)
+<span class="kw">RETURNING</span> spot_id;
+<span class="cm">-- If no rows returned: the lot is full for this vehicle type</span></pre>
+  </div>
+
+  <div class="code-block park-c">
+    <div class="code-label park-l">C# — Entry and exit, built on the atomic SQL above</div>
+    <pre><span class="kw">public class</span> <span class="tp">ParkingService</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">Ticket</span>&gt; <span class="fn">VehicleEntryAsync</span>(<span class="kw">string</span> licensePlate, <span class="tp">VehicleType</span> type)
+    {
+        <span class="cm">// This calls the atomic SQL above — either gets a spot or lot is full</span>
+        <span class="kw">var</span> spotId = <span class="kw">await</span> _repo.<span class="fn">AssignFreeSpotAsync</span>(type)
+            ?? <span class="kw">throw new</span> <span class="tp">ParkingFullException</span>(type);
+
+        <span class="kw">var</span> ticket = <span class="kw">new</span> <span class="tp">Ticket</span>
+        {
+            TicketId     = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>(),
+            LicensePlate = licensePlate,
+            SpotId       = spotId,
+            EntryTime    = <span class="tp">DateTime</span>.UtcNow
+        };
+        <span class="kw">await</span> _repo.<span class="fn">SaveTicketAsync</span>(ticket);
+        <span class="kw">return</span> ticket;
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="kw">decimal</span>&gt; <span class="fn">VehicleExitAsync</span>(<span class="tp">Guid</span> ticketId)
+    {
+        <span class="kw">var</span> ticket = <span class="kw">await</span> _repo.<span class="fn">GetTicketAsync</span>(ticketId)
+            ?? <span class="kw">throw new</span> <span class="tp">TicketNotFoundException</span>();
+
+        ticket.ExitTime = <span class="tp">DateTime</span>.UtcNow;
+        <span class="kw">var</span> duration = ticket.ExitTime.Value - ticket.EntryTime;
+        ticket.Fee = <span class="fn">CalculateFee</span>(duration);
+
+        <span class="cm">// Free the spot + save the completed ticket as ONE transaction</span>
+        <span class="kw">await</span> _repo.<span class="fn">FreeSpotAndCloseTicketAsync</span>(ticket);
+        <span class="kw">return</span> ticket.Fee;
+    }
+
+    <span class="kw">private decimal</span> <span class="fn">CalculateFee</span>(<span class="tp">TimeSpan</span> duration)
+        => (<span class="kw">decimal</span>)<span class="tp">Math</span>.<span class="fn">Ceiling</span>(duration.TotalHours) * <span class="num">2.50m</span>;  <span class="cm">// £2.50/hour, rounded up</span>
+}</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why PostgreSQL specifically? Can't we use any database?</div>
+    <p class="qa-a"><code>FOR UPDATE SKIP LOCKED</code> is a feature that exists in PostgreSQL and MySQL 8+, but NOT in all databases. This is a rare case where the choice of specific database technology matters — we're relying on a specific concurrency feature. Most SQL databases support some form of row locking, but the "skip locked" part (which lets other gates find the NEXT available spot rather than waiting in a queue) is what makes this work cleanly for parallel entry gates.</p>
+  </div>
+
+  <h3>Step 5 — Cloud Options</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Database (row locking)</td><td>RDS for PostgreSQL</td><td>Azure Database for PostgreSQL</td><td>Cloud SQL for PostgreSQL</td></tr>
+      <tr><td class="role-cell">Gate Controller App</td><td>Small EC2 / IoT Greengrass (edge)</td><td>Azure IoT Edge / small VM</td><td>Edge device + Cloud IoT</td></tr>
+      <tr><td class="role-cell">Display Board Updates</td><td>AppSync / WebSocket API</td><td>Azure Web PubSub</td><td>Firestore real-time listeners</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — Edge Cases Worth Thinking About</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Happens If the Database Goes Down?</h4>
+      <p>A gate with no database connection can either: block all entry (safe but frustrating), or let cars in and reconcile later (risky but keeps moving). Physical car parks usually prefer keeping the barrier UP — people can always pay when they exit. Software systems rarely have this "physical world" fallback, which is what makes this problem interesting.</p>
+    </div>
+    <div class="card">
+      <h4>🤔 "What if someone loses their ticket?"</h4>
+      <p>Store the license plate at entry. Gate cameras can also read plates. On exit, look up by plate if they have no ticket. Charge them from the entry time recorded in the database. This "lost ticket" flow is great OOP design practice — it's a different code path that reuses most of the same logic.</p>
+    </div>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The Big Lesson From This Example</div>
+    <p>Not every system design problem is about handling millions of users. Sometimes the interesting challenge is <strong>correctness when things happen at the same time</strong> — which can be a problem even with just 10 simultaneous gates. Recognising WHICH type of problem you have (scale vs correctness) is itself an important system design skill.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — CHAT APP
+══════════════════════════════════ -->
+<div id="tab-chat" class="tab-panel ph-chat"><div class="section">
+  <h2>💬 Chat Application (1-to-1 Messaging)</h2>
+
+  <div class="story">Every app we've built so far works the same way: the USER asks, the SERVER answers. You click, it responds. But a chat app has a completely different problem: <strong>when Alice sends Bob a message, Bob's screen needs to update WITHOUT Bob doing anything</strong>. Bob didn't click anything. Bob didn't ask for anything. The server needs to push information to Bob's browser/phone uninvited. How does that work?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Can't Bob's phone just... ask "any new messages?" every second?</div>
+    <p class="qa-a">Yes! That's called <strong>polling</strong>, and it's the simple, naive approach. Bob's phone sends "any new messages?" to the server every second. If there are, great. If not, the server says "nope" and the phone asks again in a second. It works, and some apps actually do this. The problems: every user sends one request per second 24/7 — even at 3am when nobody is chatting. That's a lot of "nope" responses. Also, there's up to a 1-second delay before a message appears. For a chat app that should feel instant, that's noticeable.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The Better Idea — Keep the Connection Open</div>
+    <p>What if instead of Bob repeatedly calling the server, the server just <strong>holds a persistent connection open to Bob's phone</strong>? When Alice's message arrives, the server immediately pushes it down that already-open pipe. No polling. No delay. No wasted "nope" requests. This is called a <strong>WebSocket</strong> — a special kind of connection that stays open and lets the server talk first.</p>
+  </div>
+
+  <h3>Step 1 — What Does a Chat App Actually Need?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-chat">
+    <li>Alice sends a message → Bob sees it appear in real-time</li>
+    <li>When Bob opens a conversation, he sees the history of past messages</li>
+    <li>Show whether Bob is online or offline</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-chat">
+    <li>Messages should arrive in under ~1 second</li>
+    <li>If Bob is offline when Alice sends a message, he should get it when he comes back online</li>
+    <li>At scale: millions of users with persistent open connections simultaneously</li>
+  </ul>
+
+  <h3>Step 2 — Numbers, and What They Tell Us</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">10M</div><div class="stat-label">Daily active users</div></div>
+    <div class="stat"><div class="stat-num">2M</div><div class="stat-label">Concurrent connections (peak)</div></div>
+    <div class="stat"><div class="stat-num">~4,600</div><div class="stat-label">Messages / second avg</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> 2 million open connections — doesn't that mean 2 million servers?</div>
+    <p class="qa-a">No — a single server can hold tens of thousands of WebSocket connections simultaneously (they're lightweight when no messages are actively flowing). But 2 million connections needs maybe 50-200 servers, each holding some slice of the connections. This creates a new problem: when Alice sends a message, her connection might be on Server A, but Bob's connection might be on Server B. Server A needs to tell Server B "hey, forward this to Bob." <strong>The servers need to coordinate.</strong></p>
+  </div>
+
+  <h3>Step 3 — How Messages Get from Alice to Bob</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">💬 Chat App — WebSocket Connections and Message Routing</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrch2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+          <marker id="arrch3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <rect x="15" y="40" width="110" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="70" y="62" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Alice</text>
+        <text x="70" y="78" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">WebSocket open</text>
+        <rect x="15" y="210" width="110" height="50" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="70" y="232" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Bob</text>
+        <text x="70" y="248" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">WebSocket open</text>
+        <line x1="125" y1="65" x2="195" y2="100" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrch2)"/>
+        <text x="155" y="88" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">① "Hi Bob!"</text>
+        <line x1="195" y1="180" x2="125" y2="235" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrch3)"/>
+        <text x="155" y="222" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">④ "Hi Bob!"</text>
+        <rect x="200" y="80" width="160" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="280" y="100" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">WS Server 1</text>
+        <text x="280" y="117" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">holds Alice's connection</text>
+        <rect x="200" y="170" width="160" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="2"/>
+        <text x="280" y="190" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#085c38" text-anchor="middle">WS Server 2</text>
+        <text x="280" y="207" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">holds Bob's connection</text>
+        <line x1="360" y1="105" x2="430" y2="150" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrch2)"/>
+        <text x="395" y="128" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">② save + route</text>
+        <rect x="435" y="120" width="170" height="60" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="520" y="143" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Message Service</text>
+        <text x="520" y="160" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">save to DB + find which</text>
+        <text x="520" y="172" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">server Bob is on (Redis)</text>
+        <line x1="520" y1="120" x2="520" y2="60" stroke="#0e6abf" stroke-width="1.5" marker-end="url(#arrch2)"/>
+        <rect x="435" y="20" width="170" height="40" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="520" y="38" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a4500" text-anchor="middle">Presence Store (Redis)</text>
+        <text x="520" y="53" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">Bob → "WS Server 2"</text>
+        <line x1="435" y1="165" x2="360" y2="195" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrch3)"/>
+        <text x="400" y="188" font-family="JetBrains Mono,monospace" font-size="8" fill="#1f7a52" text-anchor="middle">③ route to Server 2</text>
+        <text x="280" y="265" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">If Bob is OFFLINE: step ④ is skipped. Message sits in the database.</text>
+        <text x="280" y="283" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">When Bob reconnects, his app fetches messages newer than the last one he saw.</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What's that "Presence Store" box — why do we need ANOTHER Redis?</div>
+    <p class="qa-a">When Alice's message arrives at Server 1, that server needs to know: "which of my 50 other servers is currently holding Bob's WebSocket connection?" That's the Presence Store — a shared Redis map where each server registers its users: "Bob is connected to me, Server 2." When Alice's message needs to reach Bob, the Message Service does a fast Redis lookup: "where is Bob?" → "Server 2" → forward the message there. Without this, Server 1 would have no way to find Bob.</p>
+  </div>
+
+  <h3>Step 4 — Storing Messages So History Loads Fast</h3>
+
+  <div class="code-block chat-c">
+    <div class="code-label chat-l">SQL — Messages table, built for "load last 50 messages"</div>
+    <pre><span class="kw">CREATE TABLE</span> messages (
+    message_id      BIGINT      PRIMARY KEY,   <span class="cm">-- Snowflake ID: encodes timestamp + server ID</span>
+    conversation_id BIGINT      NOT NULL,      <span class="cm">-- links all messages between two users</span>
+    sender_id       BIGINT      NOT NULL,
+    content         TEXT        NOT NULL,
+    sent_at         TIMESTAMP   NOT NULL DEFAULT NOW(),
+    status          VARCHAR(10) NOT NULL DEFAULT <span class="str">'sent'</span>
+);
+
+<span class="cm">-- The one query that matters: "give me the last 50 messages in conversation X"
+-- Without this index, a table with billions of rows would be painfully slow</span>
+<span class="kw">CREATE INDEX</span> idx_conversation_time
+    <span class="kw">ON</span> messages(conversation_id, sent_at <span class="kw">DESC</span>);
+
+<span class="cm">-- Why "Snowflake ID" instead of auto-increment?
+-- An auto-increment counter needs a central coordinator (single point of failure).
+-- A Snowflake ID packs timestamp + server ID + sequence into one number —
+-- any server can generate unique, roughly-time-ordered IDs independently.
+-- This is how Twitter, Discord, and many others handle message IDs at scale.</span></pre>
+  </div>
+
+  <h3>Step 5 — Cloud Options</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">WebSocket Connections</td><td>API Gateway WebSocket APIs / ALB</td><td>Azure Web PubSub / SignalR Service</td><td>Cloud Run (WebSockets)</td></tr>
+      <tr><td class="role-cell">Presence Store (user → server)</td><td>ElastiCache (Redis)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Message Database</td><td>DynamoDB / Cassandra</td><td>Cosmos DB</td><td>Bigtable / Firestore</td></tr>
+      <tr><td class="role-cell">Push (offline users)</td><td>SNS Mobile Push</td><td>Notification Hubs</td><td>Firebase Cloud Messaging</td></tr>
+    </table>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Do I have to build all this from scratch?</div>
+    <p class="qa-a">Definitely not. Azure SignalR Service and similar managed WebSocket services handle connection management, routing between servers, and presence — all the hard parts above — without you writing any of it. Many real products start there. Understanding HOW it works underneath helps you when things go wrong, or when you outgrow the managed service, but don't feel like you have to DIY everything from day one.</p>
+  </div>
+
+  <h3>Step 6 — What Gets Hard Next</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ When One Server Restarts</h4>
+      <p>If WS Server 2 restarts, all connections it was holding drop simultaneously. Every affected user's app reconnects at the same moment — a "reconnection storm" that briefly spikes load on other servers. Good clients use exponential backoff (retry after 1s, then 2s, then 4s...) rather than all hammering at once.</p>
+    </div>
+    <div class="card">
+      <h4>🔄 Group Chats Multiply Everything</h4>
+      <p>A group with 500 members means one message needs to be delivered to up to 500 WebSocket connections, potentially spread across many servers. The fan-out here mirrors the Twitter problem — at large scale you need to think carefully about whether to push to all 500 immediately or batch it.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — NOTIFICATION SYSTEM
+══════════════════════════════════ -->
+<div id="tab-notif" class="tab-panel ph-notif"><div class="section">
+  <h2>🔔 Notification System</h2>
+
+  <div class="story">Black Friday. It's 9:00am. Your e-commerce platform just launched its biggest sale. The marketing team clicks "Send" on a notification: "BLACK FRIDAY — 70% OFF EVERYTHING". That one click needs to send emails, SMS messages, and push notifications to 5 million users. Right now. All at once. Your app server got one click. What happens next?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Just... send them all from the web server that received the click?</div>
+    <p class="qa-a">Let's think through what that looks like. Your web server receives the click and starts calling your email provider's API — 5 million times. Each email API call takes maybe 100ms. That's 5 million × 100ms = 500,000 seconds. One server, sending serially, would finish in about 5.7 DAYS. By which point Black Friday is long over. Even with 100 parallel connections: still 83 hours. And while the server is doing all this, it's completely unresponsive to other requests. The whole site is effectively down.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The Insight — Uncouple "Decide to Send" from "Actually Sending"</div>
+    <p>The marketing team's click should take <strong>milliseconds</strong> — just enough to say "yes, got it, will send." The actual sending of 5 million notifications should happen in the BACKGROUND, spread across many workers, over the next few minutes. A <strong>message queue</strong> is the bridge: the click drops 5 million "send this notification" jobs into the queue instantly, and a fleet of worker processes drain the queue steadily. The click returns immediately. Workers do the heavy lifting asynchronously.</p>
+  </div>
+
+  <h3>Step 1 — What Does This System Need to Do?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-notif">
+    <li>Other parts of the app say "notify user X about Y" — notification system handles the rest</li>
+    <li>Sends via email, SMS, push notification, or in-app — depending on what's relevant</li>
+    <li>Respects user preferences ("I don't want marketing SMS")</li>
+    <li>Uses templates so "Your order shipped!" looks the same everywhere</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-notif">
+    <li>The system that REQUESTS the notification should never have to wait for it to be DELIVERED</li>
+    <li>Must handle massive bursts — 5 million notifications from one campaign click</li>
+    <li>Never send the same notification twice, even if the requesting system retries</li>
+    <li>If the email provider is temporarily down, retry — don't just drop the notification</li>
+  </ul>
+
+  <h3>Step 2 — The Numbers That Drive the Architecture</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">50M</div><div class="stat-label">Notifications / day</div></div>
+    <div class="stat"><div class="stat-num">~580</div><div class="stat-label">Average / second</div></div>
+    <div class="stat"><div class="stat-num">~50,000</div><div class="stat-label">Peak / second (burst)</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> That's nearly a 100x difference between average and peak — how do you even plan for that?</div>
+    <p class="qa-a">You DON'T build infrastructure for the peak, because that would mean paying for 100x your normal capacity just to handle occasional bursts. Instead, you build a <strong>queue that absorbs the spike</strong>. Think of it like a theme park queue: when a show ends and 500 people all want hot dogs at once, the hot dog stand doesn't magically get 500x faster — people just wait in a queue. The stand works at a steady pace. The queue handles the burst. Your notification workers work at whatever steady rate they can handle, and during a spike the queue temporarily grows rather than anything breaking.</p>
+  </div>
+
+  <h3>Step 3 — The Queue-Based Fan-Out Architecture</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🔔 Notification System — Queue Absorbs the Burst, Workers Process Steadily</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrnf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a7a"/>
+          </marker>
+        </defs>
+        <rect x="15" y="120" width="130" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="80" y="145" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">OrderService</text>
+        <text x="80" y="162" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">"order shipped"</text>
+        <line x1="145" y1="150" x2="205" y2="150" stroke="#1a8a7a" stroke-width="2" marker-end="url(#arrnf)"/>
+        <rect x="210" y="120" width="140" height="60" rx="8" fill="#d0f0ec" stroke="rgba(26,138,122,.35)" stroke-width="2.5"/>
+        <text x="280" y="143" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0d5c52" text-anchor="middle">Notification API</text>
+        <text x="280" y="161" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">checks prefs → enqueues</text>
+        <line x1="350" y1="150" x2="415" y2="150" stroke="#1a8a7a" stroke-width="2" marker-end="url(#arrnf)"/>
+        <rect x="420" y="115" width="140" height="70" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="490" y="138" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Message Queue</text>
+        <text x="490" y="155" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">absorbs burst</text>
+        <text x="490" y="170" font-family="JetBrains Mono,monospace" font-size="8" fill="#4a1580" text-anchor="middle">retries on failure</text>
+        <line x1="560" y1="135" x2="615" y2="40"  stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrnf)"/>
+        <line x1="560" y1="150" x2="615" y2="150" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrnf)"/>
+        <line x1="560" y1="165" x2="615" y2="260" stroke="#1a8a7a" stroke-width="1.5" marker-end="url(#arrnf)"/>
+        <rect x="620" y="15" width="95" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="667" y="35" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">📧 Email</text>
+        <text x="667" y="50" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">worker</text>
+        <rect x="620" y="125" width="95" height="50" rx="6" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="667" y="145" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">🔔 Push</text>
+        <text x="667" y="160" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">worker</text>
+        <rect x="620" y="235" width="95" height="50" rx="6" fill="#f8d6e4" stroke="rgba(191,42,90,.3)" stroke-width="1.5"/>
+        <text x="667" y="255" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a003a" text-anchor="middle">📱 SMS</text>
+        <text x="667" y="270" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">worker</text>
+        <rect x="210" y="220" width="140" height="50" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="280" y="240" font-family="Sora,sans-serif" font-size="10" font-weight="700" fill="#8a4500" text-anchor="middle">User Preferences</text>
+        <text x="280" y="257" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">checked before enqueue</text>
+        <line x1="280" y1="220" x2="280" y2="180" stroke="#8a4500" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrnf)"/>
+        <text x="490" y="295" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Each worker retries on failure; after too many failures → Dead Letter Queue for investigation</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What's a "Dead Letter Queue"?</div>
+    <p class="qa-a">Imagine you try to send an email, it fails. You retry. Fails again. You retry 3 more times. Still failing. At some point you have to stop retrying — but you also don't want to just silently throw away the notification. A <strong>Dead Letter Queue (DLQ)</strong> is where failed messages go after they've exhausted their retries. An engineer can then look at the DLQ, understand WHY they failed (wrong email address? provider outage?), and decide whether to replay them or discard them. It's a safety net — nothing silently disappears.</p>
+  </div>
+
+  <h3>Step 4 — The "Send It Twice" Problem (Idempotency)</h3>
+
+  <div class="story">OrderService sends "notify user about shipment." The notification API receives it, enqueues the job, starts to respond... network blip. OrderService didn't get the response, so it assumes it failed and tries again. Now the notification is in the queue TWICE. User gets two "Your order shipped!" emails. Annoying and looks broken.</div>
+
+  <div class="code-block notif-c">
+    <div class="code-label notif-l">C# — Stopping duplicates with an idempotency key</div>
+    <pre><span class="kw">public record</span> <span class="tp">NotificationRequest</span>(
+    <span class="kw">string</span> IdempotencyKey,   <span class="cm">// caller provides: "order-shipped-{orderId}" — unique per event</span>
+    <span class="kw">int</span>    UserId,
+    <span class="kw">string</span> TemplateName,     <span class="cm">// "OrderShipped"</span>
+    <span class="tp">Dictionary</span>&lt;<span class="kw">string</span>, <span class="kw">string</span>&gt; TemplateData  <span class="cm">// { "OrderId": "42", "TrackingUrl": "..." }</span>
+);
+
+<span class="kw">public class</span> <span class="tp">NotificationApi</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">RequestNotificationAsync</span>(<span class="tp">NotificationRequest</span> req)
+    {
+        <span class="cm">// 1. Has this EXACT notification already been accepted before?
+        //    Check using the caller-provided idempotency key in Redis (fast lookup)</span>
+        <span class="kw">var</span> alreadySeen = <span class="kw">await</span> _idempotencyStore.<span class="fn">ExistsAsync</span>(req.IdempotencyKey);
+        <span class="kw">if</span> (alreadySeen)
+            <span class="kw">return</span>;   <span class="cm">// silently ignore the duplicate — already handled</span>
+
+        <span class="cm">// Mark as seen (expires after 7 days — after that, retrying is fine)</span>
+        <span class="kw">await</span> _idempotencyStore.<span class="fn">SetAsync</span>(req.IdempotencyKey, <span class="tp">TimeSpan</span>.<span class="fn">FromDays</span>(<span class="num">7</span>));
+
+        <span class="cm">// 2. Check user preferences — what channels do they allow for this type?</span>
+        <span class="kw">var</span> prefs    = <span class="kw">await</span> _preferencesRepo.<span class="fn">GetAsync</span>(req.UserId);
+        <span class="kw">var</span> channels = prefs.<span class="fn">GetEnabledChannels</span>(req.TemplateName);
+
+        <span class="cm">// 3. Enqueue one job per enabled channel — each worker handles its own channel</span>
+        <span class="kw">foreach</span> (<span class="kw">var</span> channel <span class="kw">in</span> channels)
+            <span class="kw">await</span> _queue.<span class="fn">PublishAsync</span>(<span class="kw">new</span> <span class="tp">ChannelNotification</span>(req.UserId, channel, req.TemplateName, req.TemplateData));
+    }
+}
+
+<span class="cm">// Email worker renders the template and calls the email provider
+// Throwing an exception causes the queue to redeliver (up to N retries),
+// then the message moves to the Dead Letter Queue</span></pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why use templates instead of just passing in the message text directly?</div>
+    <p class="qa-a">If OrderService hardcodes "Your order has shipped!" in its code, and marketing wants to change the wording, a developer has to update OrderService and redeploy. With templates, the wording lives in a separate template store. Marketing updates the template. OrderService just says "use the OrderShipped template with these values", and automatically gets the new wording. Decoupled — each team owns their piece.</p>
+  </div>
+
+  <h3>Step 5 — Cloud Options</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Message Queue</td><td>SQS</td><td>Azure Service Bus / Storage Queues</td><td>Pub/Sub</td></tr>
+      <tr><td class="role-cell">Email Sending</td><td>SES (Simple Email Service)</td><td>Azure Communication Services</td><td>SendGrid (common on all clouds)</td></tr>
+      <tr><td class="role-cell">SMS Sending</td><td>SNS (SMS) / Pinpoint</td><td>Azure Communication Services SMS</td><td>Firebase / Twilio</td></tr>
+      <tr><td class="role-cell">Push Notifications</td><td>SNS Mobile Push</td><td>Notification Hubs</td><td>Firebase Cloud Messaging</td></tr>
+      <tr><td class="role-cell">Worker Compute</td><td>Lambda (SQS trigger) / ECS</td><td>Azure Functions (Service Bus trigger)</td><td>Cloud Functions (Pub/Sub trigger)</td></tr>
+      <tr><td class="role-cell">Idempotency Store</td><td>ElastiCache (Redis) / DynamoDB</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — What Gets Complicated</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ Your Email Provider Has Its Own Limits</h4>
+      <p>Even if your queue can drain 50,000/sec, your email provider (SES, SendGrid) has its own rate limit and daily sending quota. You can't just hammer them. Workers need to respect the provider's limits — this is often called "respecting backpressure from downstream."</p>
+    </div>
+    <div class="card">
+      <h4>🔄 One Queue or One Per Channel?</h4>
+      <p>If email and SMS share one queue and the SMS provider goes down, a growing SMS backlog blocks email jobs too. Separate queues per channel (one for email, one for SMS, one for push) means a problem with one channel doesn't affect others. More to manage, but much more resilient — the approach shown in the diagram.</p>
+    </div>
+  </div>
+
+  <div class="completion">
+    <h3>Beginner Examples — All Done! 🎉</h3>
+    <p>URL Shortener — started naive, saw it break under load, added a cache because we understood WHY · Rate Limiter — shared Redis counter because multi-server local counters don't add up · Pastebin — two storage systems each doing what they're good at · Parking Lot — correctness not scale, atomic SQL to prevent race conditions · Chat App — WebSockets because HTTP request-response can't push, presence store for routing · Notification System — queue absorbs bursts, idempotency keys prevent duplicates, workers retry failures</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Core Concepts</span>
+      <span class="np np-done">✅ Part 2: Beginner Examples</span>
+      <span class="np np-next">→ Part 3: Advanced Examples</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

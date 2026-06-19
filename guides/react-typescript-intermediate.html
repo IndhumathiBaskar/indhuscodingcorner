@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>React + TypeScript — Intermediate – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #61dafb;
+    --accent2:    #8be9fd;
+    --accent-dim: rgba(97,218,251,0.13);
+    --ts:         #3178c6;
+    --ts-dim:     rgba(49,120,198,0.15);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--blue); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #001830 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(88,166,255,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(88,166,255,0.12); border: 1px solid rgba(88,166,255,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--blue); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--blue); }
+  .hero h1 .ts-span { color: var(--ts); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .series-track { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .series-step { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 700; }
+  .series-step.done { background: rgba(63,185,80,0.12); border: 1px solid rgba(63,185,80,0.35); color: var(--green); }
+  .series-step.current { background: rgba(88,166,255,0.15); border: 1px solid rgba(88,166,255,0.4); color: var(--blue); }
+  .series-step.future { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--blue); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.25); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-ts     { background: var(--ts-dim); border: 1px solid rgba(49,120,198,0.35); border-left: 3px solid var(--ts); }
+  .callout-ts strong { color: var(--ts); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-purple { background: rgba(188,140,255,0.08); border: 1px solid rgba(188,140,255,0.2); border-left: 3px solid var(--purple); }
+  .callout-purple strong { color: var(--purple); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-ts     { background: var(--ts-dim); color: var(--ts); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--blue); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--blue); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--blue); border-color: var(--blue); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+  .tagjsx{color:#7ee787;} .attr{color:#79c0ff;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--blue); } .pn { color: var(--green); }
+
+  /* FOLDER TREE */
+  .tree { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: var(--mono); font-size: 13px; line-height: 1.9; margin-bottom: 20px; overflow-x: auto; }
+  .tree .folder { color: var(--blue); font-weight: 600; }
+  .tree .file { color: var(--text); }
+  .tree .tsx { color: var(--ts); }
+  .tree .new { color: var(--green); font-weight: 600; }
+  .tree .comment { color: var(--muted); font-style: italic; }
+
+  /* HOOK CARDS */
+  .hook-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .hook-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .hook-grid{ grid-template-columns:1fr; } }
+  .hook-card { background: var(--surface); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .hook-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--hc,var(--blue)); }
+  .hook-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; font-family: var(--mono); }
+  .hook-desc { font-size: 12px; color: var(--muted); }
+
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: rgba(88,166,255,0.12); border: 1px solid rgba(88,166,255,0.35); color: var(--blue); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(88,166,255,0.1) 100%); border: 1px solid rgba(88,166,255,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--blue); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+  .next-up { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; background: rgba(188,140,255,0.12); border: 1px solid rgba(188,140,255,0.4); border-radius: 20px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: var(--purple); }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} .tree{font-size:12px;padding:14px 16px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">React + TypeScript — Intermediate</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">📘 Beyond the Fundamentals</div>
+  <h1>React <span>+</span> <span class="ts-span">TypeScript</span></h1>
+  <p>Context API, custom hooks, routing, refs, performance basics, and advanced TypeScript patterns — building directly on the Beginner foundation.</p>
+  <div class="series-track">
+    <span class="series-step done">✅ 1. Beginner</span>
+    <span class="series-step current">📘 2. Intermediate</span>
+    <span class="series-step future">🔥 3. Advanced (Zustand, Axios, Jest)</span>
+  </div>
+  <div class="hero-pills">
+    <span class="hero-pill">🌍 Context API</span>
+    <span class="hero-pill">🪝 Custom Hooks</span>
+    <span class="hero-pill">🛣️ React Router</span>
+    <span class="hero-pill">📌 useRef</span>
+    <span class="hero-pill">⚡ useMemo / useCallback</span>
+    <span class="hero-pill">🏷️ Generic Components</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">📁 Updated Structure</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🌍 Context API</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🪝 Custom Hooks</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🛣️ React Router</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">📌 useRef</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">⚡ Performance</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🏷️ Advanced TS</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: UPDATED STRUCTURE -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">📁 Updated Folder Structure</h2>
+  <p class="section-sub">Building on the Beginner structure — new folders for context, routing, and shared hooks.</p>
+
+  <div class="callout callout-blue">
+    <strong>What's new from Beginner</strong>
+    We're adding <code>context/</code> for global state, <code>router/</code> for route definitions, and growing out <code>hooks/</code> with more reusable logic. Everything from the Beginner guide stays exactly where it was.
+  </div>
+
+  <div class="tree">
+<span class="folder">my-app/</span><br>
+├── <span class="folder">src/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">assets/</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">components/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Button/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Card/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="folder new">ProtectedRoute/</span>     <span class="comment new"># NEW — route guard component</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tsx">ProtectedRoute.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder new">context/</span>            <span class="comment new"># NEW — React Context providers</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">AuthContext.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">ThemeContext.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">hooks/</span>              <span class="comment"># Grown out with more reusable logic</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">useLocalStorage.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx new">useFetch.ts</span>          <span class="comment new"># NEW — reusable data-fetch hook</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx new">useDebounce.ts</span>       <span class="comment new"># NEW — debounce a fast-changing value</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx new">useAuth.ts</span>           <span class="comment new"># NEW — convenience wrapper for AuthContext</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">pages/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Home/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Profile/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder new">Login/</span>            <span class="comment new"># NEW — route page</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="folder new">NotFound/</span>         <span class="comment new"># NEW — 404 page</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder new">router/</span>             <span class="comment new"># NEW — centralised route configuration</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">routes.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">types/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">utils/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx">App.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;└── <span class="tsx">main.tsx</span>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">New Folders Explained</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Folder</th><th>Purpose</th><th>Rule of Thumb</th></tr></thead>
+      <tbody>
+        <tr><td><code>context/</code></td><td>App-wide state (auth, theme) accessible anywhere without prop drilling</td><td>One file per distinct concern — don't put everything in one giant context</td></tr>
+        <tr><td><code>router/</code></td><td>Centralised list of all routes and which component renders for each</td><td>Keep route definitions in one place, not scattered across files</td></tr>
+        <tr><td><code>hooks/</code> (grown)</td><td>Logic used in 2+ components gets extracted here</td><td>If you copy-paste a <code>useState</code> + <code>useEffect</code> combo twice, make it a hook</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 1: CONTEXT API -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🌍 Context API — Avoiding Prop Drilling</h2>
+  <p class="section-sub">Share data across many components without manually passing props through every level in between.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="contextCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>The problem Context solves</strong>
+    If <code>App</code> has the current user, and a deeply nested <code>Avatar</code> component needs it, passing it as a prop through every component in between ("prop drilling") is tedious and brittle. Context lets <code>Avatar</code> read it directly.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">context/AuthContext.tsx — typed context with a Provider</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { createContext, useContext, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import type</span> { ReactNode } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">type</span> <span class="typ">User</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span> };
+
+<span class="kw">type</span> <span class="typ">AuthContextType</span> = {
+  user: <span class="typ">User</span> | <span class="kw">null</span>;
+  login: (user: <span class="typ">User</span>) =&gt; <span class="kw">void</span>;
+  logout: () =&gt; <span class="kw">void</span>;
+};
+
+<span class="cm">// undefined default forces consumers to check they're inside a Provider</span>
+<span class="kw">const</span> <span class="var">AuthContext</span> = createContext&lt;<span class="typ">AuthContextType</span> | <span class="kw">undefined</span>&gt;(<span class="kw">undefined</span>);
+
+<span class="kw">export function</span> <span class="fn">AuthProvider</span>({ children }: { children: ReactNode }) {
+  <span class="kw">const</span> [user, setUser] = useState&lt;<span class="typ">User</span> | <span class="kw">null</span>&gt;(<span class="kw">null</span>);
+
+  <span class="kw">const</span> <span class="fn">login</span> = (newUser: <span class="typ">User</span>) =&gt; setUser(newUser);
+  <span class="kw">const</span> <span class="fn">logout</span> = () =&gt; setUser(<span class="kw">null</span>);
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;AuthContext.Provider</span> <span class="attr">value</span>={{ user, login, logout }}<span class="tagjsx">&gt;</span>
+      {children}
+    <span class="tagjsx">&lt;/AuthContext.Provider&gt;</span>
+  );
+}
+
+<span class="cm">// Custom hook — the ONLY way components should access this context</span>
+<span class="kw">export function</span> <span class="fn">useAuth</span>() {
+  <span class="kw">const</span> <span class="var">context</span> = useContext(AuthContext);
+  <span class="kw">if</span> (!context) {
+    <span class="kw">throw new</span> Error(<span class="str">'useAuth must be used inside an AuthProvider'</span>);
+  }
+  <span class="kw">return</span> context;
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Wrap the app once — App.tsx</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { AuthProvider } <span class="kw">from</span> <span class="str">'./context/AuthContext'</span>;
+
+<span class="kw">function</span> <span class="fn">App</span>() {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;AuthProvider&gt;</span>
+      <span class="tagjsx">&lt;Header</span> <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;MainContent</span> <span class="tagjsx">/&gt;</span>   <span class="cm">{/* Avatar is nested deep inside here */}</span>
+    <span class="tagjsx">&lt;/AuthProvider&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Any nested component can now read it directly — no props needed</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useAuth } <span class="kw">from</span> <span class="str">'../../context/AuthContext'</span>;
+
+<span class="kw">function</span> <span class="fn">Avatar</span>() {
+  <span class="kw">const</span> { user, logout } = useAuth();   <span class="cm">// no props passed in — reads context directly</span>
+
+  <span class="kw">if</span> (!user) <span class="kw">return null</span>;
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;span&gt;</span>{user.name}<span class="tagjsx">&lt;/span&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={logout}<span class="tagjsx">&gt;</span>Log out<span class="tagjsx">&lt;/button&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Don't put everything in one giant Context</strong>
+    Any component reading a Context re-renders when <em>any</em> value in it changes. Split unrelated state into separate Contexts (AuthContext, ThemeContext) so a theme change doesn't re-render every component reading auth state.
+  </div>
+</section>
+
+<!-- TAB 2: CUSTOM HOOKS -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🪝 Custom Hooks — Reusable Logic</h2>
+  <p class="section-sub">Extract repeated stateful logic into your own hook — the single biggest lever for clean React code.</p>
+
+  <div class="callout callout-green">
+    <strong>The Rule</strong>
+    If you find yourself writing the same <code>useState</code> + <code>useEffect</code> pattern in two or more components, that's your signal to extract it into a custom hook. A custom hook is just a function whose name starts with <code>use</code> and that calls other hooks inside it.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">hooks/useFetch.ts — a generic, reusable data-fetching hook</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useState, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">type</span> <span class="typ">FetchState</span>&lt;T&gt; = {
+  data: T | <span class="kw">null</span>;
+  loading: <span class="kw">boolean</span>;
+  error: <span class="kw">string</span> | <span class="kw">null</span>;
+};
+
+<span class="cm">// Generic <T> — works for any data shape: useFetch<User>, useFetch<Post[]></span>
+<span class="kw">export function</span> <span class="fn">useFetch</span>&lt;T&gt;(url: <span class="kw">string</span>): <span class="typ">FetchState</span>&lt;T&gt; {
+  <span class="kw">const</span> [state, setState] = useState&lt;<span class="typ">FetchState</span>&lt;T&gt;&gt;({
+    data: <span class="kw">null</span>,
+    loading: <span class="kw">true</span>,
+    error: <span class="kw">null</span>,
+  });
+
+  useEffect(() =&gt; {
+    <span class="kw">let</span> <span class="var">isCancelled</span> = <span class="kw">false</span>;
+    setState({ data: <span class="kw">null</span>, loading: <span class="kw">true</span>, error: <span class="kw">null</span> });
+
+    fetch(url)
+      .then(res =&gt; {
+        <span class="kw">if</span> (!res.ok) <span class="kw">throw new</span> Error(<span class="str">`HTTP ${res.status}`</span>);
+        <span class="kw">return</span> res.json();
+      })
+      .then((data: T) =&gt; {
+        <span class="kw">if</span> (!isCancelled) setState({ data, loading: <span class="kw">false</span>, error: <span class="kw">null</span> });
+      })
+      .catch((err: Error) =&gt; {
+        <span class="kw">if</span> (!isCancelled) setState({ data: <span class="kw">null</span>, loading: <span class="kw">false</span>, error: err.message });
+      });
+
+    <span class="kw">return</span> () =&gt; { isCancelled = <span class="kw">true</span>; };
+  }, [url]);
+
+  <span class="kw">return</span> state;
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Using useFetch — clean, typed, no duplicate logic</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useFetch } <span class="kw">from</span> <span class="str">'../../hooks/useFetch'</span>;
+
+<span class="kw">type</span> <span class="typ">Post</span> = { id: <span class="kw">number</span>; title: <span class="kw">string</span> };
+
+<span class="kw">function</span> <span class="fn">PostList</span>() {
+  <span class="cm">// TypeScript knows `data` is Post[] | null — full autocomplete</span>
+  <span class="kw">const</span> { data: posts, loading, error } = useFetch&lt;<span class="typ">Post</span>[]&gt;(<span class="str">'/api/posts'</span>);
+
+  <span class="kw">if</span> (loading) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Loading...<span class="tagjsx">&lt;/p&gt;</span>;
+  <span class="kw">if</span> (error) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Error: {error}<span class="tagjsx">&lt;/p&gt;</span>;
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;ul&gt;</span>
+      {posts?.map(post =&gt; <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={post.id}<span class="tagjsx">&gt;</span>{post.title}<span class="tagjsx">&lt;/li&gt;</span>)}
+    <span class="tagjsx">&lt;/ul&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Another Useful Custom Hook — Debounce</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">hooks/useDebounce.ts — delay reacting to fast-changing values (e.g. search input)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useState, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">export function</span> <span class="fn">useDebounce</span>&lt;T&gt;(value: T, delayMs: <span class="kw">number</span>): T {
+  <span class="kw">const</span> [debounced, setDebounced] = useState(value);
+
+  useEffect(() =&gt; {
+    <span class="kw">const</span> <span class="var">timer</span> = setTimeout(() =&gt; setDebounced(value), delayMs);
+    <span class="kw">return</span> () =&gt; clearTimeout(timer);   <span class="cm">// cancel if value changes before delay finishes</span>
+  }, [value, delayMs]);
+
+  <span class="kw">return</span> debounced;
+}
+
+<span class="cm">// Usage: only fires the search after the user stops typing for 400ms</span>
+<span class="cm">// const debouncedSearch = useDebounce(searchInput, 400);</span></pre>
+  </div>
+</section>
+
+<!-- TAB 3: REACT ROUTER -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🛣️ React Router — Multi-Page Navigation</h2>
+  <p class="section-sub">React apps are usually "single page" — React Router makes different URLs render different components.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="routerCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Terminal</span>
+      <span class="code-desc">Install React Router</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>npm install react-router-dom</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">router/routes.tsx — centralised route configuration</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { createBrowserRouter } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+<span class="kw">import</span> <span class="var">Home</span> <span class="kw">from</span> <span class="str">'../pages/Home/Home'</span>;
+<span class="kw">import</span> <span class="var">Profile</span> <span class="kw">from</span> <span class="str">'../pages/Profile/Profile'</span>;
+<span class="kw">import</span> <span class="var">Login</span> <span class="kw">from</span> <span class="str">'../pages/Login/Login'</span>;
+<span class="kw">import</span> <span class="var">NotFound</span> <span class="kw">from</span> <span class="str">'../pages/NotFound/NotFound'</span>;
+<span class="kw">import</span> <span class="var">ProtectedRoute</span> <span class="kw">from</span> <span class="str">'../components/ProtectedRoute/ProtectedRoute'</span>;
+
+<span class="kw">export const</span> <span class="var">router</span> = createBrowserRouter([
+  { path: <span class="str">'/'</span>, element: <span class="tagjsx">&lt;Home</span> <span class="tagjsx">/&gt;</span> },
+  { path: <span class="str">'/login'</span>, element: <span class="tagjsx">&lt;Login</span> <span class="tagjsx">/&gt;</span> },
+  {
+    path: <span class="str">'/profile/:userId'</span>,        <span class="cm">// :userId is a dynamic route param</span>
+    element: (
+      <span class="tagjsx">&lt;ProtectedRoute&gt;</span>
+        <span class="tagjsx">&lt;Profile</span> <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;/ProtectedRoute&gt;</span>
+    ),
+  },
+  { path: <span class="str">'*'</span>, element: <span class="tagjsx">&lt;NotFound</span> <span class="tagjsx">/&gt;</span> },   <span class="cm">// catch-all 404</span>
+]);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">main.tsx — wire up the router</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { RouterProvider } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+<span class="kw">import</span> { router } <span class="kw">from</span> <span class="str">'./router/routes'</span>;
+<span class="kw">import</span> { AuthProvider } <span class="kw">from</span> <span class="str">'./context/AuthContext'</span>;
+
+ReactDOM.createRoot(document.getElementById(<span class="str">'root'</span>)!).render(
+  <span class="tagjsx">&lt;AuthProvider&gt;</span>
+    <span class="tagjsx">&lt;RouterProvider</span> <span class="attr">router</span>={router} <span class="tagjsx">/&gt;</span>
+  <span class="tagjsx">&lt;/AuthProvider&gt;</span>
+);</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Reading Route Params &amp; Navigating</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">pages/Profile/Profile.tsx — useParams + useNavigate</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useParams, useNavigate, Link } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+
+<span class="kw">function</span> <span class="fn">Profile</span>() {
+  <span class="cm">// Typed param extraction — matches ":userId" from the route path</span>
+  <span class="kw">const</span> { userId } = useParams&lt;{ userId: <span class="kw">string</span> }&gt;();
+  <span class="kw">const</span> <span class="var">navigate</span> = useNavigate();
+
+  <span class="kw">const</span> <span class="fn">goHome</span> = () =&gt; navigate(<span class="str">'/'</span>);   <span class="cm">// programmatic navigation</span>
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;h2&gt;</span>Viewing profile for user: {userId}<span class="tagjsx">&lt;/h2&gt;</span>
+      <span class="tagjsx">&lt;Link</span> <span class="attr">to</span>=<span class="str">"/"</span><span class="tagjsx">&gt;</span>Back to Home<span class="tagjsx">&lt;/Link&gt;</span>   <span class="cm">{/* declarative nav */}</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={goHome}<span class="tagjsx">&gt;</span>Or click here<span class="tagjsx">&lt;/button&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">components/ProtectedRoute/ProtectedRoute.tsx — guard authenticated routes</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import type</span> { ReactNode } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { Navigate } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+<span class="kw">import</span> { useAuth } <span class="kw">from</span> <span class="str">'../../context/AuthContext'</span>;
+
+<span class="kw">function</span> <span class="fn">ProtectedRoute</span>({ children }: { children: ReactNode }) {
+  <span class="kw">const</span> { user } = useAuth();
+
+  <span class="kw">if</span> (!user) {
+    <span class="kw">return</span> <span class="tagjsx">&lt;Navigate</span> <span class="attr">to</span>=<span class="str">"/login"</span> <span class="attr">replace</span> <span class="tagjsx">/&gt;</span>;
+  }
+
+  <span class="kw">return</span> &lt;&gt;{children}&lt;/&gt;;
+}
+
+<span class="kw">export default</span> <span class="var">ProtectedRoute</span>;</pre>
+  </div>
+</section>
+
+<!-- TAB 4: useRef -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">📌 useRef — Direct DOM Access &amp; Persistent Values</h2>
+  <p class="section-sub">For when you need to reach the actual DOM node, or store a value that survives re-renders without triggering one.</p>
+
+  <div class="callout callout-blue">
+    <strong>useRef vs useState</strong>
+    Changing a <code>ref</code>'s value does <strong>not</strong> trigger a re-render. Use it for things React doesn't need to "watch" — DOM nodes, previous values, timer IDs, anything that's an implementation detail rather than something the UI displays.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Focus an input on mount — typed DOM ref</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useRef, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">function</span> <span class="fn">SearchBox</span>() {
+  <span class="cm">// Typed as HTMLInputElement | null — starts null until React attaches it</span>
+  <span class="kw">const</span> <span class="var">inputRef</span> = useRef&lt;HTMLInputElement&gt;(<span class="kw">null</span>);
+
+  useEffect(() =&gt; {
+    inputRef.current?.focus();   <span class="cm">// ?. because it could still be null</span>
+  }, []);
+
+  <span class="kw">return</span> <span class="tagjsx">&lt;input</span> <span class="attr">ref</span>={inputRef} <span class="attr">type</span>=<span class="str">"text"</span> <span class="attr">placeholder</span>=<span class="str">"Search..."</span> <span class="tagjsx">/&gt;</span>;
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Store a value across renders WITHOUT causing a re-render</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useRef, useEffect, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">function</span> <span class="fn">Stopwatch</span>() {
+  <span class="kw">const</span> [seconds, setSeconds] = useState(<span class="num">0</span>);
+  <span class="cm">// Holds the interval ID — doesn't need to trigger re-renders when it changes</span>
+  <span class="kw">const</span> <span class="var">intervalRef</span> = useRef&lt;<span class="kw">number</span> | <span class="kw">undefined</span>&gt;(<span class="kw">undefined</span>);
+
+  <span class="kw">const</span> <span class="fn">start</span> = () =&gt; {
+    intervalRef.current = setInterval(() =&gt; setSeconds(s =&gt; s + <span class="num">1</span>), <span class="num">1000</span>);
+  };
+
+  <span class="kw">const</span> <span class="fn">stop</span> = () =&gt; clearInterval(intervalRef.current);
+
+  useEffect(() =&gt; <span class="fn">stop</span>, []);  <span class="cm">// always clean up on unmount</span>
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;p&gt;</span>{seconds}s<span class="tagjsx">&lt;/p&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={start}<span class="tagjsx">&gt;</span>Start<span class="tagjsx">&lt;/button&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={stop}<span class="tagjsx">&gt;</span>Stop<span class="tagjsx">&lt;/button&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Need</th><th>Use</th><th>Triggers Re-render?</th></tr></thead>
+      <tbody>
+        <tr><td>Data shown on screen</td><td><code>useState</code></td><td>✅ Yes</td></tr>
+        <tr><td>Direct DOM node access (focus, scroll, measure)</td><td><code>useRef</code></td><td>❌ No</td></tr>
+        <tr><td>Store a timer/interval ID</td><td><code>useRef</code></td><td>❌ No</td></tr>
+        <tr><td>Track "previous value" of a prop/state</td><td><code>useRef</code> + <code>useEffect</code></td><td>❌ No</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 5: PERFORMANCE -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">⚡ Performance Basics</h2>
+  <p class="section-sub">useMemo, useCallback, and React.memo — preventing unnecessary work, used correctly (and not too early).</p>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Don't optimise prematurely</strong>
+    These tools add complexity. Only reach for them when you've actually noticed a performance problem (e.g. via React DevTools Profiler) — not as a default habit on every component.
+  </div>
+
+  <div class="hook-grid">
+    <div class="hook-card" style="--hc:#58a6ff">
+      <div class="hook-name">useMemo</div>
+      <div class="hook-desc">Caches the <strong>result</strong> of an expensive calculation. Only recalculates when its dependencies change.</div>
+    </div>
+    <div class="hook-card" style="--hc:#bc8cff">
+      <div class="hook-name">useCallback</div>
+      <div class="hook-desc">Caches a <strong>function</strong> itself, so it keeps the same reference between renders — useful when passing callbacks to memoized children.</div>
+    </div>
+    <div class="hook-card" style="--hc:#3fb950">
+      <div class="hook-name">React.memo</div>
+      <div class="hook-desc">Wraps a component so it skips re-rendering if its props haven't changed.</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">useMemo — avoid recalculating an expensive filter on every render</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useMemo, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">type</span> <span class="typ">Product</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span>; price: <span class="kw">number</span> };
+
+<span class="kw">function</span> <span class="fn">ProductList</span>({ products }: { products: <span class="typ">Product</span>[] }) {
+  <span class="kw">const</span> [search, setSearch] = useState(<span class="str">''</span>);
+
+  <span class="cm">// Only re-filters when `products` or `search` actually change —</span>
+  <span class="cm">// not on every render caused by unrelated state elsewhere</span>
+  <span class="kw">const</span> <span class="var">filtered</span> = useMemo(
+    () =&gt; products.filter(p =&gt; p.name.toLowerCase().includes(search.toLowerCase())),
+    [products, search]
+  );
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;input</span> <span class="attr">value</span>={search} <span class="attr">onChange</span>={(e) =&gt; setSearch(e.target.value)} <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;ul&gt;</span>{filtered.map(p =&gt; <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={p.id}<span class="tagjsx">&gt;</span>{p.name}<span class="tagjsx">&lt;/li&gt;</span>)}<span class="tagjsx">&lt;/ul&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">useCallback + React.memo working together</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useCallback, useState, memo } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="cm">// Without memo, ExpensiveChild re-renders every time Parent re-renders,</span>
+<span class="cm">// even if its own props never changed.</span>
+<span class="kw">const</span> <span class="var">ExpensiveChild</span> = memo(<span class="kw">function</span> <span class="fn">ExpensiveChild</span>({ onSave }: { onSave: () =&gt; <span class="kw">void</span> }) {
+  console.log(<span class="str">'ExpensiveChild rendered'</span>);
+  <span class="kw">return</span> <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={onSave}<span class="tagjsx">&gt;</span>Save<span class="tagjsx">&lt;/button&gt;</span>;
+});
+
+<span class="kw">function</span> <span class="fn">Parent</span>() {
+  <span class="kw">const</span> [count, setCount] = useState(<span class="num">0</span>);
+
+  <span class="cm">// Without useCallback, a NEW function is created every render,</span>
+  <span class="cm">// which would defeat memo() — the child sees a "different" prop each time</span>
+  <span class="kw">const</span> <span class="fn">handleSave</span> = useCallback(() =&gt; {
+    console.log(<span class="str">'Saving...'</span>);
+  }, []);  <span class="cm">// no dependencies — this function never needs to change</span>
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;p&gt;</span>Count: {count}<span class="tagjsx">&lt;/p&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; setCount(c =&gt; c + <span class="num">1</span>)}<span class="tagjsx">&gt;</span>Increment<span class="tagjsx">&lt;/button&gt;</span>
+      <span class="tagjsx">&lt;ExpensiveChild</span> <span class="attr">onSave</span>={handleSave} <span class="tagjsx">/&gt;</span>   <span class="cm">{/* won't re-render on Increment clicks */}</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Tool</th><th>Memoizes</th><th>Use When</th></tr></thead>
+      <tbody>
+        <tr><td><code>useMemo</code></td><td>A computed value</td><td>Expensive calculation (filtering, sorting large lists)</td></tr>
+        <tr><td><code>useCallback</code></td><td>A function reference</td><td>Passing callbacks to memoized children, or as a dependency elsewhere</td></tr>
+        <tr><td><code>React.memo</code></td><td>An entire component's render output</td><td>Component re-renders often with the same props, and rendering is costly</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 6: ADVANCED TS -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🏷️ Advanced TypeScript Patterns</h2>
+  <p class="section-sub">Patterns that make components more flexible and your code more self-documenting.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Generic component — works with any list item type</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// A reusable List component that works for ANY item type</span>
+<span class="kw">type</span> <span class="typ">ListProps</span>&lt;T&gt; = {
+  items: T[];
+  renderItem: (item: T) =&gt; <span class="typ">React</span>.ReactNode;
+  keyExtractor: (item: T) =&gt; <span class="kw">string</span> | <span class="kw">number</span>;
+};
+
+<span class="kw">function</span> <span class="fn">List</span>&lt;T&gt;({ items, renderItem, keyExtractor }: <span class="typ">ListProps</span>&lt;T&gt;) {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;ul&gt;</span>
+      {items.map(item =&gt; (
+        <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={keyExtractor(item)}<span class="tagjsx">&gt;</span>{renderItem(item)}<span class="tagjsx">&lt;/li&gt;</span>
+      ))}
+    <span class="tagjsx">&lt;/ul&gt;</span>
+  );
+}
+
+<span class="cm">// Usage with Users:</span>
+<span class="cm">// <List items={users} keyExtractor={u => u.id} renderItem={u => <span>{u.name}</span>} /></span>
+
+<span class="cm">// Usage with Products — SAME component, different type, fully typed both times:</span>
+<span class="cm">// <List items={products} keyExtractor={p => p.id} renderItem={p => <span>{p.price}</span>} /></span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Discriminated unions — modelling state that can be one of several distinct shapes</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Each variant has a "status" field that TypeScript uses to narrow the type</span>
+<span class="kw">type</span> <span class="typ">RequestState</span>&lt;T&gt; =
+  | { status: <span class="str">'idle'</span> }
+  | { status: <span class="str">'loading'</span> }
+  | { status: <span class="str">'success'</span>; data: T }
+  | { status: <span class="str">'error'</span>; message: <span class="kw">string</span> };
+
+<span class="kw">function</span> <span class="fn">renderRequest</span>&lt;T&gt;(state: <span class="typ">RequestState</span>&lt;T&gt;) {
+  <span class="kw">switch</span> (state.status) {
+    <span class="kw">case</span> <span class="str">'idle'</span>:
+      <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Waiting to start...<span class="tagjsx">&lt;/p&gt;</span>;
+    <span class="kw">case</span> <span class="str">'loading'</span>:
+      <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Loading...<span class="tagjsx">&lt;/p&gt;</span>;
+    <span class="kw">case</span> <span class="str">'success'</span>:
+      <span class="cm">// TypeScript KNOWS state.data exists here — only on the success branch</span>
+      <span class="kw">return</span> <span class="tagjsx">&lt;pre&gt;</span>{JSON.stringify(state.data)}<span class="tagjsx">&lt;/pre&gt;</span>;
+    <span class="kw">case</span> <span class="str">'error'</span>:
+      <span class="cm">// And here, state.message exists — TypeScript narrows per-branch</span>
+      <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Error: {state.message}<span class="tagjsx">&lt;/p&gt;</span>;
+  }
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Utility types — Partial, Pick, Omit</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">type</span> <span class="typ">User</span> = {
+  id: <span class="kw">number</span>;
+  name: <span class="kw">string</span>;
+  email: <span class="kw">string</span>;
+  role: <span class="str">'admin'</span> | <span class="str">'viewer'</span>;
+};
+
+<span class="cm">// Partial<T> — makes every field optional. Great for "update" functions.</span>
+<span class="kw">function</span> <span class="fn">updateUser</span>(id: <span class="kw">number</span>, changes: Partial&lt;<span class="typ">User</span>&gt;) { <span class="cm">/* ... */</span> }
+updateUser(<span class="num">1</span>, { name: <span class="str">'New Name'</span> });   <span class="cm">// only "name" needed, rest optional</span>
+
+<span class="cm">// Pick<T, K> — select only certain fields</span>
+<span class="kw">type</span> <span class="typ">UserPreview</span> = Pick&lt;<span class="typ">User</span>, <span class="str">'id'</span> | <span class="str">'name'</span>&gt;;
+<span class="cm">// = { id: number; name: string }</span>
+
+<span class="cm">// Omit<T, K> — everything EXCEPT certain fields</span>
+<span class="kw">type</span> <span class="typ">UserWithoutEmail</span> = Omit&lt;<span class="typ">User</span>, <span class="str">'email'</span>&gt;;
+<span class="cm">// = { id: number; name: string; role: 'admin' | 'viewer' }</span></pre>
+  </div>
+
+  <div class="callout callout-ts">
+    <strong>💡 Why discriminated unions beat booleans</strong>
+    Instead of <code>{ loading: boolean; error: string | null; data: T | null }</code> (which allows invalid states like loading=true AND data set), a discriminated union makes invalid states <em>impossible to represent</em> — you can only ever be in exactly one of the defined states.
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Patterns that keep an intermediate-sized React + TypeScript codebase maintainable.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ One Context per Concern</div>
+      <p>Separate AuthContext, ThemeContext, CartContext rather than one giant AppContext. Limits unnecessary re-renders and keeps each context easy to reason about.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Always Wrap Context Access in a Hook</div>
+      <p>Never call <code>useContext(AuthContext)</code> directly in components. Wrap it in <code>useAuth()</code> so you get the undefined-check and a single place to evolve the API.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Extract Hooks Once You Repeat Yourself Twice</div>
+      <p>The moment you copy a <code>useState</code>+<code>useEffect</code> pattern into a second component, stop and make it a custom hook in <code>hooks/</code>.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Centralise Routes in One File</div>
+      <p>Keep all route definitions in <code>router/routes.tsx</code>. Don't scatter <code>&lt;Route&gt;</code> elements across multiple files — one source of truth for your app's URL structure.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Profile Before Optimising</div>
+      <p>Use React DevTools Profiler to find actual slow renders before reaching for <code>useMemo</code>/<code>useCallback</code>/<code>memo</code>. Premature optimisation adds complexity for no measurable benefit.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Model State with Unions, Not Booleans</div>
+      <p>Prefer <code>{ status: 'loading' | 'success' | 'error' }</code> over multiple boolean flags. It makes impossible states impossible and the code self-documenting.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Type Function Parameters, Let Return Types Infer</div>
+      <p>Always type what goes <em>into</em> a function. Let TypeScript infer the return type unless the function is complex enough that an explicit return type improves readability.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Name Custom Hooks Starting with "use"</div>
+      <p>Required by React's rules of hooks (so the linter can verify correct hook usage) and instantly communicates intent to other developers reading the code.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary — Intermediate Level Complete</h2>
+  <p class="section-sub">Everything covered, at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🌍 Context API</div>
+      <p>Avoid prop drilling. Always pair with a custom hook (<code>useAuth</code>) that throws if used outside its Provider. One context per concern.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪝 Custom Hooks</div>
+      <p>Extract repeated logic. Generic <code>useFetch&lt;T&gt;</code> and <code>useDebounce&lt;T&gt;</code> patterns. Name starts with "use".</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛣️ React Router</div>
+      <p><code>createBrowserRouter</code> + <code>RouterProvider</code>. <code>useParams</code>, <code>useNavigate</code>, <code>Link</code>. Protect routes with a guard component.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📌 useRef</div>
+      <p>DOM access and values that shouldn't trigger re-renders. Doesn't cause a render when changed — unlike useState.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Performance</div>
+      <p><code>useMemo</code> (cache value), <code>useCallback</code> (cache function), <code>React.memo</code> (skip re-render). Profile first, optimise second.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏷️ Advanced TypeScript</div>
+      <p>Generic components, discriminated unions for state, utility types (Partial/Pick/Omit) for transforming existing types.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Concept</th><th>Quick Reference</th></tr></thead>
+      <tbody>
+        <tr><td>Create context</td><td><code>createContext&lt;T | undefined&gt;(undefined)</code></td></tr>
+        <tr><td>Custom hook</td><td>Function starting with <code>use</code>, calls other hooks inside</td></tr>
+        <tr><td>Add a route</td><td><code>{ path: '/x', element: &lt;X /&gt; }</code> in routes.tsx</td></tr>
+        <tr><td>DOM ref</td><td><code>useRef&lt;HTMLInputElement&gt;(null)</code></td></tr>
+        <tr><td>Memoize value</td><td><code>useMemo(() => calc(), [deps])</code></td></tr>
+        <tr><td>Memoize function</td><td><code>useCallback(() => {}, [deps])</code></td></tr>
+        <tr><td>Generic component</td><td><code>function List&lt;T&gt;(props: ListProps&lt;T&gt;)</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>Intermediate level complete!</h3>
+    <p>You now know Context, custom hooks, routing, refs, basic performance optimisation, and advanced TypeScript patterns. The Advanced guide builds on all of this — adding Zustand for global state management, Axios for HTTP calls, and Jest for testing.</p>
+    <div class="next-up">🔥 Next up: React + TypeScript — Advanced (Zustand, Axios, Jest)</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [null, drawContext, null, drawRouter, null, null, null, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  cyan:'#61dafb', blue:'#58a6ff', ts:'#3178c6', green:'#3fb950',
+  purple:'#bc8cff', orange:'#e8834a', red:'#f85149', yellow:'#d29922',
+  text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawContext(){
+  const s=setup('contextCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Context API — Skip the Prop Drilling',C.muted,11);
+
+  // Without context (prop drilling) - left side
+  txt(ctx,W*0.25,32,'❌ Prop Drilling',C.red,11);
+  const chain=['App','Header','Toolbar','UserMenu','Avatar'];
+  chain.forEach((c,i)=>{
+    box(ctx,W*0.25-55,44+i*36,110,28,C.red,c,null,null);
+    if(i<chain.length-1) arr(ctx,W*0.25,72+i*36,W*0.25,80+i*36,C.red);
+  });
+  txt(ctx,W*0.25,H-15,'user passed through 4 levels',C.red,10);
+
+  // With context - right side
+  txt(ctx,W*0.72,32,'✅ Context API',C.green,11);
+  box(ctx,W*0.72-70,46,140,32,C.green,'AuthProvider','wraps everything',null);
+  const ctxChain=['Header','Toolbar','UserMenu','Avatar'];
+  ctxChain.forEach((c,i)=>{
+    const x=W*0.55+i*55;
+    arr(ctx,W*0.72,78,x+25,108,C.green);
+    box(ctx,x,108,90,30,C.blue,c,null,null);
+  });
+  ctx.setLineDash([3,3]); ctx.strokeStyle=C.green; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(W*0.55+3*55+45,138); ctx.lineTo(W*0.55+3*55+45,160); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,W*0.55+3*55+45,176,'useAuth() reads',C.green,9);
+  txt(ctx,W*0.55+3*55+45,190,'directly — no props!',C.green,9);
+}
+
+function drawRouter(){
+  const s=setup('routerCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'React Router — URL Determines Component',C.muted,11);
+
+  box(ctx,20,40,140,46,C.blue,'Browser URL','/profile/42',null);
+  arr(ctx,160,63,220,63,C.blue);
+
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.purple; ctx.lineWidth=2;
+  rr(ctx,220,40,160,46,8); ctx.fill(); ctx.stroke();
+  txt(ctx,300,60,'🛣️ Router',C.purple,12);
+  txt(ctx,300,75,'matches path pattern',C.muted,9);
+  arr(ctx,380,63,440,63,C.purple);
+
+  const routes=[
+    {l:'/  → Home',c:C.green},
+    {l:'/login → Login',c:C.green},
+    {l:'/profile/:id → Profile ✓',c:C.orange},
+    {l:'* → NotFound',c:C.green},
+  ];
+  routes.forEach((r,i)=>{
+    const y=36+i*36;
+    ctx.fillStyle=r.c+'18'; ctx.strokeStyle=r.c+'55'; ctx.lineWidth=1;
+    rr(ctx,440,y,W-460,30,5); ctx.fill(); ctx.stroke();
+    txt(ctx,440+(W-460)/2,y+19,r.l,r.c,10);
+  });
+
+  txt(ctx,W/2,H-10,'ProtectedRoute checks auth before rendering Profile',C.muted,10);
+}
+
+window.addEventListener('load', () => {});
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[null,drawContext,null,drawRouter,null,null,null,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

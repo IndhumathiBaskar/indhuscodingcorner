@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS CodeGuru – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #00a8cc;
+    --accent2:    #29c5f0;
+    --accent-dim: rgba(0,168,204,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent2); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #001a20 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(0,168,204,0.2) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(0,168,204,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent2); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-cyan   { background: var(--accent-dim); border: 1px solid rgba(0,168,204,0.3); border-left: 3px solid var(--accent2); }
+  .callout-cyan strong { color: var(--accent2); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-cyan   { background: var(--accent-dim); color: var(--accent2); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent2); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent2); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent2); } .pn { color: var(--green); }
+
+  /* PRODUCT CARDS */
+  .product-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .product-grid{ grid-template-columns:1fr; } }
+  .product-card { background: var(--surface); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+  .product-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--pc,var(--accent2)); }
+  .product-icon { font-size: 28px; margin-bottom: 10px; }
+  .product-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .product-status { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; display: inline-block; padding: 2px 8px; border-radius: 4px; }
+  .product-desc { font-size: 13px; color: var(--muted); }
+
+  /* FINDING SEVERITY */
+  .finding-card { background: var(--surface); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; border-left: 4px solid var(--sev,var(--accent2)); }
+  .finding-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; }
+  .finding-title { font-size: 13px; font-weight: 700; color: var(--text); }
+  .finding-sev { font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 9px; border-radius: 10px; color: var(--sev,var(--accent2)); background: color-mix(in srgb, var(--sev,var(--accent2)) 15%, transparent); }
+  .finding-desc { font-size: 13px; color: var(--muted); }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(0,168,204,0.35); color: var(--accent2); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(0,168,204,0.1) 100%); border: 1px solid rgba(0,168,204,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS CodeGuru</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🤖 ML-Powered Code Analysis</div>
+  <h1>AWS <span>CodeGuru</span></h1>
+  <p>Machine learning-powered code reviews and runtime performance profiling — find bugs, security issues, and expensive code paths before they reach production.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">🔍 Automated Code Review</span>
+    <span class="hero-pill">🛡️ Security Detection</span>
+    <span class="hero-pill">⚡ Performance Profiler</span>
+    <span class="hero-pill">💰 Cost Hotspots</span>
+    <span class="hero-pill">🔧 Auto-Fix Suggestions</span>
+    <span class="hero-pill">📊 CI/CD Integration</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🔍 Reviewer</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">⚡ Profiler</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🛡️ Security Detector</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🔧 CI/CD Setup</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# / .NET</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">📊 Finding Types</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS CodeGuru?</h2>
+  <p class="section-sub">A suite of ML-powered developer tools that automatically review code and profile running applications.</p>
+
+  <div class="callout callout-cyan">
+    <strong>One-liner</strong>
+    CodeGuru = an automated senior engineer reviewing every pull request for bugs, security issues, and bad practices — plus a profiler watching your live app to find the exact lines of code burning CPU and money.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="280"></canvas>
+  </div>
+
+  <div class="product-grid">
+    <div class="product-card" style="--pc:#00a8cc">
+      <div class="product-icon">🔍</div>
+      <div class="product-name">CodeGuru Reviewer</div>
+      <div class="product-status" style="background:rgba(63,185,80,0.15);color:var(--green)">Active</div>
+      <div class="product-desc">Automated code review on pull requests. Trained on millions of Amazon code reviews. Finds bugs, resource leaks, concurrency issues, and security vulnerabilities. Supports Java and Python.</div>
+    </div>
+    <div class="product-card" style="--pc:#bc8cff">
+      <div class="product-icon">⚡</div>
+      <div class="product-name">CodeGuru Profiler</div>
+      <div class="product-status" style="background:rgba(63,185,80,0.15);color:var(--green)">Active</div>
+      <div class="product-desc">Continuous runtime profiling of production applications. Visualises CPU/latency hotspots with flame graphs. Identifies the exact function calls costing you the most compute time and money.</div>
+    </div>
+    <div class="product-card" style="--pc:#e8834a">
+      <div class="product-icon">🛡️</div>
+      <div class="product-name">Security Detector</div>
+      <div class="product-status" style="background:rgba(63,185,80,0.15);color:var(--green)">Part of Reviewer</div>
+      <div class="product-desc">Detects security vulnerabilities aligned to OWASP Top 10, AWS API misuse, hardcoded credentials, injection flaws — integrated directly into Reviewer's findings.</div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">CodeGuru in Your SDLC</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔁 Pre-Merge (Reviewer)</div>
+      <p>Runs automatically when a pull request is opened/updated. Posts inline comments directly on the PR — just like a human reviewer. Catches issues before they're merged.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏃 Post-Deploy (Profiler)</div>
+      <p>Lightweight agent runs alongside your application in production. Continuously samples stack traces with minimal overhead (&lt;1% CPU). Surfaces cost/performance issues that only appear under real traffic.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Why ML-based over static linters?</strong>
+    Traditional linters (ESLint, SonarQube) catch syntax-level and style issues using fixed rules. CodeGuru is trained on patterns from millions of real Amazon code reviews — it catches semantic issues like resource leaks, race conditions, and inefficient AWS SDK usage that rule-based linters typically miss.
+  </div>
+</section>
+
+<!-- TAB 1: REVIEWER -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🔍 CodeGuru Reviewer</h2>
+  <p class="section-sub">Automated, ML-powered code review that runs on every pull request.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="reviewCanvas" width="860" height="240"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔗 Supported Repositories</div>
+      <p>CodeCommit, GitHub, GitHub Enterprise, Bitbucket, GitLab (via webhook). Associates a repository once — then reviews trigger automatically on every PR.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💻 Supported Languages</div>
+      <p><span class="tag tag-green">Java</span> Full support — most mature detector set.</p>
+      <p><span class="tag tag-blue">Python</span> Full support — growing detector set.</p>
+      <p>No native C#/.NET support — see Workarounds tab for alternatives.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Two Review Types</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔄 Pull Request Reviews</div>
+      <p>Triggered automatically on every new PR and subsequent commit. Inline comments appear directly on the diff in GitHub/CodeCommit/Bitbucket. Fast feedback loop, incremental.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Full Repository Analysis</div>
+      <p>One-time deep scan of an entire repository/branch. Good for onboarding an existing codebase, periodic audits, or before a major refactor. Triggered manually via console/API.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">What Reviewer Detects</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🐛 Code Quality</div>
+      <p>Resource leaks (unclosed streams/connections), null pointer risks, inefficient loops, duplicate code blocks, unused variables.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔀 Concurrency</div>
+      <p>Race conditions, deadlock risks, improper synchronization, thread-safety violations in shared state access.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">☁️ AWS Best Practices</div>
+      <p>Inefficient AWS SDK usage (e.g. creating a new client per request instead of reusing), missing pagination, hardcoded regions/credentials.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Example Finding</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Java</span>
+      <span class="code-desc">CodeGuru Reviewer flags a resource leak</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// ❌ CodeGuru finding: "Resource leak detected"</span>
+<span class="kw">public</span> String <span class="fn">readFile</span>(String path) <span class="kw">throws</span> IOException {
+    FileInputStream <span class="var">stream</span> = <span class="kw">new</span> FileInputStream(path);
+    <span class="kw">return new</span> String(<span class="var">stream</span>.readAllBytes());
+    <span class="cm">// stream is never closed — leak on every call</span>
+}
+
+<span class="cm">// ✅ CodeGuru suggested fix — try-with-resources</span>
+<span class="kw">public</span> String <span class="fn">readFile</span>(String path) <span class="kw">throws</span> IOException {
+    <span class="kw">try</span> (FileInputStream <span class="var">stream</span> = <span class="kw">new</span> FileInputStream(path)) {
+        <span class="kw">return new</span> String(<span class="var">stream</span>.readAllBytes());
+    } <span class="cm">// stream automatically closed, even on exception</span>
+}</pre>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>💡 Finding Recommendations</strong>
+    Every finding includes: a description of the issue, why it matters, a link to AWS/industry documentation, and (for many findings) a suggested code fix you can apply directly from the PR comment.
+  </div>
+</section>
+
+<!-- TAB 2: PROFILER -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">⚡ CodeGuru Profiler</h2>
+  <p class="section-sub">Continuous, low-overhead production profiling — find exactly which code is costing you CPU and money.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="profilerCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔥 Flame Graphs</div>
+      <p>Visual representation of where CPU time is spent. Wider bars = more time. Click to drill into nested function calls. Compare graphs across two time periods to spot regressions.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">💰 Cost Visualisation</div>
+      <p>Profiler estimates the dollar cost of specific code paths based on compute time consumed. Helps prioritise optimisation work by actual cost impact, not just CPU %.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🐢 Anomaly Detection</div>
+      <p>Automatically detects when a function's CPU/latency profile deviates significantly from its historical baseline — flags potential performance regressions after a deploy.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪶 Low Overhead</div>
+      <p>Sampling-based profiling agent — typically &lt;1% CPU overhead. Safe to run continuously in production, unlike traditional profilers that require dedicated profiling sessions.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Supported Runtimes</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Language</th><th>Where it Runs</th><th>Agent Type</th></tr></thead>
+      <tbody>
+        <tr><td>Java</td><td>EC2, ECS, EKS, Lambda, on-prem</td><td>CodeGuru Profiler Java Agent</td></tr>
+        <tr><td>Python</td><td>EC2, ECS, EKS, Lambda, on-prem</td><td><code>codeguru_profiler_agent</code> pip package</td></tr>
+        <tr><td>.NET / C#</td><td><span class="tag tag-orange">Limited / Community</span></td><td>No first-party agent — see Workarounds</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Python</span>
+      <span class="code-desc">Start the profiler agent in a Python app</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">from</span> codeguru_profiler_agent <span class="kw">import</span> Profiler
+
+<span class="cm"># Start profiling at app startup</span>
+<span class="var">profiler</span> = Profiler(
+    profiling_group_name=<span class="str">'order-service-prod'</span>,
+    region_name=<span class="str">'us-east-1'</span>
+)
+<span class="var">profiler</span>.start()
+
+<span class="cm"># ... your application code runs normally ...</span>
+<span class="cm"># Profiler samples stack traces in the background</span>
+
+<span class="cm"># Graceful shutdown</span>
+<span class="var">profiler</span>.stop()</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">XML</span>
+      <span class="code-desc">Java agent — add as JVM argument</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">&lt;!-- Maven dependency --&gt;</span>
+&lt;dependency&gt;
+    &lt;groupId&gt;software.amazon.codeguruprofiler&lt;/groupId&gt;
+    &lt;artifactId&gt;codeguru-profiler-java-agent&lt;/artifactId&gt;
+    &lt;version&gt;1.2.4&lt;/version&gt;
+&lt;/dependency&gt;
+
+<span class="cm">&lt;!-- Or attach as a JVM argument at startup --&gt;</span>
+<span class="cm"># java -javaagent:codeguru-profiler-java-agent.jar \
+#      -Dcom.amazonaws.codeguruprofiler.profilingGroupName=order-service-prod \
+#      -jar myapp.jar</span></pre>
+  </div>
+</section>
+
+<!-- TAB 3: SECURITY DETECTOR -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🛡️ Security Detector</h2>
+  <p class="section-sub">Security-focused findings within CodeGuru Reviewer — mapped to industry standards.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="secCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>Standards Coverage</strong>
+    Security Detector findings map to OWASP Top 10, AWS security best practices, CWE (Common Weakness Enumeration), and PCI-DSS-relevant patterns where applicable.
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Example Security Findings</h3>
+  <div class="finding-card" style="--sev:#f85149">
+    <div class="finding-header">
+      <span class="finding-title">Hardcoded AWS Credentials</span>
+      <span class="finding-sev" style="--sev:#f85149">Critical</span>
+    </div>
+    <div class="finding-desc">Detects AWS access keys, secret keys, or other credentials hardcoded in source code. Recommends using IAM roles, Secrets Manager, or environment variables instead.</div>
+  </div>
+  <div class="finding-card" style="--sev:#f85149">
+    <div class="finding-header">
+      <span class="finding-title">SQL Injection Risk</span>
+      <span class="finding-sev" style="--sev:#f85149">Critical</span>
+    </div>
+    <div class="finding-desc">Flags string concatenation used to build SQL queries from user input. Recommends parameterized queries / prepared statements.</div>
+  </div>
+  <div class="finding-card" style="--sev:#e8834a">
+    <div class="finding-header">
+      <span class="finding-title">Weak Cryptography</span>
+      <span class="finding-sev" style="--sev:#e8834a">High</span>
+    </div>
+    <div class="finding-desc">Detects use of deprecated/weak algorithms (MD5, SHA-1 for security purposes, DES). Recommends modern alternatives (SHA-256+, AES-256).</div>
+  </div>
+  <div class="finding-card" style="--sev:#e8834a">
+    <div class="finding-header">
+      <span class="finding-title">Insecure Deserialization</span>
+      <span class="finding-sev" style="--sev:#e8834a">High</span>
+    </div>
+    <div class="finding-desc">Flags deserializing untrusted data without validation — a common vector for remote code execution attacks.</div>
+  </div>
+  <div class="finding-card" style="--sev:#d29922">
+    <div class="finding-header">
+      <span class="finding-title">Missing Input Validation</span>
+      <span class="finding-sev" style="--sev:#d29922">Medium</span>
+    </div>
+    <div class="finding-desc">Identifies user-facing endpoints that process input without validation, potentially allowing injection or unexpected behaviour.</div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Example: SQL Injection Detection</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Java</span>
+      <span class="code-desc">Security Detector flags string-concatenated SQL</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// ❌ CodeGuru finding: "SQL injection risk"</span>
+String <span class="var">query</span> = <span class="str">"SELECT * FROM users WHERE username = '"</span> + userInput + <span class="str">"'"</span>;
+Statement <span class="var">stmt</span> = connection.createStatement();
+ResultSet <span class="var">rs</span> = <span class="var">stmt</span>.executeQuery(<span class="var">query</span>);
+
+<span class="cm">// ✅ Suggested fix — parameterized query</span>
+String <span class="var">query</span> = <span class="str">"SELECT * FROM users WHERE username = ?"</span>;
+PreparedStatement <span class="var">stmt</span> = connection.prepareStatement(<span class="var">query</span>);
+<span class="var">stmt</span>.setString(<span class="num">1</span>, userInput);
+ResultSet <span class="var">rs</span> = <span class="var">stmt</span>.executeQuery();</pre>
+  </div>
+</section>
+
+<!-- TAB 4: CI/CD SETUP -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🔧 CI/CD Integration</h2>
+  <p class="section-sub">Wire CodeGuru into your pull request workflow — GitHub Actions, CodeCommit, or Bitbucket.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="cicdCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <ul class="steps">
+    <li><div class="step-num">1</div><div class="step-body"><strong>Associate Repository</strong>In the CodeGuru console, connect your CodeCommit/GitHub/Bitbucket repo. Grants CodeGuru read access via OAuth or IAM role.</div></li>
+    <li><div class="step-num">2</div><div class="step-body"><strong>Configure Trigger</strong>Choose "Pull Request" trigger (recommended) for inline PR comments, and/or "Full Repository Scan" for periodic deep analysis.</div></li>
+    <li><div class="step-num">3</div><div class="step-body"><strong>Open a Pull Request</strong>CodeGuru automatically analyses the diff. Findings appear as inline review comments within minutes.</div></li>
+    <li><div class="step-num">4</div><div class="step-body"><strong>Address or Dismiss Findings</strong>Apply suggested fixes directly, or dismiss with a reason (false positive, won't fix, etc.) — improves future relevance.</div></li>
+    <li><div class="step-num">5</div><div class="step-body"><strong>Track Metrics</strong>View aggregated metrics: findings by severity, code quality trend over time, recommendation acceptance rate.</div></li>
+  </ul>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">GitHub Actions Workflow</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">YAML</span>
+      <span class="code-desc">.github/workflows/codeguru-review.yml</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="var">name</span>: CodeGuru Reviewer
+<span class="var">on</span>: [<span class="str">pull_request</span>]
+
+<span class="var">jobs</span>:
+  <span class="var">codeguru-review</span>:
+    <span class="var">runs-on</span>: ubuntu-latest
+    <span class="var">permissions</span>:
+      <span class="var">id-token</span>: write
+      <span class="var">contents</span>: read
+    <span class="var">steps</span>:
+      - <span class="var">uses</span>: actions/checkout@v4
+        <span class="var">with</span>:
+          <span class="var">fetch-depth</span>: <span class="num">0</span>
+
+      - <span class="var">name</span>: Configure AWS Credentials
+        <span class="var">uses</span>: aws-actions/configure-aws-credentials@v4
+        <span class="var">with</span>:
+          <span class="var">role-to-assume</span>: arn:aws:iam::123456789012:role/CodeGuruReviewRole
+          <span class="var">aws-region</span>: us-east-1
+
+      - <span class="var">name</span>: AWS CodeGuru Reviewer
+        <span class="var">uses</span>: aws-actions/codeguru-reviewer@v1.1
+        <span class="var">with</span>:
+          <span class="var">s3_bucket</span>: codeguru-reviewer-artifacts-myorg
+          <span class="var">build_path</span>: ./target/classes  <span class="cm"># compiled output for Java</span>
+
+      - <span class="var">name</span>: Upload Results
+        <span class="var">uses</span>: github/codeql-action/upload-sarif@v3
+        <span class="var">with</span>:
+          <span class="var">sarif_file</span>: codeguru-results.sarif.json</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">AWS CLI</span>
+      <span class="code-desc">Associate a CodeCommit repository</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>aws codeguru-reviewer associate-repository \
+  --repository <span class="str">'{"CodeCommit": {"Name": "order-service"}}'</span> \
+  --type Connection
+
+<span class="cm"># Check association status</span>
+aws codeguru-reviewer describe-repository-association \
+  --association-arn arn:aws:codeguru-reviewer:us-east-1:123456789012:association/abc-123
+
+<span class="cm"># Trigger a full repository analysis manually</span>
+aws codeguru-reviewer create-code-review \
+  --name full-scan-2026-06 \
+  --repository-association-arn arn:aws:codeguru-reviewer:us-east-1:123456789012:association/abc-123 \
+  --type <span class="str">'{"RepositoryAnalysis": {"RepositoryHead": {"BranchName": "main"}}}'</span></pre>
+  </div>
+</section>
+
+<!-- TAB 5: C# / .NET -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET — Workarounds &amp; Alternatives</h2>
+  <p class="section-sub">CodeGuru natively supports Java and Python only. Here's how .NET teams get equivalent value.</p>
+
+  <div class="callout callout-red">
+    <strong>⚠️ No Native .NET Support</strong>
+    As of this writing, neither CodeGuru Reviewer nor Profiler officially support C#/.NET. If your stack is .NET (like Indhu's), use the alternatives below for equivalent code review and profiling capability.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔍 Code Review Alternatives</div>
+      <p><span class="tag tag-blue">Amazon Q Developer</span> — AWS's newer AI coding assistant DOES support C#/.NET for code review and security scanning. Best AWS-native alternative.</p>
+      <p><span class="tag tag-green">SonarQube / SonarCloud</span> — strong C# rule sets, security hotspots, code smells.</p>
+      <p><span class="tag tag-purple">GitHub Copilot / CodeQL</span> — AI review + semantic security analysis for C#.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Profiling Alternatives</div>
+      <p><span class="tag tag-blue">AWS X-Ray .NET SDK</span> — distributed tracing, not full CPU profiling, but identifies slow service calls.</p>
+      <p><span class="tag tag-green">Application Insights (Azure)</span> — if hybrid cloud, strong .NET profiling.</p>
+      <p><span class="tag tag-purple">dotnet-trace / PerfView</span> — Microsoft's native .NET profiling tools, can export flame graphs.</p>
+      <p><span class="tag tag-orange">JetBrains dotTrace</span> — commercial, excellent .NET flame graphs.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Recommended .NET Stack (CodeGuru-equivalent)</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>CodeGuru Feature</th><th>.NET Equivalent</th><th>Integration</th></tr></thead>
+      <tbody>
+        <tr><td>PR code review</td><td>Amazon Q Developer or SonarCloud</td><td>GitHub Actions / Azure DevOps</td></tr>
+        <tr><td>Security findings</td><td>CodeQL for C# + Amazon Q Developer</td><td>GitHub Advanced Security</td></tr>
+        <tr><td>Runtime profiling</td><td>dotnet-trace + custom flame graph export</td><td>Sidecar container in ECS/EKS</td></tr>
+        <tr><td>Distributed tracing</td><td>AWS X-Ray .NET SDK</td><td>NuGet: AWSXRayRecorder</td></tr>
+        <tr><td>Cost hotspot analysis</td><td>CloudWatch Embedded Metrics + custom dashboards</td><td>Manual instrumentation</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">AWS X-Ray instrumentation for .NET (closest AWS-native equivalent)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.XRay.Recorder.Core;
+<span class="kw">using</span> Amazon.XRay.Recorder.Handlers.AwsSdk;
+
+<span class="cm">// Register X-Ray tracing for all AWS SDK calls</span>
+AWSSDKHandler.<span class="fn">RegisterXRayForAllServices</span>();
+
+<span class="kw">public async</span> <span class="typ">Task</span> <span class="fn">ProcessOrderAsync</span>(<span class="typ">Order</span> order)
+{
+    <span class="kw">await</span> <span class="typ">AWSXRayRecorder</span>.Instance.<span class="fn">TraceMethodAsync</span>(<span class="str">"ProcessOrder"</span>, <span class="kw">async</span> () =>
+    {
+        <span class="cm">// Annotate with custom metadata — visible in X-Ray console</span>
+        <span class="typ">AWSXRayRecorder</span>.Instance.<span class="fn">AddAnnotation</span>(<span class="str">"orderId"</span>, order.Id);
+
+        <span class="kw">await</span> <span class="fn">ValidateOrderAsync</span>(order);     <span class="cm">// sub-segment auto-traced</span>
+        <span class="kw">await</span> <span class="fn">SaveToDynamoDbAsync</span>(order);    <span class="cm">// AWS SDK call auto-traced</span>
+        <span class="kw">await</span> <span class="fn">PublishEventAsync</span>(order);      <span class="cm">// AWS SDK call auto-traced</span>
+    });
+}
+
+<span class="cm">// View the resulting service map + timing breakdown in X-Ray console</span>
+<span class="cm">// Identifies slow downstream calls — similar value to CodeGuru's hotspot view</span></pre>
+  </div>
+</section>
+
+<!-- TAB 6: FINDING TYPES -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">📊 Finding Types &amp; Severity</h2>
+  <p class="section-sub">Understanding how CodeGuru categorises and prioritises what it finds.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="findingCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Severity Levels</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Severity</th><th>Meaning</th><th>Example</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><span class="tag tag-red">Critical</span></td><td>Likely to cause production incidents or security breaches</td><td>Hardcoded credentials, SQL injection</td><td>Fix before merge</td></tr>
+        <tr><td><span class="tag tag-orange">High</span></td><td>Significant quality or security concern</td><td>Resource leak, weak crypto</td><td>Fix before merge</td></tr>
+        <tr><td><span class="tag tag-yellow">Medium</span></td><td>Should be addressed but not urgent</td><td>Missing input validation</td><td>Fix soon / track as tech debt</td></tr>
+        <tr><td><span class="tag tag-blue">Low</span></td><td>Minor improvement opportunity</td><td>Code style, minor inefficiency</td><td>Optional / backlog</td></tr>
+        <tr><td><span class="tag tag-green">Info</span></td><td>Informational observation</td><td>Suggestion for clarity</td><td>Consider</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Finding Categories</h3>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🐛 AWS Best Practices</div>
+      <p>S3 client recreation per request, missing retry/backoff logic, synchronous calls in async contexts, missing pagination on list operations.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔀 Concurrency</div>
+      <p>Unsynchronized access to shared mutable state, potential deadlocks, improper use of concurrent collections, thread pool exhaustion risks.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Security</div>
+      <p>Injection vulnerabilities, hardcoded secrets, weak cryptographic algorithms, insecure deserialization, missing authentication checks.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Resource Leaks</div>
+      <p>Unclosed file handles, database connections, HTTP clients, streams — anything implementing <code>Closeable</code>/<code>AutoCloseable</code> not properly released.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Code Inefficiency</div>
+      <p>Inefficient string concatenation in loops, redundant computation, suboptimal data structure choices, unnecessary object creation.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📐 Code Maintainability</div>
+      <p>Duplicate code blocks, overly complex methods (high cyclomatic complexity), inconsistent naming, missing documentation on public APIs.</p>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <strong>💡 Suppression &amp; Feedback Loop</strong>
+    Mark findings as "Useful" or "Not Useful" directly in the PR comment or console. CodeGuru uses this feedback to improve future recommendations for your specific codebase patterns over time.
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Get the most value from CodeGuru across your development workflow.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Enable on Every Repository</div>
+      <p>Associate every Java/Python repository with CodeGuru Reviewer — there's no extra cost barrier to entry for catching bugs early. The earlier issues are caught, the cheaper they are to fix.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Treat Critical/High as Merge Blockers</div>
+      <p>Configure your branch protection rules to require addressing Critical and High severity findings before merge. Medium/Low can be tracked as follow-up tech debt.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Run Full Repository Scan on Onboarding</div>
+      <p>When adopting CodeGuru on an existing codebase, run a full repository analysis first to get a baseline. Don't try to fix everything at once — triage by severity and tackle incrementally.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Profile in Production, Not Just Staging</div>
+      <p>Real cost/performance hotspots often only appear under genuine production traffic patterns. Run the Profiler agent continuously in production with its near-zero overhead.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Compare Flame Graphs Before/After Deploy</div>
+      <p>Use Profiler's comparison feature to diff CPU profiles between two time windows — instantly spot performance regressions introduced by a recent deployment.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Give Feedback on Findings</div>
+      <p>Mark findings as useful/not useful consistently. This trains CodeGuru's relevance for your team's specific codebase and reduces noise over time.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ For .NET Teams — Build the Equivalent Stack</div>
+      <p>Combine Amazon Q Developer (review) + AWS X-Ray (.NET tracing) + dotnet-trace (profiling) to approximate CodeGuru's value until/if native .NET support arrives.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Don't Ignore Security Findings</div>
+      <p>Security Detector findings (hardcoded credentials, injection risks) should always be treated as blocking — these are the exact patterns that lead to real breaches.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">CodeGuru vs Other Code Quality Tools</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Tool</th><th>Approach</th><th>Languages</th><th>Strength</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--accent2)">CodeGuru Reviewer</strong></td><td>ML, trained on Amazon's codebase</td><td>Java, Python</td><td>Semantic bugs, AWS-specific patterns</td></tr>
+        <tr><td>SonarQube</td><td>Rule-based static analysis</td><td>30+ languages incl. C#</td><td>Broad language support, customisable rules</td></tr>
+        <tr><td>CodeQL</td><td>Semantic query-based analysis</td><td>C#, Java, Python, JS, Go, C++</td><td>Deep security vulnerability detection</td></tr>
+        <tr><td>Amazon Q Developer</td><td>Generative AI</td><td>Many incl. C#/.NET</td><td>Broadest language support, AWS-native</td></tr>
+        <tr><td>ESLint / Roslyn Analyzers</td><td>Rule-based linting</td><td>Language-specific</td><td>Fast, style + simple bug patterns</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">AWS CodeGuru — the complete picture at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔍 Reviewer</div>
+      <p>ML-powered code review on PRs and full repo scans. Java + Python only. Finds bugs, concurrency issues, resource leaks, AWS best practice violations.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Profiler</div>
+      <p>Continuous low-overhead production profiling. Flame graphs, cost visualisation, anomaly detection. Java + Python agents available.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛡️ Security Detector</div>
+      <p>Part of Reviewer. Maps to OWASP Top 10, CWE. Catches hardcoded credentials, SQL injection, weak crypto, insecure deserialization.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔧 CI/CD Integration</div>
+      <p>GitHub Actions, CodeCommit, Bitbucket. Pull request trigger = inline comments. Full repo scan = periodic deep analysis.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Severity Levels</div>
+      <p>Critical → High → Medium → Low → Info. Treat Critical/High as merge blockers. Give feedback to improve relevance over time.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🧩 .NET Workaround</div>
+      <p>No native C# support. Use Amazon Q Developer for review, AWS X-Ray for tracing, dotnet-trace/PerfView for profiling as the equivalent stack.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Need</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Catch bugs before merge (Java/Python)</td><td>CodeGuru Reviewer — PR trigger</td></tr>
+        <tr><td>Audit existing codebase</td><td>CodeGuru Reviewer — Full Repository Analysis</td></tr>
+        <tr><td>Find production CPU/cost hotspots</td><td>CodeGuru Profiler</td></tr>
+        <tr><td>Detect security vulnerabilities</td><td>Security Detector (within Reviewer)</td></tr>
+        <tr><td>Compare performance before/after deploy</td><td>Profiler flame graph comparison</td></tr>
+        <tr><td>Equivalent capability for C#/.NET</td><td>Amazon Q Developer + X-Ray + dotnet-trace</td></tr>
+        <tr><td>Automate review in GitHub PRs</td><td>aws-actions/codeguru-reviewer GitHub Action</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS CodeGuru!</h3>
+    <p>From automated code review and security detection to production profiling, CI/CD integration, and the .NET workaround stack — you're ready to bring ML-powered code quality and performance insight into your AWS development workflow.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawReview, drawProfiler, drawSec, drawCicd, null, drawFinding, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  cyan:'#00a8cc', cyan2:'#29c5f0', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', orange:'#e8834a',
+  red:'#f85149', yellow:'#d29922', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'CodeGuru — Two Products, Two Stages of SDLC',C.muted,11);
+
+  // Developer -> PR
+  box(ctx,20,30,110,46,C.blue,'👩‍💻 Developer','Opens PR',null);
+  arr(ctx,130,53,190,53,C.blue);
+
+  // Reviewer
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.cyan2; ctx.lineWidth=2;
+  rr(ctx,190,30,160,46,8); ctx.fill(); ctx.stroke();
+  txt(ctx,270,50,'🔍 CodeGuru Reviewer',C.cyan2,12);
+  txt(ctx,270,65,'Pre-merge analysis',C.muted,9);
+  arr(ctx,350,53,410,53,C.cyan2);
+
+  box(ctx,410,30,140,46,C.green,'✅ Merged Code','Production-ready',null);
+  arr(ctx,480,76,480,106,C.border);
+
+  // Production
+  ctx.fillStyle='rgba(188,140,255,0.06)'; ctx.strokeStyle=C.purple+'66'; ctx.lineWidth=1;
+  rr(ctx,300,106,W-340,H-130,10); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,126,'🏭 Production Environment',C.purple,12);
+
+  box(ctx,320,140,140,40,C.orange,'Running App','EC2/ECS/Lambda',null);
+  arr(ctx,460,160,520,160,C.purple);
+  box(ctx,520,140,150,40,C.purple,'⚡ Profiler Agent','Samples stack traces',null);
+
+  arr(ctx,595,180,595,212,C.purple);
+  box(ctx,500,212,190,42,C.cyan2,'🔥 Flame Graph + Cost View','In CodeGuru console',null);
+
+  txt(ctx,W/2,H-8,'Reviewer = catch issues before merge · Profiler = optimise after deploy',C.muted,10);
+}
+
+function drawReview(){
+  const s=setup('reviewCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Pull Request Review Flow',C.muted,11);
+
+  const steps=[
+    {l:'PR Opened',ic:'📤',c:C.blue},
+    {l:'CodeGuru\nAnalyses Diff',ic:'🤖',c:C.cyan2},
+    {l:'Inline Comments\nPosted',ic:'💬',c:C.orange},
+    {l:'Dev Fixes\nor Dismisses',ic:'🔧',c:C.green},
+    {l:'PR Approved\n& Merged',ic:'✅',c:C.purple},
+  ];
+  const bw=Math.min(140,(W-60)/steps.length-8);
+  const gap=(W-40-bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,40,bw,110,st.c,st.l.split('\n')[0],st.l.split('\n')[1]||'',st.ic);
+    if(i<steps.length-1) arr(ctx,x+bw+2,95,x+bw+gap-2,95,C.border);
+  });
+
+  txt(ctx,W/2,H-8,'Findings appear as inline review comments — just like a human reviewer',C.muted,10);
+}
+
+function drawProfiler(){
+  const s=setup('profilerCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Flame Graph Concept — Width = CPU Time',C.muted,11);
+
+  const layers=[
+    [{l:'main()',w:1,c:C.blue}],
+    [{l:'processOrder()',w:0.6,c:C.green},{l:'sendEmail()',w:0.4,c:C.orange}],
+    [{l:'validateInput()',w:0.15,c:C.purple},{l:'⚠️ dbQuery() — 70% CPU',w:0.45,c:C.red},{l:'smtpSend()',w:0.4,c:C.orange}],
+  ];
+  const startY=50, rowH=44;
+  layers.forEach((row,ri)=>{
+    let cumX=20;
+    const totalW=W-40;
+    row.forEach(seg=>{
+      const segW=seg.w*totalW;
+      ctx.fillStyle=seg.c+'33'; ctx.strokeStyle=seg.c; ctx.lineWidth=1.5;
+      rr(ctx,cumX,startY+ri*(rowH+6),segW,rowH,4); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=seg.c; ctx.font='10px Inter,sans-serif'; ctx.textAlign='center';
+      if(segW>60) ctx.fillText(seg.l,cumX+segW/2,startY+ri*(rowH+6)+rowH/2+4);
+      cumX+=segW;
+    });
+  });
+
+  txt(ctx,W/2,H-12,'Wider blocks = more CPU time consumed — dbQuery() is the hotspot to optimise',C.red,10);
+}
+
+function drawSec(){
+  const s=setup('secCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Security Detector — Standards Coverage',C.muted,11);
+
+  const cx=W/2, cy=H/2+10;
+  box(ctx,cx-90,cy-25,180,50,C.orange,'🛡️ Security Detector','Part of Reviewer',null);
+
+  const stds=[
+    {l:'OWASP Top 10',c:C.red,dx:-260,dy:-50},
+    {l:'CWE Database',c:C.blue,dx:260,dy:-50},
+    {l:'AWS Best Practices',c:C.green,dx:-260,dy:50},
+    {l:'PCI-DSS Patterns',c:C.purple,dx:260,dy:50},
+  ];
+  stds.forEach(st=>{
+    const x=cx+st.dx-65, y=cy+st.dy-20;
+    box(ctx,x,y,130,40,st.c,st.l,null,null);
+    arr(ctx,cx+st.dx*0.35,cy+st.dy*0.35,cx+st.dx*0.62,cy+st.dy*0.62,C.border);
+  });
+}
+
+function drawCicd(){
+  const s=setup('cicdCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'CI/CD Pipeline Integration',C.muted,11);
+
+  const stages=[
+    {l:'Git Push',ic:'📤',c:C.blue},
+    {l:'GitHub Actions\nTriggered',ic:'⚙️',c:C.orange},
+    {l:'CodeGuru\nReviewer Step',ic:'🔍',c:C.cyan2},
+    {l:'SARIF Results\nUploaded',ic:'📄',c:C.purple},
+    {l:'PR Status\nCheck',ic:'✅',c:C.green},
+  ];
+  const bw=Math.min(140,(W-60)/stages.length-8);
+  const gap=(W-40-bw*stages.length)/(stages.length-1);
+  stages.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,40,bw,110,st.c,st.l.split('\n')[0],st.l.split('\n')[1]||'',st.ic);
+    if(i<stages.length-1) arr(ctx,x+bw+2,95,x+bw+gap-2,95,C.border);
+  });
+  txt(ctx,W/2,H-8,'Fully automated — no manual trigger needed once configured',C.muted,10);
+}
+
+function drawFinding(){
+  const s=setup('findingCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Finding Severity Distribution (Typical)',C.muted,11);
+
+  const bars=[
+    {l:'Critical',v:5,c:C.red},
+    {l:'High',v:15,c:C.orange},
+    {l:'Medium',v:35,c:C.yellow},
+    {l:'Low',v:30,c:C.blue},
+    {l:'Info',v:15,c:C.green},
+  ];
+  const bw=Math.min(120,(W-80)/bars.length-14);
+  const gap=(W-40-bw*bars.length)/(bars.length-1);
+  const maxH=H-70;
+  bars.forEach((b,i)=>{
+    const x=20+i*(bw+gap);
+    const h=(b.v/35)*maxH;
+    const y=H-40-h;
+    ctx.fillStyle=b.c+'33'; ctx.strokeStyle=b.c; ctx.lineWidth=1.5;
+    rr(ctx,x,y,bw,h,4); ctx.fill(); ctx.stroke();
+    txt(ctx,x+bw/2,y-8,b.v+'%',b.c,11);
+    txt(ctx,x+bw/2,H-24,b.l,C.muted,10);
+  });
+  txt(ctx,W/2,H-6,'Most findings are Medium/Low — focus remediation effort on Critical/High first',C.muted,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawReview,drawProfiler,drawSec,drawCicd,null,drawFinding,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

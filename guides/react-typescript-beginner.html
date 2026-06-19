@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>React + TypeScript — Beginner – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #61dafb;   /* React cyan */
+    --accent2:    #8be9fd;
+    --accent-dim: rgba(97,218,251,0.13);
+    --ts:         #3178c6;   /* TypeScript blue */
+    --ts-dim:     rgba(49,120,198,0.15);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #001820 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(97,218,251,0.18) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(97,218,251,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero h1 .ts-span { color: var(--ts); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .series-track { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .series-step { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 700; }
+  .series-step.current { background: rgba(97,218,251,0.15); border: 1px solid rgba(97,218,251,0.4); color: var(--accent); }
+  .series-step.future { background: var(--surface); border: 1px solid var(--border); color: var(--muted); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-cyan   { background: var(--accent-dim); border: 1px solid rgba(97,218,251,0.3); border-left: 3px solid var(--accent); }
+  .callout-cyan strong { color: var(--accent); }
+  .callout-ts     { background: var(--ts-dim); border: 1px solid rgba(49,120,198,0.35); border-left: 3px solid var(--ts); }
+  .callout-ts strong { color: var(--ts); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-cyan   { background: var(--accent-dim); color: var(--accent); }
+  .tag-ts     { background: var(--ts-dim); color: var(--ts); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-purple { background: rgba(188,140,255,0.15); color: var(--purple); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+  .tagjsx{color:#7ee787;} .attr{color:#79c0ff;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent); } .pn { color: var(--green); }
+
+  /* FOLDER TREE */
+  .tree { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: var(--mono); font-size: 13px; line-height: 1.9; margin-bottom: 20px; overflow-x: auto; }
+  .tree .folder { color: var(--accent); font-weight: 600; }
+  .tree .file { color: var(--text); }
+  .tree .tsx { color: var(--ts); }
+  .tree .comment { color: var(--muted); font-style: italic; }
+  .tree .indent { color: var(--border); }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(97,218,251,0.35); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  /* CONCEPT CARDS */
+  .concept-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .concept-grid{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .concept-grid{ grid-template-columns:1fr; } }
+  .concept-card { background: var(--surface); border-radius: var(--radius); padding: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .concept-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--cc,var(--accent)); }
+  .concept-icon { font-size: 22px; margin-bottom: 8px; }
+  .concept-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .concept-desc { font-size: 12px; color: var(--muted); }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(97,218,251,0.1) 100%); border: 1px solid rgba(97,218,251,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+  .next-up { margin-top: 16px; display: inline-flex; align-items: center; gap: 8px; background: var(--ts-dim); border: 1px solid rgba(49,120,198,0.4); border-radius: 20px; padding: 8px 18px; font-size: 13px; font-weight: 600; color: var(--ts); }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} .tree{font-size:12px;padding:14px 16px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">React + TypeScript — Beginner</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">⚛️ Frontend Fundamentals</div>
+  <h1>React <span>+</span> <span class="ts-span">TypeScript</span></h1>
+  <p>Start here. Components, props, state, hooks, and a real project folder structure — the foundation everything else in this series builds on.</p>
+  <div class="series-track">
+    <span class="series-step current">🌱 1. Beginner</span>
+    <span class="series-step future">📘 2. Intermediate</span>
+    <span class="series-step future">🔥 3. Advanced (Zustand, Axios, Jest)</span>
+  </div>
+  <div class="hero-pills">
+    <span class="hero-pill">🧩 Components</span>
+    <span class="hero-pill">📦 Props</span>
+    <span class="hero-pill">🪝 useState / useEffect</span>
+    <span class="hero-pill">📁 Folder Structure</span>
+    <span class="hero-pill">🏷️ TS Types & Interfaces</span>
+    <span class="hero-pill">🎯 Events</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ What is React?</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">📁 Folder Structure</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🧩 Components & JSX</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">📦 Props</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🪝 useState</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🔄 useEffect</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">🎯 Events & Forms</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">🏷️ TypeScript Basics</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: WHAT IS REACT -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is React?</h2>
+  <p class="section-sub">A JavaScript library for building user interfaces out of small, reusable pieces called components.</p>
+
+  <div class="callout callout-cyan">
+    <strong>One-liner</strong>
+    React lets you describe <strong>what</strong> the UI should look like for any given state, and React figures out <strong>how</strong> to update the actual webpage efficiently when that state changes.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🧩 Component-Based</div>
+      <p>UI is broken into small, independent, reusable pieces. A button, a card, a whole page — all components. Build complex UIs by combining simple ones.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📐 Declarative</div>
+      <p>You describe the end result ("show this list of items"), not the step-by-step DOM manipulation. React handles updating the browser for you.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌳 Virtual DOM</div>
+      <p>React keeps a lightweight in-memory copy of the UI. When state changes, it compares old vs new and updates only what actually changed in the real browser.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Why TypeScript with React?</h3>
+  <div class="callout callout-ts">
+    <strong>TypeScript = JavaScript + Types</strong>
+    TypeScript catches mistakes <em>while you type</em> — wrong prop names, missing fields, calling a function with the wrong argument type. For React specifically, it makes props, state, and event handlers self-documenting: you (and your editor) always know exactly what shape of data a component expects.
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Without TypeScript</th><th>With TypeScript</th></tr></thead>
+      <tbody>
+        <tr><td>Typo in a prop name → runtime crash, found by a user</td><td>Typo in a prop name → red squiggle in your editor, instantly</td></tr>
+        <tr><td>Forget to pass a required prop → silent bug</td><td>Forget to pass a required prop → compiler error before you even run it</td></tr>
+        <tr><td>No autocomplete for object shapes</td><td>Full autocomplete for every prop, every field</td></tr>
+        <tr><td>Refactor = search and pray</td><td>Refactor = rename, compiler tells you every place to fix</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Getting Started — Create a New Project</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Terminal</span>
+      <span class="code-desc">Create a React + TypeScript app using Vite (fast, modern, recommended)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Vite is the recommended way to start a new React + TS project in 2026</span>
+npm create vite@latest my-app -- --template react-ts
+
+<span class="kw">cd</span> my-app
+npm install
+npm run dev
+
+<span class="cm"># Your app is now running at http://localhost:5173</span></pre>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Why Vite over Create React App?</strong>
+    Vite starts your dev server in milliseconds (vs seconds with older tools) and has built-in TypeScript support — zero config needed. Create React App is no longer actively maintained, so Vite is the standard starting point now.
+  </div>
+</section>
+
+<!-- TAB 1: FOLDER STRUCTURE -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">📁 Project Folder Structure</h2>
+  <p class="section-sub">How a real, organised React + TypeScript project is laid out — this is the structure we'll build on throughout the series.</p>
+
+  <div class="callout callout-cyan">
+    <strong>Why structure matters</strong>
+    A consistent folder structure means any developer (including future-you) can open the project and immediately know where to find or add things. This is the structure we'll keep extending in the Intermediate and Advanced guides.
+  </div>
+
+  <div class="tree">
+<span class="folder">my-app/</span><br>
+├── <span class="folder">public/</span>                  <span class="comment"># Static assets served as-is</span><br>
+│&nbsp;&nbsp;&nbsp;└── <span class="file">favicon.svg</span><br>
+├── <span class="folder">src/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">assets/</span>             <span class="comment"># Images, fonts, icons imported into components</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">logo.svg</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">components/</span>         <span class="comment"># Reusable, "dumb" UI pieces — buttons, cards, inputs</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Button/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">Button.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">Button.css</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="folder">Card/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tsx">Card.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">pages/</span>              <span class="comment"># Top-level views/screens — one folder per route</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="folder">Home/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">Home.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="folder">Profile/</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── <span class="tsx">Profile.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">hooks/</span>              <span class="comment"># Custom reusable hooks (useFetch, useDebounce…)</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">useLocalStorage.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">types/</span>              <span class="comment"># Shared TypeScript types/interfaces</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">user.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">utils/</span>              <span class="comment"># Pure helper functions (formatDate, slugify…)</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="file">formatDate.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx">App.tsx</span>              <span class="comment"># Root component — sets up routes/layout</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx">main.tsx</span>             <span class="comment"># Entry point — renders &lt;App /&gt; into the DOM</span><br>
+│&nbsp;&nbsp;&nbsp;└── <span class="file">index.css</span>            <span class="comment"># Global styles</span><br>
+│<br>
+├── <span class="file">index.html</span>               <span class="comment"># The single HTML page (Vite injects the bundle here)</span><br>
+├── <span class="file">package.json</span><br>
+├── <span class="file">tsconfig.json</span>             <span class="comment"># TypeScript compiler configuration</span><br>
+└── <span class="file">vite.config.ts</span>            <span class="comment"># Vite build tool configuration</span>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">Why Each Folder Exists</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Folder</th><th>Purpose</th><th>Rule of Thumb</th></tr></thead>
+      <tbody>
+        <tr><td><code>components/</code></td><td>Small, reusable, presentational pieces</td><td>If you'd use it on 2+ pages, it goes here</td></tr>
+        <tr><td><code>pages/</code></td><td>Full screens tied to a route</td><td>One folder per route/page</td></tr>
+        <tr><td><code>hooks/</code></td><td>Reusable stateful logic extracted from components</td><td>Name starts with <code>use</code></td></tr>
+        <tr><td><code>types/</code></td><td>TypeScript interfaces/types shared across files</td><td>If 2+ files need the same shape, define it once here</td></tr>
+        <tr><td><code>utils/</code></td><td>Plain functions with no React/state involved</td><td>Pure functions — same input, same output, always</td></tr>
+        <tr><td><code>assets/</code></td><td>Images, fonts, SVGs imported by components</td><td>Anything you'd <code>import</code> into a .tsx file</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>💡 Component co-location</strong>
+    Notice each component gets its own folder (<code>Button/Button.tsx</code>) rather than flat files. This makes it easy to add a matching test file, story file, or stylesheet right next to the component as the project grows — which we'll do in later guides.
+  </div>
+</section>
+
+<!-- TAB 2: COMPONENTS & JSX -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🧩 Components &amp; JSX</h2>
+  <p class="section-sub">A component is just a function that returns JSX — HTML-like syntax that describes what should appear on screen.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="jsxCanvas" width="860" height="200"></canvas>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Your first component — components/Greeting/Greeting.tsx</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// A component is just a function. By convention, starts with a Capital letter.</span>
+<span class="kw">function</span> <span class="fn">Greeting</span>() {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;h1&gt;</span>Hello, Indhu! 👋<span class="tagjsx">&lt;/h1&gt;</span>
+      <span class="tagjsx">&lt;p&gt;</span>Welcome to React + TypeScript.<span class="tagjsx">&lt;/p&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}
+
+<span class="kw">export default</span> <span class="var">Greeting</span>;</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Using the component — App.tsx</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> <span class="var">Greeting</span> <span class="kw">from</span> <span class="str">'./components/Greeting/Greeting'</span>;
+
+<span class="kw">function</span> <span class="fn">App</span>() {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;Greeting</span> <span class="tagjsx">/&gt;</span>   <span class="cm">{/* Use a component like an HTML tag */}</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}
+
+<span class="kw">export default</span> <span class="var">App</span>;</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">JSX Rules to Remember</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">1️⃣ One Root Element</div>
+      <p>A component must return a single parent element. Wrap multiple elements in a <code>&lt;div&gt;</code> or a <code>&lt;&gt;...&lt;/&gt;</code> Fragment (no extra DOM node).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">2️⃣ camelCase Attributes</div>
+      <p>HTML's <code>class</code> becomes <code>className</code>. <code>onclick</code> becomes <code>onClick</code>. Most attributes follow JS camelCase convention, not HTML's lowercase.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">3️⃣ Curly Braces = JavaScript</div>
+      <p>Anything inside <code>{ }</code> in JSX is evaluated as JavaScript. <code>{user.name}</code>, <code>{2 + 2}</code>, <code>{isLoggedIn ? 'Hi' : 'Login'}</code> all work.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">4️⃣ Self-Closing Tags</div>
+      <p>Elements with no children must self-close: <code>&lt;img /&gt;</code>, <code>&lt;input /&gt;</code>, <code>&lt;Greeting /&gt;</code> — the trailing slash is required.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">JSX expressions and conditional rendering</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">function</span> <span class="fn">UserCard</span>() {
+  <span class="kw">const</span> <span class="var">name</span> = <span class="str">'Indhu'</span>;
+  <span class="kw">const</span> <span class="var">isOnline</span> = <span class="kw">true</span>;
+  <span class="kw">const</span> <span class="var">unreadCount</span> = <span class="num">3</span>;
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;h2&gt;</span>{name}<span class="tagjsx">&lt;/h2&gt;</span>                          <span class="cm">{/* embed a variable */}</span>
+
+      {isOnline ? <span class="tagjsx">&lt;span&gt;</span>🟢 Online<span class="tagjsx">&lt;/span&gt;</span> : <span class="tagjsx">&lt;span&gt;</span>⚫ Offline<span class="tagjsx">&lt;/span&gt;</span>}  <span class="cm">{/* ternary */}</span>
+
+      {unreadCount &gt; <span class="num">0</span> &amp;&amp; <span class="tagjsx">&lt;span&gt;</span>{unreadCount} new messages<span class="tagjsx">&lt;/span&gt;</span>}     <span class="cm">{/* && shortcut */}</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+</section>
+
+<!-- TAB 3: PROPS -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">📦 Props — Passing Data Down</h2>
+  <p class="section-sub">Props let a parent component pass data into a child component — like function arguments, but for components.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="propsCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-ts">
+    <strong>This is where TypeScript shines</strong>
+    Define a <code>type</code> or <code>interface</code> describing exactly what props a component accepts. Your editor will autocomplete them and flag an error immediately if you forget a required one or pass the wrong type.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">components/UserCard/UserCard.tsx — typed props</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// 1. Define the shape of the props this component accepts</span>
+<span class="kw">type</span> <span class="typ">UserCardProps</span> = {
+  name: <span class="kw">string</span>;
+  age: <span class="kw">number</span>;
+  isOnline: <span class="kw">boolean</span>;
+  avatarUrl?: <span class="kw">string</span>;        <span class="cm">// the ? makes this prop optional</span>
+};
+
+<span class="cm">// 2. Destructure props directly in the function signature</span>
+<span class="kw">function</span> <span class="fn">UserCard</span>({ name, age, isOnline, avatarUrl }: <span class="typ">UserCardProps</span>) {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div</span> <span class="attr">className</span>=<span class="str">"user-card"</span><span class="tagjsx">&gt;</span>
+      <span class="tagjsx">&lt;img</span> <span class="attr">src</span>={avatarUrl ?? <span class="str">'/default-avatar.png'</span>} <span class="attr">alt</span>={name} <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;h3&gt;</span>{name}, {age}<span class="tagjsx">&lt;/h3&gt;</span>
+      <span class="tagjsx">&lt;span&gt;</span>{isOnline ? <span class="str">'🟢 Online'</span> : <span class="str">'⚫ Offline'</span>}<span class="tagjsx">&lt;/span&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}
+
+<span class="kw">export default</span> <span class="var">UserCard</span>;</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Passing props from a parent component</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> <span class="var">UserCard</span> <span class="kw">from</span> <span class="str">'./components/UserCard/UserCard'</span>;
+
+<span class="kw">function</span> <span class="fn">App</span>() {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;UserCard</span> <span class="attr">name</span>=<span class="str">"Indhu"</span> <span class="attr">age</span>={<span class="num">28</span>} <span class="attr">isOnline</span>={<span class="kw">true</span>} <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;UserCard</span> <span class="attr">name</span>=<span class="str">"Alex"</span> <span class="attr">age</span>={<span class="num">34</span>} <span class="attr">isOnline</span>={<span class="kw">false</span>} <span class="tagjsx">/&gt;</span>
+
+      <span class="cm">{/* ❌ TypeScript error: missing required prop "isOnline" */}</span>
+      <span class="cm">{/* <UserCard name="Bob" age={22} /> */}</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Props with Children</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">A component that wraps other content — using React.ReactNode</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">type</span> <span class="typ">PanelProps</span> = {
+  title: <span class="kw">string</span>;
+  children: <span class="typ">React</span>.ReactNode;   <span class="cm">// accepts any valid JSX as children</span>
+};
+
+<span class="kw">function</span> <span class="fn">Panel</span>({ title, children }: <span class="typ">PanelProps</span>) {
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div</span> <span class="attr">className</span>=<span class="str">"panel"</span><span class="tagjsx">&gt;</span>
+      <span class="tagjsx">&lt;h3&gt;</span>{title}<span class="tagjsx">&lt;/h3&gt;</span>
+      <span class="tagjsx">&lt;div</span> <span class="attr">className</span>=<span class="str">"panel-body"</span><span class="tagjsx">&gt;</span>{children}<span class="tagjsx">&lt;/div&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}
+
+<span class="cm">// Usage — anything between the tags becomes "children"</span>
+<span class="tagjsx">&lt;Panel</span> <span class="attr">title</span>=<span class="str">"Account Settings"</span><span class="tagjsx">&gt;</span>
+  <span class="tagjsx">&lt;p&gt;</span>Manage your preferences here.<span class="tagjsx">&lt;/p&gt;</span>
+<span class="tagjsx">&lt;/Panel&gt;</span></pre>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Props flow one way — down</strong>
+    Data only flows from parent → child via props. A child can never directly change its parent's data. To let a child trigger a change, the parent passes down a <em>function</em> as a prop (covered in the Events tab).
+  </div>
+</section>
+
+<!-- TAB 4: useState -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🪝 useState — Component Memory</h2>
+  <p class="section-sub">State is data that a component "remembers" and can change over time — and when it changes, React re-renders the UI.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="stateCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <div class="callout callout-cyan">
+    <strong>The Golden Rule of State</strong>
+    Never modify state directly (<code>count = count + 1</code> ❌). Always use the setter function React gives you (<code>setCount(count + 1)</code> ✅). Direct mutation won't trigger a re-render.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">components/Counter/Counter.tsx — basic useState</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">function</span> <span class="fn">Counter</span>() {
+  <span class="cm">// useState<number> — TypeScript infers the type from the initial value (0)</span>
+  <span class="kw">const</span> [count, setCount] = useState&lt;<span class="kw">number</span>&gt;(<span class="num">0</span>);
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      <span class="tagjsx">&lt;p&gt;</span>Count: {count}<span class="tagjsx">&lt;/p&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; setCount(count + <span class="num">1</span>)}<span class="tagjsx">&gt;</span>
+        Increment
+      <span class="tagjsx">&lt;/button&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; setCount(<span class="num">0</span>)}<span class="tagjsx">&gt;</span>
+        Reset
+      <span class="tagjsx">&lt;/button&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">useState with Objects &amp; Arrays</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Typed object state — a form's data</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">type</span> <span class="typ">FormState</span> = {
+  name: <span class="kw">string</span>;
+  email: <span class="kw">string</span>;
+};
+
+<span class="kw">function</span> <span class="fn">SignupForm</span>() {
+  <span class="kw">const</span> [form, setForm] = useState&lt;<span class="typ">FormState</span>&gt;({ name: <span class="str">''</span>, email: <span class="str">''</span> });
+
+  <span class="kw">const</span> <span class="fn">updateName</span> = (newName: <span class="kw">string</span>) =&gt; {
+    <span class="cm">// ✅ Spread the old object, override just the changed field</span>
+    setForm({ ...form, name: newName });
+    <span class="cm">// ❌ form.name = newName — never mutate state directly!</span>
+  };
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;input</span>
+      <span class="attr">value</span>={form.name}
+      <span class="attr">onChange</span>={(e) =&gt; updateName(e.target.value)}
+    <span class="tagjsx">/&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Typed array state — a todo list</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">type</span> <span class="typ">Todo</span> = { id: <span class="kw">number</span>; text: <span class="kw">string</span>; done: <span class="kw">boolean</span> };
+
+<span class="kw">function</span> <span class="fn">TodoList</span>() {
+  <span class="kw">const</span> [todos, setTodos] = useState&lt;<span class="typ">Todo</span>[]&gt;([]);
+
+  <span class="kw">const</span> <span class="fn">addTodo</span> = (text: <span class="kw">string</span>) =&gt; {
+    <span class="kw">const</span> <span class="var">newTodo</span>: <span class="typ">Todo</span> = { id: Date.now(), text, done: <span class="kw">false</span> };
+    <span class="cm">// ✅ Spread the old array, add the new item — never push() directly</span>
+    setTodos([...todos, newTodo]);
+  };
+
+  <span class="kw">const</span> <span class="fn">toggleTodo</span> = (id: <span class="kw">number</span>) =&gt; {
+    setTodos(todos.map(t =&gt; t.id === id ? { ...t, done: !t.done } : t));
+  };
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;ul&gt;</span>
+      {todos.map(todo =&gt; (
+        <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={todo.id} <span class="attr">onClick</span>={() =&gt; toggleTodo(todo.id)}<span class="tagjsx">&gt;</span>
+          {todo.done ? <span class="str">'✅'</span> : <span class="str">'⬜'</span>} {todo.text}
+        <span class="tagjsx">&lt;/li&gt;</span>
+      ))}
+    <span class="tagjsx">&lt;/ul&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ The "key" prop</strong>
+    When rendering a list with <code>.map()</code>, every item needs a unique <code>key</code> prop. React uses it to track which items changed, were added, or removed — without it you'll get a console warning and potential rendering bugs.
+  </div>
+</section>
+
+<!-- TAB 5: useEffect -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🔄 useEffect — Side Effects</h2>
+  <p class="section-sub">Run code in response to a component rendering, or when specific values change — fetching data, subscriptions, timers.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="effectCanvas" width="860" height="230"></canvas>
+  </div>
+
+  <div class="callout callout-cyan">
+    <strong>What counts as a "side effect"?</strong>
+    Anything that reaches outside of React's rendering — fetching data from an API, setting up a timer, subscribing to an event, manually changing the page title. <code>useEffect</code> is where this code belongs.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">The three forms of useEffect — dependency array controls when it runs</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useEffect, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">function</span> <span class="fn">Example</span>({ userId }: { userId: <span class="kw">number</span> }) {
+  <span class="kw">const</span> [count, setCount] = useState(<span class="num">0</span>);
+
+  <span class="cm">// 1️⃣ No dependency array — runs after EVERY render (rarely what you want)</span>
+  useEffect(() =&gt; {
+    console.log(<span class="str">'Component rendered'</span>);
+  });
+
+  <span class="cm">// 2️⃣ Empty array [] — runs ONCE, when the component first mounts</span>
+  useEffect(() =&gt; {
+    console.log(<span class="str">'Component mounted — runs once'</span>);
+  }, []);
+
+  <span class="cm">// 3️⃣ With dependencies [userId] — runs once, AND whenever userId changes</span>
+  useEffect(() =&gt; {
+    console.log(<span class="str">`Fetching data for user ${userId}`</span>);
+  }, [userId]);
+
+  <span class="kw">return</span> <span class="tagjsx">&lt;div&gt;</span>{count}<span class="tagjsx">&lt;/div&gt;</span>;
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Real Example: Fetching Data</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">pages/UserProfile/UserProfile.tsx — fetch on mount with cleanup</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useEffect, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">type</span> <span class="typ">User</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span>; email: <span class="kw">string</span> };
+
+<span class="kw">function</span> <span class="fn">UserProfile</span>({ userId }: { userId: <span class="kw">number</span> }) {
+  <span class="kw">const</span> [user, setUser] = useState&lt;<span class="typ">User</span> | <span class="kw">null</span>&gt;(<span class="kw">null</span>);
+  <span class="kw">const</span> [loading, setLoading] = useState(<span class="kw">true</span>);
+
+  useEffect(() =&gt; {
+    <span class="kw">let</span> <span class="var">isCancelled</span> = <span class="kw">false</span>;   <span class="cm">// prevents setting state after unmount</span>
+
+    <span class="kw">async function</span> <span class="fn">fetchUser</span>() {
+      setLoading(<span class="kw">true</span>);
+      <span class="kw">const</span> <span class="var">response</span> = <span class="kw">await</span> fetch(<span class="str">`/api/users/${userId}`</span>);
+      <span class="kw">const</span> <span class="var">data</span>: <span class="typ">User</span> = <span class="kw">await</span> <span class="var">response</span>.json();
+
+      <span class="kw">if</span> (!isCancelled) {
+        setUser(<span class="var">data</span>);
+        setLoading(<span class="kw">false</span>);
+      }
+    }
+
+    fetchUser();
+
+    <span class="cm">// 🧹 Cleanup function — runs before the next effect, or on unmount</span>
+    <span class="kw">return</span> () =&gt; { isCancelled = <span class="kw">true</span>; };
+  }, [userId]);  <span class="cm">// re-run whenever userId changes</span>
+
+  <span class="kw">if</span> (loading) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Loading...<span class="tagjsx">&lt;/p&gt;</span>;
+  <span class="kw">if</span> (!user) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>User not found<span class="tagjsx">&lt;/p&gt;</span>;
+
+  <span class="kw">return</span> <span class="tagjsx">&lt;h2&gt;</span>{user.name}<span class="tagjsx">&lt;/h2&gt;</span>;
+}</pre>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Dependency Array</th><th>When it Runs</th><th>Common Use</th></tr></thead>
+      <tbody>
+        <tr><td><em>(none)</em></td><td>After every single render</td><td>Rarely needed — easy to cause infinite loops</td></tr>
+        <tr><td><code>[]</code></td><td>Once, on mount only</td><td>Initial data fetch, subscribe to an event</td></tr>
+        <tr><td><code>[userId]</code></td><td>On mount + whenever <code>userId</code> changes</td><td>Re-fetch data when a prop/id changes</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 6: EVENTS & FORMS -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">🎯 Events &amp; Forms</h2>
+  <p class="section-sub">Handling clicks, input changes, and form submissions — with properly typed event objects.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🖱️ Click Events</div>
+      <p>Use <code>React.MouseEvent</code> when you need the event object. Most of the time you don't — just use an arrow function.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⌨️ Input Events</div>
+      <p>Use <code>React.ChangeEvent&lt;HTMLInputElement&gt;</code> for typed access to <code>e.target.value</code>.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Typed event handlers</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">'react'</span>;
+
+<span class="kw">function</span> <span class="fn">LoginForm</span>() {
+  <span class="kw">const</span> [email, setEmail] = useState(<span class="str">''</span>);
+  <span class="kw">const</span> [password, setPassword] = useState(<span class="str">''</span>);
+
+  <span class="cm">// Typed change handler — knows e.target.value is a string</span>
+  <span class="kw">const</span> <span class="fn">handleEmailChange</span> = (e: <span class="typ">React</span>.ChangeEvent&lt;HTMLInputElement&gt;) =&gt; {
+    setEmail(e.target.value);
+  };
+
+  <span class="cm">// Typed click handler</span>
+  <span class="kw">const</span> <span class="fn">handleButtonClick</span> = (e: <span class="typ">React</span>.MouseEvent&lt;HTMLButtonElement&gt;) =&gt; {
+    console.log(<span class="str">'Button clicked at'</span>, e.clientX, e.clientY);
+  };
+
+  <span class="cm">// Typed form submit handler — prevents default page reload</span>
+  <span class="kw">const</span> <span class="fn">handleSubmit</span> = (e: <span class="typ">React</span>.FormEvent&lt;HTMLFormElement&gt;) =&gt; {
+    e.preventDefault();
+    console.log(<span class="str">'Submitting:'</span>, { email, password });
+  };
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;form</span> <span class="attr">onSubmit</span>={handleSubmit}<span class="tagjsx">&gt;</span>
+      <span class="tagjsx">&lt;input</span>
+        <span class="attr">type</span>=<span class="str">"email"</span>
+        <span class="attr">value</span>={email}
+        <span class="attr">onChange</span>={handleEmailChange}
+        <span class="attr">placeholder</span>=<span class="str">"Email"</span>
+      <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;input</span>
+        <span class="attr">type</span>=<span class="str">"password"</span>
+        <span class="attr">value</span>={password}
+        <span class="attr">onChange</span>={(e) =&gt; setPassword(e.target.value)}
+        <span class="attr">placeholder</span>=<span class="str">"Password"</span>
+      <span class="tagjsx">/&gt;</span>
+      <span class="tagjsx">&lt;button</span> <span class="attr">type</span>=<span class="str">"submit"</span> <span class="attr">onClick</span>={handleButtonClick}<span class="tagjsx">&gt;</span>
+        Log In
+      <span class="tagjsx">&lt;/button&gt;</span>
+    <span class="tagjsx">&lt;/form&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Common Event Types Reference</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Event</th><th>TypeScript Type</th><th>Used On</th></tr></thead>
+      <tbody>
+        <tr><td>onClick</td><td><code>React.MouseEvent&lt;HTMLButtonElement&gt;</code></td><td>button, div, any clickable element</td></tr>
+        <tr><td>onChange (input)</td><td><code>React.ChangeEvent&lt;HTMLInputElement&gt;</code></td><td>input, checkbox, radio</td></tr>
+        <tr><td>onChange (select)</td><td><code>React.ChangeEvent&lt;HTMLSelectElement&gt;</code></td><td>select dropdown</td></tr>
+        <tr><td>onChange (textarea)</td><td><code>React.ChangeEvent&lt;HTMLTextAreaElement&gt;</code></td><td>textarea</td></tr>
+        <tr><td>onSubmit</td><td><code>React.FormEvent&lt;HTMLFormElement&gt;</code></td><td>form</td></tr>
+        <tr><td>onKeyDown</td><td><code>React.KeyboardEvent&lt;HTMLInputElement&gt;</code></td><td>input (e.g. detect Enter key)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Controlled vs Uncontrolled Inputs</strong>
+    The examples above are "controlled" — the input's <code>value</code> comes from React state, and every keystroke updates that state via <code>onChange</code>. This is the recommended pattern: React state is always the single source of truth for what's on screen.
+  </div>
+</section>
+
+<!-- TAB 7: TYPESCRIPT BASICS -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">🏷️ TypeScript Basics for React</h2>
+  <p class="section-sub">The core TypeScript concepts you'll use constantly when writing React components.</p>
+
+  <div class="concept-grid">
+    <div class="concept-card" style="--cc:#3178c6">
+      <div class="concept-icon">📝</div>
+      <div class="concept-name">type vs interface</div>
+      <div class="concept-desc">Both define object shapes. <code>interface</code> can be extended; <code>type</code> is more flexible (unions, primitives). Either works for props — pick one convention and stick to it.</div>
+    </div>
+    <div class="concept-card" style="--cc:#58a6ff">
+      <div class="concept-icon">❓</div>
+      <div class="concept-name">Optional properties</div>
+      <div class="concept-desc"><code>name?: string</code> — the <code>?</code> means this field may be omitted entirely. Without it, TypeScript requires the field every time.</div>
+    </div>
+    <div class="concept-card" style="--cc:#bc8cff">
+      <div class="concept-icon">🔀</div>
+      <div class="concept-name">Union types</div>
+      <div class="concept-desc"><code>status: 'idle' | 'loading' | 'error'</code> — restricts a value to one of a specific set of options. Far safer than a generic string.</div>
+    </div>
+    <div class="concept-card" style="--cc:#3fb950">
+      <div class="concept-icon">🧬</div>
+      <div class="concept-name">Generics</div>
+      <div class="concept-desc"><code>useState&lt;number&gt;(0)</code> — the <code>&lt;number&gt;</code> tells TypeScript exactly what type this piece of state holds.</div>
+    </div>
+    <div class="concept-card" style="--cc:#e8834a">
+      <div class="concept-icon">🚫</div>
+      <div class="concept-name">null vs undefined</div>
+      <div class="concept-desc"><code>User | null</code> is common for "data not loaded yet". Always check before accessing properties: <code>if (!user) return ...</code>.</div>
+    </div>
+    <div class="concept-card" style="--cc:#d29922">
+      <div class="concept-icon">🔍</div>
+      <div class="concept-name">Type inference</div>
+      <div class="concept-desc">TypeScript often figures out types automatically: <code>useState(0)</code> already knows it's a <code>number</code> — no need to always annotate explicitly.</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TypeScript</span>
+      <span class="code-desc">types/user.ts — a shared type used across multiple components</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Define once, import everywhere — single source of truth for this shape</span>
+<span class="kw">export type</span> <span class="typ">User</span> = {
+  id: <span class="kw">number</span>;
+  name: <span class="kw">string</span>;
+  email: <span class="kw">string</span>;
+  role: <span class="str">'admin'</span> | <span class="str">'editor'</span> | <span class="str">'viewer'</span>;   <span class="cm">// union type — only these 3 values allowed</span>
+  avatarUrl?: <span class="kw">string</span>;                          <span class="cm">// optional</span>
+};
+
+<span class="cm">// Usage in another file:</span>
+<span class="cm">// import type { User } from '../types/user';</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TypeScript</span>
+      <span class="code-desc">interface vs type — both are valid for props</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">// Option A: interface (can be extended later with "extends")</span>
+<span class="kw">interface</span> <span class="typ">ButtonProps</span> {
+  label: <span class="kw">string</span>;
+  onClick: () =&gt; <span class="kw">void</span>;
+}
+
+<span class="cm">// Option B: type (more flexible — supports unions directly)</span>
+<span class="kw">type</span> <span class="typ">ButtonProps2</span> = {
+  label: <span class="kw">string</span>;
+  onClick: () =&gt; <span class="kw">void</span>;
+};
+
+<span class="cm">// Both work identically for component props — this guide uses "type" for consistency</span></pre>
+  </div>
+
+  <div class="callout callout-ts">
+    <strong>💡 Don't fight the compiler — listen to it</strong>
+    When TypeScript shows a red squiggle, it has almost always found a real bug before you ran the code. Resist the urge to use <code>any</code> to silence errors — that throws away the safety net TypeScript gives you.
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary — Beginner Level Complete</h2>
+  <p class="section-sub">Everything covered, at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📁 Folder Structure</div>
+      <p><code>components/</code> (reusable UI) · <code>pages/</code> (routes) · <code>hooks/</code> (reusable logic) · <code>types/</code> (shared shapes) · <code>utils/</code> (pure functions).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🧩 Components & JSX</div>
+      <p>A component is a function returning JSX. One root element. camelCase attributes. Curly braces embed JavaScript.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📦 Props</div>
+      <p>Pass data parent → child. Define a <code>type</code> for the shape. Use <code>children: React.ReactNode</code> for wrapper components.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🪝 useState</div>
+      <p>Component memory. Never mutate directly — always use the setter. Spread objects/arrays to update immutably.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔄 useEffect</div>
+      <p>Side effects (fetching, subscriptions). Dependency array controls when it re-runs. Return a cleanup function when needed.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🎯 Events & Forms</div>
+      <p>Typed event handlers: <code>React.ChangeEvent</code>, <code>React.MouseEvent</code>, <code>React.FormEvent</code>. Controlled inputs — state is the source of truth.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Concept</th><th>Quick Reference</th></tr></thead>
+      <tbody>
+        <tr><td>Create project</td><td><code>npm create vite@latest my-app -- --template react-ts</code></td></tr>
+        <tr><td>Define props</td><td><code>type Props = { name: string }; function C({ name }: Props)</code></td></tr>
+        <tr><td>State</td><td><code>const [val, setVal] = useState&lt;Type&gt;(initial)</code></td></tr>
+        <tr><td>Effect on mount</td><td><code>useEffect(() => { ... }, [])</code></td></tr>
+        <tr><td>Effect on change</td><td><code>useEffect(() => { ... }, [dependency])</code></td></tr>
+        <tr><td>List rendering</td><td><code>items.map(item => &lt;li key={item.id}&gt;...&lt;/li&gt;)</code></td></tr>
+        <tr><td>Conditional render</td><td><code>{condition && &lt;Component /&gt;}</code> or ternary</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>Beginner level complete!</h3>
+    <p>You now know components, props, state, effects, events, and how a real project is structured. This is the exact foundation needed for the Intermediate guide — where we'll cover Context API, custom hooks, routing, and more advanced TypeScript patterns.</p>
+    <div class="next-up">📘 Next up: React + TypeScript — Intermediate</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, null, drawJsx, drawProps, drawState, drawEffect, null, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  cyan:'#61dafb', cyan2:'#8be9fd', ts:'#3178c6', green:'#3fb950',
+  blue:'#58a6ff', purple:'#bc8cff', orange:'#e8834a',
+  red:'#f85149', yellow:'#d29922', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'React Component Tree — UI as a Tree of Components',C.muted,11);
+
+  box(ctx,W/2-70,30,140,42,C.cyan,'App','Root component',null);
+  arr(ctx,W/2-30,72,W*0.22,100,C.border);
+  arr(ctx,W/2+30,72,W*0.5,100,C.border);
+  arr(ctx,W/2+90,72,W*0.78,100,C.border);
+
+  const children=[{l:'Header',c:C.blue,x:0.22},{l:'MainContent',c:C.purple,x:0.5},{l:'Footer',c:C.orange,x:0.78}];
+  children.forEach(c=>{
+    box(ctx,W*c.x-65,100,130,40,c.c,c.l,null,null);
+  });
+
+  // Grandchildren under MainContent
+  const gc=[{l:'UserCard',x:0.36},{l:'PostList',x:0.5},{l:'Sidebar',x:0.64}];
+  gc.forEach(g=>{
+    arr(ctx,W*0.5,140,W*g.x,168,C.border);
+    box(ctx,W*g.x-55,168,110,36,C.green,g.l,null,null);
+  });
+
+  txt(ctx,W/2,H-15,'State changes → React re-renders only the affected branch of this tree',C.muted,10);
+}
+
+function drawJsx(){
+  const s=setup('jsxCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'JSX = JavaScript + HTML-like Syntax',C.muted,11);
+
+  box(ctx,30,40,W*0.4-40,120,C.cyan,'Function Component','returns JSX',null);
+  arr(ctx,W*0.4,100,W*0.5,100,C.cyan);
+  box(ctx,W*0.5+10,40,W*0.4-30,120,C.purple,'JSX Output','Looks like HTML',null);
+  arr(ctx,W*0.9-10,100,W*0.9+30,100,C.purple);
+
+  ctx.fillStyle='rgba(63,185,80,0.08)'; ctx.strokeStyle=C.green; ctx.lineWidth=1.5;
+  rr(ctx,W*0.9+20,55,W*0.1-10,90,8); ctx.fill(); ctx.stroke();
+  txt(ctx,W*0.95+10,90,'🖥️',C.green,20);
+  txt(ctx,W*0.95+10,110,'Real DOM',C.green,10);
+
+  txt(ctx,W/2,H-10,'React converts JSX into actual DOM updates behind the scenes',C.muted,10);
+}
+
+function drawProps(){
+  const s=setup('propsCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Props Flow One Direction — Parent to Child',C.muted,11);
+
+  box(ctx,W/2-90,30,180,46,C.cyan,'Parent Component','Has the data',null);
+  arr(ctx,W/2-30,76,W*0.25,110,C.border);
+  arr(ctx,W/2+30,76,W*0.75,110,C.border);
+
+  box(ctx,W*0.25-80,110,160,46,C.green,'Child A','props.name="Indhu"',null);
+  box(ctx,W*0.75-80,110,160,46,C.blue,'Child B','props.name="Alex"',null);
+
+  ctx.strokeStyle=C.red; ctx.lineWidth=2; ctx.setLineDash([4,3]);
+  ctx.beginPath(); ctx.moveTo(W*0.25,156); ctx.lineTo(W/2,76); ctx.stroke();
+  ctx.setLineDash([]);
+  txt(ctx,W*0.35,H-40,'❌ Child cannot directly modify parent state',C.red,10);
+  txt(ctx,W/2,H-15,'To let a child trigger change, parent passes a function down as a prop',C.muted,10);
+}
+
+function drawState(){
+  const s=setup('stateCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'useState — Trigger Re-render Cycle',C.muted,11);
+
+  const steps=[
+    {l:'User clicks\nbutton',ic:'🖱️',c:C.blue},
+    {l:'setCount(1)\ncalled',ic:'⚡',c:C.cyan},
+    {l:'React schedules\nre-render',ic:'🔄',c:C.purple},
+    {l:'Component\nfunction re-runs',ic:'🧩',c:C.orange},
+    {l:'New count\nshown on screen',ic:'✅',c:C.green},
+  ];
+  const bw=Math.min(130,(W-60)/steps.length-8);
+  const gap=(W-40-bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,40,bw,110,st.c,st.l.split('\n')[0],st.l.split('\n')[1]||'',st.ic);
+    if(i<steps.length-1) arr(ctx,x+bw+2,95,x+bw+gap-2,95,C.border);
+  });
+  txt(ctx,W/2,H-8,'Direct mutation (count++) skips this cycle entirely — UI never updates',C.muted,10);
+}
+
+function drawEffect(){
+  const s=setup('effectCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'useEffect Lifecycle',C.muted,11);
+
+  box(ctx,20,40,160,46,C.cyan,'Component Mounts','First render',null);
+  arr(ctx,180,63,240,63,C.cyan);
+  box(ctx,240,40,160,46,C.green,'Effect Runs','Fetch / subscribe',null);
+  arr(ctx,320,86,320,116,C.border);
+  box(ctx,240,116,160,46,C.purple,'Dependency Changes','[userId] updates',null);
+  arr(ctx,400,139,460,139,C.purple);
+  box(ctx,460,116,160,46,C.orange,'Cleanup Runs First','Then effect re-runs',null);
+
+  arr(ctx,640,63,700,63,C.muted);
+  box(ctx,700,40,W-720,46,C.red,'Unmount','Final cleanup runs',null);
+
+  txt(ctx,W/2,H-10,'Cleanup function prevents memory leaks and stale state updates',C.muted,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,null,drawJsx,drawProps,drawState,drawEffect,null,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

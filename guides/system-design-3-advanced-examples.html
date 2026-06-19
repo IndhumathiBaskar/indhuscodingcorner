@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Part 3: Advanced Examples</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f7ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --sd:#1a5abf;--sd-l:#d6e8f8;--sd-d:#0e3a8a;
+  --nf:#bf2a1a;--nf-l:#f8d8d4;--nf-d:#8a1500;
+  --tw:#0e8abf;--tw-l:#d4ecf8;--tw-d:#085c8a;
+  --ub:#1a1a2a;--ub-l:#e4e4ee;--ub-d:#2a2a4a;
+  --wa:#1a8a5a;--wa-l:#d4f0e0;--wa-d:#085c38;
+  --ig:#bf2a7a;--ig-l:#f8d6ec;--ig-d:#8a0050;
+  --gd:#0e6abf;--gd-l:#d6ebf8;--gd-d:#0a4280;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --red:#b02a37;--red-l:rgba(176,42,55,.08);--red-b:rgba(176,42,55,.2);
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --aws:#bf6a0e;--aws-l:#f8f0d4;
+  --azure:#0e6abf;--azure-l:#d6ebf8;
+  --gcp:#bf2a5a;--gcp-l:#f8d6e4;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(26,90,191,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#060c1a 0%,#0a1628 45%,#0d1e38 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(191,42,26,.3) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,191,.25) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(26,138,90,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#f87171,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(248,113,113,.2);border:1px solid rgba(248,113,113,.4);color:#fca5a5;}
+
+/* TABS */
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(245,247,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;white-space:nowrap;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-over.active{background:var(--sd-l);color:var(--sd-d);}
+.t-nf.active{background:var(--nf-l);color:var(--nf-d);}
+.t-tw.active{background:var(--tw-l);color:var(--tw-d);}
+.t-ub.active{background:var(--ub-l);color:var(--ub-d);}
+.t-wa.active{background:var(--wa-l);color:var(--wa-d);}
+.t-ig.active{background:var(--ig-l);color:var(--ig-d);}
+.t-gd.active{background:var(--gd-l);color:var(--gd-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* SECTION */
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-over h2,.ph-over h3{color:var(--sd-d);} .ph-over h2{border-bottom:3px solid var(--sd-l);}
+.ph-nf h2,.ph-nf h3{color:var(--nf-d);}     .ph-nf h2{border-bottom:3px solid var(--nf-l);}
+.ph-tw h2,.ph-tw h3{color:var(--tw-d);}     .ph-tw h2{border-bottom:3px solid var(--tw-l);}
+.ph-ub h2,.ph-ub h3{color:var(--ub-d);}     .ph-ub h2{border-bottom:3px solid var(--ub-l);}
+.ph-wa h2,.ph-wa h3{color:var(--wa-d);}     .ph-wa h2{border-bottom:3px solid var(--wa-l);}
+.ph-ig h2,.ph-ig h3{color:var(--ig-d);}     .ph-ig h2{border-bottom:3px solid var(--ig-l);}
+.ph-gd h2,.ph-gd h3{color:var(--gd-d);}     .ph-gd h2{border-bottom:3px solid var(--gd-l);}
+
+/* CALLOUTS */
+.beginner{background:linear-gradient(135deg,#edf0ff,#e4edff);border:1.5px solid var(--border);border-left:4px solid var(--sd);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.beginner-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sd-d);font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.beginner p{color:var(--text2);font-size:.86rem;margin:0;}
+.analogy{border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.an-nf{background:var(--nf-l);border:1.5px solid rgba(191,42,26,.2);border-left:4px solid var(--nf);} .an-nf .analogy-tag{color:var(--nf-d);}
+.an-tw{background:var(--tw-l);border:1.5px solid rgba(14,138,191,.2);border-left:4px solid var(--tw);} .an-tw .analogy-tag{color:var(--tw-d);}
+.an-ub{background:var(--ub-l);border:1.5px solid rgba(26,26,42,.2);border-left:4px solid var(--ub);}   .an-ub .analogy-tag{color:var(--ub-d);}
+.an-wa{background:var(--wa-l);border:1.5px solid rgba(26,138,90,.2);border-left:4px solid var(--wa);}  .an-wa .analogy-tag{color:var(--wa-d);}
+.an-ig{background:var(--ig-l);border:1.5px solid rgba(191,42,122,.2);border-left:4px solid var(--ig);} .an-ig .analogy-tag{color:var(--ig-d);}
+.an-gd{background:var(--gd-l);border:1.5px solid rgba(14,106,191,.2);border-left:4px solid var(--gd);} .an-gd .analogy-tag{color:var(--gd-d);}
+.analogy-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.analogy p{color:var(--text2);font-size:.86rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p{color:var(--muted);font-size:.84rem;margin:0;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;position:relative;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.scene{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin:14px 0;border-left:4px solid var(--border2);}
+.scene-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.scene p{color:var(--text2);font-size:.88rem;margin:0;}
+.aha{background:linear-gradient(135deg,#fff9e6,#fef3c7);border:1.5px solid rgba(217,160,15,.25);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.aha-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#92660a;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.aha p{color:#5c4a10;font-size:.88rem;margin:0;}
+
+/* STEP */
+.step{display:flex;align-items:flex-start;margin:14px 0;gap:13px;}
+.step-num{color:#fff;width:32px;height:32px;min-width:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.15);}
+.step-body{background:var(--surface);padding:13px 15px;border-radius:var(--r);flex:1;}
+.step-body h4{margin-bottom:5px;font-size:.9rem;}
+.step-body p{color:var(--muted);font-size:.84rem;margin:0;}
+.s-nf .step-num{background:var(--nf);} .s-nf .step-body{border-left:3px solid var(--nf);} .s-nf .step-body h4{color:var(--nf-d);}
+.s-tw .step-num{background:var(--tw);} .s-tw .step-body{border-left:3px solid var(--tw);} .s-tw .step-body h4{color:var(--tw-d);}
+.s-ub .step-num{background:var(--ub);} .s-ub .step-body{border-left:3px solid var(--ub);} .s-ub .step-body h4{color:var(--ub-d);}
+.s-wa .step-num{background:var(--wa);} .s-wa .step-body{border-left:3px solid var(--wa);} .s-wa .step-body h4{color:var(--wa-d);}
+.s-ig .step-num{background:var(--ig);} .s-ig .step-body{border-left:3px solid var(--ig);} .s-ig .step-body h4{color:var(--ig-d);}
+.s-gd .step-num{background:var(--gd);} .s-gd .step-body{border-left:3px solid var(--gd);} .s-gd .step-body h4{color:var(--gd-d);}
+
+/* CARDS */
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.icon-item{background:var(--card);border:1px solid var(--border);padding:14px;border-radius:var(--r);text-align:center;box-shadow:var(--sh);transition:transform .2s;}
+.icon-item:hover{transform:translateY(-2px);}
+.icon-item .emoji{font-size:1.8rem;margin-bottom:7px;display:block;}
+.icon-item h4{color:var(--text);margin-bottom:3px;font-size:.8rem;font-weight:700;}
+.icon-item p{font-size:.72rem;color:var(--muted);}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:340px;}
+th{background:var(--surface);color:var(--text);padding:9px 13px;text-align:left;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:600;}
+td{padding:9px 13px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.84rem;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface);color:var(--text);}
+
+/* CODE */
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.nf-c{border-left:4px solid var(--nf);}
+.code-block.tw-c{border-left:4px solid var(--tw);}
+.code-block.ub-c{border-left:4px solid var(--ub);}
+.code-block.wa-c{border-left:4px solid var(--wa);}
+.code-block.ig-c{border-left:4px solid var(--ig);}
+.code-block.gd-c{border-left:4px solid var(--gd);}
+.code-block.neutral{border-left:4px solid var(--sd);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.code-label.nf-l{color:#fca5a5;}.code-label.tw-l{color:#7dd3fc;}.code-label.ub-l{color:#c4c4dc;}
+.code-label.wa-l{color:#6ee7b7;}.code-label.ig-l{color:#f9a8d4;}.code-label.gd-l{color:#93c5fd;}
+.code-label.neutral{color:#93c5fd;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.iface{color:#89dceb;font-style:italic;}
+code{background:rgba(26,90,191,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--sd-d);}
+
+/* CHECKLIST */
+.checklist{list-style:none;margin:10px 0;}
+.checklist li{padding:8px 12px;margin:5px 0;background:var(--surface);border-radius:0 var(--r) var(--r) 0;color:var(--muted);font-size:.84rem;}
+.cl-nf li{border-left:3px solid var(--nf);} .cl-nf li:before{content:"✓ ";color:var(--nf);font-weight:700;}
+.cl-tw li{border-left:3px solid var(--tw);} .cl-tw li:before{content:"✓ ";color:var(--tw);font-weight:700;}
+.cl-ub li{border-left:3px solid var(--ub);} .cl-ub li:before{content:"✓ ";color:var(--ub);font-weight:700;}
+.cl-wa li{border-left:3px solid var(--wa);} .cl-wa li:before{content:"✓ ";color:var(--wa);font-weight:700;}
+.cl-ig li{border-left:3px solid var(--ig);} .cl-ig li:before{content:"✓ ";color:var(--ig);font-weight:700;}
+.cl-gd li{border-left:3px solid var(--gd);} .cl-gd li:before{content:"✓ ";color:var(--gd);font-weight:700;}
+.cl-g li{border-left:3px solid var(--green);} .cl-g li:before{content:"✓ ";color:var(--green);font-weight:700;}
+.cl-r li{border-left:3px solid var(--red);} .cl-r li:before{content:"✗ ";color:var(--red);font-weight:700;}
+
+/* PATTERN CARDS */
+.pattern-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(190px,100%),1fr));gap:12px;margin:14px 0;}
+.pc{border-radius:var(--r);padding:16px;border:1.5px solid;box-shadow:var(--sh);transition:transform .2s;}
+.pc:hover{transform:translateY(-2px);}
+.pc-nf{background:var(--nf-l);border-color:rgba(191,42,26,.25);}
+.pc-tw{background:var(--tw-l);border-color:rgba(14,138,191,.25);}
+.pc-ub{background:var(--ub-l);border-color:rgba(26,26,42,.25);}
+.pc-wa{background:var(--wa-l);border-color:rgba(26,138,90,.25);}
+.pc-ig{background:var(--ig-l);border-color:rgba(191,42,122,.25);}
+.pc-gd{background:var(--gd-l);border-color:rgba(14,106,191,.25);}
+.pc-emoji{font-size:1.8rem;margin-bottom:8px;display:block;}
+.pc-name{font-weight:800;font-size:.95rem;margin-bottom:4px;}
+.pc-nf .pc-name{color:var(--nf-d);} .pc-tw .pc-name{color:var(--tw-d);}
+.pc-ub .pc-name{color:var(--ub-d);} .pc-wa .pc-name{color:var(--wa-d);}
+.pc-ig .pc-name{color:var(--ig-d);} .pc-gd .pc-name{color:var(--gd-d);}
+.pc-intent{font-size:.78rem;color:var(--muted);line-height:1.5;}
+
+/* DIAGRAM */
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+
+/* CLOUD TABLE */
+.comp-table{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border);margin:14px 0;box-shadow:var(--sh);}
+.comp-table table{min-width:600px;}
+.comp-table th{font-size:.66rem;}
+.comp-table td{font-size:.78rem;}
+.comp-table .role-cell{font-weight:700;color:var(--text);}
+
+/* STAT GRID */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin:14px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--sd-d);}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;}
+
+/* REQ BADGE */
+.req-badges{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+.rb{padding:4px 11px;border-radius:100px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.rb-func{background:rgba(14,138,90,.12);color:#085c38;border:1px solid rgba(14,138,90,.2);}
+.rb-nonfunc{background:rgba(122,42,191,.12);color:#4a1580;border:1px solid rgba(122,42,191,.2);}
+
+/* COMPLETION */
+.completion{background:linear-gradient(135deg,#060c1a,#0a1628);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.all-done{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+
+@media(max-width:640px){
+  .grid-2,.grid-3,.pattern-cards,.stat-grid{grid-template-columns:1fr;}
+  .code-block pre{font-size:.63rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="container">
+    <div class="header-badge">System Design Series · Part 3 of 3 · Final</div>
+    <div class="part-badge">
+      <span class="pb pb-done">✅ Core Concepts</span>
+      <span class="pb pb-done">✅ Beginner Examples</span>
+      <span class="pb pb-active">③ Advanced Examples</span>
+    </div>
+    <h1>System Design — <span>Advanced Examples</span></h1>
+    <p>Netflix · Twitter/X · Uber · WhatsApp · Instagram · Google Drive — large-scale systems, step by step</p>
+    <div class="header-chips">
+      <span class="chip">Video Streaming</span>
+      <span class="chip">News Feed</span>
+      <span class="chip">Geo-Matching</span>
+      <span class="chip">Messaging at Scale</span>
+      <span class="chip">Media Storage</span>
+      <span class="chip">File Sync</span>
+      <span class="chip">AWS · Azure · GCP</span>
+    </div>
+  </div>
+</div>
+
+<div class="tab-nav">
+  <div class="container">
+    <div class="tab-nav-inner">
+      <button class="tab-btn t-over active" onclick="T('overview',this)">① What Changes at Scale</button>
+      <button class="tab-btn t-nf"   onclick="T('nf',this)">② Netflix</button>
+      <button class="tab-btn t-tw"   onclick="T('tw',this)">③ Twitter / X</button>
+      <button class="tab-btn t-ub"   onclick="T('ub',this)">④ Uber</button>
+      <button class="tab-btn t-wa"   onclick="T('wa',this)">⑤ WhatsApp</button>
+      <button class="tab-btn t-ig"   onclick="T('ig',this)">⑥ Instagram</button>
+      <button class="tab-btn t-gd"   onclick="T('gd',this)">⑦ Google Drive</button>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- ══════════════════════════════════
+     TAB 1 — OVERVIEW
+══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active ph-over"><div class="section">
+  <h2>🚀 What Changes When You Go from Beginner to Advanced?</h2>
+
+  <div class="story">In Part 2, every "breaking point" had a simple fix: add a cache, add a queue, add an index. That's because the numbers were big enough to be interesting but small enough that a single well-chosen tool solved the whole problem. The six systems in this part operate one or two orders of magnitude higher — and at that altitude, some of those "nice to have" tricks from Part 2 stop being optional. Let's see exactly where that line gets crossed.</div>
+
+  <div class="beginner">
+    <div class="beginner-tag">👶 Start Here — Same Framework, Bigger Numbers</div>
+    <p>Good news: the 5-step framework from Part 2 (Requirements → Estimation → High-Level Design → Deep Dive → Trade-offs) still applies exactly the same way. What changes is the <strong>scale</strong> — and at massive scale, problems that were "nice to have" solutions in Part 2 become absolutely <strong>mandatory</strong>. A cache was an optimisation for the URL shortener; for Netflix, without a CDN the system simply could not function at all.</p>
+  </div>
+
+  <h3>The Big Shifts at Massive Scale</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📈 Beginner Scale (Part 2)</h4>
+      <ul>
+        <li>Single database often sufficient</li>
+        <li>One cache layer (Redis) covers most needs</li>
+        <li>A handful of services, simple architecture</li>
+        <li>Storage measured in GB-TB</li>
+        <li>"What if this breaks?" is mostly theoretical</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🌍 Advanced Scale (This Part)</h4>
+      <ul>
+        <li>Sharding and multi-region databases are mandatory</li>
+        <li>Multiple specialised caching layers, CDN as core infrastructure</li>
+        <li>Dozens to hundreds of microservices</li>
+        <li>Storage measured in PB-EB (petabytes to exabytes)</li>
+        <li>Failure is CONSTANT — designing for failure is the default mindset</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>New Concepts That Appear at This Scale</h3>
+  <div class="grid-3">
+    <div class="icon-item"><span class="emoji">🌎</span><h4>Multi-Region</h4><p>Data and services replicated across geographic regions for latency and disaster recovery.</p></div>
+    <div class="icon-item"><span class="emoji">📊</span><h4>Data Pipelines</h4><p>Streaming/batch pipelines process huge volumes of events for analytics, ML, recommendations.</p></div>
+    <div class="icon-item"><span class="emoji">🧮</span><h4>Consistent Hashing</h4><p>Distributes data/load across many nodes while minimising redistribution when nodes are added/removed.</p></div>
+    <div class="icon-item"><span class="emoji">🗺️</span><h4>Geospatial Indexing</h4><p>Efficient "find things near this location" queries at huge scale (geohashing, quadtrees).</p></div>
+    <div class="icon-item"><span class="emoji">🎬</span><h4>Pre-computation</h4><p>Expensive results computed ahead of time and cached/stored, rather than calculated per-request.</p></div>
+    <div class="icon-item"><span class="emoji">🔥</span><h4>Hotspot Mitigation</h4><p>Strategies for when one piece of data (viral post, celebrity) gets disproportionate traffic.</p></div>
+  </div>
+
+  <h3>How to Read Each Example</h3>
+  <p>Each system below follows the same structure as Part 2, but deep dives focus on the <strong>ONE OR TWO ideas that make that system famous/hard</strong> — e.g., Netflix is famous for video delivery via CDN, Twitter for feed generation at scale, Uber for real-time geo-matching. We won't re-explain basics like load balancers and databases — refer back to Parts 1-2 for those building blocks.</p>
+
+  <div class="tip">
+    <h4>💡 These Are Simplified Models, Not the Real Architectures</h4>
+    <p>The real Netflix, Twitter, Uber etc. run far more complex systems built over many years by huge teams — these examples are <strong>simplified, educational models</strong> designed to teach the core ideas. The goal is to understand the PATTERNS (CDN for video, fan-out for feeds, geospatial indexing for matching) which you can apply to your own systems — not to memorise the exact real-world implementation.</p>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 2 — NETFLIX
+══════════════════════════════════ -->
+<div id="tab-nf" class="tab-panel ph-nf"><div class="section">
+  <h2>🎬 Netflix — Video Streaming Platform</h2>
+
+  <div class="story">Picture the absolute simplest version of "stream a video over the internet": you put an MP4 file on a server, and when someone wants to watch it, the server sends them the bytes. This actually works — that's literally how a lot of small video sites function. So why does Netflix need thousands of engineers and one of the most sophisticated content delivery setups on Earth to do basically the same thing, just bigger?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Couldn't you just... add more powerful servers as more people watch?</div>
+    <p class="qa-a">Let's actually run the numbers, because this is where it gets interesting. Picture a hit show drops a new season on a Friday night. Within the hour, <strong>35 million people</strong> hit play — at the same time, in living rooms scattered across six continents. Even if you built the most powerful single data center conceivable, you'd hit a wall that has NOTHING to do with server power: the speed of light. A request from Australia to a server in Virginia takes time just to travel the distance — physics, not computing power. No amount of "bigger server" fixes a problem that's fundamentally about geography.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 The Real Insight — Move the Video, Not the Viewer</div>
+    <p>If the problem is distance, the fix is obvious once you see it: put COPIES of the video physically close to wherever people are watching. A viewer in Sydney should stream from a server in Sydney, not Virginia. This is a <strong>CDN (Content Delivery Network)</strong> — and at Netflix's scale, it's not a performance optimization bolted on later, it's the entire foundation the system is built around. Without it, the product simply doesn't work, full stop.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-nf">
+    <li>Users browse a catalogue and press play on something</li>
+    <li>Video quality automatically adapts to however fast (or slow) the viewer's internet is</li>
+    <li>Pause on your phone, resume on your TV, from the exact same spot</li>
+    <li>Studios upload new content, which gets prepared for streaming behind the scenes</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-nf">
+    <li>Pressing play should feel instant — under 2 seconds to start, and no annoying buffering mid-watch</li>
+    <li>Must survive MASSIVE simultaneous spikes (a hit show's release night)</li>
+    <li>Storing and moving video is the single biggest cost in the whole system — efficiency really matters here</li>
+  </ul>
+
+  <h3>Step 2 — Let's Put Numbers on "Massive"</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">230M</div><div class="stat-label">Subscribers globally</div></div>
+    <div class="stat"><div class="stat-num">~35M</div><div class="stat-label">Concurrent streams (peak)</div></div>
+    <div class="stat"><div class="stat-num">~5GB</div><div class="stat-label">Per movie (all qualities combined)</div></div>
+    <div class="stat"><div class="stat-num">PBs/day</div><div class="stat-label">Total bandwidth at peak</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> "Petabytes per day" — is that actually a database/server problem, or something else?</div>
+    <p class="qa-a">It's genuinely a different KIND of problem than anything in Part 2. A database problem is about organizing and looking up data quickly. This is purely about MOVING an enormous volume of bytes across the physical internet to millions of separate locations, continuously, in real-time, without interruption. There's no clever query or index that fixes "the data has to physically travel thousands of miles." The only lever you actually have is: reduce the distance.</p>
+  </div>
+
+  <h3>Step 3 — How the Video Actually Gets to You</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🎬 Netflix — Upload Pipeline + Playback Path</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrnf2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a1a"/>
+          </marker>
+          <marker id="arrnfp" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+        </defs>
+        <!-- Upload pipeline (top) -->
+        <text x="180" y="20" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a1500" text-anchor="middle">📤 Upload &amp; Processing Pipeline (happens once per video)</text>
+
+        <rect x="20" y="35" width="100" height="50" rx="6" fill="#f8d8d4" stroke="rgba(191,42,26,.3)" stroke-width="1.5"/>
+        <text x="70" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a1500" text-anchor="middle">Studio</text>
+        <text x="70" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">uploads master file</text>
+
+        <line x1="120" y1="60" x2="180" y2="60" stroke="#bf2a1a" stroke-width="1.5" marker-end="url(#arrnf2)"/>
+
+        <rect x="185" y="35" width="140" height="50" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="255" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Transcoding Service</text>
+        <text x="255" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">→ multiple resolutions/bitrates</text>
+
+        <line x1="325" y1="60" x2="385" y2="60" stroke="#bf2a1a" stroke-width="1.5" marker-end="url(#arrnf2)"/>
+
+        <rect x="390" y="35" width="150" height="50" rx="6" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="465" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Origin Storage</text>
+        <text x="465" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">240p · 480p · 1080p · 4K chunks</text>
+
+        <line x1="540" y1="60" x2="600" y2="60" stroke="#bf2a1a" stroke-width="1.5" marker-end="url(#arrnf2)"/>
+
+        <rect x="605" y="35" width="100" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="655" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">CDN Edges</text>
+        <text x="655" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">pre-positioned</text>
+
+        <!-- divider -->
+        <line x1="20" y1="105" x2="700" y2="105" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+        <!-- Playback path (bottom) -->
+        <text x="180" y="128" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">▶️ Playback Path (happens every time someone presses play)</text>
+
+        <!-- User device -->
+        <rect x="20" y="150" width="110" height="60" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="172" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">User Device</text>
+        <text x="75" y="190" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">presses play</text>
+
+        <!-- arrow to metadata API -->
+        <line x1="130" y1="170" x2="195" y2="170" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrnfp)"/>
+        <text x="162" y="163" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">1.</text>
+
+        <!-- Metadata/Playback API -->
+        <rect x="200" y="145" width="160" height="70" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="280" y="168" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Playback API</text>
+        <text x="280" y="185" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">"which CDN edge is</text>
+        <text x="280" y="200" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">closest to this user?"</text>
+
+        <!-- arrow to CDN -->
+        <line x1="360" y1="180" x2="430" y2="180" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrnfp)"/>
+        <text x="395" y="173" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">2. URL</text>
+
+        <!-- CDN edge -->
+        <rect x="435" y="150" width="150" height="60" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.35)" stroke-width="2.5"/>
+        <text x="510" y="173" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">CDN Edge (local)</text>
+        <text x="510" y="191" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">serves video chunks</text>
+
+        <!-- arrow back to device for streaming -->
+        <path d="M 510 210 Q 350 260 75 220" fill="none" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrnfp)"/>
+        <text x="290" y="255" font-family="JetBrains Mono,monospace" font-size="9" fill="#1f7a52" text-anchor="middle">3. video chunks stream directly from CDN edge</text>
+
+        <!-- Adaptive bitrate note -->
+        <text x="280" y="290" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Player continuously measures connection speed and requests</text>
+        <text x="280" y="305" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">higher/lower quality chunks accordingly (Adaptive Bitrate Streaming)</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Step 4 — "Why Not Just Resize the Video on the Fly?"</h3>
+
+  <div class="story">Here's the next question worth slowing down on. The viewer's connection speed varies — sometimes great wifi, sometimes a shaky phone connection on a train. Netflix needs to serve different quality levels to different people, even the SAME person at different moments. Obvious first idea: when someone requests the video, check their current speed and resize/compress it for them in that instant.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why doesn't Netflix just transcode the video in real-time when you press play?</div>
+    <p class="qa-a">Because transcoding (converting video to a different resolution/bitrate) is computationally expensive — it can take LONGER than the video itself to process, even on powerful hardware. Now multiply that by 35 million simultaneous viewers, each potentially needing a different quality at different moments as their connection fluctuates. Doing this live, per-viewer, would require a genuinely absurd amount of compute, running constantly, just to reproduce work that's identical for millions of people watching the same movie.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Do the Expensive Work Once, Reuse It Forever</div>
+    <p>So instead: when a video is uploaded, it gets converted into EVERY quality level it'll ever need — 240p, 480p, 720p, 1080p, 4K — just once, ahead of time. This is <strong>pre-computation</strong>, the same principle as caching but applied to processing instead of just storage. Now serving any viewer at any quality is just: hand them the already-prepared file. No live computation, ever, for playback.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Okay but how does the video player actually SWITCH quality mid-stream, smoothly, without restarting?</div>
+    <p class="qa-a">This is the other half of the trick: each quality version isn't stored as one giant file — it's chopped into small chunks, typically 6-10 seconds each. The player downloads chunk after chunk, and before requesting the NEXT chunk, it checks "how fast did the last one download?" If your connection just got slow, it requests the next chunk from the LOWER quality version instead. Because every quality level is split at the exact same chunk boundaries, switching is invisible — you just get a slightly blurrier or sharper next 8 seconds, never a stutter or restart.</p>
+  </div>
+
+  <div class="code-block nf-c">
+    <div class="code-label nf-l">Conceptual — HLS manifest (simplified)</div>
+    <pre><span class="cm">#EXTM3U
+# Master playlist — lists available quality levels</span>
+#EXT-X-STREAM-INF:BANDWIDTH=800000,RESOLUTION=426x240
+240p/playlist.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=2800000,RESOLUTION=1280x720
+720p/playlist.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=6000000,RESOLUTION=1920x1080
+1080p/playlist.m3u8
+
+<span class="cm"># Inside 720p/playlist.m3u8 — the chunk list
+#EXTINF:6.0,
+segment_001.ts
+#EXTINF:6.0,
+segment_002.ts
+...
+
+# The player's logic, every few seconds:
+# - "how fast did my last chunk download?"
+# - faster than needed → request next chunk from a HIGHER quality playlist
+# - slower than needed → drop to a LOWER quality playlist
+# - Same chunk boundaries across all qualities = the switch is seamless</span></pre>
+  </div>
+
+  <h3>Step 4b — "Because You Watched..." — Where Do Those Come From?</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Surely recommendations have to be calculated live based on what I just watched?</div>
+    <p class="qa-a">You'd think so, but the same "do it once, reuse it" logic applies here too. Computing a personalized ranking for 230 million people, on-demand, every single time someone opens the app, would be enormously expensive computation happening constantly. Instead, a background pipeline runs periodically (think: overnight) churning through everyone's viewing history through ML models, and writes out the RESULT — "here's the row order for User X's homepage" — to a fast lookup store. When you open the app, it's just reading a pre-written answer, not calculating one live. The trade-off: your recommendations are slightly stale (a day old, typically), which is a price almost nobody notices paying.</p>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Video Transcoding</td><td>Elemental MediaConvert</td><td>Azure Media Services (encoding)</td><td>Transcoder API</td></tr>
+      <tr><td class="role-cell">Origin Storage (video chunks)</td><td>S3</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+      <tr><td class="role-cell">CDN / Video Delivery</td><td>CloudFront</td><td>Azure CDN / Front Door</td><td>Cloud CDN / Media CDN</td></tr>
+      <tr><td class="role-cell">Metadata / Catalogue DB</td><td>DynamoDB / RDS</td><td>Cosmos DB</td><td>Bigtable / Spanner</td></tr>
+      <tr><td class="role-cell">Recommendation Pipeline (batch)</td><td>EMR / SageMaker</td><td>Azure Databricks / Azure ML</td><td>Dataflow / Vertex AI</td></tr>
+      <tr><td class="role-cell">"Resume watching" position store</td><td>DynamoDB</td><td>Cosmos DB</td><td>Bigtable</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — What's Genuinely Hard Here</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>A brand new release</strong> — there's no "popularity built up over time" to rely on; the CDN needs the content pushed to edge locations BEFORE release, predicted in advance, not reactively cached after the first few requests</li>
+        <li><strong>CDN cache misses are expensive</strong> — every time a viewer's request can't be served from a nearby edge and has to go back to origin storage, that's real bandwidth cost; hit ratio is one of the most closely watched numbers in this whole system</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Sitting With</h4>
+      <ul>
+        <li>Pre-transcoding into ~5+ quality levels means storing roughly 5x the data of just the original file. That's a real cost. But the alternative — transcoding on-demand per viewer — would cost vastly more in compute, repeated millions of times for the exact same outcome. Paying more for storage to save drastically more on compute is the calculation being made here</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 3 — TWITTER / X
+══════════════════════════════════ -->
+<div id="tab-tw" class="tab-panel ph-tw"><div class="section">
+  <h2>🐦 Twitter / X — News Feed System</h2>
+
+  <div class="story">You post a tweet. It needs to show up in the home timeline of everyone who follows you, almost instantly. For most people that's no big deal — a few hundred followers, easy. Now picture a celebrity account with 100 million followers posting something. That ONE tweet needs to somehow reach 100 million different people's feeds. Let's think through how that actually could work.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why not just, when someone opens the app, look up who they follow and grab their recent tweets right then?</div>
+    <p class="qa-a">That's actually a completely reasonable approach, and it's called "fan-out on READ" — do the work of assembling the timeline at the moment someone asks for it. The problem appears when you check the numbers: this system gets <strong>500,000 timeline reads per second</strong>, but only 6,000 tweet writes per second. That's a 80:1 ratio. If every single one of those 500,000 reads-per-second has to go fetch-and-merge tweets from potentially hundreds of people someone follows, your read path is doing an enormous amount of repeated work, constantly, for the most frequent operation in the entire system.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Okay, so flip it — do the work when someone TWEETS instead, so reading is instant?</div>
+    <p class="qa-a">That's "fan-out on WRITE" — when you post a tweet, immediately go push it into the pre-built timeline of every single follower. Now reading your timeline really is just one fast lookup. This works great... until that celebrity with 100 million followers posts something. Now ONE tweet write needs to trigger 100 million separate timeline updates. That single tweet could take minutes to fully propagate, and it'd hammer your infrastructure every time anyone famous posts anything.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Neither Extreme Works Alone — So Don't Pick Just One</div>
+    <p>Here's the move: use fan-out-on-WRITE for everyone with a normal-sized following (fast reads, and the write cost is small — pushing to 1,000 followers is nothing). But for celebrities — anyone above some follower threshold — skip the fan-out entirely. Just store their tweet once. Then at READ time, when assembling someone's timeline, separately fetch "recent tweets from any celebrities I follow" and merge them in. You're doing fan-out-on-read, but ONLY for the rare celebrity case, which is a tiny fraction of all tweets.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-tw">
+    <li>Post a tweet, follow/unfollow people</li>
+    <li>Your home timeline shows tweets from everyone you follow, newest first</li>
+    <li>Like, retweet, reply</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-tw">
+    <li>Opening the app and seeing your feed needs to feel instant</li>
+    <li>Reads vastly outnumber writes — by a wide margin</li>
+    <li>A handful of accounts have wildly more followers than everyone else (this unevenness is the whole challenge)</li>
+  </ul>
+
+  <h3>Step 2 — The Numbers That Justify the Hybrid Approach</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">500M</div><div class="stat-label">Tweets / day</div></div>
+    <div class="stat"><div class="stat-num">~500K</div><div class="stat-label">Timeline reads / second</div></div>
+    <div class="stat"><div class="stat-num">200:1</div><div class="stat-label">Read : Write ratio</div></div>
+    <div class="stat"><div class="stat-num">100M+</div><div class="stat-label">Followers for top accounts</div></div>
+  </div>
+
+  <h3>Step 3 — Seeing the Hybrid in Action</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🐦 Fan-Out on Write (normal users) vs Fan-Out on Read (celebrities)</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrtw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e8abf"/>
+          </marker>
+          <marker id="arrtwc" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a1a"/>
+          </marker>
+        </defs>
+        <text x="180" y="22" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#085c8a" text-anchor="middle">✅ Fan-Out on WRITE — Normal User (1,000 followers)</text>
+        <rect x="20" y="40" width="120" height="50" rx="6" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="80" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c8a" text-anchor="middle">User posts tweet</text>
+        <text x="80" y="76" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">1,000 followers</text>
+        <line x1="140" y1="65" x2="200" y2="65" stroke="#0e8abf" stroke-width="2" marker-end="url(#arrtw)"/>
+        <rect x="205" y="40" width="160" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="285" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Fan-out worker</text>
+        <text x="285" y="76" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">writes tweet ID to 1,000 timelines</text>
+        <line x1="365" y1="65" x2="430" y2="65" stroke="#0e8abf" stroke-width="2" marker-end="url(#arrtw)"/>
+        <rect x="435" y="35" width="260" height="60" rx="6" fill="#ede0f8" stroke="rgba(138,42,191,.3)" stroke-width="1.5"/>
+        <text x="565" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#4a1580" text-anchor="middle">Pre-built Timeline Cache (Redis)</text>
+        <text x="565" y="72" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">timeline:follower1 → [tweetId, tweetId, ...]</text>
+        <text x="565" y="85" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">timeline:follower2 → [tweetId, tweetId, ...]</text>
+        <text x="285" y="115" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Reading the timeline later = single fast cache lookup, work was done at write time</text>
+        <line x1="20" y1="140" x2="700" y2="140" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="180" y="163" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a1500" text-anchor="middle">⚡ Fan-Out on READ — Celebrity (100 million followers)</text>
+        <rect x="20" y="180" width="160" height="55" rx="6" fill="#f8d8d4" stroke="rgba(191,42,26,.3)" stroke-width="1.5"/>
+        <text x="100" y="201" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a1500" text-anchor="middle">Celebrity posts tweet</text>
+        <text x="100" y="218" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">100,000,000 followers</text>
+        <text x="100" y="231" font-family="JetBrains Mono,monospace" font-size="8" fill="#bf2a1a" text-anchor="middle" font-weight="700">❌ writing to 100M timelines = too slow</text>
+        <line x1="180" y1="205" x2="240" y2="205" stroke="#bf2a1a" stroke-width="2" marker-end="url(#arrtwc)"/>
+        <rect x="245" y="180" width="200" height="55" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="345" y="201" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">✅ Just store the tweet once</text>
+        <text x="345" y="218" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">in "celebrity tweets" store —</text>
+        <text x="345" y="231" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">do NOT fan out to followers</text>
+        <line x1="445" y1="205" x2="510" y2="205" stroke="#bf2a1a" stroke-width="2" marker-end="url(#arrtwc)"/>
+        <rect x="515" y="180" width="180" height="55" rx="6" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="605" y="201" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c8a" text-anchor="middle">At read time:</text>
+        <text x="605" y="218" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">merge pre-built timeline +</text>
+        <text x="605" y="231" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">followed celebrities' recent tweets</text>
+        <text x="360" y="270" font-family="Sora,sans-serif" font-size="10" fill="#085c8a" font-weight="700" text-anchor="middle">Hybrid: fan-out on write for normal users (fast reads),</text>
+        <text x="360" y="288" font-family="Sora,sans-serif" font-size="10" fill="#085c8a" font-weight="700" text-anchor="middle">fan-out on read for celebrities (avoids 100M writes per tweet)</text>
+        <text x="360" y="306" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">A "celebrity" is simply any account above a follower-count threshold</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Step 4 — What's Actually Sitting in That "Timeline Cache"?</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> When you fan-out a tweet to 1,000 followers, are you copying the WHOLE tweet 1,000 times?</div>
+    <p class="qa-a">No — and this matters a lot at scale. Each person's timeline only stores the tweet ID, not the full tweet content. Think about why: if a tweet goes viral and ends up in a million people's timelines, you don't want a million copies of the same text sitting around. Instead, every timeline is just a short list of IDs, and the actual tweet content lives in ONE place, fetched once and reused for everyone who needs to display it.</p>
+  </div>
+
+  <div class="code-block tw-c">
+    <div class="code-label tw-l">Conceptual — Timeline cache structure (Redis)</div>
+    <pre><span class="cm">// Each user's timeline is just a sorted list of tweet IDs, NOT full tweet content
+// Redis sorted set: score = timestamp, member = tweet ID
+
+ZADD timeline:user_42  1718000001  tweet_998877
+ZADD timeline:user_42  1718000045  tweet_998901
+ZADD timeline:user_42  1718000102  tweet_999023
+
+// Reading: get the most recent 50 tweet IDs
+ZREVRANGE timeline:user_42 0 49
+
+// Then batch-fetch the actual tweet content for those IDs separately
+// MGET tweet:998877 tweet:998901 tweet:999023 ...
+
+// Why bother splitting these into two lookups?
+// If a tweet goes viral, it might be referenced in a MILLION timelines.
+// Storing the ID once and fetching content once means that viral tweet's
+// text exists in ONE place — not duplicated a million times over.</span></pre>
+  </div>
+
+  <div class="code-block tw-c">
+    <div class="code-label tw-l">C# — The fan-out decision in code</div>
+    <pre><span class="kw">public class</span> <span class="tp">TweetFanOutWorker</span>
+{
+    <span class="kw">private const int</span> CelebrityThreshold = <span class="num">1_000_000</span>;  <span class="cm">// followers</span>
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ProcessNewTweetAsync</span>(<span class="tp">Tweet</span> tweet)
+    {
+        <span class="cm">// 1. Always store the tweet content itself, once</span>
+        <span class="kw">await</span> _tweetStore.<span class="fn">SaveAsync</span>(tweet);
+
+        <span class="kw">var</span> followerCount = <span class="kw">await</span> _userService.<span class="fn">GetFollowerCountAsync</span>(tweet.AuthorId);
+
+        <span class="kw">if</span> (followerCount < CelebrityThreshold)
+        {
+            <span class="cm">// 2a. Normal user — fan out to all followers' timelines right now</span>
+            <span class="kw">var</span> followerIds = <span class="kw">await</span> _userService.<span class="fn">GetFollowerIdsAsync</span>(tweet.AuthorId);
+            <span class="kw">foreach</span> (<span class="kw">var</span> followerId <span class="kw">in</span> followerIds)
+            {
+                <span class="kw">await</span> _timelineCache.<span class="fn">AddToTimelineAsync</span>(followerId, tweet.Id, tweet.CreatedAt);
+            }
+        }
+        <span class="cm">// 2b. Celebrity — do nothing extra. The tweet sits in _tweetStore,
+        //     and gets pulled in later at READ time by anyone following them.</span>
+    }
+}
+
+<span class="kw">public class</span> <span class="tp">TimelineReadService</span>
+{
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">Tweet</span>&gt;&gt; <span class="fn">GetHomeTimelineAsync</span>(<span class="kw">int</span> userId)
+    {
+        <span class="cm">// 1. Pre-built timeline — already assembled from fan-out-on-write</span>
+        <span class="kw">var</span> baseTimelineIds = <span class="kw">await</span> _timelineCache.<span class="fn">GetRecentTweetIdsAsync</span>(userId, count: <span class="num">50</span>);
+
+        <span class="cm">// 2. The exception case — celebrities this user follows, fetched live</span>
+        <span class="kw">var</span> celebrityIds = <span class="kw">await</span> _userService.<span class="fn">GetFollowedCelebrityIdsAsync</span>(userId);
+        <span class="kw">var</span> celebrityTweets = <span class="kw">await</span> _tweetStore.<span class="fn">GetRecentTweetsByAuthorsAsync</span>(celebrityIds, count: <span class="num">50</span>);
+
+        <span class="cm">// 3. Merge both lists by time and return the top 50 — invisible to the user</span>
+        <span class="kw">var</span> allTweets = (<span class="kw">await</span> _tweetStore.<span class="fn">GetByIdsAsync</span>(baseTimelineIds))
+            .<span class="fn">Concat</span>(celebrityTweets)
+            .<span class="fn">OrderByDescending</span>(t => t.CreatedAt)
+            .<span class="fn">Take</span>(<span class="num">50</span>)
+            .<span class="fn">ToList</span>();
+
+        <span class="kw">return</span> allTweets;
+    }
+}</pre>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Timeline Cache (Redis sorted sets)</td><td>ElastiCache (Redis)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Tweet Content Store</td><td>DynamoDB / Cassandra on EC2</td><td>Cosmos DB</td><td>Bigtable</td></tr>
+      <tr><td class="role-cell">Fan-out Workers (async)</td><td>SQS + Lambda / ECS workers</td><td>Service Bus + Azure Functions</td><td>Pub/Sub + Cloud Run</td></tr>
+      <tr><td class="role-cell">Social Graph (followers)</td><td>Neptune (graph DB) / DynamoDB</td><td>Cosmos DB (Gremlin API)</td><td>Spanner / Bigtable</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — Where the Threshold Itself Gets Tricky</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>The threshold is a blunt instrument</strong> — an account with 900,000 followers (just under your 1-million cutoff) still triggers 900,000 timeline writes per tweet. There's no perfectly clean line</li>
+        <li><strong>A "normal" tweet can suddenly go viral</strong> if a celebrity retweets it — now a tweet that was fanned-out-on-write to 1,000 people needs to ALSO reach that celebrity's 100 million followers through the read path</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Noticing</h4>
+      <ul>
+        <li>Because fan-out happens asynchronously through workers, there's a small delay — maybe a few seconds — before a tweet appears in every follower's timeline. For a social feed, nobody notices or cares. The same approach would be unacceptable for, say, a banking transaction, where "eventually correct" isn't good enough</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+<!-- ══════════════════════════════════
+     TAB 4 — UBER
+══════════════════════════════════ -->
+<div id="tab-ub" class="tab-panel ph-ub"><div class="section">
+  <h2>🚗 Uber — Real-Time Ride Matching</h2>
+
+  <div class="story">You open the app and tap "request ride." Somewhere out there, among 5 million active drivers worldwide, the system needs to find the few who happen to be close enough to you to actually pick you up — and do it in under a second. Let's think about how you'd even begin to search for "things near this point" when there are millions of them, all constantly moving.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Couldn't you just store everyone's latitude/longitude in a database and query "find drivers within 2km"?</div>
+    <p class="qa-a">You could write that query, sure — but think about what the database actually has to DO to answer it. Without special handling, finding "everything within 2km" means calculating the distance from the rider to EVERY driver in the database, one by one, then keeping the ones close enough. With 5 million drivers and 1.25 million location updates arriving every second, asking the database to do millions of distance calculations per ride request would be brutally slow. We need a way to instantly narrow down to "roughly nearby" before doing any precise math at all.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Turn "Nearby" Into a String Comparison</div>
+    <p>This is the idea behind <strong>geohashing</strong>: take a (latitude, longitude) and convert it into a short string code, by repeatedly slicing the map into smaller and smaller grid squares. Here's the trick that makes it useful — two points that are physically close to each other will USUALLY produce geohash strings that share the same starting characters. So "find things near me" becomes "find entries whose geohash starts with the same few characters as mine" — a fast string lookup instead of a math problem run millions of times.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-ub">
+    <li>Drivers continuously report their current location</li>
+    <li>Rider requests a ride → system finds the nearest available driver</li>
+    <li>Both sides see each other's live position during the trip</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-ub">
+    <li>"Find nearby drivers" must complete in well under 100ms</li>
+    <li>Location data is constantly changing — old positions become useless within seconds</li>
+    <li>Massive continuous write volume from every driver's app</li>
+  </ul>
+
+  <h3>Step 2 — The Numbers That Make "Nearby Search" Hard</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">5M</div><div class="stat-label">Active drivers globally</div></div>
+    <div class="stat"><div class="stat-num">every 4s</div><div class="stat-label">Location update interval</div></div>
+    <div class="stat"><div class="stat-num">~1.25M</div><div class="stat-label">Location updates / second</div></div>
+    <div class="stat"><div class="stat-num">&lt;100ms</div><div class="stat-label">Target "nearby drivers" query time</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So is geohashing the WHOLE solution, or just part of it?</div>
+    <p class="qa-a">Just part — but the key part. We still need somewhere fast to actually STORE all these constantly-updating positions. A normal disk-backed database, even with geohashing, would struggle to absorb 1.25 million writes per second sustainably. That points to an in-memory store. And since a driver's location 5 minutes ago is essentially useless for matching (they've moved), we don't even need to keep history around — just the current snapshot, refreshed constantly.</p>
+  </div>
+
+  <h3>Step 3 — Putting It Together</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">🚗 Uber — Location Updates &amp; Ride Matching</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrub" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a1a2a"/>
+          </marker>
+          <marker id="arrubr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a1a"/>
+          </marker>
+        </defs>
+        <text x="180" y="20" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#2a2a4a" text-anchor="middle">📍 Continuous Location Stream (every driver, every few seconds)</text>
+        <rect x="20" y="35" width="120" height="50" rx="6" fill="#e4e4ee" stroke="rgba(26,26,42,.3)" stroke-width="1.5"/>
+        <text x="80" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#2a2a4a" text-anchor="middle">Driver App</text>
+        <text x="80" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">(lat, lng) every 4s</text>
+        <line x1="140" y1="60" x2="200" y2="60" stroke="#1a1a2a" stroke-width="2" marker-end="url(#arrub)"/>
+        <rect x="205" y="35" width="150" height="50" rx="6" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="280" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c8a" text-anchor="middle">Location Ingest</text>
+        <text x="280" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">stream processor</text>
+        <line x1="355" y1="60" x2="420" y2="60" stroke="#1a1a2a" stroke-width="2" marker-end="url(#arrub)"/>
+        <rect x="425" y="35" width="270" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="560" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Geospatial Index (in-memory)</text>
+        <text x="560" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">geohash → set of nearby driver IDs + positions</text>
+        <line x1="20" y1="105" x2="700" y2="105" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="180" y="128" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a1500" text-anchor="middle">🙋 Ride Request → Match</text>
+        <rect x="20" y="145" width="110" height="60" rx="8" fill="#f8d8d4" stroke="rgba(191,42,26,.3)" stroke-width="2"/>
+        <text x="75" y="170" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#8a1500" text-anchor="middle">Rider App</text>
+        <text x="75" y="188" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">requests ride</text>
+        <line x1="130" y1="175" x2="195" y2="175" stroke="#bf2a1a" stroke-width="2" marker-end="url(#arrubr)"/>
+        <rect x="200" y="150" width="180" height="50" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="290" y="170" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Matching Service</text>
+        <text x="290" y="187" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">query geospatial index for nearby drivers</text>
+        <line x1="560" y1="85" x2="290" y2="150" stroke="#1a1a2a" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrubr)"/>
+        <text x="430" y="125" font-family="JetBrains Mono,monospace" font-size="8" fill="#1a1a2a" text-anchor="middle">lookup geohash cells near rider</text>
+        <line x1="380" y1="175" x2="445" y2="175" stroke="#bf2a1a" stroke-width="2" marker-end="url(#arrubr)"/>
+        <rect x="450" y="150" width="245" height="50" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="572" y="170" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Best driver selected → notified</text>
+        <text x="572" y="187" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">(distance + ETA + driver acceptance rate)</text>
+        <text x="360" y="245" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">During the trip, both apps continue sending location updates,</text>
+        <text x="360" y="263" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">pushed to each other via WebSocket (same idea as the Chat App in Part 2)</text>
+        <text x="360" y="290" font-family="Sora,sans-serif" font-size="10" fill="#2a2a4a" font-weight="700" text-anchor="middle">Old location data expires quickly — the index only needs to reflect "now", not history</text>
+      </svg>
+    </div>
+  </div>
+
+  <h3>Step 4 — How a Geohash Actually Narrows Things Down</h3>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Can you walk through an actual example of how this string-matching trick works?</div>
+    <p class="qa-a">Sure. A geohash gets longer (more precise) the more characters it has — each extra character shrinks the area it represents. So you pick a precision that roughly matches "the radius I care about" (say, ~1.2km), compute the rider's geohash at that precision, and then look up: which drivers currently have a geohash starting with those same characters? That's your candidate pool — maybe a few dozen drivers instead of 5 million. ONLY THEN do you bother calculating exact distances on that small group, to find the truly closest one.</p>
+  </div>
+
+  <div class="code-block ub-c">
+    <div class="code-label ub-l">Conceptual — Geohash precision levels</div>
+    <pre><span class="cm">Geohash "gcpv"     → covers a region roughly 39km x 19km (4 characters)
+Geohash "gcpvj"    → covers a region roughly 4.9km x 4.9km (5 characters)
+Geohash "gcpvj0"   → covers a region roughly 1.2km x 0.6km (6 characters)
+
+// To find drivers "near" a rider at geohash "gcpvj0":
+// 1. Compute the rider's geohash at the precision matching ~1.2km cells
+// 2. Also check the 8 neighbouring cells (a nearby driver might be just
+//    across a cell boundary — checking only the exact cell would miss them)
+// 3. Look up all drivers whose current geohash matches any of these 9 cells
+// 4. ONLY NOW calculate precise distance, on this small candidate set
+
+// "Search millions of moving points" becomes "look up ~9 dictionary keys,
+// then do a handful of distance calculations" — a massive difference</span></pre>
+  </div>
+
+  <div class="code-block ub-c">
+    <div class="code-label ub-l">C# — Driver location update + nearby search</div>
+    <pre><span class="kw">public class</span> <span class="tp">LocationService</span>
+{
+    <span class="kw">private readonly</span> <span class="iface">IGeoIndex</span> _geoIndex;   <span class="cm">// Redis with geo commands, or similar</span>
+
+    <span class="cm">// Called every ~4 seconds by each driver's app</span>
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">UpdateDriverLocationAsync</span>(<span class="kw">int</span> driverId, <span class="kw">double</span> lat, <span class="kw">double</span> lng)
+    {
+        <span class="cm">// Stores the position, indexed for radius queries — geohashing happens internally</span>
+        <span class="kw">await</span> _geoIndex.<span class="fn">AddOrUpdateAsync</span>(<span class="str">"drivers:available"</span>, driverId, lat, lng);
+
+        <span class="cm">// Short TTL — if a driver stops sending updates (app closed, went offline),
+        // they automatically vanish from the index after ~30 seconds. No cleanup job needed.</span>
+        <span class="kw">await</span> _geoIndex.<span class="fn">ExpireDriverAsync</span>(driverId, <span class="tp">TimeSpan</span>.<span class="fn">FromSeconds</span>(<span class="num">30</span>));
+    }
+
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">List</span>&lt;<span class="tp">NearbyDriver</span>&gt;&gt; <span class="fn">FindNearbyDriversAsync</span>(
+        <span class="kw">double</span> riderLat, <span class="kw">double</span> riderLng, <span class="kw">double</span> radiusKm = <span class="num">3</span>)
+    {
+        <span class="cm">// This single call does the cell-narrowing + distance ranking from the walkthrough above</span>
+        <span class="kw">var</span> nearby = <span class="kw">await</span> _geoIndex.<span class="fn">SearchRadiusAsync</span>(
+            key: <span class="str">"drivers:available"</span>,
+            lat: riderLat, lng: riderLng,
+            radiusKm: radiusKm,
+            maxResults: <span class="num">10</span>);
+
+        <span class="kw">return</span> nearby;  <span class="cm">// already sorted by distance, ready for ranking</span>
+    }
+}</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Do I have to implement geohashing myself?</div>
+    <p class="qa-a">No — Redis has built-in commands (<code>GEOADD</code>, <code>GEOSEARCH</code>) that handle the geohashing internally; you just feed in coordinates and ask for "nearby", and it returns a sorted list. This is true on every major cloud's managed Redis offering. For routing and ETA calculation specifically (actual road networks, traffic), all three clouds also offer dedicated mapping APIs rather than you building that from scratch.</p>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Location Update Stream</td><td>Kinesis Data Streams</td><td>Event Hubs</td><td>Pub/Sub</td></tr>
+      <tr><td class="role-cell">Geospatial Index (live positions)</td><td>ElastiCache (Redis with GEO commands)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Persistent Geo Database</td><td>Aurora PostgreSQL + PostGIS</td><td>Azure DB for PostgreSQL + PostGIS</td><td>Cloud SQL PostgreSQL + PostGIS</td></tr>
+      <tr><td class="role-cell">Real-time Trip Tracking</td><td>API Gateway WebSockets</td><td>Azure Web PubSub</td><td>Cloud Run (WebSockets)</td></tr>
+      <tr><td class="role-cell">ETA / Routing</td><td>Amazon Location Service</td><td>Azure Maps</td><td>Google Maps Platform (Routes API)</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — Where the Cracks Start to Show</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>Dense city centers at rush hour</strong> — thousands of drivers can land in the SAME geohash cell, meaning the "narrow it down" step doesn't narrow much; some systems use finer-grained cells specifically in high-density areas</li>
+        <li><strong>Sudden demand spikes</strong> — a concert ending, severe weather — concentrate ride requests in one geo area, spiking matching service load very locally rather than globally</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Noticing</h4>
+      <ul>
+        <li>Updating location every 4 seconds (not every 1 second) is a deliberate choice — more frequent updates would give slightly fresher positions, but would drain phone batteries and use more mobile data for a benefit riders would barely notice</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 5 — WHATSAPP
+══════════════════════════════════ -->
+<div id="tab-wa" class="tab-panel ph-wa"><div class="section">
+  <h2>💬 WhatsApp — Messaging at Billions-of-Users Scale</h2>
+
+  <div class="story">Part 2's Chat App had a server that stores and routes messages — perfectly normal, the server can see "Alice said hi to Bob" because it needs to know what to forward. But WhatsApp makes a much stronger promise: not even WhatsApp itself can read your messages. Let's think about what that actually requires changing, mechanically.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> If the server can't read messages, how does it know WHERE to send them?</div>
+    <p class="qa-a">Good distinction to make: the server can still see the METADATA — who's sending to whom, and when — it just can't see the CONTENT. The message text itself gets encrypted on the sender's device, before it ever leaves their phone, using a key that only the recipient's device possesses. The server receives a blob of encrypted bytes it has no ability to decrypt, and simply forwards that blob to the right destination based on the (unencrypted) "from" and "to" fields. It's like a sealed envelope — the postal service can read the address, never the letter inside.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What does WhatsApp lose by doing this? Surely there's a cost?</div>
+    <p class="qa-a">A real one. Plenty of features that seem simple become impossible server-side. Want to search all your old messages? In Part 2's chat app, the server could run that search directly on its database. Here, the server has nothing readable to search — so search has to happen entirely on YOUR device, against messages already decrypted and stored locally. Content moderation, spam detection, anything that requires reading message text — none of it can happen on the server. The privacy guarantee is real, but it's not free.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-wa">
+    <li>Everything from Part 2's chat app, but now encrypted end-to-end</li>
+    <li>Send media — photos, voice notes, videos</li>
+    <li>Same account, active simultaneously on phone, web, and desktop</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-wa">
+    <li>2+ billion users — Part 2's chat challenge, but orders of magnitude bigger</li>
+    <li>The server must be able to route messages it cannot decrypt</li>
+    <li>Messages need to stay correctly synced across every device a user has active</li>
+  </ul>
+
+  <h3>Step 2 — Numbers, and the New Multiplier They Reveal</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">2B+</div><div class="stat-label">Monthly active users</div></div>
+    <div class="stat"><div class="stat-num">~1.2M</div><div class="stat-label">Messages / second avg</div></div>
+    <div class="stat"><div class="stat-num">~3</div><div class="stat-label">Avg devices per user</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why does having 3 devices per user matter for how encryption works?</div>
+    <p class="qa-a">Because encryption is done per-DEVICE, not per-person. If you send a message to someone with a phone, a laptop, and a browser tab all logged in, your device has to encrypt that SAME message three separate times — once with each of their device's individual key. So 1.2 million messages/second at the message-pipeline layer becomes roughly 3.6 million encrypted payloads/second once you account for multi-device fan-out. That's a real multiplier, and it compounds further in group chats.</p>
+  </div>
+
+  <h3>Step 3 — Encrypted Routing + a Separate Path for Media</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">💬 WhatsApp — Encrypted Routing + Separate Media Path</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrwa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a5a"/>
+          </marker>
+          <marker id="arrwam" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf6a0e"/>
+          </marker>
+        </defs>
+        <text x="90" y="20" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">Sender (3 devices)</text>
+        <rect x="20" y="30" width="140" height="36" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="90" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">📱 Phone — encrypts msg</text>
+        <line x1="160" y1="48" x2="270" y2="100" stroke="#1a8a5a" stroke-width="2" marker-end="url(#arrwa)"/>
+        <text x="200" y="85" font-family="JetBrains Mono,monospace" font-size="8" fill="#1a8a5a" text-anchor="middle">encrypted blob</text>
+        <rect x="275" y="80" width="170" height="80" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="360" y="103" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Message Server</text>
+        <text x="360" y="121" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">sees: from, to, timestamp</text>
+        <text x="360" y="136" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">does NOT see: message content</text>
+        <text x="360" y="151" font-family="JetBrains Mono,monospace" font-size="8" fill="#4a1580" text-anchor="middle">routes encrypted blob to recipient device(s)</text>
+        <line x1="445" y1="100" x2="540" y2="50" stroke="#1a8a5a" stroke-width="1.5" marker-end="url(#arrwa)"/>
+        <line x1="445" y1="120" x2="540" y2="120" stroke="#1a8a5a" stroke-width="1.5" marker-end="url(#arrwa)"/>
+        <line x1="445" y1="140" x2="540" y2="190" stroke="#1a8a5a" stroke-width="1.5" marker-end="url(#arrwa)"/>
+        <text x="630" y="25" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">Recipient (3 devices)</text>
+        <rect x="545" y="30" width="150" height="36" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="620" y="52" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">📱 Phone — decrypts</text>
+        <rect x="545" y="100" width="150" height="36" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="620" y="122" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">💻 Desktop — decrypts</text>
+        <rect x="545" y="170" width="150" height="36" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="620" y="192" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">🌐 Web — decrypts</text>
+        <text x="360" y="200" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Server forwards the SAME message, separately encrypted for EACH recipient device's key</text>
+        <line x1="20" y1="230" x2="700" y2="230" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="180" y="252" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a4500" text-anchor="middle">📷 Media Messages — Separate Path</text>
+        <rect x="20" y="265" width="140" height="40" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="90" y="289" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">1. encrypt + upload photo</text>
+        <line x1="160" y1="285" x2="290" y2="285" stroke="#bf6a0e" stroke-width="2" marker-end="url(#arrwam)"/>
+        <rect x="295" y="265" width="160" height="40" rx="6" fill="#f8f0d4" stroke="rgba(191,106,14,.3)" stroke-width="1.5"/>
+        <text x="375" y="289" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Encrypted Media Storage</text>
+        <line x1="455" y1="285" x2="540" y2="285" stroke="#bf6a0e" stroke-width="2" marker-end="url(#arrwam)"/>
+        <rect x="545" y="265" width="150" height="40" rx="6" fill="#d4f0e0" stroke="rgba(26,138,90,.3)" stroke-width="1.5"/>
+        <text x="620" y="284" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">2. message server sends</text>
+        <text x="620" y="298" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">just a LINK + decryption key</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why does media get a totally separate path instead of just going through the same pipeline as text?</div>
+    <p class="qa-a">Think about what the real-time message pipeline (the WebSocket-based system from Part 2) is optimized for: tiny, frequent payloads, delivered instantly — text messages, read receipts, "is typing" indicators. Now imagine a 50MB video trying to squeeze through that same pipe. It would clog the path that millions of other tiny text messages are also trying to use at that exact moment. So instead: the photo gets encrypted and uploaded to object storage SEPARATELY, and the only thing that travels through the fast real-time pipeline is a tiny message containing a link and a decryption key. The recipient's device fetches the actual media on its own, at its own pace, without blocking anyone else's text messages.</p>
+  </div>
+
+  <h3>Step 4 — Following One Message Across 3 Devices</h3>
+
+  <div class="code-block wa-c">
+    <div class="code-label wa-l">Conceptual — Multi-device message fan-out</div>
+    <pre><span class="cm">// User A sends "Hello" to User B, who has 3 devices registered:
+
+// 1. User A's device encrypts the message SEPARATELY for each of
+//    User B's device keys — this is how E2E encryption handles
+//    multiple devices: the sender does the work multiple times
+
+EncryptedMessage[] payloads = {
+    Encrypt("Hello", recipientDeviceKey: "B-phone"),
+    Encrypt("Hello", recipientDeviceKey: "B-desktop"),
+    Encrypt("Hello", recipientDeviceKey: "B-web")
+};
+
+// 2. Server receives 3 encrypted payloads + routing info.
+//    To the server, these are 3 unrelated blobs of bytes going
+//    to 3 device IDs — it has no idea they all say "Hello"
+
+// 3. Server delivers each payload to its device when that device
+//    is online (or holds it in a per-device queue if offline)
+
+// 4. Each device decrypts its OWN copy independently.
+//    All 3 now display "Hello" — synced in outcome, but each
+//    device did its own separate decryption
+
+// This is why linking a new device requires a "pairing" step:
+// the new device needs ITS OWN key registered before anyone's
+// future messages can be encrypted for it.</span></pre>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Real-time Message Routing</td><td>API Gateway WebSockets + custom routing layer</td><td>Azure Web PubSub</td><td>Cloud Run (WebSockets) + Pub/Sub</td></tr>
+      <tr><td class="role-cell">Offline Message Queue (per device)</td><td>SQS (per-device queues) / DynamoDB</td><td>Service Bus queues / Cosmos DB</td><td>Pub/Sub / Firestore</td></tr>
+      <tr><td class="role-cell">Encrypted Media Storage</td><td>S3 (client-side encrypted objects)</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+      <tr><td class="role-cell">Device/Key Registry</td><td>DynamoDB</td><td>Cosmos DB</td><td>Firestore</td></tr>
+      <tr><td class="role-cell">Push Notification (app closed)</td><td>SNS Mobile Push</td><td>Notification Hubs</td><td>Firebase Cloud Messaging</td></tr>
+    </table>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Which cloud product actually does the encryption?</div>
+    <p class="qa-a">None of them — and that's worth sitting with for a second. Unlike almost everything else in this entire guide, the encryption itself isn't a cloud service you configure; it's code running on the CLIENT apps (phone, desktop, browser), using cryptographic libraries like implementations of the Signal Protocol. The cloud's job here is narrower than usual: reliably move encrypted bytes around and store them — which is why the table above looks a lot like Part 2's chat app, just operating at a much larger scale.</p>
+  </div>
+
+  <h3>Step 6 — What Gets Hard at This Scale</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>Offline devices accumulate backlogs</strong> — a phone that's been off for a week comes back to potentially thousands of queued encrypted messages, all needing delivery and local decryption at once</li>
+        <li><strong>Group chats multiply the encryption work further</strong> — a 256-person group means each message gets encrypted once per member, per device. One message can mean 700+ separate encrypted payloads</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Sitting With</h4>
+      <ul>
+        <li>"Search my messages" and "server-side backup" are SERVER features that simply can't exist when the server can't read content. Backups have to be encrypted separately, with a key only the user controls — meaning if a user loses that key, there's genuinely no way for anyone, including WhatsApp, to recover their backup. That's the actual cost of the privacy guarantee, not a minor footnote</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 6 — INSTAGRAM
+══════════════════════════════════ -->
+<div id="tab-ig" class="tab-panel ph-ig"><div class="section">
+  <h2>📷 Instagram — Photo/Video Sharing &amp; Feed</h2>
+
+  <div class="story">You upload a photo. It needs to look crisp on a smartwatch, a phone, and a giant desktop monitor — three wildly different screen sizes, all from the one file you just uploaded. And that same photo might get viewed by your 200 followers a total of 50,000 times over the next week. Let's think about when the "right size for this screen" work should actually happen.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why not just store the original and resize it on-the-fly whenever someone views it?</div>
+    <p class="qa-a">You could — and for a small personal site, that's totally reasonable. But think about the read pattern here: ONE upload, potentially tens of thousands of views. If you resize on every view, you're redoing the EXACT SAME resizing work, over and over, for the exact same output, every single time anyone looks at that photo. That's the same wasteful pattern we saw with the URL shortener's database being asked the same question repeatedly — except now it's CPU-intensive image processing instead of a database lookup.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Same Principle as Netflix — Do the Work Once, Serve It Forever</div>
+    <p>Generate the handful of sizes you'll actually need — thumbnail, feed-size, full-size — ONCE, right when the photo is uploaded. Every view afterward is just: hand over the file that's already sitting there, no computation required. This is the exact same trade (a bit more storage, for a massive reduction in repeated compute) that Netflix makes with pre-transcoding video into multiple resolutions.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-ig">
+    <li>Upload a photo/video with a caption</li>
+    <li>Followers see it in their feed</li>
+    <li>Like, comment, view profiles</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-ig">
+    <li>Images must load fast regardless of device or connection</li>
+    <li>Massively read-heavy — one upload, potentially millions of views</li>
+    <li>Processing shouldn't make the person wait after they hit "share"</li>
+  </ul>
+
+  <h3>Step 2 — The Numbers</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">500M</div><div class="stat-label">Photos/videos uploaded / day</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Sizes generated per upload</div></div>
+    <div class="stat"><div class="stat-num">~2MB</div><div class="stat-label">Average original photo size</div></div>
+    <div class="stat"><div class="stat-num">100B+</div><div class="stat-label">Feed views / day</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> If you're generating 5 sizes upfront, doesn't that mean 5x the storage for every single photo?</div>
+    <p class="qa-a">Yes, roughly — and that's a real cost being deliberately accepted. The alternative (resizing on every view) would cost vastly more in repeated compute across 100 billion feed views per day, for a result that's IDENTICAL every single time you compute it. Paying a bit more in storage to eliminate massive repeated computation is the same calculation Netflix makes, just applied to photos instead of video.</p>
+  </div>
+
+  <h3>Step 3 — Two Separate Concerns: Uploading vs Feeding</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📷 Instagram — Upload Processing Pipeline + Feed Delivery</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrig" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#bf2a7a"/>
+          </marker>
+          <marker id="arrigf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+        </defs>
+        <text x="180" y="20" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#8a0050" text-anchor="middle">📤 Upload Path — Process Once</text>
+        <rect x="20" y="35" width="110" height="50" rx="6" fill="#f8d6ec" stroke="rgba(191,42,122,.3)" stroke-width="1.5"/>
+        <text x="75" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a0050" text-anchor="middle">User uploads</text>
+        <text x="75" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">original photo</text>
+        <line x1="130" y1="60" x2="190" y2="60" stroke="#bf2a7a" stroke-width="2" marker-end="url(#arrig)"/>
+        <rect x="195" y="35" width="130" height="50" rx="6" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="260" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#8a4500" text-anchor="middle">Original stored</text>
+        <text x="260" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">object storage</text>
+        <line x1="325" y1="60" x2="385" y2="60" stroke="#bf2a7a" stroke-width="2" marker-end="url(#arrig)"/>
+        <rect x="390" y="20" width="160" height="80" rx="6" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="470" y="42" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Image Processing</text>
+        <text x="470" y="60" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">generates:</text>
+        <text x="470" y="75" font-family="JetBrains Mono,monospace" font-size="8" fill="#4a1580" text-anchor="middle">thumbnail · feed · full-size · etc.</text>
+        <text x="470" y="90" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">(async — doesn't block upload response)</text>
+        <line x1="550" y1="60" x2="615" y2="60" stroke="#bf2a7a" stroke-width="2" marker-end="url(#arrig)"/>
+        <rect x="620" y="35" width="90" height="50" rx="6" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="665" y="55" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">CDN Edges</text>
+        <text x="665" y="71" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">all sizes</text>
+        <line x1="20" y1="115" x2="700" y2="115" stroke="#dce0f5" stroke-width="1.5" stroke-dasharray="6,4"/>
+        <text x="180" y="138" font-family="Sora,sans-serif" font-size="12" font-weight="700" fill="#0a4280" text-anchor="middle">📰 Feed Path — Served Many Times (Same Pattern as Twitter)</text>
+        <rect x="20" y="155" width="110" height="55" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="75" y="178" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Follower</text>
+        <text x="75" y="196" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">opens feed</text>
+        <line x1="130" y1="182" x2="195" y2="182" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrigf)"/>
+        <rect x="200" y="155" width="190" height="55" rx="8" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="295" y="178" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c8a" text-anchor="middle">Feed Service</text>
+        <text x="295" y="196" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">fan-out timeline (like Twitter) — returns post IDs + image URLs</text>
+        <line x1="390" y1="182" x2="450" y2="182" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrigf)"/>
+        <rect x="455" y="155" width="245" height="55" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.3)" stroke-width="1.5"/>
+        <text x="577" y="178" font-family="JetBrains Mono,monospace" font-size="9" fill="#085c38" text-anchor="middle">Images load directly from CDN</text>
+        <text x="577" y="196" font-family="JetBrains Mono,monospace" font-size="8" fill="#606278" text-anchor="middle">"feed-size" version, not full original</text>
+        <text x="360" y="250" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">Feed Service itself never touches image bytes — it only returns metadata + CDN URLs</text>
+        <text x="360" y="268" font-family="Sora,sans-serif" font-size="10" fill="#8a0050" font-weight="700" text-anchor="middle">App requests the smallest size that fits the display — saves bandwidth on mobile</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why does "Feed Service" only return URLs instead of the actual images?</div>
+    <p class="qa-a">This is the same separation-of-concerns idea from Twitter's timeline cache — keep the thing that's queried constantly (the feed list) lightweight, and let a completely different, purpose-built system (the CDN) handle the heavy lifting of actually moving image bytes. If the Feed Service had to fetch and stream image data itself, it would be doing two very different jobs at once, and doing neither particularly well.</p>
+  </div>
+
+  <h3>Step 4 — Making "Posting" Feel Instant Despite the Processing Work</h3>
+
+  <div class="story">You hit "share." Generating 5 different image sizes takes a moment — maybe 2-3 seconds of actual processing work. But the app shows your post as live almost immediately. How?</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Does the upload request just wait those 2-3 seconds before responding?</div>
+    <p class="qa-a">Only for the part that genuinely needs to happen synchronously — uploading the original file. Everything else (resizing into 5 versions, triggering the feed fan-out) gets handed off to a queue and a background worker, the exact pattern from Part 2's Notification System. The user gets back "posted!" the moment the original is safely stored, while the actual image processing happens in the background over the next couple of seconds. The post briefly shows as "processing" before its various sizes are ready.</p>
+  </div>
+
+  <div class="code-block ig-c">
+    <div class="code-label ig-l">C# — Upload returns fast, processing happens in background</div>
+    <pre><span class="kw">public class</span> <span class="tp">UploadController</span> : <span class="tp">ControllerBase</span>
+{
+    [<span class="at">HttpPost</span>(<span class="str">"upload"</span>)]
+    <span class="kw">public async</span> <span class="tp">Task</span>&lt;<span class="tp">IActionResult</span>&gt; <span class="fn">Upload</span>(<span class="tp">IFormFile</span> photo, <span class="kw">string</span> caption)
+    {
+        <span class="kw">var</span> postId = <span class="tp">Guid</span>.<span class="fn">NewGuid</span>();
+        <span class="kw">var</span> originalPath = <span class="str">$"originals/{postId}.jpg"</span>;
+
+        <span class="cm">// 1. Upload original to object storage — this IS synchronous, user waits</span>
+        <span class="kw">await</span> _storage.<span class="fn">UploadAsync</span>(originalPath, photo);
+
+        <span class="cm">// 2. Save post metadata with status "processing"</span>
+        <span class="kw">await</span> _postRepo.<span class="fn">CreateAsync</span>(<span class="kw">new</span> <span class="tp">Post</span>
+        {
+            Id = postId, Caption = caption, Status = <span class="str">"processing"</span>,
+            OriginalPath = originalPath
+        });
+
+        <span class="cm">// 3. Hand off the heavy lifting — return to the user IMMEDIATELY</span>
+        <span class="kw">await</span> _queue.<span class="fn">PublishAsync</span>(<span class="kw">new</span> <span class="tp">ImageProcessingJob</span>(postId, originalPath));
+
+        <span class="kw">return</span> <span class="fn">Ok</span>(<span class="kw">new</span> { postId, status = <span class="str">"processing"</span> });
+        <span class="cm">// "Posted!" appears instantly — the various sizes finish a moment later</span>
+    }
+}
+
+<span class="cm">// Background worker — does the actual resizing</span>
+<span class="kw">public class</span> <span class="tp">ImageProcessingWorker</span>
+{
+    <span class="kw">private static readonly</span> (<span class="kw">string</span> Name, <span class="kw">int</span> Width)[] Sizes =
+    {
+        (<span class="str">"thumbnail"</span>, <span class="num">150</span>),
+        (<span class="str">"feed"</span>,      <span class="num">640</span>),
+        (<span class="str">"full"</span>,      <span class="num">1080</span>)
+    };
+
+    <span class="kw">public async</span> <span class="tp">Task</span> <span class="fn">ProcessAsync</span>(<span class="tp">ImageProcessingJob</span> job)
+    {
+        <span class="kw">var</span> original = <span class="kw">await</span> _storage.<span class="fn">DownloadAsync</span>(job.OriginalPath);
+
+        <span class="kw">foreach</span> (<span class="kw">var</span> (name, width) <span class="kw">in</span> Sizes)
+        {
+            <span class="kw">var</span> resized = <span class="fn">ResizeImage</span>(original, width);
+            <span class="kw">await</span> _storage.<span class="fn">UploadAsync</span>(<span class="str">$"posts/{job.PostId}/{name}.jpg"</span>, resized);
+        }
+
+        <span class="cm">// Mark post as ready — now visible in feeds</span>
+        <span class="kw">await</span> _postRepo.<span class="fn">UpdateStatusAsync</span>(job.PostId, <span class="str">"published"</span>);
+
+        <span class="cm">// Trigger feed fan-out (same pattern as Twitter)</span>
+        <span class="kw">await</span> _fanOutService.<span class="fn">PublishPostToFollowersAsync</span>(job.PostId);
+    }
+}</pre>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Original + Processed Image Storage</td><td>S3</td><td>Blob Storage</td><td>Cloud Storage</td></tr>
+      <tr><td class="role-cell">Image Processing Trigger</td><td>S3 Event → Lambda</td><td>Blob trigger → Azure Functions</td><td>Cloud Storage trigger → Cloud Functions</td></tr>
+      <tr><td class="role-cell">Image Resizing</td><td>Lambda + Sharp/ImageMagick layer</td><td>Azure Functions + ImageSharp</td><td>Cloud Functions + Sharp</td></tr>
+      <tr><td class="role-cell">CDN for Images</td><td>CloudFront</td><td>Azure CDN / Front Door</td><td>Cloud CDN</td></tr>
+      <tr><td class="role-cell">Feed Fan-out</td><td>Same as Twitter — SQS + DynamoDB/ElastiCache</td><td>Service Bus + Cosmos DB / Redis</td><td>Pub/Sub + Bigtable / Memorystore</td></tr>
+    </table>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Is this "upload → trigger → resize → CDN" pattern something every cloud has a name for?</div>
+    <p class="qa-a">Yes — it's common enough that AWS publishes a ready-made "Serverless Image Handler" reference architecture, and similar templates exist for Azure and GCP. You don't necessarily need to build this from first principles; recognizing the PATTERN (trigger on upload → process asynchronously → store multiple versions → serve via CDN) is what transfers between projects, more than memorizing any one specific tool.</p>
+  </div>
+
+  <h3>Step 6 — What's Worth Worrying About</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>Processing queue backlog during major events</strong> — if everyone posts at once (a big live event), the queue grows and posts appear with a noticeable delay before all sizes are ready</li>
+        <li><strong>Storage costs accumulate</strong> — 5x the original storage adds up fast; rarely-viewed old photos are good candidates to move to cheaper "cold" storage tiers</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Noticing</h4>
+      <ul>
+        <li>Generating a FIXED set of sizes (thumbnail/feed/full) is simple and very cacheable, but inflexible — if a new device with an unusual screen size becomes popular, you either accept slightly-wrong-sized images or add a 6th pre-generated size. On-demand resizing handles any size perfectly, but reintroduces the per-request cost we were trying to avoid in the first place</li>
+      </ul>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- ══════════════════════════════════
+     TAB 7 — GOOGLE DRIVE
+══════════════════════════════════ -->
+<div id="tab-gd" class="tab-panel ph-gd"><div class="section">
+  <h2>📁 Google Drive — File Storage &amp; Sync</h2>
+
+  <div class="story">You're uploading a 2GB video file on a slow hotel wifi connection. At 73% progress, the connection drops. With most simple upload implementations, you'd have to start completely over — re-send all 2GB from scratch. That's clearly not how Google Drive behaves in practice. Let's figure out what it would take to make "resume where you left off" actually work.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why can't you just resume sending the remaining bytes from wherever it stopped?</div>
+    <p class="qa-a">You actually could, in principle — but think about what the SERVER needs to know to make that work reliably: exactly which bytes it already received, and exactly where to pick back up, even across a connection drop, even if the user closes the app and comes back tomorrow. Tracking "byte 1,847,293,012 onward" as one continuous stream is fragile. What if, instead, you broke the file into clean, fixed-size pieces from the start — say, 4MB chunks — and tracked progress per CHUNK instead of per byte?</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 Files Are Chunks, Not One Giant Blob</div>
+    <p>Split every file into fixed-size chunks before uploading. Now "resume" just means: ask the server "which chunk numbers do you already have?", and only send the missing ones. This same idea pays off in two OTHER places too, which is why it's worth doing even ignoring the resume problem: if you edit a tiny part of a huge file, only the changed CHUNKS need to re-sync, not the whole file — and if two different people upload the exact same content, their chunks will be byte-for-byte identical, which opens the door to something pretty elegant.</p>
+  </div>
+
+  <h3>Step 1 — What's Actually Required Here?</h3>
+  <div class="req-badges"><span class="rb rb-func">FUNCTIONAL</span></div>
+  <ul class="checklist cl-gd">
+    <li>Upload/download files, organize into folders</li>
+    <li>Files sync automatically across all your devices</li>
+    <li>Share files/folders with specific permissions</li>
+  </ul>
+  <div class="req-badges"><span class="rb rb-nonfunc">NON-FUNCTIONAL</span></div>
+  <ul class="checklist cl-gd">
+    <li>Large uploads must be resumable — a dropped connection shouldn't mean starting over</li>
+    <li>Avoid storing identical content twice, at the scale of a billion users this adds up enormously</li>
+    <li>Handle the same file being edited on two different devices while both were offline</li>
+  </ul>
+
+  <h3>Step 2 — Numbers That Justify Chunking</h3>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">1B+</div><div class="stat-label">Users</div></div>
+    <div class="stat"><div class="stat-num">EBs</div><div class="stat-label">Total storage (exabytes)</div></div>
+    <div class="stat"><div class="stat-num">4MB</div><div class="stat-label">Typical chunk size</div></div>
+    <div class="stat"><div class="stat-num">~30%</div><div class="stat-label">Storage saved via deduplication (est.)</div></div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> 30% storage savings sounds significant — where does that actually come from?</div>
+    <p class="qa-a">Picture a company where 500 employees all received the same 50MB onboarding PDF as an email attachment, and many of them saved a copy to their Drive. Without deduplication, that's 500 separate copies of an identical file — 25GB for content that's really just one 50MB file. If each chunk is identified by a hash of its CONTENT rather than a random ID, then identical content — even uploaded by completely different people who've never interacted — naturally produces identical chunk hashes, and gets stored exactly once.</p>
+  </div>
+
+  <h3>Step 3 — Watching Deduplication Happen</h3>
+
+  <div class="diagram-wrap">
+    <div class="diagram-header">📁 Google Drive — Chunked Upload with Deduplication</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrgd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#0e6abf"/>
+          </marker>
+          <marker id="arrgdd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f7a52"/>
+          </marker>
+        </defs>
+        <rect x="20" y="110" width="120" height="70" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.3)" stroke-width="2"/>
+        <text x="80" y="135" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">Client App</text>
+        <text x="80" y="153" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">splits file into</text>
+        <text x="80" y="168" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">4MB chunks</text>
+        <rect x="155" y="60" width="34" height="34" rx="4" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="172" y="81" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c8a" text-anchor="middle">C1</text>
+        <rect x="195" y="60" width="34" height="34" rx="4" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="212" y="81" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c8a" text-anchor="middle">C2</text>
+        <rect x="235" y="60" width="34" height="34" rx="4" fill="#d4ecf8" stroke="rgba(14,138,191,.3)" stroke-width="1.5"/>
+        <text x="252" y="81" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c8a" text-anchor="middle">C3</text>
+        <text x="212" y="45" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">each chunk hashed (SHA-256)</text>
+        <line x1="140" y1="145" x2="290" y2="145" stroke="#0e6abf" stroke-width="2" marker-end="url(#arrgd)"/>
+        <text x="215" y="138" font-family="JetBrains Mono,monospace" font-size="8" fill="#0e6abf" text-anchor="middle">"I have chunks with hashes [a1, b2, c3]"</text>
+        <rect x="295" y="105" width="180" height="80" rx="8" fill="#ede0f8" stroke="rgba(138,42,191,.35)" stroke-width="2.5"/>
+        <text x="385" y="128" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#4a1580" text-anchor="middle">Upload Service</text>
+        <text x="385" y="146" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">"which hashes do you</text>
+        <text x="385" y="161" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">NOT already have?"</text>
+        <text x="385" y="176" font-family="JetBrains Mono,monospace" font-size="8" fill="#4a1580" text-anchor="middle">→ client uploads only NEW chunks</text>
+        <line x1="475" y1="145" x2="540" y2="100" stroke="#1f7a52" stroke-width="2" marker-end="url(#arrgdd)"/>
+        <rect x="545" y="60" width="155" height="70" rx="8" fill="#d4f0e8" stroke="rgba(14,138,90,.35)" stroke-width="2.5"/>
+        <text x="622" y="83" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">Chunk Store</text>
+        <text x="622" y="101" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">hash(content) → bytes</text>
+        <text x="622" y="116" font-family="JetBrains Mono,monospace" font-size="8" fill="#085c38" text-anchor="middle">same hash = stored ONCE, referenced N times</text>
+        <line x1="475" y1="165" x2="540" y2="200" stroke="#1f7a59" stroke-width="2" marker-end="url(#arrgdd)"/>
+        <rect x="545" y="175" width="155" height="70" rx="8" fill="#fde8d0" stroke="rgba(201,96,10,.3)" stroke-width="1.5"/>
+        <text x="622" y="198" font-family="Sora,sans-serif" font-size="11" font-weight="700" fill="#8a4500" text-anchor="middle">File Metadata DB</text>
+        <text x="622" y="216" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">fileId → [hash_a1, hash_b2, hash_c3]</text>
+        <text x="622" y="231" font-family="JetBrains Mono,monospace" font-size="8" fill="#8a4500" text-anchor="middle">ordered list = how to reassemble the file</text>
+        <text x="360" y="270" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">If User B uploads the SAME file User A already uploaded, all chunk hashes already exist —</text>
+        <text x="360" y="288" font-family="Sora,sans-serif" font-size="10" fill="#085c38" font-weight="700" text-anchor="middle">User B's upload completes near-instantly with ZERO new bytes transferred (dedup)</text>
+      </svg>
+    </div>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> So how does "resume after a dropped connection" actually use this same mechanism?</div>
+    <p class="qa-a">Exactly the same lookup. When your 2GB upload drops at 73%, your client already knows which chunks it computed hashes for. On reconnect, it just asks the server again: "which of these hashes do you already have?" The chunks from before the drop come back as "already have it" — skip them. Only the chunks that never made it through get re-sent. You're not tracking byte offsets at all; you're just re-running the SAME deduplication check that handles the "two users, same file" case.</p>
+  </div>
+
+  <h3>Step 4 — The Harder Problem: Editing While Offline</h3>
+
+  <div class="warn">
+    <h4>⚠️ The Scenario</h4>
+    <p>You edit "report.docx" on your laptop while offline on a flight. Later that day, you also edit the SAME file on your phone — also offline at the time. Both devices eventually reconnect. Both now have a DIFFERENT version of the same file. The server has to decide what "correct" means here.</p>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why not just keep whichever edit reconnects LAST, since that's presumably the most "final"?</div>
+    <p class="qa-a">Because "reconnected last" has nothing to do with which edit the user actually cares about more. If your phone happens to sync a few minutes after your laptop, your phone's edit would silently overwrite your laptop's work — work you might have spent an hour on. Silently losing someone's edits because of network timing, rather than their actual intent, is exactly the kind of bug that erodes trust in a product whose entire job is "don't lose my files."</p>
+  </div>
+
+  <div class="code-block gd-c">
+    <div class="code-label gd-l">Conceptual — Version-based conflict detection</div>
+    <pre><span class="cm">// Every file has a version number, incremented on each save
+// File "report.docx" — last synced version: 5
+
+// Laptop (offline edit, based on version 5):
+//   Tries to save as version 6
+
+// Phone (offline edit, ALSO based on version 5):
+//   Tries to save as version 6 too
+
+// Laptop reconnects first:
+//   Server: "Current version is 5, your edit is based on 5 → fine, now version 6"
+
+// Phone reconnects second:
+//   Server: "Current version is 6, but your edit is based on 5 → CONFLICT"
+//   The server can tell something's wrong because the phone's edit is
+//   based on a version that's no longer the latest — that mismatch IS
+//   the detection mechanism, no guessing required.
+
+//   What happens next is a genuine design choice:
+//   1. Keep both — save phone's edit as "report (conflicted copy).docx"
+//      Simple, never loses data, but pushes the merge decision to the user
+//   2. Operational Transform / CRDTs — used by Google Docs for real-time
+//      collaborative editing: merge non-conflicting changes automatically
+//   3. Last-write-wins — simplest, but SILENTLY discards the phone's edit
+
+// Google Docs (built for live collaboration) uses approach 2.
+// Google Drive (arbitrary files like .docx, .pdf) typically uses approach 1 —
+// because automatically merging an unknown binary file format isn't possible.</span></pre>
+  </div>
+
+  <div class="card">
+    <h4>🔐 The Other Thing Checked on Every Single File Access</h4>
+    <p>Every file download, every folder listing, asks: does this user actually have permission? With direct shares, shared folders, and permissions inherited from parent folders, this check gets genuinely complex to evaluate quickly. The practical fix is aggressive caching — permission results for a given user+file pair get cached briefly, since permissions change far less often than files get accessed, but the cache has to invalidate correctly the moment a permission actually changes.</p>
+  </div>
+
+  <h3>Step 5 — Where This Lives in Each Cloud</h3>
+  <div class="comp-table">
+    <table>
+      <tr><th>Component</th><th>AWS</th><th>Azure</th><th>GCP</th></tr>
+      <tr><td class="role-cell">Chunk Storage (content-addressed)</td><td>S3 (key = content hash)</td><td>Blob Storage (key = content hash)</td><td>Cloud Storage (key = content hash)</td></tr>
+      <tr><td class="role-cell">Resumable Uploads</td><td>S3 Multipart Upload</td><td>Blob Storage Block Upload</td><td>Cloud Storage Resumable Upload</td></tr>
+      <tr><td class="role-cell">File Metadata / Folder Structure</td><td>DynamoDB (file tree as adjacency list)</td><td>Cosmos DB</td><td>Firestore / Spanner</td></tr>
+      <tr><td class="role-cell">Permission Cache</td><td>ElastiCache (Redis)</td><td>Azure Cache for Redis</td><td>Memorystore (Redis)</td></tr>
+      <tr><td class="role-cell">Sync Notifications</td><td>AppSync subscriptions / WebSockets</td><td>Azure Web PubSub</td><td>Firestore real-time listeners</td></tr>
+    </table>
+  </div>
+
+  <h3>Step 6 — What's Genuinely Tricky at This Scale</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>⚠️ What Breaks First</h4>
+      <ul>
+        <li><strong>Deleting a file isn't actually deleting bytes</strong> — if another file shares one of its chunks (because the content was identical), you can only safely delete a chunk once NOTHING references it anymore. That requires careful reference counting, not a simple delete</li>
+        <li><strong>Huge folders</strong> — a folder with millions of files needs paginated listing, not "load everything at once"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>🔄 A Trade-off Worth Noticing</h4>
+      <ul>
+        <li>Smaller chunks give finer-grained deduplication and sync (only re-upload exactly what changed), but more chunks means more hashes to track and more metadata overhead per file. 4-8MB is the typical sweet spot — small enough to dedupe well, large enough that the metadata doesn't dominate</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="completion">
+    <h3>🎉 System Design Series — All 3 Parts Complete!</h3>
+    <p>What Changes at Scale — multi-region, data pipelines, consistent hashing, geospatial indexing, pre-computation, hotspot mitigation · Netflix — why CDN is the foundation not an add-on, pre-transcoding instead of live resizing, pre-computed recommendations · Twitter/X — why neither fan-out approach works alone, and the hybrid that does · Uber — turning "nearby" into a fast string lookup via geohashing · WhatsApp — what end-to-end encryption actually costs in lost server-side features · Instagram — the same "process once, serve forever" idea as Netflix, applied to photos · Google Drive — chunking solves resumable uploads, deduplication, AND efficient sync all at once · AWS / Azure / GCP equivalents for every component across all six systems</p>
+    <div class="all-done">
+      <span class="np np-done">✅ Part 1: Core Concepts</span>
+      <span class="np np-done">✅ Part 2: Beginner Examples</span>
+      <span class="np np-done">✅ Part 3: Advanced Examples</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>
+function T(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

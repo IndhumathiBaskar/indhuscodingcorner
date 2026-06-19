@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AWS CloudTrail – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #8e44ad;
+    --accent2:    #a569bd;
+    --accent-dim: rgba(142,68,173,0.13);
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --purple:     #bc8cff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent2); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #170a1c 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(142,68,173,0.2) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(142,68,173,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent2); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent2); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent2); border-bottom-color: var(--accent2); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent2); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-purple { background: var(--accent-dim); border: 1px solid rgba(142,68,173,0.3); border-left: 3px solid var(--accent2); }
+  .callout-purple strong { color: var(--accent2); }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-blue   { background: rgba(88,166,255,0.08); border: 1px solid rgba(88,166,255,0.2); border-left: 3px solid var(--blue); }
+  .callout-blue strong { color: var(--blue); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+  .callout-red    { background: rgba(248,81,73,0.08); border: 1px solid rgba(248,81,73,0.2); border-left: 3px solid var(--red); }
+  .callout-red strong { color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-purple { background: var(--accent-dim); color: var(--accent2); }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+  .tag-yellow { background: rgba(210,153,34,0.15); color: var(--yellow); }
+  .tag-teal   { background: rgba(38,166,127,0.15); color: var(--teal); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent2); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent2); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent2); border-color: var(--accent2); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--purple); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--purple); font-weight: 600; } .pv { color: var(--accent2); } .pn { color: var(--green); }
+
+  /* EVENT TYPE CARDS */
+  .evt-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .evt-grid{ grid-template-columns:1fr; } }
+  .evt-card { background: var(--surface); border-radius: var(--radius); padding: 18px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+  .evt-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--ec,var(--accent2)); }
+  .evt-name { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .evt-tag  { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 10px; display: block; }
+  .evt-desc { font-size: 12px; color: var(--muted); }
+
+  /* STEPS */
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(142,68,173,0.35); color: var(--accent2); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(142,68,173,0.1) 100%); border: 1px solid rgba(142,68,173,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 38px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 18px; font-weight: 700; color: var(--accent2); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 500px; margin: 0 auto; }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">AWS CloudTrail</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">📜 Audit & Governance</div>
+  <h1>AWS <span>CloudTrail</span></h1>
+  <p>The complete audit log of every API call made in your AWS account — who did what, when, and from where. The backbone of security investigations and compliance.</p>
+  <div class="hero-pills">
+    <span class="hero-pill">📋 Management Events</span>
+    <span class="hero-pill">📦 Data Events</span>
+    <span class="hero-pill">🔍 Insights</span>
+    <span class="hero-pill">🏢 Org Trails</span>
+    <span class="hero-pill">🔒 Log Integrity</span>
+    <span class="hero-pill">🔎 Lake</span>
+    <span class="hero-pill">⚡ EventBridge</span>
+    <span class="hero-pill">📊 Athena Queries</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">🏗️ Overview</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">📋 Event Types</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🏢 Trails</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🔍 Insights & Lake</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🔒 Log Integrity</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧩 C# SDK</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">📊 Querying Logs</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(8,this)">🏁 Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">🏗️ What is AWS CloudTrail?</h2>
+  <p class="section-sub">Records every API call made in your AWS account — across the console, CLI, SDKs, and other AWS services.</p>
+
+  <div class="callout callout-purple">
+    <strong>One-liner</strong>
+    CloudTrail = the audit log of <strong>who did what, when, from where, and with what result</strong> across your entire AWS account. Enabled by default for the last 90 days — create a Trail for permanent storage and advanced features.
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="archCanvas" width="860" height="300"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">📋 Event History (Default)</div>
+      <p>Last 90 days of management events, automatically recorded, no setup needed. Free. Searchable in the console. No S3 storage — view-only in console/CLI.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🛤️ Trail (Configured)</div>
+      <p>Continuous delivery of events to an S3 bucket — permanent retention. Required for events older than 90 days, CloudWatch Logs integration, and data events.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔎 CloudTrail Lake</div>
+      <p>Managed data lake for CloudTrail events. SQL queries directly on events — no Athena setup needed. Retain up to 7 years. Newer, simpler alternative to S3 + Athena.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">What Gets Recorded</h3>
+  <div class="callout callout-green">
+    <strong>Every CloudTrail event captures:</strong>
+    Who (IAM user/role/root) · What action (API call, e.g. <code>RunInstances</code>) · When (timestamp) · Where from (source IP) · Which resource · Request parameters · Response elements · Whether it succeeded or was denied
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin-bottom:14px">CloudTrail vs Config vs CloudWatch</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Service</th><th>What it tracks</th><th>Question it answers</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--accent2)">CloudTrail</strong></td><td>API calls / actions taken</td><td>"Who deleted this S3 bucket and when?"</td></tr>
+        <tr><td>AWS Config</td><td>Resource configuration state over time</td><td>"What did this security group look like last Tuesday?"</td></tr>
+        <tr><td>CloudWatch Logs</td><td>Application / system log output</td><td>"What error did my Lambda throw at 3pm?"</td></tr>
+        <tr><td>VPC Flow Logs</td><td>Network traffic metadata</td><td>"What IP connected to this instance on port 22?"</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 1: EVENT TYPES -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">📋 CloudTrail Event Types</h2>
+  <p class="section-sub">Three categories of events — each with different cost, volume, and use case.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="eventCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="evt-grid">
+    <div class="evt-card" style="--ec:#58a6ff">
+      <div class="evt-name">📋 Management Events</div>
+      <span class="evt-tag">Control plane operations</span>
+      <div class="evt-desc">Operations on AWS resources themselves: creating an EC2 instance, deleting an S3 bucket, modifying an IAM policy, creating a VPC. <strong style="color:var(--green)">Free</strong> for the first copy delivered to S3. Enabled by default in Event History.</div>
+    </div>
+    <div class="evt-card" style="--ec:#e8834a">
+      <div class="evt-name">📦 Data Events</div>
+      <span class="evt-tag">Data plane operations</span>
+      <div class="evt-desc">High-volume operations on data inside resources: S3 <code>GetObject</code>/<code>PutObject</code>, Lambda <code>Invoke</code>, DynamoDB <code>PutItem</code>. <strong style="color:var(--orange)">Charged per event</strong> — can be very high volume. Disabled by default.</div>
+    </div>
+    <div class="evt-card" style="--ec:#bc8cff">
+      <div class="evt-name">🔍 Insights Events</div>
+      <span class="evt-tag">Anomaly detection</span>
+      <div class="evt-desc">Automatically detects unusual API call volume or error rate patterns using ML. Flags spikes like a sudden burst of <code>RunInstances</code> calls or IAM policy changes. <strong style="color:var(--purple)">Additional charge</strong>, opt-in per trail.</div>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Sample CloudTrail Event (JSON)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">Management event — S3 bucket deleted</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"eventVersion"</span>: <span class="str">"1.09"</span>,
+  <span class="str">"userIdentity"</span>: {
+    <span class="str">"type"</span>: <span class="str">"IAMUser"</span>,
+    <span class="str">"principalId"</span>: <span class="str">"AIDAEXAMPLE123"</span>,
+    <span class="str">"arn"</span>: <span class="str">"arn:aws:iam::123456789012:user/indhu"</span>,
+    <span class="str">"accountId"</span>: <span class="str">"123456789012"</span>,
+    <span class="str">"userName"</span>: <span class="str">"indhu"</span>
+  },
+  <span class="str">"eventTime"</span>: <span class="str">"2026-06-18T09:42:11Z"</span>,
+  <span class="str">"eventSource"</span>: <span class="str">"s3.amazonaws.com"</span>,
+  <span class="str">"eventName"</span>: <span class="str">"DeleteBucket"</span>,
+  <span class="str">"awsRegion"</span>: <span class="str">"us-east-1"</span>,
+  <span class="str">"sourceIPAddress"</span>: <span class="str">"203.0.113.42"</span>,
+  <span class="str">"userAgent"</span>: <span class="str">"aws-cli/2.15.0"</span>,
+  <span class="str">"requestParameters"</span>: {
+    <span class="str">"bucketName"</span>: <span class="str">"my-old-archive-bucket"</span>
+  },
+  <span class="str">"responseElements"</span>: <span class="kw">null</span>,
+  <span class="str">"errorCode"</span>: <span class="kw">null</span>,
+  <span class="str">"readOnly"</span>: <span class="kw">false</span>,
+  <span class="str">"eventType"</span>: <span class="str">"AwsApiCall"</span>,
+  <span class="str">"managementEvent"</span>: <span class="kw">true</span>,
+  <span class="str">"recipientAccountId"</span>: <span class="str">"123456789012"</span>
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Read-Only vs Write Events</h3>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">👁️ Read-Only Events</div>
+      <p><code>DescribeInstances</code>, <code>GetObject</code>, <code>ListBuckets</code> — operations that don't modify resources. Useful for understanding access patterns but rarely the focus of security investigations.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✏️ Write Events</div>
+      <p><code>RunInstances</code>, <code>DeleteBucket</code>, <code>PutBucketPolicy</code>, <code>CreateUser</code> — operations that modify resources or state. These are what security teams focus on for incident investigation.</p>
+    </div>
+  </div>
+</section>
+
+<!-- TAB 2: TRAILS -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🏢 Trails — Continuous Logging</h2>
+  <p class="section-sub">Configure a Trail to deliver events to S3 permanently and unlock advanced features.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="trailCanvas" width="860" height="260"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🌍 Single-Region Trail</div>
+      <p>Captures events only in the region where it's created. Rarely recommended — you'll miss activity in other regions. Use only if your workload is genuinely single-region.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌐 All-Regions Trail (Recommended)</div>
+      <p>Captures events from <strong style="color:var(--text)">all AWS regions</strong>, including future regions automatically. Single S3 bucket destination. The default and recommended choice for almost every account.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏢 Organization Trail</div>
+      <p>Created in the AWS Organizations management account. Automatically applies to <strong style="color:var(--text)">all member accounts</strong>. Member accounts cannot disable or modify it. Best for centralised governance.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">👤 Account Trail</div>
+      <p>Created within a single AWS account. Visible and manageable only within that account (unless it's an org trail). Good for account-specific custom requirements alongside an org trail.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Trail Setup Checklist</h3>
+  <ul class="steps">
+    <li><div class="step-num">1</div><div class="step-body"><strong>Create Trail</strong>Name it, choose "Apply to all regions" = Yes. For Organizations, check "Apply to my organization".</div></li>
+    <li><div class="step-num">2</div><div class="step-body"><strong>Choose S3 Destination</strong>Create a new bucket or use existing. Enable bucket versioning + Object Lock for tamper-evidence.</div></li>
+    <li><div class="step-num">3</div><div class="step-body"><strong>Enable Log File Validation</strong>Creates SHA-256 digest files to detect tampering. Always enable for compliance trails.</div></li>
+    <li><div class="step-num">4</div><div class="step-body"><strong>Enable SSE-KMS Encryption</strong>Encrypt log files with a customer-managed KMS key for audit trail of who accessed the logs themselves.</div></li>
+    <li><div class="step-num">5</div><div class="step-body"><strong>Send to CloudWatch Logs (optional)</strong>Enables real-time alerting via CloudWatch Alarms and Metric Filters on specific API calls.</div></li>
+    <li><div class="step-num">6</div><div class="step-body"><strong>Select Data Events (optional)</strong>Enable S3/Lambda/DynamoDB data events only if you need data-plane visibility — watch for cost.</div></li>
+  </ul>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">AWS CLI</span>
+      <span class="code-desc">Create an all-regions trail with log validation + KMS</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>aws cloudtrail create-trail \
+  --name org-audit-trail \
+  --s3-bucket-name my-cloudtrail-logs-bucket \
+  --is-multi-region-trail \
+  --enable-log-file-validation \
+  --kms-key-id arn:aws:kms:us-east-1:123456789012:key/abc-123 \
+  --is-organization-trail
+
+<span class="cm"># Start logging</span>
+aws cloudtrail start-logging --name org-audit-trail
+
+<span class="cm"># Enable CloudWatch Logs delivery for real-time alerting</span>
+aws cloudtrail update-trail \
+  --name org-audit-trail \
+  --cloud-watch-logs-log-group-arn arn:aws:logs:us-east-1:123456789012:log-group:CloudTrail/DefaultLogGroup:* \
+  --cloud-watch-logs-role-arn arn:aws:iam::123456789012:role/CloudTrail_CloudWatchLogs_Role</pre>
+  </div>
+</section>
+
+<!-- TAB 3: INSIGHTS & LAKE -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🔍 CloudTrail Insights &amp; Lake</h2>
+  <p class="section-sub">Advanced features for anomaly detection and large-scale event querying.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="insightsCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔍 CloudTrail Insights</div>
+      <p>ML-based anomaly detection on management events. Establishes a baseline of normal API call volume, then flags deviations.</p>
+      <p><strong style="color:var(--text)">Detects:</strong> Sudden spike in <code>RunInstances</code> (possible compromised credentials launching crypto-mining instances). Unusual IAM policy change rate. Error rate spikes (possible misconfiguration or attack).</p>
+      <p><span class="tag tag-purple">Opt-in per trail</span> <span class="tag tag-orange">Additional cost</span></p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔎 CloudTrail Lake</div>
+      <p>Managed data lake purpose-built for CloudTrail events. Run SQL queries directly — no need to set up Athena + Glue + S3 partitioning manually.</p>
+      <p><strong style="color:var(--text)">Retention:</strong> Up to 7 years. <strong style="color:var(--text)">Sources:</strong> CloudTrail events, AWS Config configuration items, and custom application events via PutAuditEvents API.</p>
+      <p><span class="tag tag-green">No Athena setup</span> <span class="tag tag-blue">7yr retention</span></p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">CloudTrail Lake — Sample Query</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">SQL</span>
+      <span class="code-desc">CloudTrail Lake — find all IAM policy changes in last 7 days</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">SELECT</span> eventTime, userIdentity.arn, eventName, requestParameters
+<span class="kw">FROM</span> $EVENT_DATA_STORE_ID
+<span class="kw">WHERE</span> eventSource = <span class="str">'iam.amazonaws.com'</span>
+  <span class="kw">AND</span> eventName <span class="kw">IN</span> (<span class="str">'PutUserPolicy'</span>, <span class="str">'AttachUserPolicy'</span>,
+                    <span class="str">'PutRolePolicy'</span>, <span class="str">'AttachRolePolicy'</span>,
+                    <span class="str">'CreatePolicy'</span>, <span class="str">'DeletePolicy'</span>)
+  <span class="kw">AND</span> eventTime &gt; <span class="fn">date_add</span>(<span class="str">'day'</span>, -<span class="num">7</span>, now())
+<span class="kw">ORDER BY</span> eventTime <span class="kw">DESC</span>;</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Insights Event Example</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">JSON</span>
+      <span class="code-desc">Insights event — unusual spike in RunInstances</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>{
+  <span class="str">"eventCategory"</span>: <span class="str">"Insight"</span>,
+  <span class="str">"insightDetails"</span>: {
+    <span class="str">"state"</span>: <span class="str">"Start"</span>,
+    <span class="str">"eventSource"</span>: <span class="str">"ec2.amazonaws.com"</span>,
+    <span class="str">"eventName"</span>: <span class="str">"RunInstances"</span>,
+    <span class="str">"insightType"</span>: <span class="str">"ApiCallRateInsight"</span>,
+    <span class="str">"insightContext"</span>: {
+      <span class="str">"statistics"</span>: {
+        <span class="str">"baseline"</span>: { <span class="str">"average"</span>: <span class="num">2.1</span> },
+        <span class="str">"insight"</span>: { <span class="str">"average"</span>: <span class="num">47.3</span> }
+      }
+    }
+  },
+  <span class="str">"eventTime"</span>: <span class="str">"2026-06-18T03:14:00Z"</span>
+}
+<span class="cm">// 22x spike in RunInstances calls — possible compromised credentials</span></pre>
+  </div>
+</section>
+
+<!-- TAB 4: LOG INTEGRITY -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🔒 Log Integrity &amp; Tamper Protection</h2>
+  <p class="section-sub">An audit log is worthless if it can be modified. CloudTrail provides cryptographic proof of integrity.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="integrityCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>Log File Validation</strong>
+    Every hour, CloudTrail creates a digest file containing SHA-256 hashes of all log files delivered in that period, plus the hash of the previous digest file — forming a hash chain. Any tampering with a log file breaks the chain and is detectable.
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🔗 Digest File Hash Chain</div>
+      <p>Each digest file references the previous one's hash. Validate with <code>aws cloudtrail validate-logs</code>. If any log file was modified or deleted, validation fails and identifies exactly which file.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔐 SSE-KMS Encryption</div>
+      <p>Encrypt log files with a customer-managed KMS key. Only principals with <code>kms:Decrypt</code> permission can read logs — adds an access control layer beyond S3 bucket policy.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 S3 Object Lock (WORM)</div>
+      <p>Apply Object Lock in Compliance mode to the CloudTrail S3 bucket. Makes log files immutable — cannot be deleted or modified by anyone, including root, until the retention period expires.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🚫 Restrictive Bucket Policy</div>
+      <p>Deny <code>s3:DeleteObject</code> and <code>s3:PutObject</code> (except from CloudTrail service) on the log bucket. Use SCPs to prevent member accounts from disabling the trail or modifying the bucket policy.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">AWS CLI</span>
+      <span class="code-desc">Validate log file integrity</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>aws cloudtrail validate-logs \
+  --trail-arn arn:aws:cloudtrail:us-east-1:123456789012:trail/org-audit-trail \
+  --start-time 2026-06-01T00:00:00Z \
+  --end-time 2026-06-18T00:00:00Z
+
+<span class="cm"># Output shows:</span>
+<span class="cm"># Results requested for 2026-06-01T00:00:00Z to 2026-06-18T00:00:00Z</span>
+<span class="cm"># Results found for the requested time range:</span>
+<span class="cm"># 17 digest files valid</span>
+<span class="cm"># 0 digest files invalid</span>
+<span class="cm"># 412 log files valid</span>
+<span class="cm"># 0 log files invalid</span></pre>
+  </div>
+
+  <div class="callout callout-red">
+    <strong>⚠️ Protecting Against Insider Threats</strong>
+    A privileged user could disable CloudTrail to hide their tracks. Mitigate with: SCPs denying <code>cloudtrail:StopLogging</code> and <code>cloudtrail:DeleteTrail</code> org-wide, an EventBridge rule alerting on those API calls, and an Organization Trail that member accounts cannot touch at all.
+  </div>
+</section>
+
+<!-- TAB 5: C# SDK -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧩 C# / .NET SDK Examples</h2>
+  <p class="section-sub">Using <code>AWSSDK.CloudTrail</code> NuGet package to query and manage trails programmatically.</p>
+
+  <div class="callout callout-purple">
+    <strong>NuGet</strong>
+    <code>dotnet add package AWSSDK.CloudTrail</code>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Search CloudTrail Event History</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">using</span> Amazon.CloudTrail;
+<span class="kw">using</span> Amazon.CloudTrail.Model;
+
+<span class="kw">var</span> <span class="var">client</span> = <span class="kw">new</span> <span class="typ">AmazonCloudTrailClient</span>();
+
+<span class="cm">// Find all DeleteBucket events in the last 24 hours</span>
+<span class="kw">var</span> <span class="var">response</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="fn">LookupEventsAsync</span>(<span class="kw">new</span> <span class="typ">LookupEventsRequest</span>
+{
+    StartTime    = DateTime.UtcNow.AddHours(-<span class="num">24</span>),
+    EndTime      = DateTime.UtcNow,
+    LookupAttributes =
+    [
+        <span class="kw">new</span> <span class="typ">LookupAttribute</span>
+        {
+            AttributeKey   = LookupAttributeKey.EventName,
+            AttributeValue = <span class="str">"DeleteBucket"</span>
+        }
+    ],
+    MaxResults = <span class="num">50</span>
+});
+
+<span class="kw">foreach</span> (<span class="kw">var</span> <span class="var">evt</span> <span class="kw">in</span> <span class="var">response</span>.Events)
+{
+    Console.<span class="fn">WriteLine</span>($<span class="str">"{evt.EventTime}: {evt.Username} called {evt.EventName}"</span>);
+    Console.<span class="fn">WriteLine</span>($<span class="str">"  Resources: {string.Join(\", \", evt.Resources.Select(r => r.ResourceName))}"</span>);
+}</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Create and configure a multi-region trail</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">createResponse</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="fn">CreateTrailAsync</span>(<span class="kw">new</span> <span class="typ">CreateTrailRequest</span>
+{
+    Name                      = <span class="str">"app-audit-trail"</span>,
+    S3BucketName              = <span class="str">"my-cloudtrail-logs-bucket"</span>,
+    IsMultiRegionTrail        = <span class="kw">true</span>,
+    EnableLogFileValidation   = <span class="kw">true</span>,
+    KmsKeyId                  = <span class="str">"arn:aws:kms:us-east-1:123456789012:key/abc-123"</span>,
+    CloudWatchLogsLogGroupArn = <span class="str">"arn:aws:logs:us-east-1:123456789012:log-group:CloudTrail/Default:*"</span>,
+    CloudWatchLogsRoleArn     = <span class="str">"arn:aws:iam::123456789012:role/CloudTrail_CWLogs_Role"</span>
+});
+
+<span class="cm">// Start logging</span>
+<span class="kw">await</span> <span class="var">client</span>.<span class="fn">StartLoggingAsync</span>(<span class="kw">new</span> <span class="typ">StartLoggingRequest</span>
+    { Name = <span class="str">"app-audit-trail"</span> });
+
+<span class="cm">// Add data events for a specific S3 bucket</span>
+<span class="kw">await</span> <span class="var">client</span>.<span class="fn">PutEventSelectorsAsync</span>(<span class="kw">new</span> <span class="typ">PutEventSelectorsRequest</span>
+{
+    TrailName     = <span class="str">"app-audit-trail"</span>,
+    EventSelectors =
+    [
+        <span class="kw">new</span> <span class="typ">EventSelector</span>
+        {
+            ReadWriteType           = ReadWriteType.All,
+            IncludeManagementEvents = <span class="kw">true</span>,
+            DataResources =
+            [
+                <span class="kw">new</span> <span class="typ">DataResource</span>
+                {
+                    Type   = <span class="str">"AWS::S3::Object"</span>,
+                    Values = [<span class="str">"arn:aws:s3:::my-sensitive-bucket/"</span>]
+                }
+            ]
+        }
+    ]
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">C#</span>
+      <span class="code-desc">Query CloudTrail Lake event data store</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">var</span> <span class="var">queryResponse</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="fn">StartQueryAsync</span>(<span class="kw">new</span> <span class="typ">StartQueryRequest</span>
+{
+    QueryStatement = $<span class="str">@"
+        SELECT eventTime, userIdentity.arn, eventName, sourceIPAddress
+        FROM {eventDataStoreId}
+        WHERE eventName = 'ConsoleLogin'
+          AND errorMessage = 'Failed authentication'
+          AND eventTime > date_add('hour', -1, now())
+        ORDER BY eventTime DESC"</span>
+});
+
+<span class="cm">// Poll for query results</span>
+<span class="kw">var</span> <span class="var">results</span> = <span class="kw">await</span> <span class="var">client</span>.<span class="fn">GetQueryResultsAsync</span>(<span class="kw">new</span> <span class="typ">GetQueryResultsRequest</span>
+    { QueryId = <span class="var">queryResponse</span>.QueryId, EventDataStore = eventDataStoreId });
+
+<span class="kw">foreach</span> (<span class="kw">var</span> <span class="var">row</span> <span class="kw">in</span> <span class="var">results</span>.QueryResultRows)
+    Console.<span class="fn">WriteLine</span>(<span class="typ">string</span>.<span class="fn">Join</span>(<span class="str">" | "</span>, <span class="var">row</span>.<span class="fn">Select</span>(c => c.Values.<span class="fn">FirstOrDefault</span>().Value)));
+
+<span class="cm">// Use case: detect brute-force login attempts in the last hour</span></pre>
+  </div>
+</section>
+
+<!-- TAB 6: QUERYING LOGS -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">📊 Querying CloudTrail Logs</h2>
+  <p class="section-sub">Three ways to search and analyse your CloudTrail data — pick based on volume and retention needs.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="queryCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🔍 Event History (Console)</div>
+      <p>Built-in console search. Last 90 days. Filter by event name, user, resource, time range. No setup. Good for quick lookups.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Athena + S3</div>
+      <p>Query historical logs in S3 with standard SQL. Set up Glue table partition projection for performance. Pay per query (per TB scanned).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔎 CloudTrail Lake</div>
+      <p>Purpose-built SQL query engine for CloudTrail. No Athena/Glue setup. Up to 7yr retention. Slightly higher cost per GB ingested but zero setup overhead.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Athena Table Setup</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">SQL</span>
+      <span class="code-desc">Create Athena table over CloudTrail S3 logs</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">CREATE EXTERNAL TABLE</span> cloudtrail_logs (
+  eventVersion <span class="kw">STRING</span>,
+  userIdentity <span class="typ">STRUCT</span>&lt;
+    type: <span class="kw">STRING</span>, principalId: <span class="kw">STRING</span>,
+    arn: <span class="kw">STRING</span>, accountId: <span class="kw">STRING</span>,
+    userName: <span class="kw">STRING</span>&gt;,
+  eventTime <span class="kw">STRING</span>,
+  eventSource <span class="kw">STRING</span>,
+  eventName <span class="kw">STRING</span>,
+  awsRegion <span class="kw">STRING</span>,
+  sourceIPAddress <span class="kw">STRING</span>,
+  userAgent <span class="kw">STRING</span>,
+  errorCode <span class="kw">STRING</span>,
+  errorMessage <span class="kw">STRING</span>,
+  requestParameters <span class="kw">STRING</span>,
+  responseElements <span class="kw">STRING</span>,
+  recipientAccountId <span class="kw">STRING</span>
+)
+<span class="kw">PARTITIONED BY</span> (region <span class="kw">STRING</span>, year <span class="kw">STRING</span>, month <span class="kw">STRING</span>, day <span class="kw">STRING</span>)
+<span class="kw">ROW FORMAT SERDE</span> <span class="str">'org.apache.hive.hcatalog.data.JsonSerDe'</span>
+<span class="kw">LOCATION</span> <span class="str">'s3://my-cloudtrail-logs-bucket/AWSLogs/123456789012/CloudTrail/'</span>;</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Common Investigation Queries</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">SQL</span>
+      <span class="code-desc">Athena — who made changes to security groups?</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm">-- Who modified security groups in the last 7 days?</span>
+<span class="kw">SELECT</span> eventtime, useridentity.arn, eventname, sourceipaddress
+<span class="kw">FROM</span> cloudtrail_logs
+<span class="kw">WHERE</span> eventsource = <span class="str">'ec2.amazonaws.com'</span>
+  <span class="kw">AND</span> eventname <span class="kw">LIKE</span> <span class="str">'%SecurityGroup%'</span>
+  <span class="kw">AND</span> year=<span class="str">'2026'</span> <span class="kw">AND</span> month=<span class="str">'06'</span>
+<span class="kw">ORDER BY</span> eventtime <span class="kw">DESC</span>;
+
+<span class="cm">-- Find all console logins without MFA</span>
+<span class="kw">SELECT</span> eventtime, useridentity.username, sourceipaddress
+<span class="kw">FROM</span> cloudtrail_logs
+<span class="kw">WHERE</span> eventname = <span class="str">'ConsoleLogin'</span>
+  <span class="kw">AND</span> json_extract_scalar(responseelements, <span class="str">'$.ConsoleLogin'</span>) = <span class="str">'Success'</span>
+  <span class="kw">AND</span> json_extract_scalar(additionaleventdata, <span class="str">'$.MFAUsed'</span>) = <span class="str">'No'</span>;
+
+<span class="cm">-- Failed API calls due to AccessDenied (potential probing)</span>
+<span class="kw">SELECT</span> useridentity.arn, eventname, <span class="fn">COUNT</span>(*) <span class="kw">as</span> attempts
+<span class="kw">FROM</span> cloudtrail_logs
+<span class="kw">WHERE</span> errorcode = <span class="str">'AccessDenied'</span>
+<span class="kw">GROUP BY</span> useridentity.arn, eventname
+<span class="kw">ORDER BY</span> attempts <span class="kw">DESC</span>;</pre>
+  </div>
+</section>
+
+<!-- TAB 7: BEST PRACTICES -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production-grade CloudTrail setup for security, compliance, and operational visibility.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ Always Use an Organization Trail</div>
+      <p>Create one trail at the AWS Organizations management account level covering all member accounts. Member accounts cannot disable it — closes the insider-threat gap of an individual account turning off logging.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Enable in All Regions</div>
+      <p>Always select "Apply trail to all regions". Attackers often target less-monitored regions specifically because teams forget to enable logging there.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Enable Log File Validation</div>
+      <p>Always turn on log file validation. Costs nothing extra and gives you cryptographic proof that logs haven't been tampered with — critical for compliance and forensic investigations.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Encrypt with Customer-Managed KMS</div>
+      <p>Use a CMK instead of the default. Gives you an audit trail (via the key's own CloudTrail events) of exactly who decrypted/read the audit logs themselves.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Lock Down the Log Bucket</div>
+      <p>Apply a restrictive bucket policy denying delete/modify except from the CloudTrail service. Add S3 Object Lock in Compliance mode for true immutability. Block public access.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Alert on Critical Events in Real-Time</div>
+      <p>Send to CloudWatch Logs and create Metric Filters + Alarms for: <code>StopLogging</code>, <code>DeleteTrail</code>, root account usage, <code>CreateUser</code>/<code>AttachUserPolicy</code> with admin policies, failed console logins.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use SCPs to Prevent Tampering</div>
+      <p>Deny <code>cloudtrail:StopLogging</code>, <code>cloudtrail:DeleteTrail</code>, and <code>cloudtrail:UpdateTrail</code> via Service Control Policy at the OU level — even account admins cannot disable the org trail.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Enable Data Events Selectively</div>
+      <p>Don't enable S3/Lambda data events account-wide by default — costly at scale. Enable only for specific sensitive buckets/functions where data-plane visibility is genuinely needed.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Critical Events to Alarm On</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Event Name</th><th>Why it matters</th><th>Severity</th></tr></thead>
+      <tbody>
+        <tr><td><code>StopLogging</code> / <code>DeleteTrail</code></td><td>Someone is trying to hide their tracks</td><td><span class="tag tag-red">Critical</span></td></tr>
+        <tr><td><code>ConsoleLogin</code> (root)</td><td>Root account should rarely be used</td><td><span class="tag tag-red">Critical</span></td></tr>
+        <tr><td><code>CreateUser</code> + <code>AttachUserPolicy</code> (admin)</td><td>New privileged identity created</td><td><span class="tag tag-orange">High</span></td></tr>
+        <tr><td><code>AuthorizeSecurityGroupIngress</code> (0.0.0.0/0)</td><td>Security group opened to the world</td><td><span class="tag tag-orange">High</span></td></tr>
+        <tr><td><code>PutBucketPolicy</code> / <code>PutBucketAcl</code></td><td>S3 bucket permissions changed — check for public exposure</td><td><span class="tag tag-orange">High</span></td></tr>
+        <tr><td><code>DisableKey</code> / <code>ScheduleKeyDeletion</code></td><td>KMS key disabled or scheduled for deletion</td><td><span class="tag tag-red">Critical</span></td></tr>
+        <tr><td>Repeated <code>AccessDenied</code></td><td>Possible credential compromise or probing</td><td><span class="tag tag-yellow">Medium</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 8: SUMMARY -->
+<section class="tab-panel" id="panel-8">
+  <h2 class="section-title">🏁 Summary</h2>
+  <p class="section-sub">AWS CloudTrail — the complete picture at a glance.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">📋 Event Types</div>
+      <p>Management (control plane, default-on, free) · Data (data plane, high volume, paid) · Insights (ML anomaly detection, opt-in).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🏢 Trails</div>
+      <p>Event History = last 90 days, free, console only. Trail = permanent S3 delivery. Organization Trail = applies to all member accounts, cannot be disabled by them.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔎 Querying</div>
+      <p>Console search (90 days) → Athena + S3 (historical, pay per query) → CloudTrail Lake (managed SQL, up to 7yr retention, no setup).</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔒 Integrity</div>
+      <p>Log file validation = SHA-256 hash chain digest files. SSE-KMS encryption. S3 Object Lock for WORM immutability. SCPs prevent trail tampering.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">⚡ Real-Time Alerting</div>
+      <p>CloudTrail → CloudWatch Logs → Metric Filter → Alarm → SNS. Or CloudTrail → EventBridge rule → Lambda/SNS for specific event patterns.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🧩 SDK</div>
+      <p><code>LookupEventsAsync</code> for Event History search. <code>CreateTrailAsync</code> + <code>PutEventSelectorsAsync</code> for trail management. <code>StartQueryAsync</code> for CloudTrail Lake SQL.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap" style="margin-top:8px">
+    <table class="tbl">
+      <thead><tr><th>Need</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Quick lookup of recent activity</td><td>Console Event History (90 days)</td></tr>
+        <tr><td>Permanent retention beyond 90 days</td><td>Trail → S3 bucket</td></tr>
+        <tr><td>Org-wide audit, can't be disabled by members</td><td>Organization Trail</td></tr>
+        <tr><td>Detect unusual API call spikes</td><td>CloudTrail Insights</td></tr>
+        <tr><td>SQL query without Athena setup</td><td>CloudTrail Lake</td></tr>
+        <tr><td>Real-time alert on critical action</td><td>CloudWatch Logs + Metric Filter + Alarm</td></tr>
+        <tr><td>Prove logs weren't tampered with</td><td>Log File Validation (SHA-256 digest chain)</td></tr>
+        <tr><td>Prevent deletion of audit logs</td><td>S3 Object Lock Compliance Mode</td></tr>
+        <tr><td>Track S3/Lambda data plane access</td><td>Data Events (enable selectively)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎉</div>
+    <h3>You've mastered AWS CloudTrail!</h3>
+    <p>From management vs data events and trail configuration to log integrity, Insights anomaly detection, Lake SQL queries, and real-time alerting — you're ready to build a complete audit and governance foundation on AWS.</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawArch, drawEvent, drawTrail, drawInsights, drawIntegrity, null, drawQuery, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  purple:'#8e44ad', purple2:'#a569bd', green:'#3fb950',
+  blue:'#58a6ff', orange:'#e8834a', red:'#f85149',
+  yellow:'#d29922', teal:'#26a67f', text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawArch(){
+  const s=setup('archCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'CloudTrail — How It Works',C.muted,11);
+
+  // Sources
+  const srcs=[{l:'Console',ic:'🖥️',c:C.blue},{l:'CLI',ic:'⌨️',c:C.green},{l:'SDK',ic:'🧩',c:C.orange},{l:'AWS Service',ic:'☁️',c:C.purple2}];
+  const sw=110, sg=(W-40-sw*4)/3;
+  srcs.forEach((s2,i)=>{ const x=20+i*(sw+sg); box(ctx,x,28,sw,46,s2.c,s2.l,null,s2.ic); arr(ctx,x+sw/2,74,x+sw/2,100,C.border); });
+
+  // CloudTrail
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.purple2; ctx.lineWidth=2;
+  rr(ctx,20,100,W-40,52,10); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,122,'📜  AWS CloudTrail',C.purple2,13);
+  txt(ctx,W/2,140,'Records every API call account-wide',C.muted,10);
+
+  arr(ctx,W*0.25,152,W*0.25,178,C.border);
+  arr(ctx,W*0.75,152,W*0.75,178,C.border);
+
+  // Two paths
+  box(ctx,W*0.25-90,178,180,42,C.blue,'Event History','Last 90 days (free)',null);
+  box(ctx,W*0.75-90,178,180,42,C.green,'Trail → S3','Permanent storage',null);
+
+  arr(ctx,W*0.75,220,W*0.75,246,C.border);
+  const dests=[{l:'📊 Athena',c:C.orange},{l:'🔍 Insights',c:C.purple2},{l:'⚡ EventBridge',c:C.yellow}];
+  const dw=150, dg=(W-40-dw*3)/2;
+  dests.forEach((d,i)=>{ const x=20+i*(dw+dg); box(ctx,x,246,dw,42,d.c,d.l,null,null); });
+
+  txt(ctx,W/2,H-8,'Trail = continuous delivery to S3, unlocks Athena, Insights, CloudWatch alerting',C.muted,10);
+}
+
+function drawEvent(){
+  const s=setup('eventCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Management vs Data vs Insights Events',C.muted,11);
+
+  const cols=[
+    {l:'📋 Management',sub:'Control plane',items:['CreateBucket','RunInstances','PutUserPolicy'],c:C.blue},
+    {l:'📦 Data',sub:'Data plane (high vol)',items:['S3 GetObject','Lambda Invoke','DynamoDB PutItem'],c:C.orange},
+    {l:'🔍 Insights',sub:'Anomaly detection',items:['API spike alert','Error rate spike','Unusual pattern'],c:C.purple2},
+  ];
+  const cw=(W-60)/3;
+  cols.forEach((col,i)=>{
+    const x=20+i*(cw+10);
+    ctx.fillStyle='#0d1117'; ctx.strokeStyle=col.c; ctx.lineWidth=1.5;
+    rr(ctx,x,28,cw,H-44,10); ctx.fill(); ctx.stroke();
+    txt(ctx,x+cw/2,48,col.l,col.c,12);
+    txt(ctx,x+cw/2,64,col.sub,C.muted,10);
+    col.items.forEach((item,j)=>{
+      ctx.fillStyle=col.c+'15'; ctx.strokeStyle=col.c+'55'; ctx.lineWidth=1;
+      rr(ctx,x+12,80+j*38,cw-24,30,5); ctx.fill(); ctx.stroke();
+      txt(ctx,x+cw/2,99+j*38,item,C.muted,10);
+    });
+  });
+}
+
+function drawTrail(){
+  const s=setup('trailCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Organization Trail — Centralised Governance',C.muted,11);
+
+  // Management account
+  box(ctx,W/2-100,28,200,46,C.purple2,'🏢 Management Account','Creates Org Trail',null);
+  arr(ctx,W/2,74,W/2,100,C.border);
+
+  // Org trail box
+  ctx.fillStyle='rgba(142,68,173,0.08)'; ctx.strokeStyle=C.purple2; ctx.lineWidth=1.5;
+  rr(ctx,20,100,W-40,40,8); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,124,'📜 Organization Trail — applies to ALL member accounts automatically',C.purple2,11);
+
+  // Member accounts
+  const members=[{l:'Production',c:C.green},{l:'Staging',c:C.blue},{l:'Dev',c:C.orange},{l:'Security',c:C.red}];
+  const mw=(W-60)/4;
+  members.forEach((m,i)=>{
+    const x=20+i*(mw+10);
+    arr(ctx,W/2,140,x+mw/2,166,C.border);
+    box(ctx,x,166,mw,42,m.c,m.l,'Cannot disable',null);
+  });
+
+  txt(ctx,W/2,H-10,'Member accounts CANNOT stop logging or delete the org trail — even with admin access',C.muted,10);
+}
+
+function drawInsights(){
+  const s=setup('insightsCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'CloudTrail Insights — Anomaly Detection',C.muted,11);
+
+  // Baseline chart
+  ctx.strokeStyle=C.border; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(60,H-40); ctx.lineTo(W-30,H-40); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(60,30); ctx.lineTo(60,H-40); ctx.stroke();
+  txt(ctx,W/2,H-15,'Time →',C.muted,10);
+  txt(ctx,25,H/2,'API calls',C.muted,9,'center');
+
+  // Baseline line
+  ctx.strokeStyle=C.green; ctx.lineWidth=2;
+  ctx.beginPath();
+  const baseY=H-70;
+  ctx.moveTo(60,baseY);
+  for(let x=60;x<W-100;x+=20) ctx.lineTo(x,baseY+Math.sin(x/20)*4);
+  ctx.stroke();
+  txt(ctx,W/2-60,baseY-12,'Normal baseline (~2 calls/min)',C.green,10);
+
+  // Spike
+  ctx.strokeStyle=C.red; ctx.lineWidth=2.5;
+  ctx.beginPath();
+  ctx.moveTo(W-100,baseY);
+  ctx.lineTo(W-80,40);
+  ctx.lineTo(W-60,38);
+  ctx.lineTo(W-40,baseY);
+  ctx.stroke();
+  ctx.fillStyle=C.red+'22'; ctx.beginPath();
+  ctx.moveTo(W-100,baseY); ctx.lineTo(W-80,40); ctx.lineTo(W-60,38); ctx.lineTo(W-40,baseY); ctx.closePath(); ctx.fill();
+  txt(ctx,W-70,30,'🚨 22x spike detected',C.red,10);
+
+  txt(ctx,W/2,H-2,'Insights flags deviations from learned baseline — e.g. sudden RunInstances burst',C.muted,10);
+}
+
+function drawIntegrity(){
+  const s=setup('integrityCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Log File Validation — Hash Chain',C.muted,11);
+
+  const digests=[{l:'Digest\nHour 1',c:C.blue},{l:'Digest\nHour 2',c:C.blue},{l:'Digest\nHour 3',c:C.blue},{l:'Digest\nHour 4',c:C.red}];
+  const dw=120, gap=(W-40-dw*4)/3;
+  digests.forEach((d,i)=>{
+    const x=20+i*(dw+gap);
+    const isLast=i===3;
+    box(ctx,x,50,dw,60,d.c,d.l.split('\n')[0],d.l.split('\n')[1],null);
+    txt(ctx,x+dw/2,122,'SHA-256: '+(isLast?'❌ mismatch':'a1b2...'),isLast?C.red:C.muted,9);
+    if(i<3){ arr(ctx,x+dw+2,80,x+dw+gap-2,80,C.border); txt(ctx,x+dw+gap/2,68,'hash of\nprevious',C.muted,8); }
+  });
+
+  ctx.fillStyle='rgba(248,81,73,0.08)'; ctx.strokeStyle=C.red; ctx.lineWidth=1; ctx.setLineDash([4,3]);
+  rr(ctx,20+3*(dw+gap)-10,40,dw+20,100,8); ctx.stroke(); ctx.setLineDash([]);
+  txt(ctx,20+3*(dw+gap)+dw/2,170,'⚠️ Chain broken = tampering detected here',C.red,10);
+
+  txt(ctx,W/2,H-10,'aws cloudtrail validate-logs detects exactly which file was modified',C.muted,10);
+}
+
+function drawQuery(){
+  const s=setup('queryCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Three Ways to Query CloudTrail Data',C.muted,11);
+
+  const opts=[
+    {l:'Console\nEvent History',sub:'90 days · Free · No setup',c:C.blue},
+    {l:'Athena + S3',sub:'Historical · Pay/query · Setup needed',c:C.orange},
+    {l:'CloudTrail Lake',sub:'7yr retention · SQL · Managed',c:C.purple2},
+  ];
+  const ow=Math.min(220,(W-60)/3);
+  const og=(W-40-ow*3)/2;
+  opts.forEach((o,i)=>{
+    const x=20+i*(ow+og);
+    box(ctx,x,40,ow,H-70,o.c,o.l.split('\n')[0],null,null);
+    txt(ctx,x+ow/2,80,o.l.split('\n')[1]||'',o.c,10);
+    txt(ctx,x+ow/2,H-50,o.sub,C.muted,9);
+  });
+
+  txt(ctx,W/2,H-10,'Choose based on retention need, query complexity, and existing infra',C.muted,10);
+}
+
+window.addEventListener('load', drawArch);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawArch,drawEvent,drawTrail,drawInsights,drawIntegrity,null,drawQuery,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>

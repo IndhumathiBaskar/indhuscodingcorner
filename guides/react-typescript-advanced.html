@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>React + TypeScript — Advanced – Indhu's Coding Corner</title>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:         #0d1117;
+    --surface:    #161b22;
+    --surface2:   #1c2330;
+    --border:     #30363d;
+    --accent:     #bc8cff;
+    --accent2:    #d4b3ff;
+    --accent-dim: rgba(188,140,255,0.13);
+    --ts:         #3178c6;
+    --ts-dim:     rgba(49,120,198,0.15);
+    --zustand:    #6a3df5;
+    --axios:      #5a29e4;
+    --jest:       #c21807;
+    --green:      #3fb950;
+    --blue:       #58a6ff;
+    --orange:     #e8834a;
+    --red:        #f85149;
+    --yellow:     #d29922;
+    --teal:       #26a67f;
+    --text:       #e6edf3;
+    --muted:      #8b949e;
+    --code-bg:    #0d1117;
+    --mono:       'Fira Code', monospace;
+    --sans:       'Inter', sans-serif;
+    --radius:     10px;
+    --tab-h:      48px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; min-height: 100vh; overflow-x: hidden; width: 100%; max-width: 100vw; }
+
+  .site-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100; width: 100%; overflow: hidden; }
+  .logo { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: none; white-space: nowrap; }
+  .sep  { color: var(--border); flex-shrink: 0; }
+  .page-title { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .hero { background: linear-gradient(135deg, #0d1117 0%, #160a26 50%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 40px 16px 36px; text-align: center; position: relative; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(188,140,255,0.2) 0%, transparent 70%); pointer-events: none; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-dim); border: 1px solid rgba(188,140,255,0.35); border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 600; color: var(--accent); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 18px; }
+  .hero h1 { font-size: clamp(24px,5vw,42px); font-weight: 800; letter-spacing: -1px; line-height: 1.15; margin-bottom: 14px; }
+  .hero h1 span { color: var(--accent); }
+  .hero h1 .ts-span { color: var(--ts); }
+  .hero p { max-width: 600px; margin: 0 auto 26px; color: var(--muted); font-size: clamp(13px,2vw,15px); }
+  .series-track { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 16px; }
+  .series-step { display: flex; align-items: center; gap: 6px; border-radius: 20px; padding: 5px 14px; font-size: 12px; font-weight: 700; }
+  .series-step.done { background: rgba(63,185,80,0.12); border: 1px solid rgba(63,185,80,0.35); color: var(--green); }
+  .series-step.current { background: var(--accent-dim); border: 1px solid rgba(188,140,255,0.4); color: var(--accent); }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: 7px; justify-content: center; max-width: 100%; padding: 0 4px; }
+  .hero-pill { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 4px 11px; font-size: 11px; color: var(--muted); font-weight: 500; white-space: nowrap; }
+
+  .tab-nav-wrapper { position: sticky; top: 49px; z-index: 90; background: var(--surface); border-bottom: 1px solid var(--border); width: 100%; overflow: hidden; }
+  .tab-nav { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; width: 100%; }
+  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-btn { flex-shrink: 0; padding: 0 15px; height: var(--tab-h); background: none; border: none; border-bottom: 2px solid transparent; color: var(--muted); font-family: var(--sans); font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; transition: color .2s, border-color .2s; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .content { max-width: 960px; margin: 0 auto; padding: 28px 14px 80px; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .section-title { font-size: 21px; font-weight: 700; color: var(--text); margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 14px; font-weight: 700; color: var(--accent); margin-bottom: 10px; }
+  .card p { color: var(--muted); font-size: 14px; margin-bottom: 7px; }
+  .card p:last-child { margin-bottom: 0; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  @media(max-width:700px){ .grid-3{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:480px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .callout { border-radius: var(--radius); padding: 14px 17px; margin-bottom: 18px; font-size: 14px; color: var(--muted); }
+  .callout strong { display: block; margin-bottom: 4px; }
+  .callout-purple { background: var(--accent-dim); border: 1px solid rgba(188,140,255,0.3); border-left: 3px solid var(--accent); }
+  .callout-purple strong { color: var(--accent); }
+  .callout-zustand{ background: rgba(106,61,245,0.1); border: 1px solid rgba(106,61,245,0.3); border-left: 3px solid var(--zustand); }
+  .callout-zustand strong { color: #9b7ef5; }
+  .callout-axios  { background: rgba(90,41,228,0.1); border: 1px solid rgba(90,41,228,0.3); border-left: 3px solid var(--axios); }
+  .callout-axios strong { color: #8b6af0; }
+  .callout-jest   { background: rgba(194,24,7,0.1); border: 1px solid rgba(194,24,7,0.3); border-left: 3px solid var(--jest); }
+  .callout-jest strong { color: #e8553a; }
+  .callout-green  { background: rgba(63,185,80,0.08); border: 1px solid rgba(63,185,80,0.2); border-left: 3px solid var(--green); }
+  .callout-green strong { color: var(--green); }
+  .callout-orange { background: rgba(232,131,74,0.08); border: 1px solid rgba(232,131,74,0.2); border-left: 3px solid var(--orange); }
+  .callout-orange strong { color: var(--orange); }
+
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: var(--mono); }
+  .tag-purple { background: var(--accent-dim); color: var(--accent); }
+  .tag-zustand{ background: rgba(106,61,245,0.18); color: #9b7ef5; }
+  .tag-axios  { background: rgba(90,41,228,0.18); color: #8b6af0; }
+  .tag-jest   { background: rgba(194,24,7,0.18); color: #e8553a; }
+  .tag-green  { background: rgba(63,185,80,0.15); color: var(--green); }
+  .tag-blue   { background: rgba(88,166,255,0.15); color: var(--blue); }
+  .tag-orange { background: rgba(232,131,74,0.12); color: var(--orange); }
+  .tag-red    { background: rgba(248,81,73,0.15); color: var(--red); }
+
+  .table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+  .tbl { width: 100%; min-width: 480px; border-collapse: collapse; font-size: 13px; }
+  .tbl th { background: var(--surface2); color: var(--accent); font-weight: 600; padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tbl td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--muted); vertical-align: top; }
+  .tbl tr:last-child td { border-bottom: none; }
+  .tbl tr:hover td { background: var(--surface2); }
+
+  .code-block { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 20px; overflow: hidden; width: 100%; box-sizing: border-box; }
+  .code-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding: 8px 14px; background: var(--surface2); border-bottom: 1px solid var(--border); }
+  .code-lang { color: var(--accent); font-weight: 600; font-family: var(--mono); font-size: 12px; }
+  .code-desc { color: var(--muted); font-size: 12px; }
+  .copy-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; color: var(--muted); cursor: pointer; font-family: var(--sans); transition: all .15s; }
+  .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+  pre { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.75; color: var(--text); }
+  .kw{color:#ff7b72;} .str{color:#a5d6ff;} .cm{color:#8b949e;font-style:italic;}
+  .fn{color:#d2a8ff;} .num{color:#79c0ff;} .var{color:#ffa657;} .typ{color:#7ee787;}
+  .tagjsx{color:#7ee787;} .attr{color:#79c0ff;}
+
+  .canvas-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-bottom: 22px; overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; box-sizing: border-box; }
+  .canvas-wrap canvas { display: block; margin: 0 auto; }
+
+  .pseudo { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; color: var(--muted); overflow-x: auto; }
+  .pk { color: var(--accent); font-weight: 600; } .pv { color: var(--blue); } .pn { color: var(--green); }
+
+  /* FOLDER TREE */
+  .tree { background: var(--code-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; font-family: var(--mono); font-size: 13px; line-height: 1.9; margin-bottom: 20px; overflow-x: auto; }
+  .tree .folder { color: var(--blue); font-weight: 600; }
+  .tree .file { color: var(--text); }
+  .tree .tsx { color: var(--ts); }
+  .tree .new { color: var(--green); font-weight: 600; }
+  .tree .comment { color: var(--muted); font-style: italic; }
+
+  /* LIBRARY HERO CARDS */
+  .lib-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media(max-width:700px){ .lib-grid{ grid-template-columns:1fr; } }
+  .lib-card { background: var(--surface); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; border: 1px solid var(--border); }
+  .lib-card::before { content:''; position:absolute; top:0;left:0;right:0;height:3px; background:var(--lc,var(--accent)); }
+  .lib-icon { font-size: 28px; margin-bottom: 10px; }
+  .lib-name { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .lib-tag  { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; display: inline-block; padding: 2px 8px; border-radius: 4px; }
+  .lib-desc { font-size: 13px; color: var(--muted); }
+
+  .steps { list-style: none; padding: 0; margin-bottom: 20px; }
+  .steps li { display: flex; gap: 14px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--muted); }
+  .steps li:last-child { border-bottom: none; }
+  .step-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-dim); border: 1px solid rgba(188,140,255,0.35); color: var(--accent); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .step-body strong { display: block; color: var(--text); font-size: 14px; margin-bottom: 2px; }
+
+  .completion-card { background: linear-gradient(135deg,var(--surface) 0%,rgba(188,140,255,0.1) 100%); border: 1px solid rgba(188,140,255,0.3); border-radius: var(--radius); padding: 28px; text-align: center; margin-top: 32px; }
+  .completion-card .ck { font-size: 42px; margin-bottom: 12px; }
+  .completion-card h3 { font-size: 20px; font-weight: 800; color: var(--accent); margin-bottom: 8px; }
+  .completion-card p { color: var(--muted); font-size: 14px; max-width: 560px; margin: 0 auto; }
+
+  @media(max-width:600px){ .content{padding:20px 12px 60px;} .section-title{font-size:18px;} .card{padding:15px 13px;} pre{font-size:11.5px;padding:13px 11px;} .pseudo{font-size:11.5px;} .tree{font-size:12px;padding:14px 16px;} }
+  @media(max-width:440px){ .tab-btn{padding:0 10px;font-size:12px;} .tbl th,.tbl td{padding:8px 10px;font-size:12px;} }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">⚡ Indhu's Coding Corner</a>
+  <span class="sep">›</span>
+  <span class="page-title">React + TypeScript — Advanced</span>
+</header>
+
+<section class="hero">
+  <div class="hero-badge">🔥 Production-Grade Patterns</div>
+  <h1>React <span>+</span> <span class="ts-span">TypeScript</span></h1>
+  <p>Zustand for global state, Axios for typed HTTP calls, and Jest + React Testing Library for tests — the final pieces of a production-ready stack.</p>
+  <div class="series-track">
+    <span class="series-step done">✅ 1. Beginner</span>
+    <span class="series-step done">✅ 2. Intermediate</span>
+    <span class="series-step current">🔥 3. Advanced</span>
+  </div>
+  <div class="hero-pills">
+    <span class="hero-pill">🐻 Zustand</span>
+    <span class="hero-pill">🌐 Axios</span>
+    <span class="hero-pill">🧪 Jest + RTL</span>
+    <span class="hero-pill">📁 Final Folder Structure</span>
+    <span class="hero-pill">🔌 Interceptors</span>
+    <span class="hero-pill">🏪 Stores & Slices</span>
+  </div>
+</section>
+
+<nav class="tab-nav-wrapper">
+  <div class="tab-nav" role="tablist">
+    <button class="tab-btn active" onclick="switchTab(0,this)">📁 Final Structure</button>
+    <button class="tab-btn" onclick="switchTab(1,this)">🐻 Zustand</button>
+    <button class="tab-btn" onclick="switchTab(2,this)">🌐 Axios</button>
+    <button class="tab-btn" onclick="switchTab(3,this)">🔗 Zustand + Axios</button>
+    <button class="tab-btn" onclick="switchTab(4,this)">🧪 Jest + RTL</button>
+    <button class="tab-btn" onclick="switchTab(5,this)">🧪 Testing Hooks & Stores</button>
+    <button class="tab-btn" onclick="switchTab(6,this)">💡 Best Practices</button>
+    <button class="tab-btn" onclick="switchTab(7,this)">🏁 Final Summary</button>
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- TAB 0: FINAL STRUCTURE -->
+<section class="tab-panel active" id="panel-0">
+  <h2 class="section-title">📁 The Complete Project Structure</h2>
+  <p class="section-sub">Everything from Beginner + Intermediate, plus stores, API layer, and tests — this is the final shape of the series.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="overviewCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="lib-grid">
+    <div class="lib-card" style="--lc:#6a3df5">
+      <div class="lib-icon">🐻</div>
+      <div class="lib-name">Zustand</div>
+      <div class="lib-tag" style="background:rgba(106,61,245,0.18);color:#9b7ef5">Global State</div>
+      <div class="lib-desc">A tiny, simple alternative to Redux. No providers, no boilerplate, no reducers — just a function that returns your state and the actions to change it.</div>
+    </div>
+    <div class="lib-card" style="--lc:#5a29e4">
+      <div class="lib-icon">🌐</div>
+      <div class="lib-name">Axios</div>
+      <div class="lib-tag" style="background:rgba(90,41,228,0.18);color:#8b6af0">HTTP Client</div>
+      <div class="lib-desc">A more feature-rich alternative to the built-in <code>fetch</code>. Automatic JSON parsing, interceptors, request/response transforms, and better TypeScript ergonomics.</div>
+    </div>
+    <div class="lib-card" style="--lc:#c21807">
+      <div class="lib-icon">🧪</div>
+      <div class="lib-name">Jest + RTL</div>
+      <div class="lib-tag" style="background:rgba(194,24,7,0.18);color:#e8553a">Testing</div>
+      <div class="lib-desc">Jest is the test runner. React Testing Library (RTL) renders components and lets you query/interact with them the way a real user would.</div>
+    </div>
+  </div>
+
+  <div class="tree">
+<span class="folder">my-app/</span><br>
+├── <span class="folder">src/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">assets/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">components/</span>          <span class="comment">(from Beginner)</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">context/</span>              <span class="comment">(from Intermediate)</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">hooks/</span>                <span class="comment">(from Beginner + Intermediate)</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">pages/</span>                <span class="comment">(from Beginner + Intermediate)</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">router/</span>               <span class="comment">(from Intermediate)</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder new">api/</span>                  <span class="comment new"># NEW — Axios instance + typed API functions</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">axiosClient.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">userApi.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">postApi.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder new">store/</span>                <span class="comment new"># NEW — Zustand stores, one file per domain</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">useAuthStore.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── <span class="tsx">useCartStore.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── <span class="tsx">useUiStore.ts</span><br>
+│&nbsp;&nbsp;&nbsp;│<br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">types/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="folder">utils/</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx">App.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;└── <span class="tsx">main.tsx</span><br>
+│<br>
+├── <span class="folder new">src/__tests__/</span>          <span class="comment new"># NEW — or co-located *.test.tsx next to each file</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx new">Button.test.tsx</span><br>
+│&nbsp;&nbsp;&nbsp;├── <span class="tsx new">useAuthStore.test.ts</span><br>
+│&nbsp;&nbsp;&nbsp;└── <span class="tsx new">userApi.test.ts</span><br>
+│<br>
+├── <span class="file new">jest.config.ts</span>           <span class="comment new"># NEW — Jest configuration</span><br>
+├── <span class="file new">jest.setup.ts</span>            <span class="comment new"># NEW — RTL setup, jest-dom matchers</span><br>
+└── <span class="file">package.json</span>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>Co-located vs centralised tests</strong>
+    Two valid conventions: put <code>Button.test.tsx</code> right next to <code>Button.tsx</code> (co-located — easier to find), or keep all tests under one <code>__tests__/</code> folder mirroring the source tree (centralised — cleaner top-level view). Either works; this guide shows co-located examples since it scales better as the app grows.
+  </div>
+</section>
+
+<!-- TAB 1: ZUSTAND -->
+<section class="tab-panel" id="panel-1">
+  <h2 class="section-title">🐻 Zustand — Global State Management</h2>
+  <p class="section-sub">A minimal state management library — no Provider wrapping, no boilerplate, just a hook.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="zustandCanvas" width="860" height="240"></canvas>
+  </div>
+
+  <div class="callout callout-zustand">
+    <strong>Why Zustand over Context for global state?</strong>
+    Context re-renders every consumer when <em>any</em> value changes. Zustand lets components subscribe to only the specific slice of state they need — so a cart count update doesn't re-render a component that only reads the user's name.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Terminal</span>
+      <span class="code-desc">Install Zustand</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>npm install zustand</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">store/useCartStore.ts — a fully typed Zustand store</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { create } <span class="kw">from</span> <span class="str">'zustand'</span>;
+
+<span class="kw">type</span> <span class="typ">CartItem</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span>; price: <span class="kw">number</span>; quantity: <span class="kw">number</span> };
+
+<span class="cm">// 1. Define the shape of state AND the actions together</span>
+<span class="kw">type</span> <span class="typ">CartState</span> = {
+  items: <span class="typ">CartItem</span>[];
+  addItem: (item: Omit&lt;<span class="typ">CartItem</span>, <span class="str">'quantity'</span>&gt;) =&gt; <span class="kw">void</span>;
+  removeItem: (id: <span class="kw">number</span>) =&gt; <span class="kw">void</span>;
+  clearCart: () =&gt; <span class="kw">void</span>;
+  totalPrice: () =&gt; <span class="kw">number</span>;     <span class="cm">// derived value, computed on demand</span>
+};
+
+<span class="cm">// 2. create<T>()(...) — the extra () is required for TypeScript inference</span>
+<span class="kw">export const</span> <span class="var">useCartStore</span> = create&lt;<span class="typ">CartState</span>&gt;()((set, get) =&gt; ({
+  items: [],
+
+  addItem: (item) =&gt; set((state) =&gt; {
+    <span class="kw">const</span> <span class="var">existing</span> = state.items.find(i =&gt; i.id === item.id);
+    <span class="kw">if</span> (existing) {
+      <span class="kw">return</span> {
+        items: state.items.map(i =&gt;
+          i.id === item.id ? { ...i, quantity: i.quantity + <span class="num">1</span> } : i
+        ),
+      };
+    }
+    <span class="kw">return</span> { items: [...state.items, { ...item, quantity: <span class="num">1</span> }] };
+  }),
+
+  removeItem: (id) =&gt; set((state) =&gt; ({
+    items: state.items.filter(i =&gt; i.id !== id),
+  })),
+
+  clearCart: () =&gt; set({ items: [] }),
+
+  totalPrice: () =&gt; get().items.reduce((sum, i) =&gt; sum + i.price * i.quantity, <span class="num">0</span>),
+}));</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Using the store — no Provider needed anywhere</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useCartStore } <span class="kw">from</span> <span class="str">'../../store/useCartStore'</span>;
+
+<span class="kw">function</span> <span class="fn">CartBadge</span>() {
+  <span class="cm">// Subscribes ONLY to items.length — only re-renders when count changes</span>
+  <span class="kw">const</span> <span class="var">itemCount</span> = useCartStore((state) =&gt; state.items.length);
+  <span class="kw">return</span> <span class="tagjsx">&lt;span&gt;</span>🛒 {itemCount}<span class="tagjsx">&lt;/span&gt;</span>;
+}
+
+<span class="kw">function</span> <span class="fn">ProductCard</span>({ product }: { product: { id: <span class="kw">number</span>; name: <span class="kw">string</span>; price: <span class="kw">number</span> } }) {
+  <span class="cm">// Only needs the action, not the items array — no unnecessary re-renders</span>
+  <span class="kw">const</span> <span class="var">addItem</span> = useCartStore((state) =&gt; state.addItem);
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; addItem(product)}<span class="tagjsx">&gt;</span>
+      Add to Cart
+    <span class="tagjsx">&lt;/button&gt;</span>
+  );
+}
+
+<span class="kw">function</span> <span class="fn">CartSummary</span>() {
+  <span class="kw">const</span> <span class="var">items</span> = useCartStore((state) =&gt; state.items);
+  <span class="kw">const</span> <span class="var">total</span> = useCartStore((state) =&gt; state.totalPrice());
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;div&gt;</span>
+      {items.map(i =&gt; <span class="tagjsx">&lt;p</span> <span class="attr">key</span>={i.id}<span class="tagjsx">&gt;</span>{i.name} × {i.quantity}<span class="tagjsx">&lt;/p&gt;</span>)}
+      <span class="tagjsx">&lt;strong&gt;</span>Total: ${total.toFixed(<span class="num">2</span>)}<span class="tagjsx">&lt;/strong&gt;</span>
+    <span class="tagjsx">&lt;/div&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Persisting State (e.g. cart survives page refresh)</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">store/useAuthStore.ts — using the persist middleware</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { create } <span class="kw">from</span> <span class="str">'zustand'</span>;
+<span class="kw">import</span> { persist } <span class="kw">from</span> <span class="str">'zustand/middleware'</span>;
+
+<span class="kw">type</span> <span class="typ">User</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span> };
+
+<span class="kw">type</span> <span class="typ">AuthState</span> = {
+  user: <span class="typ">User</span> | <span class="kw">null</span>;
+  token: <span class="kw">string</span> | <span class="kw">null</span>;
+  login: (user: <span class="typ">User</span>, token: <span class="kw">string</span>) =&gt; <span class="kw">void</span>;
+  logout: () =&gt; <span class="kw">void</span>;
+};
+
+<span class="cm">// persist() wraps the store and automatically syncs to localStorage</span>
+<span class="kw">export const</span> <span class="var">useAuthStore</span> = create&lt;<span class="typ">AuthState</span>&gt;()(
+  persist(
+    (set) =&gt; ({
+      user: <span class="kw">null</span>,
+      token: <span class="kw">null</span>,
+      login: (user, token) =&gt; set({ user, token }),
+      logout: () =&gt; set({ user: <span class="kw">null</span>, token: <span class="kw">null</span> }),
+    }),
+    { name: <span class="str">'auth-storage'</span> }   <span class="cm">// localStorage key</span>
+  )
+);
+
+<span class="cm">// User stays logged in even after a page refresh — no extra code needed!</span></pre>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Feature</th><th>Context API</th><th>Zustand</th></tr></thead>
+      <tbody>
+        <tr><td>Setup</td><td>Provider + custom hook</td><td>Just <code>create()</code>, no Provider</td></tr>
+        <tr><td>Re-render granularity</td><td>All consumers re-render on any change</td><td>Only components reading the changed slice</td></tr>
+        <tr><td>Boilerplate</td><td>Moderate (context + provider + hook)</td><td>Minimal — one file, one function</td></tr>
+        <tr><td>DevTools</td><td>React DevTools only</td><td>Redux DevTools compatible (with middleware)</td></tr>
+        <tr><td>Best for</td><td>Rarely-changing app-wide config (theme)</td><td>Frequently-changing global state (cart, auth, UI)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 2: AXIOS -->
+<section class="tab-panel" id="panel-2">
+  <h2 class="section-title">🌐 Axios — Typed HTTP Client</h2>
+  <p class="section-sub">A more capable alternative to the browser's built-in <code>fetch</code> — with interceptors, automatic JSON parsing, and clean TypeScript generics.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="axiosCanvas" width="860" height="240"></canvas>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">🆚 Axios vs fetch</div>
+      <p><strong style="color:var(--text)">fetch:</strong> built-in, but you must manually call <code>.json()</code>, manually check <code>response.ok</code>, no built-in interceptors or timeout.</p>
+      <p><strong style="color:var(--text)">Axios:</strong> auto-parses JSON, throws on non-2xx by default, built-in interceptors, request cancellation, upload progress.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🔌 What's an Interceptor?</div>
+      <p>A function that runs on every request or response, automatically. Use it to attach an auth token to every outgoing request, or to handle 401 errors globally in one place.</p>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Terminal</span>
+      <span class="code-desc">Install Axios</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre>npm install axios</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">api/axiosClient.ts — one shared, configured instance</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
+<span class="kw">import</span> { useAuthStore } <span class="kw">from</span> <span class="str">'../store/useAuthStore'</span>;
+
+<span class="cm">// One configured instance, reused everywhere — never call axios.get() directly</span>
+<span class="kw">export const</span> <span class="var">axiosClient</span> = axios.create({
+  baseURL: <span class="str">'https://api.myapp.com'</span>,
+  timeout: <span class="num">10000</span>,
+  headers: { <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span> },
+});
+
+<span class="cm">// REQUEST interceptor — attach the auth token to every outgoing request</span>
+axiosClient.interceptors.request.use((config) =&gt; {
+  <span class="kw">const</span> <span class="var">token</span> = useAuthStore.getState().token;
+  <span class="kw">if</span> (token) {
+    config.headers.Authorization = <span class="str">`Bearer ${token}`</span>;
+  }
+  <span class="kw">return</span> config;
+});
+
+<span class="cm">// RESPONSE interceptor — handle expired sessions globally, in one place</span>
+axiosClient.interceptors.response.use(
+  (response) =&gt; response,
+  (error) =&gt; {
+    <span class="kw">if</span> (error.response?.status === <span class="num">401</span>) {
+      useAuthStore.getState().logout();
+      window.location.href = <span class="str">'/login'</span>;
+    }
+    <span class="kw">return</span> Promise.reject(error);
+  }
+);</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">api/userApi.ts — typed API functions, one per endpoint</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { axiosClient } <span class="kw">from</span> <span class="str">'./axiosClient'</span>;
+
+<span class="kw">export type</span> <span class="typ">User</span> = { id: <span class="kw">number</span>; name: <span class="kw">string</span>; email: <span class="kw">string</span> };
+<span class="kw">export type</span> <span class="typ">CreateUserPayload</span> = { name: <span class="kw">string</span>; email: <span class="kw">string</span> };
+
+<span class="cm">// Each function is typed: what it sends AND what it returns</span>
+<span class="kw">export const</span> <span class="var">userApi</span> = {
+  <span class="fn">getAll</span>: <span class="kw">async</span> (): <span class="typ">Promise</span>&lt;<span class="typ">User</span>[]&gt; =&gt; {
+    <span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> axiosClient.get&lt;<span class="typ">User</span>[]&gt;(<span class="str">'/users'</span>);
+    <span class="kw">return</span> <span class="var">res</span>.data;   <span class="cm">// axios auto-parses JSON — no .json() call needed</span>
+  },
+
+  <span class="fn">getById</span>: <span class="kw">async</span> (id: <span class="kw">number</span>): <span class="typ">Promise</span>&lt;<span class="typ">User</span>&gt; =&gt; {
+    <span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> axiosClient.get&lt;<span class="typ">User</span>&gt;(<span class="str">`/users/${id}`</span>);
+    <span class="kw">return</span> <span class="var">res</span>.data;
+  },
+
+  <span class="fn">create</span>: <span class="kw">async</span> (payload: <span class="typ">CreateUserPayload</span>): <span class="typ">Promise</span>&lt;<span class="typ">User</span>&gt; =&gt; {
+    <span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> axiosClient.post&lt;<span class="typ">User</span>&gt;(<span class="str">'/users'</span>, payload);
+    <span class="kw">return</span> <span class="var">res</span>.data;
+  },
+
+  <span class="fn">update</span>: <span class="kw">async</span> (id: <span class="kw">number</span>, payload: Partial&lt;<span class="typ">CreateUserPayload</span>&gt;): <span class="typ">Promise</span>&lt;<span class="typ">User</span>&gt; =&gt; {
+    <span class="kw">const</span> <span class="var">res</span> = <span class="kw">await</span> axiosClient.patch&lt;<span class="typ">User</span>&gt;(<span class="str">`/users/${id}`</span>, payload);
+    <span class="kw">return</span> <span class="var">res</span>.data;
+  },
+
+  <span class="fn">delete</span>: <span class="kw">async</span> (id: <span class="kw">number</span>): <span class="typ">Promise</span>&lt;<span class="kw">void</span>&gt; =&gt; {
+    <span class="kw">await</span> axiosClient.delete(<span class="str">`/users/${id}`</span>);
+  },
+};</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">Using the typed API in a component</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useEffect, useState } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { userApi } <span class="kw">from</span> <span class="str">'../../api/userApi'</span>;
+<span class="kw">import type</span> { User } <span class="kw">from</span> <span class="str">'../../api/userApi'</span>;
+
+<span class="kw">function</span> <span class="fn">UserList</span>() {
+  <span class="kw">const</span> [users, setUsers] = useState&lt;<span class="typ">User</span>[]&gt;([]);
+
+  useEffect(() =&gt; {
+    userApi.getAll().then(setUsers).catch(console.error);
+  }, []);
+
+  <span class="kw">const</span> <span class="fn">handleDelete</span> = <span class="kw">async</span> (id: <span class="kw">number</span>) =&gt; {
+    <span class="kw">await</span> userApi.delete(id);
+    setUsers(users.filter(u =&gt; u.id !== id));   <span class="cm">// optimistic UI update</span>
+  };
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;ul&gt;</span>
+      {users.map(u =&gt; (
+        <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={u.id}<span class="tagjsx">&gt;</span>
+          {u.name} <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; handleDelete(u.id)}<span class="tagjsx">&gt;</span>Delete<span class="tagjsx">&lt;/button&gt;</span>
+        <span class="tagjsx">&lt;/li&gt;</span>
+      ))}
+    <span class="tagjsx">&lt;/ul&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="callout callout-orange">
+    <strong>⚠️ Always handle errors</strong>
+    Axios throws an error for any non-2xx response — wrap calls in <code>try/catch</code> or attach <code>.catch()</code>. Check <code>error.response?.status</code> for the HTTP status code, and <code>error.response?.data</code> for the API's error body.
+  </div>
+</section>
+
+<!-- TAB 3: ZUSTAND + AXIOS -->
+<section class="tab-panel" id="panel-3">
+  <h2 class="section-title">🔗 Combining Zustand + Axios</h2>
+  <p class="section-sub">The real production pattern — async actions inside a Zustand store, calling typed Axios functions.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="combineCanvas" width="860" height="250"></canvas>
+  </div>
+
+  <div class="callout callout-purple">
+    <strong>The Pattern</strong>
+    Instead of fetching data inside component <code>useEffect</code>s scattered everywhere, put the fetch logic <em>inside the store itself</em> as an async action. Components just call <code>store.fetchUsers()</code> and read <code>store.users</code> / <code>store.loading</code>.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">store/useUserStore.ts — store with built-in async data fetching</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { create } <span class="kw">from</span> <span class="str">'zustand'</span>;
+<span class="kw">import</span> { userApi } <span class="kw">from</span> <span class="str">'../api/userApi'</span>;
+<span class="kw">import type</span> { User } <span class="kw">from</span> <span class="str">'../api/userApi'</span>;
+
+<span class="kw">type</span> <span class="typ">UserState</span> = {
+  users: <span class="typ">User</span>[];
+  loading: <span class="kw">boolean</span>;
+  error: <span class="kw">string</span> | <span class="kw">null</span>;
+  fetchUsers: () =&gt; <span class="typ">Promise</span>&lt;<span class="kw">void</span>&gt;;
+  addUser: (name: <span class="kw">string</span>, email: <span class="kw">string</span>) =&gt; <span class="typ">Promise</span>&lt;<span class="kw">void</span>&gt;;
+  removeUser: (id: <span class="kw">number</span>) =&gt; <span class="typ">Promise</span>&lt;<span class="kw">void</span>&gt;;
+};
+
+<span class="kw">export const</span> <span class="var">useUserStore</span> = create&lt;<span class="typ">UserState</span>&gt;()((set, get) =&gt; ({
+  users: [],
+  loading: <span class="kw">false</span>,
+  error: <span class="kw">null</span>,
+
+  fetchUsers: <span class="kw">async</span> () =&gt; {
+    set({ loading: <span class="kw">true</span>, error: <span class="kw">null</span> });
+    <span class="kw">try</span> {
+      <span class="kw">const</span> <span class="var">users</span> = <span class="kw">await</span> userApi.getAll();
+      set({ users, loading: <span class="kw">false</span> });
+    } <span class="kw">catch</span> (err) {
+      set({ error: <span class="str">'Failed to load users'</span>, loading: <span class="kw">false</span> });
+    }
+  },
+
+  addUser: <span class="kw">async</span> (name, email) =&gt; {
+    <span class="kw">const</span> <span class="var">newUser</span> = <span class="kw">await</span> userApi.create({ name, email });
+    set({ users: [...get().users, newUser] });   <span class="cm">// append without re-fetching</span>
+  },
+
+  removeUser: <span class="kw">async</span> (id) =&gt; {
+    <span class="kw">await</span> userApi.delete(id);
+    set({ users: get().users.filter(u =&gt; u.id !== id) });
+  },
+}));</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">pages/Users/Users.tsx — the component becomes very thin</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> { useUserStore } <span class="kw">from</span> <span class="str">'../../store/useUserStore'</span>;
+
+<span class="kw">function</span> <span class="fn">Users</span>() {
+  <span class="kw">const</span> { users, loading, error, fetchUsers, removeUser } = useUserStore();
+
+  useEffect(() =&gt; {
+    fetchUsers();   <span class="cm">// trigger once on mount — logic lives in the store, not here</span>
+  }, [fetchUsers]);
+
+  <span class="kw">if</span> (loading) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>Loading...<span class="tagjsx">&lt;/p&gt;</span>;
+  <span class="kw">if</span> (error) <span class="kw">return</span> <span class="tagjsx">&lt;p&gt;</span>{error}<span class="tagjsx">&lt;/p&gt;</span>;
+
+  <span class="kw">return</span> (
+    <span class="tagjsx">&lt;ul&gt;</span>
+      {users.map(u =&gt; (
+        <span class="tagjsx">&lt;li</span> <span class="attr">key</span>={u.id}<span class="tagjsx">&gt;</span>
+          {u.name} <span class="tagjsx">&lt;button</span> <span class="attr">onClick</span>={() =&gt; removeUser(u.id)}<span class="tagjsx">&gt;</span>✕<span class="tagjsx">&lt;/button&gt;</span>
+        <span class="tagjsx">&lt;/li&gt;</span>
+      ))}
+    <span class="tagjsx">&lt;/ul&gt;</span>
+  );
+}</pre>
+  </div>
+
+  <div class="callout callout-green">
+    <strong>💡 Why this is better</strong>
+    The data-fetching logic lives in exactly one place (the store) instead of being duplicated across every component that needs the user list. Any component anywhere can call <code>useUserStore.getState().fetchUsers()</code> or read the same cached data — no prop drilling, no duplicate API calls.
+  </div>
+</section>
+
+<!-- TAB 4: JEST + RTL -->
+<section class="tab-panel" id="panel-4">
+  <h2 class="section-title">🧪 Jest + React Testing Library</h2>
+  <p class="section-sub">Jest runs your tests. React Testing Library renders components and queries them the way a real user would.</p>
+
+  <div class="canvas-wrap">
+    <canvas id="jestCanvas" width="860" height="220"></canvas>
+  </div>
+
+  <div class="callout callout-jest">
+    <strong>RTL's Guiding Principle</strong>
+    "The more your tests resemble the way your software is used, the more confidence they can give you." Query elements by what a user sees (text, labels, roles) — not by implementation details like CSS class names or component internals.
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">Terminal</span>
+      <span class="code-desc">Install Jest + React Testing Library (Vite projects use vitest, shown as alternative below)</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="cm"># Jest setup (works for both Vite and CRA projects)</span>
+npm install -D jest @types/jest ts-jest \
+  @testing-library/react @testing-library/jest-dom @testing-library/user-event \
+  jest-environment-jsdom
+
+<span class="cm"># If using Vite, vitest is the recommended drop-in alternative (same API as Jest):</span>
+<span class="cm"># npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom</span></pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TypeScript</span>
+      <span class="code-desc">jest.config.ts — minimal config for a React + TS project</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import type</span> { Config } <span class="kw">from</span> <span class="str">'jest'</span>;
+
+<span class="kw">const</span> <span class="var">config</span>: <span class="typ">Config</span> = {
+  preset: <span class="str">'ts-jest'</span>,
+  testEnvironment: <span class="str">'jsdom'</span>,             <span class="cm">// simulates a browser DOM for tests</span>
+  setupFilesAfterEach: [<span class="str">'<rootDir>/jest.setup.ts'</span>],
+  moduleNameMapper: {
+    <span class="str">'\\.(css|less|scss)$'</span>: <span class="str">'identity-obj-proxy'</span>,  <span class="cm">// ignore CSS imports in tests</span>
+  },
+};
+
+<span class="kw">export default</span> <span class="var">config</span>;</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">components/Button/Button.test.tsx — first component test</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { render, screen } <span class="kw">from</span> <span class="str">'@testing-library/react'</span>;
+<span class="kw">import</span> userEvent <span class="kw">from</span> <span class="str">'@testing-library/user-event'</span>;
+<span class="kw">import</span> { describe, it, expect, vi } <span class="kw">from</span> <span class="str">'vitest'</span>;  <span class="cm">// or 'jest' if using Jest directly</span>
+<span class="kw">import</span> <span class="var">Button</span> <span class="kw">from</span> <span class="str">'./Button'</span>;
+
+describe(<span class="str">'Button'</span>, () =&gt; {
+  it(<span class="str">'renders the label text'</span>, () =&gt; {
+    render(<span class="tagjsx">&lt;Button</span> <span class="attr">label</span>=<span class="str">"Save"</span> <span class="attr">onClick</span>={() =&gt; {}} <span class="tagjsx">/&gt;</span>);
+
+    <span class="cm">// Query by role + accessible name — exactly how a screen reader user finds it</span>
+    <span class="kw">const</span> <span class="var">button</span> = screen.getByRole(<span class="str">'button'</span>, { name: <span class="str">'Save'</span> });
+    expect(button).toBeInTheDocument();
+  });
+
+  it(<span class="str">'calls onClick when clicked'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">const</span> <span class="var">handleClick</span> = vi.fn();   <span class="cm">// jest.fn() if using Jest directly</span>
+    render(<span class="tagjsx">&lt;Button</span> <span class="attr">label</span>=<span class="str">"Save"</span> <span class="attr">onClick</span>={handleClick} <span class="tagjsx">/&gt;</span>);
+
+    <span class="kw">const</span> <span class="var">user</span> = userEvent.setup();
+    <span class="kw">await</span> user.click(screen.getByRole(<span class="str">'button'</span>, { name: <span class="str">'Save'</span> }));
+
+    expect(handleClick).toHaveBeenCalledTimes(<span class="num">1</span>);
+  });
+
+  it(<span class="str">'is disabled when the disabled prop is true'</span>, () =&gt; {
+    render(<span class="tagjsx">&lt;Button</span> <span class="attr">label</span>=<span class="str">"Save"</span> <span class="attr">onClick</span>={() =&gt; {}} <span class="attr">disabled</span> <span class="tagjsx">/&gt;</span>);
+    expect(screen.getByRole(<span class="str">'button'</span>, { name: <span class="str">'Save'</span> })).toBeDisabled();
+  });
+});</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Testing a Component with State</h3>
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">components/Counter/Counter.test.tsx — interacting with state</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { render, screen } <span class="kw">from</span> <span class="str">'@testing-library/react'</span>;
+<span class="kw">import</span> userEvent <span class="kw">from</span> <span class="str">'@testing-library/user-event'</span>;
+<span class="kw">import</span> <span class="var">Counter</span> <span class="kw">from</span> <span class="str">'./Counter'</span>;
+
+it(<span class="str">'increments the count when the button is clicked'</span>, <span class="kw">async</span> () =&gt; {
+  <span class="kw">const</span> <span class="var">user</span> = userEvent.setup();
+  render(<span class="tagjsx">&lt;Counter</span> <span class="tagjsx">/&gt;</span>);
+
+  <span class="cm">// Initial state</span>
+  expect(screen.getByText(<span class="str">'Count: 0'</span>)).toBeInTheDocument();
+
+  <span class="cm">// Simulate a real click</span>
+  <span class="kw">await</span> user.click(screen.getByRole(<span class="str">'button'</span>, { name: <span class="str">'Increment'</span> }));
+
+  <span class="cm">// Assert the UI updated</span>
+  expect(screen.getByText(<span class="str">'Count: 1'</span>)).toBeInTheDocument();
+});</pre>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:16px 0 12px">Common RTL Queries</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Query</th><th>Finds</th><th>Use When</th></tr></thead>
+      <tbody>
+        <tr><td><code>getByRole('button', {name})</code></td><td>An element by its accessibility role + label</td><td>Buttons, links, headings — preferred first choice</td></tr>
+        <tr><td><code>getByText('Hello')</code></td><td>Element containing exact/partial text</td><td>Static text content</td></tr>
+        <tr><td><code>getByLabelText('Email')</code></td><td>Form input associated with a label</td><td>Form fields</td></tr>
+        <tr><td><code>getByPlaceholderText('Search...')</code></td><td>Input by its placeholder</td><td>Inputs without a visible label</td></tr>
+        <tr><td><code>queryBy...</code></td><td>Same as getBy but returns null instead of throwing</td><td>Asserting something is <em>absent</em></td></tr>
+        <tr><td><code>findBy...</code></td><td>Same as getBy but async — waits for element to appear</td><td>After async actions (data loading)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 5: TESTING HOOKS & STORES -->
+<section class="tab-panel" id="panel-5">
+  <h2 class="section-title">🧪 Testing Custom Hooks, Zustand Stores &amp; Axios Calls</h2>
+  <p class="section-sub">Going beyond components — testing the logic layers we built earlier in this guide.</p>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">store/useCartStore.test.ts — testing a Zustand store directly</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { useCartStore } <span class="kw">from</span> <span class="str">'./useCartStore'</span>;
+<span class="kw">import</span> { beforeEach, describe, it, expect } <span class="kw">from</span> <span class="str">'vitest'</span>;
+
+describe(<span class="str">'useCartStore'</span>, () =&gt; {
+  <span class="cm">// Reset the store before every test — stores are singletons, state leaks between tests otherwise</span>
+  beforeEach(() =&gt; {
+    useCartStore.setState({ items: [] });
+  });
+
+  it(<span class="str">'adds a new item to the cart'</span>, () =&gt; {
+    useCartStore.getState().addItem({ id: <span class="num">1</span>, name: <span class="str">'Keyboard'</span>, price: <span class="num">49.99</span> });
+
+    <span class="kw">const</span> <span class="var">items</span> = useCartStore.getState().items;
+    expect(items).toHaveLength(<span class="num">1</span>);
+    expect(items[<span class="num">0</span>].quantity).toBe(<span class="num">1</span>);
+  });
+
+  it(<span class="str">'increments quantity when adding the same item twice'</span>, () =&gt; {
+    <span class="kw">const</span> { addItem } = useCartStore.getState();
+    addItem({ id: <span class="num">1</span>, name: <span class="str">'Keyboard'</span>, price: <span class="num">49.99</span> });
+    addItem({ id: <span class="num">1</span>, name: <span class="str">'Keyboard'</span>, price: <span class="num">49.99</span> });
+
+    <span class="kw">const</span> <span class="var">items</span> = useCartStore.getState().items;
+    expect(items).toHaveLength(<span class="num">1</span>);          <span class="cm">// still one entry</span>
+    expect(items[<span class="num">0</span>].quantity).toBe(<span class="num">2</span>);  <span class="cm">// quantity incremented</span>
+  });
+
+  it(<span class="str">'calculates total price correctly'</span>, () =&gt; {
+    <span class="kw">const</span> { addItem, totalPrice } = useCartStore.getState();
+    addItem({ id: <span class="num">1</span>, name: <span class="str">'Keyboard'</span>, price: <span class="num">50</span> });
+    addItem({ id: <span class="num">2</span>, name: <span class="str">'Mouse'</span>, price: <span class="num">25</span> });
+
+    expect(totalPrice()).toBe(<span class="num">75</span>);
+  });
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">api/userApi.test.ts — mocking Axios with vitest</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { vi, describe, it, expect, beforeEach } <span class="kw">from</span> <span class="str">'vitest'</span>;
+<span class="kw">import</span> { axiosClient } <span class="kw">from</span> <span class="str">'./axiosClient'</span>;
+<span class="kw">import</span> { userApi } <span class="kw">from</span> <span class="str">'./userApi'</span>;
+
+<span class="cm">// Mock the entire axios client module</span>
+vi.mock(<span class="str">'./axiosClient'</span>);
+
+describe(<span class="str">'userApi'</span>, () =&gt; {
+  beforeEach(() =&gt; {
+    vi.clearAllMocks();
+  });
+
+  it(<span class="str">'getAll returns the list of users'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">const</span> <span class="var">mockUsers</span> = [{ id: <span class="num">1</span>, name: <span class="str">'Indhu'</span>, email: <span class="str">'indhu@example.com'</span> }];
+
+    <span class="cm">// Make the mocked axios.get resolve with our fake data</span>
+    vi.mocked(axiosClient.get).mockResolvedValueOnce({ data: mockUsers });
+
+    <span class="kw">const</span> <span class="var">result</span> = <span class="kw">await</span> userApi.getAll();
+
+    expect(axiosClient.get).toHaveBeenCalledWith(<span class="str">'/users'</span>);
+    expect(result).toEqual(mockUsers);
+  });
+
+  it(<span class="str">'create sends a POST with the correct payload'</span>, <span class="kw">async</span> () =&gt; {
+    <span class="kw">const</span> <span class="var">newUser</span> = { id: <span class="num">2</span>, name: <span class="str">'Alex'</span>, email: <span class="str">'alex@example.com'</span> };
+    vi.mocked(axiosClient.post).mockResolvedValueOnce({ data: newUser });
+
+    <span class="kw">const</span> <span class="var">result</span> = <span class="kw">await</span> userApi.create({ name: <span class="str">'Alex'</span>, email: <span class="str">'alex@example.com'</span> });
+
+    expect(axiosClient.post).toHaveBeenCalledWith(<span class="str">'/users'</span>, { name: <span class="str">'Alex'</span>, email: <span class="str">'alex@example.com'</span> });
+    expect(result).toEqual(newUser);
+  });
+});</pre>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-lang">TSX</span>
+      <span class="code-desc">hooks/useDebounce.test.ts — testing a custom hook with renderHook</span>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+    </div>
+    <pre><span class="kw">import</span> { renderHook, act } <span class="kw">from</span> <span class="str">'@testing-library/react'</span>;
+<span class="kw">import</span> { vi, describe, it, expect } <span class="kw">from</span> <span class="str">'vitest'</span>;
+<span class="kw">import</span> { useDebounce } <span class="kw">from</span> <span class="str">'./useDebounce'</span>;
+
+describe(<span class="str">'useDebounce'</span>, () =&gt; {
+  it(<span class="str">'returns the debounced value after the delay'</span>, () =&gt; {
+    vi.useFakeTimers();   <span class="cm">// control time manually instead of waiting in real-time</span>
+
+    <span class="kw">const</span> { result, rerender } = renderHook(
+      ({ value }) =&gt; useDebounce(value, <span class="num">500</span>),
+      { initialProps: { value: <span class="str">'a'</span> } }
+    );
+
+    expect(result.current).toBe(<span class="str">'a'</span>);
+
+    rerender({ value: <span class="str">'ab'</span> });
+    expect(result.current).toBe(<span class="str">'a'</span>);   <span class="cm">// hasn't updated yet — delay not elapsed</span>
+
+    act(() =&gt; { vi.advanceTimersByTime(<span class="num">500</span>); });
+    expect(result.current).toBe(<span class="str">'ab'</span>);  <span class="cm">// now updated</span>
+
+    vi.useRealTimers();
+  });
+});</pre>
+  </div>
+</section>
+
+<!-- TAB 6: BEST PRACTICES -->
+<section class="tab-panel" id="panel-6">
+  <h2 class="section-title">💡 Best Practices</h2>
+  <p class="section-sub">Production wisdom for the full stack — Zustand, Axios, and testing.</p>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title">✅ One Store per Domain</div>
+      <p>Don't put everything in one giant Zustand store. <code>useAuthStore</code>, <code>useCartStore</code>, <code>useUiStore</code> — separate concerns mean smaller, more testable, more focused files.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Never Call axios.get() Directly in Components</div>
+      <p>Always go through a typed API function (<code>userApi.getAll()</code>). This centralises the URL, the type, and any transformation logic in one place — and makes mocking in tests trivial.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Put Async Logic in the Store, Not the Component</div>
+      <p>Components should call <code>store.fetchUsers()</code> and read <code>store.loading</code> — not contain their own <code>useEffect</code> + <code>useState</code> fetching logic duplicated everywhere.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Reset Store State Between Tests</div>
+      <p>Zustand stores are singletons — state persists across test files unless you reset it. Use <code>beforeEach(() => store.setState(initialState))</code> to avoid test pollution.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Query by Role and Text, Not Test IDs</div>
+      <p>Prefer <code>getByRole</code>/<code>getByText</code> over <code>data-testid</code> wherever possible — it tests your app the way real users and screen readers experience it.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Mock at the Network Boundary</div>
+      <p>Mock the Axios client (or use MSW — Mock Service Worker) rather than mocking your own API functions. This tests more of your real code path while still avoiding real network calls.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Use Interceptors for Cross-Cutting Concerns</div>
+      <p>Auth token attachment, global 401 handling, request logging — these belong in Axios interceptors, written once, rather than repeated in every API call.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">✅ Don't Test Implementation Details</div>
+      <p>Avoid asserting on internal state shape or component internals. Test what the user sees and can do — button text, displayed values, whether something is disabled.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Decision Cheat Sheet</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Need</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td>Local component state (form input, toggle)</td><td><code>useState</code></td></tr>
+        <tr><td>Shared state across distant components</td><td>Zustand store</td></tr>
+        <tr><td>Rarely-changing app-wide config</td><td>Context API</td></tr>
+        <tr><td>Making any HTTP request</td><td>Axios via a typed <code>api/*.ts</code> function</td></tr>
+        <tr><td>Testing a button click / form submit</td><td>RTL + <code>userEvent</code></td></tr>
+        <tr><td>Testing a Zustand store's logic</td><td>Call store actions directly, assert on <code>getState()</code></td></tr>
+        <tr><td>Testing an API function</td><td>Mock the Axios client, assert it was called correctly</td></tr>
+        <tr><td>Testing a custom hook</td><td><code>renderHook</code> from RTL</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TAB 7: FINAL SUMMARY -->
+<section class="tab-panel" id="panel-7">
+  <h2 class="section-title">🏁 Final Summary — Full Series Complete</h2>
+  <p class="section-sub">The complete React + TypeScript journey, beginner to advanced.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">🐻 Zustand</div>
+      <p><code>create&lt;T&gt;()((set, get) => ({...}))</code>. No Provider. Subscribe to specific slices. <code>persist</code> middleware for localStorage sync.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🌐 Axios</div>
+      <p>One shared instance via <code>axios.create()</code>. Interceptors for auth + global error handling. Typed API functions, never call axios directly in components.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">🧪 Jest + RTL</div>
+      <p><code>render</code> + <code>screen</code> + <code>userEvent</code>. Query by role/text. <code>renderHook</code> for custom hooks. Mock Axios at the client boundary.</p>
+    </div>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">The Whole Series at a Glance</h3>
+  <div class="table-wrap">
+    <table class="tbl">
+      <thead><tr><th>Level</th><th>Core Topics</th></tr></thead>
+      <tbody>
+        <tr><td>🌱 Beginner</td><td>Components, JSX, props, useState, useEffect, events/forms, TypeScript basics, folder structure</td></tr>
+        <tr><td>📘 Intermediate</td><td>Context API, custom hooks, React Router, useRef, useMemo/useCallback/memo, generics, discriminated unions</td></tr>
+        <tr><td>🔥 Advanced</td><td>Zustand global state, Axios typed HTTP + interceptors, Jest + RTL component/hook/store testing</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 style="color:var(--text);font-size:16px;margin:20px 0 14px">Final Project Structure Recap</h3>
+  <div class="tree">
+<span class="folder">src/</span><br>
+├── <span class="folder">api/</span> <span class="comment">— Axios client + typed endpoint functions</span><br>
+├── <span class="folder">assets/</span><br>
+├── <span class="folder">components/</span><br>
+├── <span class="folder">context/</span> <span class="comment">— rarely-changing app-wide state</span><br>
+├── <span class="folder">hooks/</span> <span class="comment">— reusable stateful logic</span><br>
+├── <span class="folder">pages/</span><br>
+├── <span class="folder">router/</span><br>
+├── <span class="folder">store/</span> <span class="comment">— Zustand stores, frequently-changing global state</span><br>
+├── <span class="folder">types/</span><br>
+└── <span class="folder">utils/</span>
+  </div>
+
+  <div class="completion-card">
+    <div class="ck">🎓</div>
+    <h3>React + TypeScript series complete!</h3>
+    <p>From your first component to a fully typed, tested, production-shaped application with global state and a real API layer — you now have the complete picture. This structure and these patterns scale to real production codebases. Well done, Indhu! 🎉</p>
+  </div>
+</section>
+
+</main>
+
+<script>
+function switchTab(idx, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + idx).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' });
+  const draws = [drawOverview, drawZustand, drawAxios, drawCombine, drawJest, null, null, null];
+  if (draws[idx]) draws[idx]();
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(() => {
+    btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1800);
+  });
+}
+
+const C = {
+  bg:'#161b22', bg2:'#0d1117', border:'#30363d',
+  purple:'#bc8cff', zustand:'#9b7ef5', axios:'#8b6af0', jest:'#e8553a',
+  blue:'#58a6ff', green:'#3fb950', orange:'#e8834a', red:'#f85149', yellow:'#d29922',
+  text:'#e6edf3', muted:'#8b949e',
+};
+
+function setup(id) {
+  const el = document.getElementById(id); if (!el) return null;
+  const r = window.devicePixelRatio || 1;
+  const maxW = (el.parentElement?.clientWidth || window.innerWidth) - 24;
+  const oW = parseInt(el.getAttribute('width')) || 860;
+  const oH = parseInt(el.getAttribute('height')) || 220;
+  const sc = Math.min(1, maxW / oW);
+  el.width  = Math.floor(oW*sc)*r; el.height = Math.floor(oH*sc)*r;
+  el.style.width  = Math.floor(oW*sc)+'px'; el.style.height = Math.floor(oH*sc)+'px';
+  const ctx = el.getContext('2d'); ctx.scale(r*sc, r*sc); ctx.clearRect(0,0,oW,oH);
+  return { ctx, W:oW, H:oH };
+}
+function rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+function box(ctx,x,y,w,h,col,label,sub,icon){ ctx.shadowColor=col+'44'; ctx.shadowBlur=10; ctx.fillStyle=C.bg2; ctx.strokeStyle=col; ctx.lineWidth=1.5; rr(ctx,x,y,w,h,8); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0; if(icon){ctx.font='14px sans-serif';ctx.textAlign='center';ctx.fillText(icon,x+w/2,y+(sub?20:h/2-3));} ctx.fillStyle=C.text; ctx.font='600 11px Inter,sans-serif'; ctx.textAlign='center'; ctx.fillText(label,x+w/2,y+(icon?(sub?36:h/2+8):(sub?h/2-4:h/2+4))); if(sub){ctx.fillStyle=C.muted;ctx.font='10px Inter,sans-serif';ctx.fillText(sub,x+w/2,y+h-9);} }
+function arr(ctx,x1,y1,x2,y2,col){ col=col||C.muted; ctx.strokeStyle=col; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); const a=Math.atan2(y2-y1,x2-x1); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-8*Math.cos(a-.4),y2-8*Math.sin(a-.4)); ctx.lineTo(x2-8*Math.cos(a+.4),y2-8*Math.sin(a+.4)); ctx.closePath(); ctx.fill(); }
+function txt(ctx,x,y,t,col,size,align){ ctx.fillStyle=col||C.muted; ctx.font=(size||10)+'px Inter,sans-serif'; ctx.textAlign=align||'center'; ctx.fillText(t,x,y); }
+
+function drawOverview(){
+  const s=setup('overviewCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Advanced Stack — How the Pieces Connect',C.muted,11);
+
+  box(ctx,20,40,140,46,C.blue,'React Component','UI layer',null);
+  arr(ctx,160,63,220,63,C.blue);
+  box(ctx,220,40,150,46,C.zustand,'🐻 Zustand Store','State + actions',null);
+  arr(ctx,370,63,430,63,C.zustand);
+  box(ctx,430,40,150,46,C.axios,'🌐 Axios API','HTTP calls',null);
+  arr(ctx,580,63,640,63,C.axios);
+  box(ctx,640,40,W-660,46,C.orange,'Backend API','Real server',null);
+
+  arr(ctx,90,86,90,140,C.border);
+  box(ctx,20,140,W-40,50,C.jest,'🧪 Jest + RTL tests every layer above','Components · Stores · API functions',null);
+
+  txt(ctx,W/2,H-20,'Component reads/writes store → store calls API → API hits backend',C.muted,10);
+}
+
+function drawZustand(){
+  const s=setup('zustandCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Zustand — Selective Subscriptions',C.muted,11);
+
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.zustand; ctx.lineWidth=2;
+  rr(ctx,W/2-100,30,200,50,8); ctx.fill(); ctx.stroke();
+  txt(ctx,W/2,52,'🐻 useCartStore',C.zustand,12);
+  txt(ctx,W/2,68,'{ items, addItem, totalPrice }',C.muted,9);
+
+  const consumers=[
+    {l:'CartBadge',sub:'reads: items.length',c:C.green,x:0.15},
+    {l:'ProductCard',sub:'reads: addItem only',c:C.blue,x:0.5},
+    {l:'CartSummary',sub:'reads: items, totalPrice',c:C.orange,x:0.85},
+  ];
+  consumers.forEach(con=>{
+    arr(ctx,W/2,80,W*con.x,118,C.border);
+    box(ctx,W*con.x-80,118,160,50,con.c,con.l,con.sub,null);
+  });
+
+  txt(ctx,W/2,H-15,'Each component only re-renders when ITS slice of state changes',C.muted,10);
+}
+
+function drawAxios(){
+  const s=setup('axiosCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Axios Interceptor Flow',C.muted,11);
+
+  box(ctx,20,100,130,46,C.blue,'Component','calls userApi.getAll()',null);
+  arr(ctx,150,123,210,123,C.blue);
+
+  ctx.fillStyle='rgba(90,41,228,0.08)'; ctx.strokeStyle=C.axios; ctx.lineWidth=1.5;
+  rr(ctx,210,40,180,170,10); ctx.fill(); ctx.stroke();
+  txt(ctx,300,58,'🌐 Axios Client',C.axios,12);
+
+  box(ctx,225,75,150,36,C.purple,'Request Interceptor','+ auth token',null);
+  arr(ctx,300,111,300,140,C.border);
+  box(ctx,225,140,150,36,C.red,'Response Interceptor','handles 401s',null);
+
+  arr(ctx,390,123,450,123,C.axios);
+  box(ctx,450,100,W-470,46,C.orange,'Backend API','Returns JSON',null);
+
+  txt(ctx,W/2,H-10,'Every request automatically gets the token — every 401 automatically logs out',C.muted,10);
+}
+
+function drawCombine(){
+  const s=setup('combineCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'The Combined Pattern — Thin Components',C.muted,11);
+
+  box(ctx,20,40,150,50,C.blue,'Users Component','fetchUsers() + render',null);
+  arr(ctx,170,65,230,65,C.blue);
+
+  ctx.fillStyle='#0d1117'; ctx.strokeStyle=C.zustand; ctx.lineWidth=2;
+  rr(ctx,230,40,180,160,10); ctx.fill(); ctx.stroke();
+  txt(ctx,320,58,'🐻 useUserStore',C.zustand,12);
+  const storeItems=['users: User[]','loading: boolean','fetchUsers()','addUser()','removeUser()'];
+  storeItems.forEach((item,i)=>{
+    ctx.fillStyle=C.zustand+'15'; ctx.strokeStyle=C.zustand+'55'; ctx.lineWidth=1;
+    rr(ctx,245,72+i*24,150,20,4); ctx.fill(); ctx.stroke();
+    txt(ctx,320,86+i*24,item,C.muted,9);
+  });
+
+  arr(ctx,410,120,470,120,C.axios);
+  box(ctx,470,95,150,50,C.axios,'🌐 userApi','getAll/create/delete',null);
+  arr(ctx,620,120,680,120,C.orange);
+  box(ctx,680,95,W-700,50,C.orange,'Backend','/users',null);
+
+  txt(ctx,W/2,H-12,'Component is "dumb" — all logic and state live in the store',C.muted,10);
+}
+
+function drawJest(){
+  const s=setup('jestCanvas'); if(!s)return;
+  const{ctx,W,H}=s;
+  txt(ctx,W/2,15,'Jest + React Testing Library Flow',C.muted,11);
+
+  const steps=[
+    {l:'render(<Component />)',ic:'🎬',c:C.blue},
+    {l:'screen.getByRole(...)',ic:'🔍',c:C.purple},
+    {l:'userEvent.click(...)',ic:'🖱️',c:C.orange},
+    {l:'expect(...).toBe(...)',ic:'✅',c:C.green},
+  ];
+  const bw=Math.min(170,(W-60)/steps.length-10);
+  const gap=(W-40-bw*steps.length)/(steps.length-1);
+  steps.forEach((st,i)=>{
+    const x=20+i*(bw+gap);
+    box(ctx,x,40,bw,100,st.c,st.l,null,st.ic);
+    if(i<steps.length-1) arr(ctx,x+bw+2,90,x+bw+gap-2,90,C.border);
+  });
+
+  txt(ctx,W/2,H-15,'Tests interact with your app the same way a real user would',C.muted,10);
+}
+
+window.addEventListener('load', drawOverview);
+window.addEventListener('resize', () => {
+  const idx=[...document.querySelectorAll('.tab-panel')].findIndex(p=>p.classList.contains('active'));
+  const draws=[drawOverview,drawZustand,drawAxios,drawCombine,drawJest,null,null,null];
+  if(draws[idx]) draws[idx]();
+});
+</script>
+</body>
+</html>
