@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GitHub Actions — Part 1: Fundamentals</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --wf:#2563eb;--wf-l:#dbe7fb;--wf-d:#143d8a;
+  --tr:#0e8abf;--tr-l:#d4ecf8;--tr-d:#085c8a;
+  --jb:#1a8a5a;--jb-l:#d4f0e0;--jb-d:#085c38;
+  --se:#8a2abf;--se-l:#ede0f8;--se-d:#4a1580;
+  --vr:#bf6a0e;--vr-l:#f8f0d4;--vr-d:#8a4500;
+  --ar:#0e6abf;--ar-l:#d6ebf8;--ar-d:#0a4280;
+  --mx:#bf2a7a;--mx-l:#f8d6ec;--mx-d:#8a0050;
+  --rw:#bf2a1a;--rw-l:#f8d8d4;--rw-d:#8a1500;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(37,99,235,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#05080f 0%,#0a1730 45%,#0d1d3d 100%);border-bottom:1px solid #0a1428;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(37,99,235,.4) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(14,138,191,.25) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#93c5fd,#7dd3fc,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-active{background:rgba(147,197,253,.2);border:1px solid rgba(147,197,253,.4);color:#93c5fd;}
+.pb-next{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.4);}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(244,246,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-wf.active{background:var(--wf-l);color:var(--wf-d);}
+.t-tr.active{background:var(--tr-l);color:var(--tr-d);}
+.t-jb.active{background:var(--jb-l);color:var(--jb-d);}
+.t-se.active{background:var(--se-l);color:var(--se-d);}
+.t-vr.active{background:var(--vr-l);color:var(--vr-d);}
+.t-ar.active{background:var(--ar-l);color:var(--ar-d);}
+.t-mx.active{background:var(--mx-l);color:var(--mx-d);}
+.t-rw.active{background:var(--rw-l);color:var(--rw-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-wf h2,.ph-wf h3{color:var(--wf-d);} .ph-wf h2{border-bottom:3px solid var(--wf-l);}
+.ph-tr h2,.ph-tr h3{color:var(--tr-d);} .ph-tr h2{border-bottom:3px solid var(--tr-l);}
+.ph-jb h2,.ph-jb h3{color:var(--jb-d);} .ph-jb h2{border-bottom:3px solid var(--jb-l);}
+.ph-se h2,.ph-se h3{color:var(--se-d);} .ph-se h2{border-bottom:3px solid var(--se-l);}
+.ph-vr h2,.ph-vr h3{color:var(--vr-d);} .ph-vr h2{border-bottom:3px solid var(--vr-l);}
+.ph-ar h2,.ph-ar h3{color:var(--ar-d);} .ph-ar h2{border-bottom:3px solid var(--ar-l);}
+.ph-mx h2,.ph-mx h3{color:var(--mx-d);} .ph-mx h2{border-bottom:3px solid var(--mx-l);}
+.ph-rw h2,.ph-rw h3{color:var(--rw-d);} .ph-rw h2{border-bottom:3px solid var(--rw-l);}
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.aha{background:linear-gradient(135deg,#fff9e6,#fef3c7);border:1.5px solid rgba(217,160,15,.25);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.aha-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#92660a;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.aha p{color:#5c4a10;font-size:.88rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p,.tip li{color:var(--muted);font-size:.84rem;margin:0;}
+.tip ul{padding-left:16px;margin-top:4px;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.scene{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin:14px 0;border-left:4px solid var(--border2);}
+.scene-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-bottom:6px;}
+.scene p{color:var(--text2);font-size:.88rem;margin:0;}
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(175px,100%),1fr));gap:11px;margin:14px 0;}
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.wf-c{border-left:4px solid var(--wf);}
+.code-block.tr-c{border-left:4px solid var(--tr);}
+.code-block.jb-c{border-left:4px solid var(--jb);}
+.code-block.se-c{border-left:4px solid var(--se);}
+.code-block.vr-c{border-left:4px solid var(--vr);}
+.code-block.ar-c{border-left:4px solid var(--ar);}
+.code-block.mx-c{border-left:4px solid var(--mx);}
+.code-block.rw-c{border-left:4px solid var(--rw);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.code-label.wf-l{color:#93c5fd;}.code-label.tr-l{color:#7dd3fc;}.code-label.jb-l{color:#6ee7b7;}
+.code-label.se-l{color:#c4b5fd;}.code-label.vr-l{color:#fcd34d;}.code-label.ar-l{color:#7dd3fc;}
+.code-label.mx-l{color:#f9a8d4;}.code-label.rw-l{color:#fca5a5;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}.ky{color:#f38ba8;}
+.attr{color:#89b4fa;}.blk{color:#cba6f7;}
+code{background:rgba(37,99,235,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--wf-d);}
+.folder-tree{background:var(--code-bg);border-radius:var(--r);padding:1.2rem 1.4rem;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:clamp(.68rem,1.7vw,.82rem);line-height:1.75;color:#cdd6f4;overflow-x:auto;border-left:4px solid var(--tr);box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:pre;}
+.folder-tree .dir{color:#89b4fa;font-weight:600;}
+.folder-tree .file-tf{color:#c4b5fd;}
+.folder-tree .comment{color:#45486a;font-style:italic;white-space:normal;}
+.diagram-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin:16px 0;box-shadow:var(--sh-lg);}
+.diagram-header{padding:10px 16px;font-weight:700;font-size:.83rem;color:var(--text);border-bottom:1px solid var(--border);}
+.diagram-body{padding:16px;overflow-x:auto;}
+.diagram-svg{width:100%;min-width:300px;max-width:760px;display:block;margin:0 auto;}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr));gap:10px;margin:14px 0;}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--sh);}
+.stat-num{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:var(--wf-d);}
+.stat-label{font-size:.7rem;color:var(--muted);margin-top:3px;}
+.completion{background:linear-gradient(135deg,#05080f,#0a1730);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(147,197,253,.2);border:1px solid rgba(147,197,253,.3);color:#93c5fd;}
+.np-todo{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.4);}
+.kw-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:.82rem;}
+.kw-table th{background:var(--surface);color:var(--text);text-align:left;padding:9px 12px;font-size:.74rem;border-bottom:2px solid var(--border2);}
+.kw-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--muted);vertical-align:top;}
+.kw-table tr:hover td{background:var(--surface);}
+.kw-table code{font-size:.78rem;}
+@media(max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr;}.code-block pre{font-size:.63rem;}.kw-table{font-size:.74rem;}.kw-table th,.kw-table td{padding:7px 8px;}}
+</style>
+</head>
+<body>
+<div class="header"><div class="container">
+  <div class="header-badge">CI/CD · YAML Pipelines · DevOps</div>
+  <div class="part-badge">
+    <span class="pb pb-active">① Fundamentals</span>
+    <span class="pb pb-next">② AWS Deploy Examples</span>
+    <span class="pb pb-next">③ Reusable Workflows &amp; Advanced</span>
+  </div>
+  <h1>GitHub Actions — <span>Fundamentals</span></h1>
+  <p>From "what even is a workflow?" to triggers, jobs, steps, secrets, and matrix builds</p>
+  <div class="header-chips">
+    <span class="chip">Workflows</span><span class="chip">Triggers</span><span class="chip">Jobs &amp; Steps</span>
+    <span class="chip">Runners</span><span class="chip">Secrets</span><span class="chip">Variables</span>
+    <span class="chip">Artifacts</span><span class="chip">Matrix Builds</span>
+  </div>
+</div></div>
+<div class="tab-nav"><div class="container"><div class="tab-nav-inner">
+  <button class="tab-btn t-wf active" onclick="T('wf',this)">① What Is a Workflow?</button>
+  <button class="tab-btn t-tr" onclick="T('tr',this)">② Folder Structure &amp; Triggers</button>
+  <button class="tab-btn t-jb" onclick="T('jb',this)">③ Jobs &amp; Steps</button>
+  <button class="tab-btn t-se" onclick="T('se',this)">④ Secrets &amp; Variables</button>
+  <button class="tab-btn t-vr" onclick="T('vr',this)">⑤ Runners &amp; Environments</button>
+  <button class="tab-btn t-ar" onclick="T('ar',this)">⑥ Artifacts &amp; Caching</button>
+  <button class="tab-btn t-mx" onclick="T('mx',this)">⑦ Matrix &amp; Conditionals</button>
+  <button class="tab-btn t-rw" onclick="T('rw',this)">⑧ Keyword Reference</button>
+</div></div></div>
+<div class="container">
+
+<!-- TAB 1: WHAT IS A WORKFLOW -->
+<div id="tab-wf" class="tab-panel active ph-wf"><div class="section">
+  <h2>⚙️ What Is a GitHub Actions Workflow?</h2>
+  <div class="story">You push code to GitHub. You want tests to run automatically, a Docker image to build, and — if everything passes on the <code>main</code> branch — the app to deploy to AWS. Doing this by hand every time is slow and error-prone. GitHub Actions watches your repository for events (a push, a pull request, a schedule) and runs a YAML-defined set of instructions in response — automatically, every single time.</div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Is this the same as Jenkins or other CI tools?</div>
+    <p class="qa-a">Same goal (automate build/test/deploy), different home. Jenkins is self-hosted and tool-agnostic — you install it anywhere. GitHub Actions lives INSIDE GitHub itself: your workflow files sit in your repo, trigger off GitHub-native events (PRs, issues, releases) and the entire ecosystem of 20,000+ pre-built "Actions" is one line away. If your code is already on GitHub, Actions removes an entire layer of external tooling.</p>
+  </div>
+  <h3>The Core Hierarchy — Just Four Levels</h3>
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚡ Workflow → Job → Step → Action</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arrwf" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker></defs>
+        <rect x="20" y="20" width="680" height="160" rx="10" fill="#dbe7fb" stroke="rgba(37,99,235,.35)" stroke-width="2.5"/>
+        <text x="40" y="42" font-family="JetBrains Mono,monospace" font-size="12" font-weight="700" fill="#143d8a">WORKFLOW (.github/workflows/ci.yml)</text>
+        <rect x="40" y="55" width="300" height="110" rx="8" fill="#d4f0e0" stroke="rgba(26,138,90,.4)" stroke-width="2"/>
+        <text x="55" y="75" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#085c38">JOB: test</text>
+        <rect x="55" y="85" width="270" height="24" rx="5" fill="#fff" stroke="#1a8a5a" stroke-width="1.5"/>
+        <text x="190" y="101" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#085c38" text-anchor="middle">step: actions/checkout@v4</text>
+        <rect x="55" y="113" width="270" height="24" rx="5" fill="#fff" stroke="#1a8a5a" stroke-width="1.5"/>
+        <text x="190" y="129" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#085c38" text-anchor="middle">step: run npm test</text>
+        <rect x="55" y="141" width="270" height="20" rx="5" fill="#fff" stroke="#1a8a5a" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="190" y="155" font-family="JetBrains Mono,monospace" font-size="9" fill="#606278" text-anchor="middle">...more steps</text>
+        <line x1="340" y1="110" x2="375" y2="110" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrwf)"/>
+        <rect x="380" y="55" width="300" height="110" rx="8" fill="#d6ebf8" stroke="rgba(14,106,191,.4)" stroke-width="2"/>
+        <text x="395" y="75" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0a4280">JOB: deploy</text>
+        <text x="395" y="92" font-family="Sora,sans-serif" font-size="9" fill="#606278">needs: [test] — waits for test job</text>
+        <rect x="395" y="100" width="270" height="24" rx="5" fill="#fff" stroke="#0e6abf" stroke-width="1.5"/>
+        <text x="530" y="116" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#0a4280" text-anchor="middle">step: aws-actions/configure-aws-credentials</text>
+        <rect x="395" y="128" width="270" height="24" rx="5" fill="#fff" stroke="#0e6abf" stroke-width="1.5"/>
+        <text x="530" y="144" font-family="JetBrains Mono,monospace" font-size="9.5" fill="#0a4280" text-anchor="middle">step: deploy to ECS</text>
+      </svg>
+    </div>
+  </div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What exactly is an "Action" vs a "step"?</div>
+    <p class="qa-a">A <strong>step</strong> is one instruction inside a job — it either runs a shell command (<code>run:</code>) or calls a reusable package called an <strong>Action</strong> (<code>uses:</code>). An Action is pre-built, versioned code published to the GitHub Marketplace — e.g. <code>actions/checkout@v4</code> clones your repo, <code>aws-actions/configure-aws-credentials@v4</code> sets up AWS auth. You never have to write that logic yourself — just reference the Action by name and version.</p>
+  </div>
+  <h3>Key Concepts</h3>
+  <div class="grid-3">
+    <div class="card"><h4>📄 Workflow</h4><p>One YAML file = one workflow. Lives in <code>.github/workflows/</code>. Triggered by events. Contains one or more jobs.</p></div>
+    <div class="card"><h4>💼 Job</h4><p>A set of steps that run on the same runner (VM). Jobs run in parallel by default unless you declare dependencies.</p></div>
+    <div class="card"><h4>👟 Step</h4><p>One instruction inside a job — either <code>run:</code> a shell command or <code>uses:</code> a pre-built Action.</p></div>
+    <div class="card"><h4>🧩 Action</h4><p>Reusable, versioned packaged code from the Marketplace (or your own). Referenced as <code>owner/repo@version</code>.</p></div>
+    <div class="card"><h4>🖥️ Runner</h4><p>The VM that actually executes your job — GitHub-hosted (Ubuntu/Windows/macOS) or your own self-hosted machine.</p></div>
+    <div class="card"><h4>⚡ Event</h4><p>What triggers the workflow — a push, pull request, schedule, manual click, or another workflow finishing.</p></div>
+  </div>
+  <h3>What the YAML Looks Like</h3>
+  <div class="code-block wf-c">
+    <div class="code-label wf-l">YAML — The basics at a glance</div>
+    <pre><span class="cm"># .github/workflows/ci.yml</span>
+<span class="attr">name</span>: <span class="str">CI</span>
+
+<span class="cm"># WHEN does this run?</span>
+<span class="attr">on</span>:
+  <span class="attr">push</span>:
+    <span class="attr">branches</span>: [<span class="str">main</span>]
+  <span class="attr">pull_request</span>:
+    <span class="attr">branches</span>: [<span class="str">main</span>]
+
+<span class="cm"># WHAT runs?</span>
+<span class="attr">jobs</span>:
+  <span class="attr">test</span>:                              <span class="cm"># job ID — any name you choose</span>
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>          <span class="cm"># which VM to run on</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">name</span>: <span class="str">Checkout code</span>
+        <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>     <span class="cm"># pre-built Action</span>
+
+      - <span class="attr">name</span>: <span class="str">Set up Node.js</span>
+        <span class="attr">uses</span>: <span class="fn">actions/setup-node@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">node-version</span>: <span class="str">"20"</span>
+
+      - <span class="attr">name</span>: <span class="str">Install &amp; test</span>
+        <span class="attr">run</span>: |                       <span class="cm"># shell command(s) instead of an Action</span>
+          npm ci
+          npm test
+
+<span class="cm"># Address pattern for referencing things:
+# ${{ secrets.NAME }}      — a secret
+# ${{ github.ref }}        — workflow context info
+# ${{ steps.STEP_ID.outputs.X }} — a previous step's output</span></pre>
+  </div>
+  <div class="tip">
+    <h4>💡 Jobs Run in Parallel by Default</h4>
+    <p>Unless you add <code>needs: [job_name]</code>, every job in a workflow starts at the same time on separate runners. This is GitHub Actions' equivalent of Terraform's implicit dependency graph — except here, YOU must declare it explicitly with <code>needs:</code>.</p>
+  </div>
+</div></div>
+
+<!-- TAB 2: FOLDER STRUCTURE & TRIGGERS -->
+<div id="tab-tr" class="tab-panel ph-tr"><div class="section">
+  <h2>📁 Folder Structure &amp; Triggers</h2>
+  <div class="story">Unlike GitLab (one <code>.gitlab-ci.yml</code> file) or Terraform (flexible folder layout), GitHub Actions has ONE fixed rule: every workflow file must live in <code>.github/workflows/</code> at your repo root. Beyond that, you decide how many files, what each one is responsible for, and what triggers each one.</div>
+  <h3>Standard Folder Layout</h3>
+  <div class="folder-tree"><span class="dir">my-app/</span>
+├── <span class="dir">.github/</span>
+│   └── <span class="dir">workflows/</span>          <span class="comment"># THE ONLY required location — fixed by GitHub</span>
+│       ├── <span class="file-tf">ci.yml</span>            <span class="comment"># runs tests on every push/PR</span>
+│       ├── <span class="file-tf">deploy-staging.yml</span> <span class="comment"># deploys to staging on merge to develop</span>
+│       ├── <span class="file-tf">deploy-prod.yml</span>    <span class="comment"># deploys to prod on merge to main (often with approval)</span>
+│       ├── <span class="file-tf">pr-checks.yml</span>      <span class="comment"># linting/security scans on every PR</span>
+│       └── <span class="file-tf">nightly.yml</span>        <span class="comment"># scheduled cron job — e.g. dependency audit</span>
+├── <span class="dir">src/</span>
+├── <span class="file-tf">Dockerfile</span>
+└── <span class="file-tf">package.json</span></div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why split into multiple files instead of one big workflow?</div>
+    <p class="qa-a">Each YAML file is an independently triggered, independently visible workflow in the GitHub UI ("Actions" tab). Splitting by purpose (CI vs deploy-staging vs deploy-prod) means you can re-run just the failed one, see clear pass/fail history per concern, and avoid one giant file becoming unreadable. This is the opposite of GitLab's single-file philosophy — and is GitHub's biggest structural difference.</p>
+  </div>
+  <h3>Trigger Types — the <code>on:</code> Keyword</h3>
+  <div class="grid-3">
+    <div class="card"><h4>📤 push</h4><p>Runs when commits are pushed. Filter by <code>branches:</code>, <code>tags:</code>, or <code>paths:</code> to avoid running on every tiny change.</p></div>
+    <div class="card"><h4>🔀 pull_request</h4><p>Runs on PR open/update. Use <code>pull_request_target</code> carefully — it runs with base branch permissions, a common security trap.</p></div>
+    <div class="card"><h4>👆 workflow_dispatch</h4><p>Manual trigger — adds a "Run workflow" button in the GitHub UI. Can accept typed <code>inputs:</code> like a form.</p></div>
+    <div class="card"><h4>⏰ schedule</h4><p>Cron-based trigger. <code>cron: '0 2 * * *'</code> = every day at 2am UTC. Good for nightly builds, dependency scans.</p></div>
+    <div class="card"><h4>🏷️ release</h4><p>Runs when a GitHub Release is published — common trigger for production deployment workflows.</p></div>
+    <div class="card"><h4>🔗 workflow_call</h4><p>Makes this workflow reusable — callable FROM another workflow. The foundation of "reusable workflows" (Part 3).</p></div>
+  </div>
+  <h3>Triggers in Practice</h3>
+  <div class="code-block tr-c">
+    <div class="code-label tr-l">YAML — Combining multiple triggers with filters</div>
+    <pre><span class="attr">on</span>:
+  <span class="cm"># Run on push, but only to main/develop, and only if relevant files changed</span>
+  <span class="attr">push</span>:
+    <span class="attr">branches</span>: [<span class="str">main</span>, <span class="str">develop</span>]
+    <span class="attr">paths</span>:
+      - <span class="str">'src/**'</span>
+      - <span class="str">'package.json'</span>
+    <span class="attr">paths-ignore</span>:
+      - <span class="str">'**.md'</span>           <span class="cm"># skip docs-only changes</span>
+
+  <span class="cm"># Run on every PR targeting main</span>
+  <span class="attr">pull_request</span>:
+    <span class="attr">branches</span>: [<span class="str">main</span>]
+    <span class="attr">types</span>: [<span class="str">opened</span>, <span class="str">synchronize</span>, <span class="str">reopened</span>]
+
+  <span class="cm"># Manual trigger with typed inputs — shows up as a form in the GitHub UI</span>
+  <span class="attr">workflow_dispatch</span>:
+    <span class="attr">inputs</span>:
+      <span class="attr">environment</span>:
+        <span class="attr">description</span>: <span class="str">'Target environment'</span>
+        <span class="attr">required</span>: <span class="kw">true</span>
+        <span class="attr">type</span>: <span class="str">choice</span>
+        <span class="attr">options</span>: [<span class="str">staging</span>, <span class="str">production</span>]
+
+  <span class="cm"># Scheduled — nightly dependency audit at 2am UTC</span>
+  <span class="attr">schedule</span>:
+    - <span class="attr">cron</span>: <span class="str">'0 2 * * *'</span></pre>
+  </div>
+  <div class="warn">
+    <h4>⚠️ schedule: Only Runs on the Default Branch</h4>
+    <p>Scheduled workflows only trigger from whatever YAML exists on your repo's default branch (usually <code>main</code>) — editing the cron schedule in a feature branch PR has no effect until merged.</p>
+  </div>
+</div></div>
+
+<!-- TAB 3: JOBS & STEPS -->
+<div id="tab-jb" class="tab-panel ph-jb"><div class="section">
+  <h2>💼 Jobs &amp; Steps — The Execution Model</h2>
+  <div class="story">A workflow can have many jobs. By default they all start simultaneously on separate runners — fast, but sometimes wrong (you don't want "deploy" starting before "test" finishes). <code>needs:</code> is how you build a dependency graph, GitHub's answer to Terraform's automatic dependency detection — except here it's always explicit.</div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Why would I want multiple jobs instead of one job with more steps?</div>
+    <p class="qa-a">Separate jobs run on SEPARATE runners — meaning they can run in parallel (faster overall pipeline) and each gets a clean environment. Steps inside ONE job always run sequentially on the SAME runner and share filesystem state. Use multiple jobs when tasks are independent (lint + unit-test can run at once) or need different runners (build on Linux, but a separate signing job needs Windows).</p>
+  </div>
+  <h3>Job Dependency Graph</h3>
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚡ needs: Builds a DAG</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arrjb" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8a5a"/></marker></defs>
+        <rect x="20" y="20" width="150" height="55" rx="8" fill="#d4f0e0" stroke="#1a8a5a" stroke-width="2"/>
+        <text x="95" y="44" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">lint</text>
+        <text x="95" y="60" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">runs immediately</text>
+        <rect x="20" y="145" width="150" height="55" rx="8" fill="#d4f0e0" stroke="#1a8a5a" stroke-width="2"/>
+        <text x="95" y="169" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">test</text>
+        <text x="95" y="185" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">runs immediately</text>
+        <line x1="170" y1="47" x2="245" y2="90" stroke="#1a8a5a" stroke-width="2.5" marker-end="url(#arrjb)"/>
+        <line x1="170" y1="172" x2="245" y2="105" stroke="#1a8a5a" stroke-width="2.5" marker-end="url(#arrjb)"/>
+        <rect x="250" y="70" width="160" height="55" rx="8" fill="#d6ebf8" stroke="#0e6abf" stroke-width="2"/>
+        <text x="330" y="94" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">build</text>
+        <text x="330" y="110" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">needs: [lint, test]</text>
+        <line x1="410" y1="97" x2="475" y2="97" stroke="#0e6abf" stroke-width="2.5" marker-end="url(#arrjb)"/>
+        <rect x="480" y="70" width="160" height="55" rx="8" fill="#f8f0d4" stroke="#bf6a0e" stroke-width="2"/>
+        <text x="560" y="94" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#8a4500" text-anchor="middle">deploy</text>
+        <text x="560" y="110" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">needs: [build]</text>
+        <text x="350" y="200" font-family="Sora,sans-serif" font-size="9" fill="#606278" text-anchor="middle">lint &amp; test run in parallel → build waits for both → deploy waits for build</text>
+      </svg>
+    </div>
+  </div>
+  <h3>The Pattern in YAML</h3>
+  <div class="code-block jb-c">
+    <div class="code-label jb-l">YAML — Multiple jobs with needs: and outputs</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">lint</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+      - <span class="attr">run</span>: <span class="str">npm run lint</span>
+
+  <span class="attr">test</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+      - <span class="attr">run</span>: <span class="str">npm test</span>
+
+  <span class="attr">build</span>:
+    <span class="attr">needs</span>: [<span class="str">lint</span>, <span class="str">test</span>]      <span class="cm"># waits for BOTH to succeed</span>
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">outputs</span>:
+      <span class="attr">image-tag</span>: <span class="fn">${{ steps.meta.outputs.tag }}</span>  <span class="cm"># pass data to the next job</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+      - <span class="attr">id</span>: <span class="str">meta</span>                       <span class="cm"># step ID — referenced above</span>
+        <span class="attr">run</span>: <span class="str">echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT</span>
+      - <span class="attr">run</span>: <span class="str">docker build -t myapp:${{ steps.meta.outputs.tag }} .</span>
+
+  <span class="attr">deploy</span>:
+    <span class="attr">needs</span>: <span class="str">build</span>                   <span class="cm"># single dependency, no brackets needed</span>
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">run</span>: <span class="str">echo "Deploying image ${{ needs.build.outputs.image-tag }}"</span></pre>
+  </div>
+  <div class="aha">
+    <div class="aha-tag">💡 Aha Moment</div>
+    <p>Notice <code>needs.build.outputs.image-tag</code> in the deploy job — that's how data flows BETWEEN jobs (which run on separate, isolated VMs). Within ONE job, steps share a filesystem so you don't need this; across jobs, <code>outputs:</code> + <code>$GITHUB_OUTPUT</code> is the only bridge.</p>
+  </div>
+</div></div>
+
+<!-- TAB 4: SECRETS & VARIABLES -->
+<div id="tab-se" class="tab-panel ph-se"><div class="section">
+  <h2>🔐 Secrets &amp; Variables</h2>
+  <div class="story">Your deploy job needs an AWS access key. You absolutely cannot put that in the YAML file — it's committed to git, visible to anyone with repo access, forever in history. GitHub gives you two separate stores: <strong>Secrets</strong> (encrypted, masked in logs) and <strong>Variables</strong> (plain text, for non-sensitive config) — both settable at repository, environment, or organization level.</div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Secrets vs Variables — when do I use which?</div>
+    <p class="qa-a">If a value leaking would be a security incident (API keys, passwords, tokens) → <strong>Secret</strong>. GitHub automatically masks secret values in workflow logs (replaced with <code>***</code>) even if you accidentally echo them. If it's just configuration that's fine to be public (an AWS region name, a Node version, a feature flag) → <strong>Variable</strong>. Using a Secret for everything makes debugging harder since you can never see the actual value in logs.</p>
+  </div>
+  <h3>Where Secrets/Variables Live</h3>
+  <div class="grid-3">
+    <div class="card"><h4>📦 Repository level</h4><p>Settings → Secrets and variables. Available to all workflows in that repo. Good default for most projects.</p></div>
+    <div class="card"><h4>🌍 Environment level</h4><p>Tied to a named Environment (e.g. "production"). Can require manual approval before a job using it runs — critical for prod deploys.</p></div>
+    <div class="card"><h4>🏢 Organization level</h4><p>Shared across multiple repos in your GitHub org. Can restrict which repos may access a given org secret.</p></div>
+  </div>
+  <h3>Using Secrets in a Workflow</h3>
+  <div class="code-block se-c">
+    <div class="code-label se-l">YAML — AWS credentials via OIDC (no long-lived keys!) + secrets</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">deploy</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">permissions</span>:
+      <span class="attr">id-token</span>: <span class="str">write</span>          <span class="cm"># required for OIDC — no AWS access keys stored at all!</span>
+      <span class="attr">contents</span>: <span class="str">read</span>
+    <span class="attr">environment</span>: <span class="str">production</span>     <span class="cm"># ties this job to env-scoped secrets + approval gates</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+
+      <span class="cm"># Modern AWS auth — assumes an IAM role, no static keys to leak</span>
+      - <span class="attr">name</span>: <span class="str">Configure AWS credentials</span>
+        <span class="attr">uses</span>: <span class="fn">aws-actions/configure-aws-credentials@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">role-to-assume</span>: <span class="fn">${{ secrets.AWS_DEPLOY_ROLE_ARN }}</span>
+          <span class="attr">aws-region</span>: <span class="fn">${{ vars.AWS_REGION }}</span>      <span class="cm"># vars. = a Variable, not secret</span>
+
+      - <span class="attr">name</span>: <span class="str">Deploy to ECS</span>
+        <span class="attr">run</span>: |
+          aws ecs update-service \
+            --cluster <span class="fn">${{ vars.ECS_CLUSTER }}</span> \
+            --service <span class="fn">${{ vars.ECS_SERVICE }}</span> \
+            --force-new-deployment
+
+      <span class="cm"># Example: a database connection string — genuinely sensitive</span>
+      - <span class="attr">name</span>: <span class="str">Run migrations</span>
+        <span class="attr">env</span>:
+          <span class="attr">DB_CONNECTION</span>: <span class="fn">${{ secrets.PROD_DB_CONNECTION_STRING }}</span>
+        <span class="attr">run</span>: <span class="str">dotnet ef database update</span></pre>
+  </div>
+  <div class="warn">
+    <h4>⚠️ Secrets Are NOT Available to Forked-Repo PRs</h4>
+    <p>By design, workflows triggered by a pull request from a FORK don't get access to repository secrets — this prevents a malicious PR from exfiltrating your AWS keys. This is a common "why isn't my secret working" trap for open-source projects with external contributors.</p>
+  </div>
+  <h3>OIDC vs Long-Lived Access Keys</h3>
+  <div class="grid-2">
+    <div class="card"><h4>🔑 Old way — Access Keys</h4><p>Store <code>AWS_ACCESS_KEY_ID</code> + <code>AWS_SECRET_ACCESS_KEY</code> as secrets. Works, but the keys are long-lived — if leaked, valid until manually rotated.</p></div>
+    <div class="card"><h4>🛡️ Modern way — OIDC</h4><p>GitHub issues a short-lived OIDC token; AWS IAM trusts GitHub's identity provider and grants temporary credentials via <code>sts:AssumeRoleWithWebIdentity</code>. No secret AWS keys stored anywhere, ever.</p></div>
+  </div>
+</div></div>
+
+<!-- TAB 5: RUNNERS & ENVIRONMENTS -->
+<div id="tab-vr" class="tab-panel ph-vr"><div class="section">
+  <h2>🖥️ Runners &amp; Environments</h2>
+  <div class="story">Every job needs somewhere to actually execute — that's the <strong>runner</strong>. GitHub gives you fully managed VMs for free (within limits), or you can run your own. <strong>Environments</strong> are a separate concept — a named deployment target (staging, production) that can require manual approval, restrict which branches can deploy to it, and scope secrets.</div>
+  <h3>GitHub-Hosted Runner Options</h3>
+  <table class="kw-table">
+    <tr><th>runs-on value</th><th>OS</th><th>Typical specs (2026)</th><th>Use case</th></tr>
+    <tr><td><code>ubuntu-latest</code></td><td>Linux</td><td>4 vCPU, 16 GB RAM</td><td>Default for almost everything — Node, .NET, Docker, Python</td></tr>
+    <tr><td><code>windows-latest</code></td><td>Windows</td><td>4 vCPU, 16 GB RAM</td><td>.NET Framework, Windows-specific builds, IIS</td></tr>
+    <tr><td><code>macos-latest</code></td><td>macOS</td><td>4 vCPU, 8 GB RAM</td><td>iOS/macOS app builds — only platform that can build these</td></tr>
+    <tr><td><code>ubuntu-latest-4-cores</code> etc.</td><td>Linux/Win</td><td>Up to 64 vCPU, 256 GB RAM</td><td>Larger runners — paid tier, for heavy builds/tests</td></tr>
+    <tr><td><code>self-hosted</code></td><td>Any</td><td>Whatever you provide</td><td>Custom hardware, GPU, on-prem network access, cost control</td></tr>
+  </table>
+  <h3>Environments — Approval Gates for Production</h3>
+  <div class="diagram-wrap">
+    <div class="diagram-header">⚡ Environment Protection Rules</div>
+    <div class="diagram-body">
+      <svg class="diagram-svg" viewBox="0 0 720 170" xmlns="http://www.w3.org/2000/svg">
+        <defs><marker id="arrvr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#bf6a0e"/></marker></defs>
+        <rect x="20" y="55" width="160" height="70" rx="8" fill="#d6ebf8" stroke="#0e6abf" stroke-width="2"/>
+        <text x="100" y="86" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#0a4280" text-anchor="middle">build job</text>
+        <text x="100" y="104" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">passes automatically</text>
+        <line x1="180" y1="90" x2="235" y2="90" stroke="#bf6a0e" stroke-width="2.5" marker-end="url(#arrvr)"/>
+        <rect x="240" y="40" width="200" height="100" rx="8" fill="#f8f0d4" stroke="#bf6a0e" stroke-width="2.5" stroke-dasharray="4,2"/>
+        <text x="340" y="62" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#8a4500" text-anchor="middle">environment: production</text>
+        <text x="340" y="80" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">⏸️ Required reviewers</text>
+        <text x="340" y="95" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">⏱️ Wait timer (optional)</text>
+        <text x="340" y="110" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">🌿 Deployment branch rules</text>
+        <text x="340" y="125" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">🔒 Environment-scoped secrets</text>
+        <line x1="440" y1="90" x2="495" y2="90" stroke="#bf6a0e" stroke-width="2.5" marker-end="url(#arrvr)"/>
+        <rect x="500" y="55" width="200" height="70" rx="8" fill="#d4f0e0" stroke="#1a8a5a" stroke-width="2"/>
+        <text x="600" y="86" font-family="JetBrains Mono,monospace" font-size="11" font-weight="700" fill="#085c38" text-anchor="middle">deploy job runs</text>
+        <text x="600" y="104" font-family="Sora,sans-serif" font-size="8.5" fill="#606278" text-anchor="middle">only after approval</text>
+      </svg>
+    </div>
+  </div>
+  <div class="code-block vr-c">
+    <div class="code-label vr-l">YAML — A job gated by a protected environment</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">deploy-production</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">environment</span>:
+      <span class="attr">name</span>: <span class="str">production</span>
+      <span class="attr">url</span>: <span class="str">https://myapp.com</span>     <span class="cm"># shows as a clickable link in the run summary</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">run</span>: <span class="str">echo "Deploying to production..."</span>
+    <span class="cm"># This job will PAUSE and wait for a manual approval click
+    # in the GitHub UI if "production" has required reviewers configured</span></pre>
+  </div>
+  <div class="tip">
+    <h4>💡 Self-Hosted Runners for AWS-Native Pipelines</h4>
+    <p>For teams already running on AWS, a common pattern is a self-hosted runner on an EC2 instance (or ECS/Fargate via auto-scaling runner controllers) inside your private VPC — lets the runner reach private RDS instances or internal services directly, something GitHub-hosted runners can't do without a VPN/tunnel.</p>
+  </div>
+</div></div>
+
+<!-- TAB 6: ARTIFACTS & CACHING -->
+<div id="tab-ar" class="tab-panel ph-ar"><div class="section">
+  <h2>📦 Artifacts &amp; Caching</h2>
+  <div class="story">Two related but different problems. <strong>Artifacts</strong>: your build job produces a compiled binary or test report — how does the deploy job (on a totally separate, fresh VM) get that file? <strong>Caching</strong>: re-downloading every npm/NuGet package on every single run is slow — how do you skip that when nothing changed?</div>
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Aren't artifacts and cache basically the same thing?</div>
+    <p class="qa-a">No — different purpose, different lifecycle. <strong>Artifacts</strong> are the actual OUTPUT of your pipeline (a built .zip, test results, a Docker image tarball) — meant to be downloaded, inspected, or passed to another job/workflow, kept for a defined retention period (default 90 days). <strong>Cache</strong> is purely a speed optimisation for INPUTS (dependencies) — it's a best-effort, can be evicted anytime, and you should never rely on it for correctness.</p>
+  </div>
+  <h3>Passing Build Output Between Jobs</h3>
+  <div class="code-block ar-c">
+    <div class="code-label ar-l">YAML — upload-artifact in build, download-artifact in deploy</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">build</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+      - <span class="attr">run</span>: <span class="str">dotnet publish -c Release -o ./publish</span>
+
+      - <span class="attr">name</span>: <span class="str">Upload build artifact</span>
+        <span class="attr">uses</span>: <span class="fn">actions/upload-artifact@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">name</span>: <span class="str">app-build</span>
+          <span class="attr">path</span>: <span class="str">./publish</span>
+          <span class="attr">retention-days</span>: <span class="num">7</span>
+
+  <span class="attr">deploy</span>:
+    <span class="attr">needs</span>: <span class="str">build</span>
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>     <span class="cm"># a FRESH VM — has none of build's files</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">name</span>: <span class="str">Download build artifact</span>
+        <span class="attr">uses</span>: <span class="fn">actions/download-artifact@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">name</span>: <span class="str">app-build</span>
+          <span class="attr">path</span>: <span class="str">./publish</span>
+      - <span class="attr">run</span>: <span class="str">ls ./publish</span>    <span class="cm"># the files from build are now here</span></pre>
+  </div>
+  <h3>Speeding Up Builds with Cache</h3>
+  <div class="code-block ar-c">
+    <div class="code-label ar-l">YAML — caching npm and NuGet dependencies</div>
+    <pre><span class="attr">steps</span>:
+  - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+
+  <span class="cm"># Manual cache — key changes when package-lock.json changes, invalidating old cache</span>
+  - <span class="attr">name</span>: <span class="str">Cache node_modules</span>
+    <span class="attr">uses</span>: <span class="fn">actions/cache@v4</span>
+    <span class="attr">with</span>:
+      <span class="attr">path</span>: <span class="str">~/.npm</span>
+      <span class="attr">key</span>: <span class="fn">${{ runner.os }}-npm-${{ hashFiles('package-lock.json') }}</span>
+      <span class="attr">restore-keys</span>: |
+        <span class="fn">${{ runner.os }}</span>-npm-
+
+  - <span class="attr">run</span>: <span class="str">npm ci</span>
+
+  <span class="cm"># Many setup-* actions have caching BUILT IN — simpler, recommended when available</span>
+  - <span class="attr">uses</span>: <span class="fn">actions/setup-dotnet@v4</span>
+    <span class="attr">with</span>:
+      <span class="attr">dotnet-version</span>: <span class="str">"8.0"</span>
+      <span class="attr">cache</span>: <span class="kw">true</span>            <span class="cm"># handles NuGet caching automatically</span></pre>
+  </div>
+  <div class="aha">
+    <div class="aha-tag">💡 Aha Moment</div>
+    <p>Notice the cache <code>key</code> includes <code>hashFiles('package-lock.json')</code> — if your lockfile changes, the hash changes, the key changes, and you automatically get a FRESH cache instead of stale dependencies. This hash-based invalidation pattern shows up everywhere in CI caching, across every platform.</p>
+  </div>
+</div></div>
+
+<!-- TAB 7: MATRIX & CONDITIONALS -->
+<div id="tab-mx" class="tab-panel ph-mx"><div class="section">
+  <h2>🔢 Matrix Builds &amp; Conditionals</h2>
+  <div class="story">You need to test your app against Node 18, 20, AND 22 — on Ubuntu AND Windows. Writing 6 separate jobs would be insane. <code>strategy.matrix</code> generates every combination automatically from a short list. Combined with <code>if:</code> conditionals, you get fine control over exactly when each job or step actually runs.</div>
+  <h3>Matrix Builds — One Job, Many Combinations</h3>
+  <div class="code-block mx-c">
+    <div class="code-label mx-l">YAML — testing across multiple Node versions and OSes</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">test</span>:
+    <span class="attr">runs-on</span>: <span class="fn">${{ matrix.os }}</span>
+    <span class="attr">strategy</span>:
+      <span class="attr">matrix</span>:
+        <span class="attr">os</span>: [<span class="str">ubuntu-latest</span>, <span class="str">windows-latest</span>]
+        <span class="attr">node-version</span>: [<span class="str">"18"</span>, <span class="str">"20"</span>, <span class="str">"22"</span>]
+      <span class="attr">fail-fast</span>: <span class="kw">false</span>            <span class="cm"># don't cancel other combos if one fails</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="fn">actions/checkout@v4</span>
+      - <span class="attr">uses</span>: <span class="fn">actions/setup-node@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">node-version</span>: <span class="fn">${{ matrix.node-version }}</span>
+      - <span class="attr">run</span>: <span class="str">npm test</span>
+    <span class="cm"># Generates 2 × 3 = 6 jobs automatically:
+    # (ubuntu,18) (ubuntu,20) (ubuntu,22) (windows,18) (windows,20) (windows,22)</span></pre>
+  </div>
+  <h3>Conditionals — the <code>if:</code> Keyword</h3>
+  <div class="code-block mx-c">
+    <div class="code-label mx-l">YAML — controlling exactly when jobs/steps run</div>
+    <pre><span class="attr">jobs</span>:
+  <span class="attr">deploy</span>:
+    <span class="cm"># Only deploy if this is a push directly to main (not a PR, not another branch)</span>
+    <span class="attr">if</span>: <span class="fn">github.ref == 'refs/heads/main' &amp;&amp; github.event_name == 'push'</span>
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">run</span>: <span class="str">echo "Deploying..."</span>
+
+      <span class="cm"># Step-level conditional — only notify Slack if a PREVIOUS step failed</span>
+      - <span class="attr">name</span>: <span class="str">Notify failure</span>
+        <span class="attr">if</span>: <span class="fn">failure()</span>
+        <span class="attr">run</span>: <span class="str">curl -X POST $SLACK_WEBHOOK -d "Deploy failed!"</span>
+
+      <span class="cm"># Always run cleanup, even if earlier steps failed</span>
+      - <span class="attr">name</span>: <span class="str">Cleanup</span>
+        <span class="attr">if</span>: <span class="fn">always()</span>
+        <span class="attr">run</span>: <span class="str">echo "Cleaning up temp resources"</span></pre>
+  </div>
+  <h3>Common Status Check Functions</h3>
+  <div class="grid-3">
+    <div class="card"><h4>✅ success()</h4><p>True if all previous steps succeeded. This is the implicit default if you write no <code>if:</code> at all.</p></div>
+    <div class="card"><h4>❌ failure()</h4><p>True if any previous step in the job failed. Useful for sending failure notifications.</p></div>
+    <div class="card"><h4>♾️ always()</h4><p>Runs regardless of success/failure — great for cleanup steps that must execute no matter what.</p></div>
+    <div class="card"><h4>🚫 cancelled()</h4><p>True if the workflow run was manually cancelled mid-execution.</p></div>
+  </div>
+  <div class="warn">
+    <h4>⚠️ Matrix Jobs Multiply Your Minutes Usage</h4>
+    <p>A 2×3 matrix = 6 full job runs, each consuming runner minutes against your usage quota. Be deliberate about matrix size — testing every permutation of every dependency version quickly becomes expensive on private repos.</p>
+  </div>
+</div></div>
+
+<!-- TAB 8: KEYWORD REFERENCE -->
+<div id="tab-rw" class="tab-panel ph-rw"><div class="section">
+  <h2>📖 Keyword Reference Cheat Sheet</h2>
+  <div class="story">Every keyword used across this guide, in one place — so you can come back here instead of re-reading whole tabs once you already understand the concepts.</div>
+  <h3>Top-Level Workflow Keywords</h3>
+  <table class="kw-table">
+    <tr><th>Keyword</th><th>Purpose</th></tr>
+    <tr><td><code>name:</code></td><td>Display name of the workflow, shown in the Actions tab</td></tr>
+    <tr><td><code>on:</code></td><td>What event(s) trigger this workflow (push, pull_request, schedule, workflow_dispatch...)</td></tr>
+    <tr><td><code>permissions:</code></td><td>Sets the GITHUB_TOKEN's permission scope for this workflow/job (e.g. <code>id-token: write</code> for OIDC)</td></tr>
+    <tr><td><code>env:</code></td><td>Environment variables available to all jobs/steps below this level</td></tr>
+    <tr><td><code>jobs:</code></td><td>Container for all jobs in the workflow</td></tr>
+    <tr><td><code>concurrency:</code></td><td>Prevents overlapping runs — e.g. cancel an in-progress deploy if a newer one starts</td></tr>
+  </table>
+  <h3>Job-Level Keywords</h3>
+  <table class="kw-table">
+    <tr><th>Keyword</th><th>Purpose</th></tr>
+    <tr><td><code>runs-on:</code></td><td>Which runner/VM this job executes on</td></tr>
+    <tr><td><code>needs:</code></td><td>List of job IDs that must complete successfully first — builds the dependency graph</td></tr>
+    <tr><td><code>if:</code></td><td>Conditional expression — job only runs if this evaluates true</td></tr>
+    <tr><td><code>environment:</code></td><td>Ties the job to a named Environment (approval gates, scoped secrets)</td></tr>
+    <tr><td><code>strategy.matrix:</code></td><td>Generates multiple job runs from combinations of variables</td></tr>
+    <tr><td><code>outputs:</code></td><td>Values this job exposes for other jobs to read via <code>needs.JOB.outputs.X</code></td></tr>
+    <tr><td><code>steps:</code></td><td>The ordered list of instructions this job executes</td></tr>
+    <tr><td><code>timeout-minutes:</code></td><td>Kills the job if it runs longer than this — prevents stuck jobs burning minutes forever</td></tr>
+  </table>
+  <h3>Step-Level Keywords</h3>
+  <table class="kw-table">
+    <tr><th>Keyword</th><th>Purpose</th></tr>
+    <tr><td><code>name:</code></td><td>Display label for this step in logs/UI (optional but recommended)</td></tr>
+    <tr><td><code>id:</code></td><td>Reference name so other steps can read this step's <code>outputs</code></td></tr>
+    <tr><td><code>uses:</code></td><td>Calls a pre-built Action — format <code>owner/repo@version</code></td></tr>
+    <tr><td><code>run:</code></td><td>Executes shell command(s) directly instead of an Action</td></tr>
+    <tr><td><code>with:</code></td><td>Input parameters passed to an Action used via <code>uses:</code></td></tr>
+    <tr><td><code>env:</code></td><td>Environment variables scoped to just this step</td></tr>
+    <tr><td><code>if:</code></td><td>Conditional — this individual step only runs if true</td></tr>
+    <tr><td><code>continue-on-error:</code></td><td>Job keeps running even if this step fails (doesn't fail the whole job)</td></tr>
+  </table>
+  <h3>Useful Context Expressions</h3>
+  <table class="kw-table">
+    <tr><th>Expression</th><th>Returns</th></tr>
+    <tr><td><code>${{ github.ref }}</code></td><td>The branch/tag ref that triggered the workflow (e.g. <code>refs/heads/main</code>)</td></tr>
+    <tr><td><code>${{ github.sha }}</code></td><td>The commit SHA that triggered the run</td></tr>
+    <tr><td><code>${{ github.event_name }}</code></td><td>What kind of event triggered this (push, pull_request, etc.)</td></tr>
+    <tr><td><code>${{ github.actor }}</code></td><td>Username of whoever triggered the workflow</td></tr>
+    <tr><td><code>${{ secrets.NAME }}</code></td><td>Value of a configured Secret</td></tr>
+    <tr><td><code>${{ vars.NAME }}</code></td><td>Value of a configured (non-secret) Variable</td></tr>
+    <tr><td><code>${{ runner.os }}</code></td><td>OS of the current runner — Linux, Windows, or macOS</td></tr>
+    <tr><td><code>${{ steps.ID.outputs.X }}</code></td><td>An output value from an earlier step in the SAME job</td></tr>
+    <tr><td><code>${{ needs.JOB.outputs.X }}</code></td><td>An output value from a job this one depends on</td></tr>
+  </table>
+  <div class="stat-grid">
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">Core levels<br>workflow→job→step→action</div></div>
+    <div class="stat"><div class="stat-num">20k+</div><div class="stat-label">Marketplace<br>Actions available</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Hosted runner OSes<br>Linux/Win/macOS</div></div>
+    <div class="stat"><div class="stat-num">90</div><div class="stat-label">Default artifact<br>retention (days)</div></div>
+  </div>
+  <div class="completion">
+    <h3>🎉 Part 1 Complete — GitHub Actions Fundamentals</h3>
+    <p>You now understand the workflow→job→step→action hierarchy, triggers, secrets vs variables, runners, environments, artifacts vs caching, and matrix builds. Part 2 puts all of this together into real, deployable AWS pipelines — building Docker images, pushing to ECR, and deploying to ECS/Lambda/Elastic Beanstalk using OIDC auth, matching the same AWS services you've already learned.</p>
+    <div class="next-parts">
+      <span class="np np-done">① Fundamentals ✓</span>
+      <span class="np np-next">② AWS Deploy Examples →</span>
+      <span class="np np-todo">③ Reusable Workflows &amp; Advanced</span>
+    </div>
+  </div>
+</div></div>
+
+</div>
+<script>
+function T(id, btn){
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  btn.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
+}
+</script>
+</body>
+</html>

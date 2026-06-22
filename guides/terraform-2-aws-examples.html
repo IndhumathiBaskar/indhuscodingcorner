@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraform — Part 2: AWS Examples</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --s3:#e67e22;--s3-l:#fde8d0;--s3-d:#8a4500;
+  --ec2:#e74c3c;--ec2-l:#f8d8d4;--ec2-d:#8a1500;
+  --iam:#8e44ad;--iam-l:#ede0f8;--iam-d:#4a1580;
+  --kms:#27ae60;--kms-l:#d4f0e0;--kms-d:#085c38;
+  --ecs:#2980b9;--ecs-l:#d6ebf8;--ecs-d:#0a4280;
+  --alb:#16a085;--alb-l:#d4f0ec;--alb-d:#0d5c52;
+  --lam:#f39c12;--lam-l:#fef3c7;--lam-d:#92660a;
+  --apg:#c0392b;--apg-l:#f8d6d4;--apg-d:#8a1500;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(123,66,188,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#0a0618 0%,#1a0e38 45%,#1e1240 100%);border-bottom:1px solid #1a0e30;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(230,126,34,.35) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(39,174,96,.25) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(41,128,185,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#fcd34d,#6ee7b7,#7dd3fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(252,211,77,.2);border:1px solid rgba(252,211,77,.4);color:#fcd34d;}
+.pb-next{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.4);}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(244,246,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-s3.active{background:var(--s3-l);color:var(--s3-d);}
+.t-ec2.active{background:var(--ec2-l);color:var(--ec2-d);}
+.t-iam.active{background:var(--iam-l);color:var(--iam-d);}
+.t-kms.active{background:var(--kms-l);color:var(--kms-d);}
+.t-ecs.active{background:var(--ecs-l);color:var(--ecs-d);}
+.t-alb.active{background:var(--alb-l);color:var(--alb-d);}
+.t-lam.active{background:var(--lam-l);color:var(--lam-d);}
+.t-apg.active{background:var(--apg-l);color:var(--apg-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-s3 h2,.ph-s3 h3{color:var(--s3-d);} .ph-s3 h2{border-bottom:3px solid var(--s3-l);}
+.ph-ec2 h2,.ph-ec2 h3{color:var(--ec2-d);} .ph-ec2 h2{border-bottom:3px solid var(--ec2-l);}
+.ph-iam h2,.ph-iam h3{color:var(--iam-d);} .ph-iam h2{border-bottom:3px solid var(--iam-l);}
+.ph-kms h2,.ph-kms h3{color:var(--kms-d);} .ph-kms h2{border-bottom:3px solid var(--kms-l);}
+.ph-ecs h2,.ph-ecs h3{color:var(--ecs-d);} .ph-ecs h2{border-bottom:3px solid var(--ecs-l);}
+.ph-alb h2,.ph-alb h3{color:var(--alb-d);} .ph-alb h2{border-bottom:3px solid var(--alb-l);}
+.ph-lam h2,.ph-lam h3{color:var(--lam-d);} .ph-lam h2{border-bottom:3px solid var(--lam-l);}
+.ph-apg h2,.ph-apg h3{color:var(--apg-d);} .ph-apg h2{border-bottom:3px solid var(--apg-l);}
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p,.tip li{color:var(--muted);font-size:.84rem;margin:0;}
+.tip ul{padding-left:16px;margin-top:4px;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.s3-c{border-left:4px solid var(--s3);}
+.code-block.ec2-c{border-left:4px solid var(--ec2);}
+.code-block.iam-c{border-left:4px solid var(--iam);}
+.code-block.kms-c{border-left:4px solid var(--kms);}
+.code-block.ecs-c{border-left:4px solid var(--ecs);}
+.code-block.alb-c{border-left:4px solid var(--alb);}
+.code-block.lam-c{border-left:4px solid var(--lam);}
+.code-block.apg-c{border-left:4px solid var(--apg);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.s3-l{color:#fcd34d;}.ec2-l{color:#fca5a5;}.iam-l{color:#c4b5fd;}.kms-l{color:#6ee7b7;}
+.ecs-l{color:#7dd3fc;}.alb-l{color:#6ee7b7;}.lam-l{color:#fcd34d;}.apg-l{color:#fca5a5;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+.attr{color:#89b4fa;}.blk{color:#cba6f7;}
+code{background:rgba(123,66,188,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:#4a1580;}
+.folder-tree{background:var(--code-bg);border-radius:var(--r);padding:1rem 1.3rem;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:clamp(.7rem,1.9vw,.82rem);line-height:2;color:#cdd6f4;overflow-x:auto;border-left:4px solid #7b42bc;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.folder-tree .dir{color:#89b4fa;font-weight:600;}
+.folder-tree .file-tf{color:#c4b5fd;}
+.folder-tree .comment{color:#45486a;font-style:italic;}
+.completion{background:linear-gradient(135deg,#0a0618,#1a0e38);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.next-parts{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.np-next{background:rgba(252,211,77,.2);border:1px solid rgba(252,211,77,.3);color:#fcd34d;}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr;}.code-block pre{font-size:.63rem;}}
+</style>
+</head>
+<body>
+<div class="header"><div class="container">
+  <div class="header-badge">Infrastructure as Code · AWS Examples</div>
+  <div class="part-badge">
+    <span class="pb pb-done">✅ Part 1: Fundamentals</span>
+    <span class="pb pb-active">② AWS Examples</span>
+    <span class="pb pb-next">③ Terragrunt</span>
+  </div>
+  <h1>Terraform — <span>AWS Examples</span></h1>
+  <p>Real, production-ready Terraform for S3, EC2, IAM, KMS, SSM, ECS, ALB, Lambda, and API Gateway</p>
+  <div class="header-chips">
+    <span class="chip">S3</span><span class="chip">EC2</span><span class="chip">IAM</span>
+    <span class="chip">KMS</span><span class="chip">SSM</span><span class="chip">ECS Fargate</span>
+    <span class="chip">ALB / NLB</span><span class="chip">Lambda</span><span class="chip">API Gateway</span>
+  </div>
+</div></div>
+<div class="tab-nav"><div class="container"><div class="tab-nav-inner">
+  <button class="tab-btn t-s3  active" onclick="T('s3',this)">① S3</button>
+  <button class="tab-btn t-ec2"        onclick="T('ec2',this)">② EC2</button>
+  <button class="tab-btn t-iam"        onclick="T('iam',this)">③ IAM</button>
+  <button class="tab-btn t-kms"        onclick="T('kms',this)">④ KMS &amp; SSM</button>
+  <button class="tab-btn t-ecs"        onclick="T('ecs',this)">⑤ ECS Fargate</button>
+  <button class="tab-btn t-alb"        onclick="T('alb',this)">⑥ ALB / NLB</button>
+  <button class="tab-btn t-lam"        onclick="T('lam',this)">⑦ Lambda</button>
+  <button class="tab-btn t-apg"        onclick="T('apg',this)">⑧ API Gateway</button>
+</div></div></div>
+<div class="container">
+
+<!-- TAB 1: S3 -->
+<div id="tab-s3" class="tab-panel active ph-s3"><div class="section">
+  <h2>🪣 S3 — Simple Storage Service</h2>
+  <div class="story">S3 is one of the most common AWS resources you'll manage with Terraform. A "bucket" in the console is actually 6-8 separate Terraform resources — the bucket itself, versioning, encryption, public access blocks, lifecycle rules, and bucket policy. Here's a complete, production-ready S3 setup.</div>
+
+  <h3>Folder Structure</h3>
+  <div class="folder-tree"><span class="dir">modules/s3-bucket/</span>
+├── <span class="file-tf">main.tf</span>       <span class="comment"># bucket + all settings</span>
+├── <span class="file-tf">variables.tf</span>
+└── <span class="file-tf">outputs.tf</span></div>
+
+  <h3>Complete Production S3 Bucket</h3>
+  <div class="code-block s3-c">
+    <div class="code-label s3-l">HCL — main.tf — production S3 bucket</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_s3_bucket"</span> <span class="str">"this"</span> {
+  <span class="attr">bucket</span> = <span class="fn">var.bucket_name</span>
+  <span class="attr">tags</span>   = <span class="fn">var.tags</span>
+}
+
+<span class="cm"># Block ALL public access — always on for app buckets</span>
+<span class="blk">resource</span> <span class="str">"aws_s3_bucket_public_access_block"</span> <span class="str">"this"</span> {
+  <span class="attr">bucket</span>                  = <span class="fn">aws_s3_bucket.this.id</span>
+  <span class="attr">block_public_acls</span>       = <span class="kw">true</span>
+  <span class="attr">block_public_policy</span>     = <span class="kw">true</span>
+  <span class="attr">ignore_public_acls</span>      = <span class="kw">true</span>
+  <span class="attr">restrict_public_buckets</span> = <span class="kw">true</span>
+}
+
+<span class="cm"># Versioning — recommended for state buckets and critical data</span>
+<span class="blk">resource</span> <span class="str">"aws_s3_bucket_versioning"</span> <span class="str">"this"</span> {
+  <span class="attr">bucket</span> = <span class="fn">aws_s3_bucket.this.id</span>
+  <span class="attr">versioning_configuration</span> {
+    <span class="attr">status</span> = <span class="fn">var.enable_versioning</span> ? <span class="str">"Enabled"</span> : <span class="str">"Suspended"</span>
+  }
+}
+
+<span class="cm"># Encryption at rest using KMS or S3-managed key</span>
+<span class="blk">resource</span> <span class="str">"aws_s3_bucket_server_side_encryption_configuration"</span> <span class="str">"this"</span> {
+  <span class="attr">bucket</span> = <span class="fn">aws_s3_bucket.this.id</span>
+  <span class="attr">rule</span> {
+    <span class="attr">apply_server_side_encryption_by_default</span> {
+      <span class="attr">sse_algorithm</span>     = <span class="fn">var.kms_key_id</span> != <span class="str">""</span> ? <span class="str">"aws:kms"</span> : <span class="str">"AES256"</span>
+      <span class="attr">kms_master_key_id</span> = <span class="fn">var.kms_key_id</span> != <span class="str">""</span> ? <span class="fn">var.kms_key_id</span> : <span class="kw">null</span>
+    }
+    <span class="attr">bucket_key_enabled</span> = <span class="kw">true</span>   <span class="cm"># reduces KMS API calls + cost</span>
+  }
+}
+
+<span class="cm"># Lifecycle — move old versions to cheaper storage, then delete</span>
+<span class="blk">resource</span> <span class="str">"aws_s3_bucket_lifecycle_configuration"</span> <span class="str">"this"</span> {
+  <span class="attr">count</span>  = <span class="fn">length</span>(<span class="fn">var.lifecycle_rules</span>) > <span class="num">0</span> ? <span class="num">1</span> : <span class="num">0</span>
+  <span class="attr">bucket</span> = <span class="fn">aws_s3_bucket.this.id</span>
+
+  <span class="kw">dynamic</span> <span class="str">"rule"</span> {
+    <span class="attr">for_each</span> = <span class="fn">var.lifecycle_rules</span>
+    <span class="attr">content</span> {
+      <span class="attr">id</span>     = <span class="fn">rule.value.id</span>
+      <span class="attr">status</span> = <span class="str">"Enabled"</span>
+      <span class="attr">transition</span> {
+        <span class="attr">days</span>          = <span class="fn">rule.value.transition_days</span>
+        <span class="attr">storage_class</span> = <span class="fn">rule.value.storage_class</span>
+      }
+      <span class="attr">expiration</span> {
+        <span class="attr">days</span> = <span class="fn">rule.value.expiration_days</span>
+      }
+    }
+  }
+}
+
+<span class="cm"># Bucket policy — restrict access to specific IAM roles</span>
+<span class="blk">resource</span> <span class="str">"aws_s3_bucket_policy"</span> <span class="str">"this"</span> {
+  <span class="attr">count</span>  = <span class="fn">var.bucket_policy_json</span> != <span class="str">""</span> ? <span class="num">1</span> : <span class="num">0</span>
+  <span class="attr">bucket</span> = <span class="fn">aws_s3_bucket.this.id</span>
+  <span class="attr">policy</span> = <span class="fn">var.bucket_policy_json</span>
+  <span class="cm"># depends_on ensures public access block is set BEFORE policy</span>
+  <span class="attr">depends_on</span> = [<span class="fn">aws_s3_bucket_public_access_block.this</span>]
+}</pre>
+  </div>
+
+  <div class="code-block s3-c">
+    <div class="code-label s3-l">HCL — variables.tf</div>
+    <pre><span class="blk">variable</span> <span class="str">"bucket_name"</span>       { <span class="attr">type</span> = <span class="kw">string</span> }
+<span class="blk">variable</span> <span class="str">"tags"</span>              { <span class="attr">type</span> = <span class="fn">map</span>(<span class="kw">string</span>); <span class="attr">default</span> = {} }
+<span class="blk">variable</span> <span class="str">"kms_key_id"</span>        { <span class="attr">type</span> = <span class="kw">string</span>; <span class="attr">default</span> = <span class="str">""</span> }
+<span class="blk">variable</span> <span class="str">"enable_versioning"</span> { <span class="attr">type</span> = <span class="kw">bool</span>; <span class="attr">default</span> = <span class="kw">true</span> }
+<span class="blk">variable</span> <span class="str">"bucket_policy_json"</span>{ <span class="attr">type</span> = <span class="kw">string</span>; <span class="attr">default</span> = <span class="str">""</span> }
+<span class="blk">variable</span> <span class="str">"lifecycle_rules"</span> {
+  <span class="attr">type</span> = <span class="fn">list</span>(<span class="fn">object</span>({
+    <span class="attr">id</span>               = <span class="kw">string</span>
+    <span class="attr">transition_days</span>  = <span class="kw">number</span>
+    <span class="attr">storage_class</span>    = <span class="kw">string</span>
+    <span class="attr">expiration_days</span>  = <span class="kw">number</span>
+  }))
+  <span class="attr">default</span> = []
+}</pre>
+  </div>
+
+  <div class="code-block s3-c">
+    <div class="code-label s3-l">HCL — calling the module</div>
+    <pre><span class="blk">module</span> <span class="str">"app_data_bucket"</span> {
+  <span class="attr">source</span>      = <span class="str">"../../modules/s3-bucket"</span>
+  <span class="attr">bucket_name</span> = <span class="str">"myapp-${var.environment}-data"</span>
+  <span class="attr">kms_key_id</span>  = <span class="fn">module.kms.key_arn</span>
+  <span class="attr">tags</span>        = <span class="fn">local.common_tags</span>
+
+  <span class="attr">lifecycle_rules</span> = [{
+    <span class="attr">id</span>              = <span class="str">"archive-old-data"</span>
+    <span class="attr">transition_days</span> = <span class="num">30</span>
+    <span class="attr">storage_class</span>   = <span class="str">"STANDARD_IA"</span>
+    <span class="attr">expiration_days</span> = <span class="num">365</span>
+  }]
+}</pre>
+  </div>
+  <div class="tip">
+    <h4>💡 Force-Destroy for Dev Buckets</h4>
+    <p>Add <code>force_destroy = true</code> to <code>aws_s3_bucket</code> in dev environments — otherwise Terraform can't delete a non-empty bucket on <code>terraform destroy</code>. Never set this in prod.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 2: EC2 -->
+<div id="tab-ec2" class="tab-panel ph-ec2"><div class="section">
+  <h2>🖥️ EC2 — Elastic Compute Cloud</h2>
+  <div class="story">EC2 with Terraform means never hardcoding an AMI ID again, never manually configuring security groups, and having your auto-scaling setup be version-controlled and reproducible. Here's a complete setup: a launch template, auto-scaling group, and security group.</div>
+
+  <div class="code-block ec2-c">
+    <div class="code-label ec2-l">HCL — data source for latest AMI (never hardcode!)</div>
+    <pre><span class="blk">data</span> <span class="str">"aws_ami"</span> <span class="str">"amazon_linux"</span> {
+  <span class="attr">most_recent</span> = <span class="kw">true</span>
+  <span class="attr">owners</span>      = [<span class="str">"amazon"</span>]
+  <span class="attr">filter</span> {
+    <span class="attr">name</span>   = <span class="str">"name"</span>
+    <span class="attr">values</span> = [<span class="str">"al2023-ami-*-x86_64"</span>]
+  }
+}</pre>
+  </div>
+
+  <div class="code-block ec2-c">
+    <div class="code-label ec2-l">HCL — security group</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_security_group"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span>        = <span class="str">"${local.name_prefix}-app-sg"</span>
+  <span class="attr">description</span> = <span class="str">"App tier security group"</span>
+  <span class="attr">vpc_id</span>      = <span class="fn">var.vpc_id</span>
+
+  <span class="attr">ingress</span> {
+    <span class="attr">description</span>     = <span class="str">"HTTP from ALB"</span>
+    <span class="attr">from_port</span>       = <span class="num">8080</span>
+    <span class="attr">to_port</span>         = <span class="num">8080</span>
+    <span class="attr">protocol</span>        = <span class="str">"tcp"</span>
+    <span class="attr">security_groups</span> = [<span class="fn">var.alb_sg_id</span>]   <span class="cm"># only from ALB, not internet</span>
+  }
+
+  <span class="attr">egress</span> {
+    <span class="attr">from_port</span>   = <span class="num">0</span>
+    <span class="attr">to_port</span>     = <span class="num">0</span>
+    <span class="attr">protocol</span>    = <span class="str">"-1"</span>
+    <span class="attr">cidr_blocks</span> = [<span class="str">"0.0.0.0/0"</span>]
+  }
+
+  <span class="attr">lifecycle</span> { <span class="attr">create_before_destroy</span> = <span class="kw">true</span> }
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}</pre>
+  </div>
+
+  <div class="code-block ec2-c">
+    <div class="code-label ec2-l">HCL — launch template + auto-scaling group</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_launch_template"</span> <span class="str">"app"</span> {
+  <span class="attr">name_prefix</span>   = <span class="str">"${local.name_prefix}-app-"</span>
+  <span class="attr">image_id</span>      = <span class="fn">data.aws_ami.amazon_linux.id</span>
+  <span class="attr">instance_type</span> = <span class="fn">var.instance_type</span>
+
+  <span class="attr">vpc_security_group_ids</span> = [<span class="fn">aws_security_group.app.id</span>]
+
+  <span class="attr">iam_instance_profile</span> {
+    <span class="attr">arn</span> = <span class="fn">aws_iam_instance_profile.app.arn</span>
+  }
+
+  <span class="attr">block_device_mappings</span> {
+    <span class="attr">device_name</span> = <span class="str">"/dev/xvda"</span>
+    <span class="attr">ebs</span> {
+      <span class="attr">volume_size</span>           = <span class="num">20</span>
+      <span class="attr">volume_type</span>           = <span class="str">"gp3"</span>
+      <span class="attr">encrypted</span>             = <span class="kw">true</span>
+      <span class="attr">kms_key_id</span>            = <span class="fn">var.kms_key_id</span>
+      <span class="attr">delete_on_termination</span> = <span class="kw">true</span>
+    }
+  }
+
+  <span class="attr">metadata_options</span> {
+    <span class="attr">http_endpoint</span>               = <span class="str">"enabled"</span>
+    <span class="attr">http_tokens</span>                 = <span class="str">"required"</span>  <span class="cm"># IMDSv2 — always enable</span>
+    <span class="attr">http_put_response_hop_limit</span> = <span class="num">1</span>
+  }
+
+  <span class="attr">user_data</span> = <span class="fn">base64encode</span>(<span class="fn">templatefile</span>(<span class="str">"${path.module}/templates/user_data.sh.tpl"</span>, {
+    <span class="attr">environment</span> = <span class="fn">var.environment</span>
+    <span class="attr">app_version</span> = <span class="fn">var.app_version</span>
+  }))
+
+  <span class="attr">tag_specifications</span> {
+    <span class="attr">resource_type</span> = <span class="str">"instance"</span>
+    <span class="attr">tags</span>          = <span class="fn">local.common_tags</span>
+  }
+
+  <span class="attr">lifecycle</span> { <span class="attr">create_before_destroy</span> = <span class="kw">true</span> }
+}
+
+<span class="blk">resource</span> <span class="str">"aws_autoscaling_group"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span>                = <span class="str">"${local.name_prefix}-app-asg"</span>
+  <span class="attr">vpc_zone_identifier</span> = <span class="fn">var.private_subnet_ids</span>
+  <span class="attr">min_size</span>            = <span class="fn">var.min_capacity</span>
+  <span class="attr">max_size</span>            = <span class="fn">var.max_capacity</span>
+  <span class="attr">desired_capacity</span>    = <span class="fn">var.desired_capacity</span>
+  <span class="attr">target_group_arns</span>   = [<span class="fn">var.target_group_arn</span>]
+  <span class="attr">health_check_type</span>   = <span class="str">"ELB"</span>
+  <span class="attr">health_check_grace_period</span> = <span class="num">60</span>
+
+  <span class="attr">launch_template</span> {
+    <span class="attr">id</span>      = <span class="fn">aws_launch_template.app.id</span>
+    <span class="attr">version</span> = <span class="str">"$Latest"</span>
+  }
+
+  <span class="attr">instance_refresh</span> {
+    <span class="attr">strategy</span> = <span class="str">"Rolling"</span>
+    <span class="attr">preferences</span> {
+      <span class="attr">min_healthy_percentage</span> = <span class="num">50</span>
+    }
+  }
+
+  <span class="attr">tag</span> {
+    <span class="attr">key</span>                 = <span class="str">"Name"</span>
+    <span class="attr">value</span>               = <span class="str">"${local.name_prefix}-app"</span>
+    <span class="attr">propagate_at_launch</span> = <span class="kw">true</span>
+  }
+}</pre>
+  </div>
+  <div class="tip">
+    <h4>💡 Always Enable IMDSv2</h4>
+    <p>Setting <code>http_tokens = "required"</code> enforces IMDSv2 (token-based metadata access), which prevents SSRF attacks from being able to steal instance credentials. It's a one-liner that eliminates a whole class of security issue.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 3: IAM -->
+<div id="tab-iam" class="tab-panel ph-iam"><div class="section">
+  <h2>🔐 IAM — Identity &amp; Access Management</h2>
+  <div class="story">IAM is the most complex AWS service to get right — and also the most critical from a security standpoint. Terraform makes IAM auditable and version-controlled, so you can track exactly who has access to what and when it changed.</div>
+
+  <div class="code-block iam-c">
+    <div class="code-label iam-l">HCL — IAM role with trust policy (for EC2)</div>
+    <pre><span class="cm"># The role itself — who can ASSUME this role</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span>               = <span class="str">"${local.name_prefix}-app-role"</span>
+  <span class="attr">assume_role_policy</span> = <span class="fn">data.aws_iam_policy_document.ec2_assume.json</span>
+  <span class="attr">tags</span>               = <span class="fn">local.common_tags</span>
+}
+
+<span class="cm"># Trust policy — who can assume the role (EC2 in this case)</span>
+<span class="blk">data</span> <span class="str">"aws_iam_policy_document"</span> <span class="str">"ec2_assume"</span> {
+  <span class="attr">statement</span> {
+    <span class="attr">actions</span> = [<span class="str">"sts:AssumeRole"</span>]
+    <span class="attr">principals</span> {
+      <span class="attr">type</span>        = <span class="str">"Service"</span>
+      <span class="attr">identifiers</span> = [<span class="str">"ec2.amazonaws.com"</span>]
+    }
+  }
+}
+
+<span class="cm"># Instance profile — wraps the role so EC2 can use it</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_instance_profile"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span> = <span class="str">"${local.name_prefix}-app-profile"</span>
+  <span class="attr">role</span> = <span class="fn">aws_iam_role.app.name</span>
+}</pre>
+  </div>
+
+  <div class="code-block iam-c">
+    <div class="code-label iam-l">HCL — custom policy using aws_iam_policy_document</div>
+    <pre><span class="cm"># Always use aws_iam_policy_document instead of raw JSON strings
+# — it validates syntax, handles condition formatting, and is diffable</span>
+<span class="blk">data</span> <span class="str">"aws_iam_policy_document"</span> <span class="str">"app_permissions"</span> {
+  <span class="attr">statement</span> {
+    <span class="attr">sid</span>     = <span class="str">"AllowS3Access"</span>
+    <span class="attr">effect</span>  = <span class="str">"Allow"</span>
+    <span class="attr">actions</span> = [<span class="str">"s3:GetObject"</span>, <span class="str">"s3:PutObject"</span>, <span class="str">"s3:DeleteObject"</span>]
+    <span class="attr">resources</span> = [
+      <span class="fn">aws_s3_bucket.app_data.arn</span>,
+      <span class="str">"${aws_s3_bucket.app_data.arn}/*"</span>
+    ]
+  }
+
+  <span class="attr">statement</span> {
+    <span class="attr">sid</span>     = <span class="str">"AllowSSMParameters"</span>
+    <span class="attr">effect</span>  = <span class="str">"Allow"</span>
+    <span class="attr">actions</span> = [<span class="str">"ssm:GetParameter"</span>, <span class="str">"ssm:GetParametersByPath"</span>]
+    <span class="attr">resources</span> = [
+      <span class="str">"arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/${var.environment}/*"</span>
+    ]
+  }
+
+  <span class="attr">statement</span> {
+    <span class="attr">sid</span>     = <span class="str">"AllowKMSDecrypt"</span>
+    <span class="attr">effect</span>  = <span class="str">"Allow"</span>
+    <span class="attr">actions</span> = [<span class="str">"kms:Decrypt"</span>, <span class="str">"kms:GenerateDataKey"</span>]
+    <span class="attr">resources</span> = [<span class="fn">var.kms_key_arn</span>]
+  }
+}
+
+<span class="blk">resource</span> <span class="str">"aws_iam_policy"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span>   = <span class="str">"${local.name_prefix}-app-policy"</span>
+  <span class="attr">policy</span> = <span class="fn">data.aws_iam_policy_document.app_permissions.json</span>
+}
+
+<span class="cm"># Attach the policy to the role</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"app"</span> {
+  <span class="attr">role</span>       = <span class="fn">aws_iam_role.app.name</span>
+  <span class="attr">policy_arn</span> = <span class="fn">aws_iam_policy.app.arn</span>
+}
+
+<span class="cm"># Attach AWS-managed policies (e.g., for SSM Session Manager)</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"ssm_core"</span> {
+  <span class="attr">role</span>       = <span class="fn">aws_iam_role.app.name</span>
+  <span class="attr">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"</span>
+}</pre>
+  </div>
+
+  <div class="code-block iam-c">
+    <div class="code-label iam-l">HCL — ECS task execution role (needed for Fargate)</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"ecs_task_execution"</span> {
+  <span class="attr">name</span> = <span class="str">"${local.name_prefix}-ecs-exec-role"</span>
+  <span class="attr">assume_role_policy</span> = <span class="fn">jsonencode</span>({
+    <span class="attr">Version</span>   = <span class="str">"2012-10-17"</span>
+    <span class="attr">Statement</span> = [{
+      <span class="attr">Action</span>    = <span class="str">"sts:AssumeRole"</span>
+      <span class="attr">Effect</span>    = <span class="str">"Allow"</span>
+      <span class="attr">Principal</span> = { <span class="attr">Service</span> = <span class="str">"ecs-tasks.amazonaws.com"</span> }
+    }]
+  })
+}
+
+<span class="blk">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"ecs_exec_policy"</span> {
+  <span class="attr">role</span>       = <span class="fn">aws_iam_role.ecs_task_execution.name</span>
+  <span class="attr">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"</span>
+}
+
+<span class="cm"># Extra permission to pull secrets from Secrets Manager or SSM</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_role_policy"</span> <span class="str">"ecs_secrets"</span> {
+  <span class="attr">name</span> = <span class="str">"ecs-secrets-access"</span>
+  <span class="attr">role</span> = <span class="fn">aws_iam_role.ecs_task_execution.id</span>
+  <span class="attr">policy</span> = <span class="fn">jsonencode</span>({
+    <span class="attr">Version</span>   = <span class="str">"2012-10-17"</span>
+    <span class="attr">Statement</span> = [{
+      <span class="attr">Effect</span>   = <span class="str">"Allow"</span>
+      <span class="attr">Action</span>   = [<span class="str">"ssm:GetParameters"</span>, <span class="str">"secretsmanager:GetSecretValue"</span>]
+      <span class="attr">Resource</span> = [<span class="str">"arn:aws:ssm:*:*:parameter/${var.environment}/*"</span>]
+    }]
+  })
+}</pre>
+  </div>
+  <div class="tip">
+    <h4>💡 Use aws_iam_policy_document Not Inline JSON</h4>
+    <p>The <code>data "aws_iam_policy_document"</code> resource validates syntax at plan time, handles JSON formatting correctly, and produces clean diffs. Inline <code>jsonencode()</code> is fine for small one-off policies. Never use raw JSON strings — they're invisible to Terraform's diff engine.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 4: KMS & SSM -->
+<div id="tab-kms" class="tab-panel ph-kms"><div class="section">
+  <h2>🔑 KMS &amp; SSM Parameter Store</h2>
+  <div class="story">KMS keys and SSM parameters are the backbone of secrets management in AWS. KMS encrypts data at rest across all services. SSM Parameter Store holds configuration and secrets that your applications read at runtime — version controlled, encrypted, audited. Together they replace hardcoded secrets in code completely.</div>
+
+  <h3>KMS Customer Managed Key</h3>
+  <div class="code-block kms-c">
+    <div class="code-label kms-l">HCL — KMS key with key policy</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_kms_key"</span> <span class="str">"app"</span> {
+  <span class="attr">description</span>             = <span class="str">"${local.name_prefix} application encryption key"</span>
+  <span class="attr">deletion_window_in_days</span> = <span class="num">30</span>
+  <span class="attr">enable_key_rotation</span>     = <span class="kw">true</span>    <span class="cm"># automatic annual rotation</span>
+  <span class="attr">multi_region</span>            = <span class="kw">false</span>
+
+  <span class="attr">policy</span> = <span class="fn">data.aws_iam_policy_document.kms_key_policy.json</span>
+  <span class="attr">tags</span>   = <span class="fn">local.common_tags</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_kms_alias"</span> <span class="str">"app"</span> {
+  <span class="attr">name</span>          = <span class="str">"alias/${local.name_prefix}-app"</span>
+  <span class="attr">target_key_id</span> = <span class="fn">aws_kms_key.app.key_id</span>
+}
+
+<span class="blk">data</span> <span class="str">"aws_iam_policy_document"</span> <span class="str">"kms_key_policy"</span> {
+  <span class="cm"># Root account must always have full access — otherwise you can lock yourself out!</span>
+  <span class="attr">statement</span> {
+    <span class="attr">sid</span>     = <span class="str">"EnableRootAccess"</span>
+    <span class="attr">effect</span>  = <span class="str">"Allow"</span>
+    <span class="attr">actions</span> = [<span class="str">"kms:*"</span>]
+    <span class="attr">principals</span> {
+      <span class="attr">type</span>        = <span class="str">"AWS"</span>
+      <span class="attr">identifiers</span> = [<span class="str">"arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"</span>]
+    }
+    <span class="attr">resources</span> = [<span class="str">"*"</span>]
+  }
+
+  <span class="attr">statement</span> {
+    <span class="attr">sid</span>    = <span class="str">"AllowAppDecrypt"</span>
+    <span class="attr">effect</span> = <span class="str">"Allow"</span>
+    <span class="attr">actions</span> = [
+      <span class="str">"kms:Decrypt"</span>, <span class="str">"kms:GenerateDataKey"</span>,
+      <span class="str">"kms:DescribeKey"</span>, <span class="str">"kms:ReEncrypt*"</span>
+    ]
+    <span class="attr">principals</span> {
+      <span class="attr">type</span>        = <span class="str">"AWS"</span>
+      <span class="attr">identifiers</span> = [<span class="fn">aws_iam_role.app.arn</span>]
+    }
+    <span class="attr">resources</span> = [<span class="str">"*"</span>]
+  }
+}</pre>
+  </div>
+
+  <h3>SSM Parameter Store</h3>
+  <div class="code-block kms-c">
+    <div class="code-label kms-l">HCL — SSM parameters for app config and secrets</div>
+    <pre><span class="cm"># Non-sensitive config — String type</span>
+<span class="blk">resource</span> <span class="str">"aws_ssm_parameter"</span> <span class="str">"db_host"</span> {
+  <span class="attr">name</span>  = <span class="str">"/${var.environment}/app/db_host"</span>
+  <span class="attr">type</span>  = <span class="str">"String"</span>
+  <span class="attr">value</span> = <span class="fn">aws_db_instance.main.endpoint</span>
+  <span class="attr">tags</span>  = <span class="fn">local.common_tags</span>
+}
+
+<span class="cm"># Sensitive secret — SecureString, encrypted with KMS</span>
+<span class="blk">resource</span> <span class="str">"aws_ssm_parameter"</span> <span class="str">"db_password"</span> {
+  <span class="attr">name</span>      = <span class="str">"/${var.environment}/app/db_password"</span>
+  <span class="attr">type</span>      = <span class="str">"SecureString"</span>
+  <span class="attr">value</span>     = <span class="fn">var.db_password</span>
+  <span class="attr">key_id</span>    = <span class="fn">aws_kms_key.app.arn</span>
+  <span class="attr">overwrite</span> = <span class="kw">true</span>
+  <span class="attr">tags</span>      = <span class="fn">local.common_tags</span>
+
+  <span class="attr">lifecycle</span> {
+    <span class="attr">ignore_changes</span> = [<span class="attr">value</span>]   <span class="cm"># don't reset if changed outside Terraform</span>
+  }
+}
+
+<span class="cm"># Reading a parameter in a different config (via data source)</span>
+<span class="blk">data</span> <span class="str">"aws_ssm_parameter"</span> <span class="str">"db_host"</span> {
+  <span class="attr">name</span>            = <span class="str">"/${var.environment}/app/db_host"</span>
+  <span class="attr">with_decryption</span> = <span class="kw">false</span>  <span class="cm"># true for SecureString</span>
+}
+
+<span class="cm"># Create multiple parameters from a map variable</span>
+<span class="blk">variable</span> <span class="str">"app_config"</span> {
+  <span class="attr">type</span> = <span class="fn">map</span>(<span class="kw">string</span>)
+  <span class="attr">default</span> = {
+    <span class="attr">LOG_LEVEL</span>  = <span class="str">"INFO"</span>
+    <span class="attr">REGION</span>     = <span class="str">"eu-west-1"</span>
+    <span class="attr">APP_PORT</span>   = <span class="str">"8080"</span>
+  }
+}
+
+<span class="blk">resource</span> <span class="str">"aws_ssm_parameter"</span> <span class="str">"app_config"</span> {
+  <span class="kw">for_each</span> = <span class="fn">var.app_config</span>
+  <span class="attr">name</span>     = <span class="str">"/${var.environment}/app/${each.key}"</span>
+  <span class="attr">type</span>     = <span class="str">"String"</span>
+  <span class="attr">value</span>    = <span class="fn">each.value</span>
+  <span class="attr">tags</span>     = <span class="fn">local.common_tags</span>
+}</pre>
+  </div>
+
+  <div class="warn">
+    <h4>⚠️ Never Store Secrets as terraform.tfvars in Git</h4>
+    <p>Use <code>TF_VAR_db_password</code> environment variables in CI/CD, or read secrets from an existing Secrets Manager secret via a data source. The tfvars file containing secrets should be in <code>.gitignore</code> and injected at runtime — never committed.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 5: ECS FARGATE -->
+<div id="tab-ecs" class="tab-panel ph-ecs"><div class="section">
+  <h2>🐳 ECS Fargate</h2>
+  <div class="story">ECS Fargate is how most teams run containerised workloads on AWS without managing EC2 instances. Terraform manages the full stack: cluster, task definition, service, and the IAM roles that wire it all together.</div>
+
+  <div class="code-block ecs-c">
+    <div class="code-label ecs-l">HCL — ECS cluster</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_ecs_cluster"</span> <span class="str">"main"</span> {
+  <span class="attr">name</span> = <span class="str">"${local.name_prefix}-cluster"</span>
+
+  <span class="attr">setting</span> {
+    <span class="attr">name</span>  = <span class="str">"containerInsights"</span>
+    <span class="attr">value</span> = <span class="str">"enabled"</span>   <span class="cm"># CloudWatch Container Insights</span>
+  }
+
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_ecs_cluster_capacity_providers"</span> <span class="str">"main"</span> {
+  <span class="attr">cluster_name</span>       = <span class="fn">aws_ecs_cluster.main.name</span>
+  <span class="attr">capacity_providers</span> = [<span class="str">"FARGATE"</span>, <span class="str">"FARGATE_SPOT"</span>]
+
+  <span class="attr">default_capacity_provider_strategy</span> {
+    <span class="attr">capacity_provider</span> = <span class="str">"FARGATE"</span>
+    <span class="attr">weight</span>            = <span class="num">1</span>
+    <span class="attr">base</span>              = <span class="num">1</span>   <span class="cm"># at least 1 task on regular Fargate</span>
+  }
+}</pre>
+  </div>
+
+  <div class="code-block ecs-c">
+    <div class="code-label ecs-l">HCL — task definition</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_ecs_task_definition"</span> <span class="str">"api"</span> {
+  <span class="attr">family</span>                   = <span class="str">"${local.name_prefix}-api"</span>
+  <span class="attr">cpu</span>                      = <span class="fn">var.task_cpu</span>      <span class="cm"># e.g. 256, 512, 1024</span>
+  <span class="attr">memory</span>                   = <span class="fn">var.task_memory</span>   <span class="cm"># e.g. 512, 1024, 2048</span>
+  <span class="attr">network_mode</span>             = <span class="str">"awsvpc"</span>
+  <span class="attr">requires_compatibilities</span> = [<span class="str">"FARGATE"</span>]
+  <span class="attr">execution_role_arn</span>       = <span class="fn">aws_iam_role.ecs_task_execution.arn</span>
+  <span class="attr">task_role_arn</span>            = <span class="fn">aws_iam_role.app.arn</span>
+
+  <span class="attr">container_definitions</span> = <span class="fn">jsonencode</span>([
+    {
+      <span class="attr">name</span>      = <span class="str">"api"</span>
+      <span class="attr">image</span>     = <span class="str">"${var.ecr_repo_url}:${var.image_tag}"</span>
+      <span class="attr">essential</span> = <span class="kw">true</span>
+
+      <span class="attr">portMappings</span> = [{ <span class="attr">containerPort</span> = <span class="num">8080</span>, <span class="attr">protocol</span> = <span class="str">"tcp"</span> }]
+
+      <span class="cm"># Inject SSM params as environment variables at task start</span>
+      <span class="attr">secrets</span> = [
+        { <span class="attr">name</span> = <span class="str">"DB_HOST"</span>,     <span class="attr">valueFrom</span> = <span class="str">"/${var.environment}/app/db_host"</span> },
+        { <span class="attr">name</span> = <span class="str">"DB_PASSWORD"</span>, <span class="attr">valueFrom</span> = <span class="str">"/${var.environment}/app/db_password"</span> }
+      ]
+
+      <span class="attr">environment</span> = [
+        { <span class="attr">name</span> = <span class="str">"ENVIRONMENT"</span>, <span class="attr">value</span> = <span class="fn">var.environment</span> },
+        { <span class="attr">name</span> = <span class="str">"APP_PORT"</span>,    <span class="attr">value</span> = <span class="str">"8080"</span> }
+      ]
+
+      <span class="attr">logConfiguration</span> = {
+        <span class="attr">logDriver</span> = <span class="str">"awslogs"</span>
+        <span class="attr">options</span> = {
+          <span class="str">"awslogs-group"</span>         = <span class="fn">aws_cloudwatch_log_group.api.name</span>
+          <span class="str">"awslogs-region"</span>        = <span class="fn">var.region</span>
+          <span class="str">"awslogs-stream-prefix"</span> = <span class="str">"api"</span>
+        }
+      }
+    }
+  ])
+}
+
+<span class="blk">resource</span> <span class="str">"aws_cloudwatch_log_group"</span> <span class="str">"api"</span> {
+  <span class="attr">name</span>              = <span class="str">"/ecs/${local.name_prefix}/api"</span>
+  <span class="attr">retention_in_days</span> = <span class="fn">var.log_retention_days</span>
+  <span class="attr">kms_key_id</span>        = <span class="fn">aws_kms_key.app.arn</span>
+}</pre>
+  </div>
+
+  <div class="code-block ecs-c">
+    <div class="code-label ecs-l">HCL — ECS service with auto-scaling</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_ecs_service"</span> <span class="str">"api"</span> {
+  <span class="attr">name</span>                               = <span class="str">"${local.name_prefix}-api"</span>
+  <span class="attr">cluster</span>                            = <span class="fn">aws_ecs_cluster.main.id</span>
+  <span class="attr">task_definition</span>                    = <span class="fn">aws_ecs_task_definition.api.arn</span>
+  <span class="attr">desired_count</span>                      = <span class="fn">var.desired_count</span>
+  <span class="attr">launch_type</span>                        = <span class="str">"FARGATE"</span>
+  <span class="attr">health_check_grace_period_seconds</span>  = <span class="num">30</span>
+
+  <span class="attr">network_configuration</span> {
+    <span class="attr">subnets</span>          = <span class="fn">var.private_subnet_ids</span>
+    <span class="attr">security_groups</span>  = [<span class="fn">aws_security_group.ecs_tasks.id</span>]
+    <span class="attr">assign_public_ip</span> = <span class="kw">false</span>   <span class="cm"># always private for Fargate</span>
+  }
+
+  <span class="attr">load_balancer</span> {
+    <span class="attr">target_group_arn</span> = <span class="fn">var.target_group_arn</span>
+    <span class="attr">container_name</span>   = <span class="str">"api"</span>
+    <span class="attr">container_port</span>   = <span class="num">8080</span>
+  }
+
+  <span class="attr">deployment_circuit_breaker</span> {
+    <span class="attr">enable</span>   = <span class="kw">true</span>
+    <span class="attr">rollback</span> = <span class="kw">true</span>   <span class="cm"># auto-rollback on failed deployment</span>
+  }
+
+  <span class="attr">depends_on</span> = [<span class="fn">aws_iam_role_policy_attachment.ecs_exec_policy</span>]
+  <span class="attr">lifecycle</span> { <span class="attr">ignore_changes</span> = [<span class="attr">desired_count</span>] }  <span class="cm"># let autoscaling manage this</span>
+}
+
+<span class="cm"># Auto-scaling for ECS service</span>
+<span class="blk">resource</span> <span class="str">"aws_appautoscaling_target"</span> <span class="str">"ecs"</span> {
+  <span class="attr">max_capacity</span>       = <span class="fn">var.max_capacity</span>
+  <span class="attr">min_capacity</span>       = <span class="fn">var.min_capacity</span>
+  <span class="attr">resource_id</span>        = <span class="str">"service/${aws_ecs_cluster.main.name}/${aws_ecs_service.api.name}"</span>
+  <span class="attr">scalable_dimension</span> = <span class="str">"ecs:service:DesiredCount"</span>
+  <span class="attr">service_namespace</span>  = <span class="str">"ecs"</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_appautoscaling_policy"</span> <span class="str">"ecs_cpu"</span> {
+  <span class="attr">name</span>               = <span class="str">"${local.name_prefix}-cpu-scaling"</span>
+  <span class="attr">policy_type</span>        = <span class="str">"TargetTrackingScaling"</span>
+  <span class="attr">resource_id</span>        = <span class="fn">aws_appautoscaling_target.ecs.resource_id</span>
+  <span class="attr">scalable_dimension</span> = <span class="fn">aws_appautoscaling_target.ecs.scalable_dimension</span>
+  <span class="attr">service_namespace</span>  = <span class="fn">aws_appautoscaling_target.ecs.service_namespace</span>
+
+  <span class="attr">target_tracking_scaling_policy_configuration</span> {
+    <span class="attr">target_value</span> = <span class="num">70</span>  <span class="cm"># scale when CPU > 70%</span>
+    <span class="attr">predefined_metric_specification</span> {
+      <span class="attr">predefined_metric_type</span> = <span class="str">"ECSServiceAverageCPUUtilization"</span>
+    }
+  }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 6: ALB / NLB -->
+<div id="tab-alb" class="tab-panel ph-alb"><div class="section">
+  <h2>⚖️ ALB &amp; NLB</h2>
+  <div class="story">ALB (Application Load Balancer) works at HTTP/HTTPS level and is what most web services use. NLB (Network Load Balancer) works at TCP/UDP level — used for ultra-low latency, static IPs, or non-HTTP workloads. Here's both, starting with the most common: ALB with HTTPS.</div>
+
+  <h3>Application Load Balancer (ALB)</h3>
+  <div class="code-block alb-c">
+    <div class="code-label alb-l">HCL — ALB with HTTPS redirect</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_lb"</span> <span class="str">"main"</span> {
+  <span class="attr">name</span>               = <span class="str">"${local.name_prefix}-alb"</span>
+  <span class="attr">internal</span>           = <span class="kw">false</span>   <span class="cm"># false = internet-facing</span>
+  <span class="attr">load_balancer_type</span> = <span class="str">"application"</span>
+  <span class="attr">security_groups</span>    = [<span class="fn">aws_security_group.alb.id</span>]
+  <span class="attr">subnets</span>            = <span class="fn">var.public_subnet_ids</span>
+
+  <span class="attr">enable_deletion_protection</span> = <span class="fn">local.is_prod</span>  <span class="cm"># prevent accidental deletion</span>
+  <span class="attr">enable_http2</span>               = <span class="kw">true</span>
+
+  <span class="attr">access_logs</span> {
+    <span class="attr">bucket</span>  = <span class="fn">var.log_bucket_id</span>
+    <span class="attr">prefix</span>  = <span class="str">"alb-logs"</span>
+    <span class="attr">enabled</span> = <span class="kw">true</span>
+  }
+
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}
+
+<span class="cm"># HTTP listener — redirect all traffic to HTTPS</span>
+<span class="blk">resource</span> <span class="str">"aws_lb_listener"</span> <span class="str">"http"</span> {
+  <span class="attr">load_balancer_arn</span> = <span class="fn">aws_lb.main.arn</span>
+  <span class="attr">port</span>              = <span class="str">"80"</span>
+  <span class="attr">protocol</span>          = <span class="str">"HTTP"</span>
+
+  <span class="attr">default_action</span> {
+    <span class="attr">type</span> = <span class="str">"redirect"</span>
+    <span class="attr">redirect</span> {
+      <span class="attr">port</span>        = <span class="str">"443"</span>
+      <span class="attr">protocol</span>    = <span class="str">"HTTPS"</span>
+      <span class="attr">status_code</span> = <span class="str">"HTTP_301"</span>
+    }
+  }
+}
+
+<span class="cm"># HTTPS listener — forward to target group</span>
+<span class="blk">resource</span> <span class="str">"aws_lb_listener"</span> <span class="str">"https"</span> {
+  <span class="attr">load_balancer_arn</span> = <span class="fn">aws_lb.main.arn</span>
+  <span class="attr">port</span>              = <span class="str">"443"</span>
+  <span class="attr">protocol</span>          = <span class="str">"HTTPS"</span>
+  <span class="attr">ssl_policy</span>        = <span class="str">"ELBSecurityPolicy-TLS13-1-2-2021-06"</span>
+  <span class="attr">certificate_arn</span>   = <span class="fn">var.acm_certificate_arn</span>
+
+  <span class="attr">default_action</span> {
+    <span class="attr">type</span>             = <span class="str">"forward"</span>
+    <span class="attr">target_group_arn</span> = <span class="fn">aws_lb_target_group.api.arn</span>
+  }
+}
+
+<span class="cm"># Target group — where the ALB sends requests</span>
+<span class="blk">resource</span> <span class="str">"aws_lb_target_group"</span> <span class="str">"api"</span> {
+  <span class="attr">name</span>        = <span class="str">"${local.name_prefix}-api"</span>
+  <span class="attr">port</span>        = <span class="num">8080</span>
+  <span class="attr">protocol</span>    = <span class="str">"HTTP"</span>
+  <span class="attr">vpc_id</span>      = <span class="fn">var.vpc_id</span>
+  <span class="attr">target_type</span> = <span class="str">"ip"</span>   <span class="cm"># "ip" for Fargate, "instance" for EC2</span>
+
+  <span class="attr">health_check</span> {
+    <span class="attr">enabled</span>             = <span class="kw">true</span>
+    <span class="attr">path</span>                = <span class="str">"/health"</span>
+    <span class="attr">port</span>                = <span class="str">"traffic-port"</span>
+    <span class="attr">protocol</span>            = <span class="str">"HTTP"</span>
+    <span class="attr">healthy_threshold</span>   = <span class="num">2</span>
+    <span class="attr">unhealthy_threshold</span> = <span class="num">3</span>
+    <span class="attr">timeout</span>             = <span class="num">5</span>
+    <span class="attr">interval</span>            = <span class="num">30</span>
+    <span class="attr">matcher</span>             = <span class="str">"200"</span>
+  }
+
+  <span class="attr">lifecycle</span> { <span class="attr">create_before_destroy</span> = <span class="kw">true</span> }
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}
+
+<span class="cm"># Path-based routing — /api/* to one service, /admin/* to another</span>
+<span class="blk">resource</span> <span class="str">"aws_lb_listener_rule"</span> <span class="str">"admin"</span> {
+  <span class="attr">listener_arn</span> = <span class="fn">aws_lb_listener.https.arn</span>
+  <span class="attr">priority</span>     = <span class="num">100</span>
+
+  <span class="attr">action</span> {
+    <span class="attr">type</span>             = <span class="str">"forward"</span>
+    <span class="attr">target_group_arn</span> = <span class="fn">aws_lb_target_group.admin.arn</span>
+  }
+
+  <span class="attr">condition</span> {
+    <span class="attr">path_pattern</span> { <span class="attr">values</span> = [<span class="str">"/admin/*"</span>] }
+  }
+}</pre>
+  </div>
+
+  <h3>Network Load Balancer (NLB)</h3>
+  <div class="code-block alb-c">
+    <div class="code-label alb-l">HCL — NLB for TCP workloads</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_lb"</span> <span class="str">"nlb"</span> {
+  <span class="attr">name</span>               = <span class="str">"${local.name_prefix}-nlb"</span>
+  <span class="attr">internal</span>           = <span class="kw">true</span>   <span class="cm"># NLBs are often internal</span>
+  <span class="attr">load_balancer_type</span> = <span class="str">"network"</span>
+  <span class="attr">subnets</span>            = <span class="fn">var.private_subnet_ids</span>
+  <span class="attr">tags</span>               = <span class="fn">local.common_tags</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_lb_listener"</span> <span class="str">"nlb_tcp"</span> {
+  <span class="attr">load_balancer_arn</span> = <span class="fn">aws_lb.nlb.arn</span>
+  <span class="attr">port</span>              = <span class="str">"5432"</span>   <span class="cm"># e.g. PostgreSQL port</span>
+  <span class="attr">protocol</span>          = <span class="str">"TCP"</span>
+  <span class="attr">default_action</span> {
+    <span class="attr">type</span>             = <span class="str">"forward"</span>
+    <span class="attr">target_group_arn</span> = <span class="fn">aws_lb_target_group.postgres.arn</span>
+  }
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 7: LAMBDA -->
+<div id="tab-lam" class="tab-panel ph-lam"><div class="section">
+  <h2>λ Lambda</h2>
+  <div class="story">Lambda functions in Terraform require a few moving pieces: the function itself, an IAM role it runs as, a CloudWatch log group for its output, and optionally a trigger (schedule, SQS, API Gateway). Here's the full setup for a production-ready Lambda.</div>
+
+  <div class="code-block lam-c">
+    <div class="code-label lam-l">HCL — Lambda function with IAM role and log group</div>
+    <pre><span class="cm"># Package the Lambda code — zip it from a local directory</span>
+<span class="blk">data</span> <span class="str">"archive_file"</span> <span class="str">"lambda"</span> {
+  <span class="attr">type</span>        = <span class="str">"zip"</span>
+  <span class="attr">source_dir</span>  = <span class="str">"${path.module}/lambda_src"</span>
+  <span class="attr">output_path</span> = <span class="str">"${path.module}/.builds/lambda.zip"</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_lambda_function"</span> <span class="str">"processor"</span> {
+  <span class="attr">function_name</span>    = <span class="str">"${local.name_prefix}-processor"</span>
+  <span class="attr">description</span>      = <span class="str">"Processes incoming events"</span>
+  <span class="attr">runtime</span>          = <span class="str">"python3.12"</span>
+  <span class="attr">handler</span>          = <span class="str">"handler.lambda_handler"</span>  <span class="cm"># file.function</span>
+  <span class="attr">filename</span>         = <span class="fn">data.archive_file.lambda.output_path</span>
+  <span class="attr">source_code_hash</span> = <span class="fn">data.archive_file.lambda.output_base64sha256</span>
+  <span class="attr">role</span>             = <span class="fn">aws_iam_role.lambda.arn</span>
+
+  <span class="attr">memory_size</span> = <span class="num">256</span>
+  <span class="attr">timeout</span>     = <span class="num">30</span>
+
+  <span class="attr">environment</span> {
+    <span class="attr">variables</span> = {
+      <span class="attr">ENVIRONMENT</span>   = <span class="fn">var.environment</span>
+      <span class="attr">S3_BUCKET</span>     = <span class="fn">var.data_bucket_name</span>
+      <span class="attr">LOG_LEVEL</span>     = <span class="fn">var.environment</span> == <span class="str">"prod"</span> ? <span class="str">"WARNING"</span> : <span class="str">"DEBUG"</span>
+    }
+  }
+
+  <span class="attr">kms_key_arn</span> = <span class="fn">var.kms_key_arn</span>  <span class="cm"># encrypt env vars at rest</span>
+
+  <span class="attr">vpc_config</span> {
+    <span class="attr">subnet_ids</span>         = <span class="fn">var.private_subnet_ids</span>
+    <span class="attr">security_group_ids</span> = [<span class="fn">aws_security_group.lambda.id</span>]
+  }
+
+  <span class="attr">tracing_config</span> {
+    <span class="attr">mode</span> = <span class="str">"Active"</span>   <span class="cm"># X-Ray tracing</span>
+  }
+
+  <span class="attr">reserved_concurrent_executions</span> = <span class="fn">var.environment</span> == <span class="str">"prod"</span> ? <span class="num">100</span> : <span class="num">10</span>
+
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_cloudwatch_log_group"</span> <span class="str">"lambda"</span> {
+  <span class="attr">name</span>              = <span class="str">"/aws/lambda/${aws_lambda_function.processor.function_name}"</span>
+  <span class="attr">retention_in_days</span> = <span class="fn">var.log_retention_days</span>
+  <span class="attr">kms_key_id</span>        = <span class="fn">var.kms_key_arn</span>
+}
+
+<span class="cm"># IAM role for Lambda</span>
+<span class="blk">resource</span> <span class="str">"aws_iam_role"</span> <span class="str">"lambda"</span> {
+  <span class="attr">name</span>               = <span class="str">"${local.name_prefix}-lambda-role"</span>
+  <span class="attr">assume_role_policy</span> = <span class="fn">jsonencode</span>({
+    <span class="attr">Version</span>   = <span class="str">"2012-10-17"</span>
+    <span class="attr">Statement</span> = [{
+      <span class="attr">Action</span>    = <span class="str">"sts:AssumeRole"</span>
+      <span class="attr">Effect</span>    = <span class="str">"Allow"</span>
+      <span class="attr">Principal</span> = { <span class="attr">Service</span> = <span class="str">"lambda.amazonaws.com"</span> }
+    }]
+  })
+}
+
+<span class="blk">resource</span> <span class="str">"aws_iam_role_policy_attachment"</span> <span class="str">"lambda_vpc"</span> {
+  <span class="attr">role</span>       = <span class="fn">aws_iam_role.lambda.name</span>
+  <span class="attr">policy_arn</span> = <span class="str">"arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"</span>
+}</pre>
+  </div>
+
+  <div class="code-block lam-c">
+    <div class="code-label lam-l">HCL — EventBridge schedule trigger</div>
+    <pre><span class="cm"># Trigger Lambda on a schedule (like a cron job)</span>
+<span class="blk">resource</span> <span class="str">"aws_cloudwatch_event_rule"</span> <span class="str">"daily"</span> {
+  <span class="attr">name</span>                = <span class="str">"${local.name_prefix}-daily-trigger"</span>
+  <span class="attr">schedule_expression</span> = <span class="str">"cron(0 6 * * ? *)"</span>  <span class="cm"># 06:00 UTC daily</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_cloudwatch_event_target"</span> <span class="str">"lambda"</span> {
+  <span class="attr">rule</span>      = <span class="fn">aws_cloudwatch_event_rule.daily.name</span>
+  <span class="attr">target_id</span> = <span class="str">"LambdaProcessor"</span>
+  <span class="attr">arn</span>       = <span class="fn">aws_lambda_function.processor.arn</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_lambda_permission"</span> <span class="str">"eventbridge"</span> {
+  <span class="attr">action</span>        = <span class="str">"lambda:InvokeFunction"</span>
+  <span class="attr">function_name</span> = <span class="fn">aws_lambda_function.processor.function_name</span>
+  <span class="attr">principal</span>     = <span class="str">"events.amazonaws.com"</span>
+  <span class="attr">source_arn</span>    = <span class="fn">aws_cloudwatch_event_rule.daily.arn</span>
+}
+
+<span class="cm"># SQS trigger</span>
+<span class="blk">resource</span> <span class="str">"aws_lambda_event_source_mapping"</span> <span class="str">"sqs"</span> {
+  <span class="attr">event_source_arn</span>                   = <span class="fn">aws_sqs_queue.input.arn</span>
+  <span class="attr">function_name</span>                      = <span class="fn">aws_lambda_function.processor.arn</span>
+  <span class="attr">batch_size</span>                         = <span class="num">10</span>
+  <span class="attr">maximum_batching_window_in_seconds</span> = <span class="num">30</span>
+  <span class="attr">function_response_types</span>            = [<span class="str">"ReportBatchItemFailures"</span>]
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 8: API GATEWAY -->
+<div id="tab-apg" class="tab-panel ph-apg"><div class="section">
+  <h2>🌐 API Gateway</h2>
+  <div class="story">API Gateway v2 (HTTP API) is the modern, cheaper, faster choice for REST APIs backed by Lambda or HTTP integrations. API Gateway v1 (REST API) has more features (WAF, request transformation, usage plans) but is more complex. Here's both, starting with the common HTTP API + Lambda pattern.</div>
+
+  <h3>HTTP API (v2) — Lambda Integration</h3>
+  <div class="code-block apg-c">
+    <div class="code-label apg-l">HCL — API Gateway HTTP API with Lambda</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_apigatewayv2_api"</span> <span class="str">"main"</span> {
+  <span class="attr">name</span>          = <span class="str">"${local.name_prefix}-api"</span>
+  <span class="attr">protocol_type</span> = <span class="str">"HTTP"</span>
+  <span class="attr">description</span>   = <span class="str">"Main application API"</span>
+
+  <span class="attr">cors_configuration</span> {
+    <span class="attr">allow_origins</span> = <span class="fn">var.environment</span> == <span class="str">"prod"</span> ? [<span class="str">"https://myapp.com"</span>] : [<span class="str">"*"</span>]
+    <span class="attr">allow_methods</span> = [<span class="str">"GET"</span>, <span class="str">"POST"</span>, <span class="str">"PUT"</span>, <span class="str">"DELETE"</span>, <span class="str">"OPTIONS"</span>]
+    <span class="attr">allow_headers</span> = [<span class="str">"Content-Type"</span>, <span class="str">"Authorization"</span>]
+    <span class="attr">max_age</span>       = <span class="num">300</span>
+  }
+
+  <span class="attr">tags</span> = <span class="fn">local.common_tags</span>
+}
+
+<span class="cm"># Stage — $default is the main stage for HTTP APIs</span>
+<span class="blk">resource</span> <span class="str">"aws_apigatewayv2_stage"</span> <span class="str">"default"</span> {
+  <span class="attr">api_id</span>      = <span class="fn">aws_apigatewayv2_api.main.id</span>
+  <span class="attr">name</span>        = <span class="str">"$default"</span>
+  <span class="attr">auto_deploy</span> = <span class="kw">true</span>
+
+  <span class="attr">access_log_settings</span> {
+    <span class="attr">destination_arn</span> = <span class="fn">aws_cloudwatch_log_group.apigw.arn</span>
+  }
+
+  <span class="attr">default_route_settings</span> {
+    <span class="attr">throttling_burst_limit</span> = <span class="num">500</span>
+    <span class="attr">throttling_rate_limit</span>  = <span class="num">1000</span>
+  }
+}
+
+<span class="cm"># Lambda integration</span>
+<span class="blk">resource</span> <span class="str">"aws_apigatewayv2_integration"</span> <span class="str">"lambda"</span> {
+  <span class="attr">api_id</span>                 = <span class="fn">aws_apigatewayv2_api.main.id</span>
+  <span class="attr">integration_type</span>       = <span class="str">"AWS_PROXY"</span>
+  <span class="attr">integration_uri</span>        = <span class="fn">aws_lambda_function.processor.invoke_arn</span>
+  <span class="attr">payload_format_version</span> = <span class="str">"2.0"</span>
+}
+
+<span class="cm"># Route — map HTTP method + path to integration</span>
+<span class="blk">resource</span> <span class="str">"aws_apigatewayv2_route"</span> <span class="str">"api"</span> {
+  <span class="attr">api_id</span>    = <span class="fn">aws_apigatewayv2_api.main.id</span>
+  <span class="attr">route_key</span> = <span class="str">"ANY /api/{proxy+}"</span>  <span class="cm"># catch-all for /api/*</span>
+  <span class="attr">target</span>    = <span class="str">"integrations/${aws_apigatewayv2_integration.lambda.id}"</span>
+}
+
+<span class="cm"># Permission for API GW to invoke Lambda</span>
+<span class="blk">resource</span> <span class="str">"aws_lambda_permission"</span> <span class="str">"apigw"</span> {
+  <span class="attr">action</span>        = <span class="str">"lambda:InvokeFunction"</span>
+  <span class="attr">function_name</span> = <span class="fn">aws_lambda_function.processor.function_name</span>
+  <span class="attr">principal</span>     = <span class="str">"apigateway.amazonaws.com"</span>
+  <span class="attr">source_arn</span>    = <span class="str">"${aws_apigatewayv2_api.main.execution_arn}/*/*"</span>
+}
+
+<span class="blk">resource</span> <span class="str">"aws_cloudwatch_log_group"</span> <span class="str">"apigw"</span> {
+  <span class="attr">name</span>              = <span class="str">"/aws/apigateway/${aws_apigatewayv2_api.main.name}"</span>
+  <span class="attr">retention_in_days</span> = <span class="fn">var.log_retention_days</span>
+}
+
+<span class="blk">output</span> <span class="str">"api_endpoint"</span> {
+  <span class="attr">value</span> = <span class="fn">aws_apigatewayv2_api.main.api_endpoint</span>
+}</pre>
+  </div>
+
+  <h3>Custom Domain Name</h3>
+  <div class="code-block apg-c">
+    <div class="code-label apg-l">HCL — custom domain for API Gateway</div>
+    <pre><span class="blk">resource</span> <span class="str">"aws_apigatewayv2_domain_name"</span> <span class="str">"api"</span> {
+  <span class="attr">domain_name</span> = <span class="str">"api.${var.domain_name}"</span>
+  <span class="attr">domain_name_configuration</span> {
+    <span class="attr">certificate_arn</span> = <span class="fn">var.acm_certificate_arn</span>
+    <span class="attr">endpoint_type</span>   = <span class="str">"REGIONAL"</span>
+    <span class="attr">security_policy</span> = <span class="str">"TLS_1_2"</span>
+  }
+}
+
+<span class="blk">resource</span> <span class="str">"aws_apigatewayv2_api_mapping"</span> <span class="str">"api"</span> {
+  <span class="attr">api_id</span>      = <span class="fn">aws_apigatewayv2_api.main.id</span>
+  <span class="attr">domain_name</span> = <span class="fn">aws_apigatewayv2_domain_name.api.id</span>
+  <span class="attr">stage</span>       = <span class="fn">aws_apigatewayv2_stage.default.id</span>
+}
+
+<span class="cm"># DNS record pointing to API Gateway domain</span>
+<span class="blk">resource</span> <span class="str">"aws_route53_record"</span> <span class="str">"api"</span> {
+  <span class="attr">zone_id</span> = <span class="fn">var.hosted_zone_id</span>
+  <span class="attr">name</span>    = <span class="str">"api.${var.domain_name}"</span>
+  <span class="attr">type</span>    = <span class="str">"A"</span>
+  <span class="attr">alias</span> {
+    <span class="attr">name</span>                   = <span class="fn">aws_apigatewayv2_domain_name.api.domain_name_configuration[0].target_domain_name</span>
+    <span class="attr">zone_id</span>                = <span class="fn">aws_apigatewayv2_domain_name.api.domain_name_configuration[0].hosted_zone_id</span>
+    <span class="attr">evaluate_target_health</span> = <span class="kw">false</span>
+  }
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 HTTP API vs REST API</h4>
+    <ul>
+      <li><strong>HTTP API (v2)</strong> — cheaper (~70%), faster, simpler. Use for Lambda/HTTP integrations. Missing: request transformation, API keys, usage plans, WAF at GW level</li>
+      <li><strong>REST API (v1)</strong> — full feature set. Use when you need WAF integration, request/response transformation, or API keys natively. More complex, more expensive</li>
+    </ul>
+  </div>
+
+  <div class="completion">
+    <h3>Terraform AWS Examples — Complete!</h3>
+    <p>S3 — bucket, public access block, versioning, KMS encryption, lifecycle rules, bucket policy · EC2 — AMI data source, security groups, launch templates, ASG with instance refresh, IMDSv2 · IAM — roles, trust policies, aws_iam_policy_document, instance profiles, ECS execution roles · KMS &amp; SSM — CMK with key policy, rotation, SecureString parameters, reading params at runtime · ECS Fargate — cluster, task definition with SSM secrets injection, service with circuit breaker, auto-scaling · ALB/NLB — HTTPS redirect, target groups, path-based routing, NLB for TCP · Lambda — packaging, VPC config, X-Ray tracing, EventBridge schedule, SQS trigger · API Gateway — HTTP API v2 with Lambda, CORS, throttling, custom domain + Route53</p>
+    <div class="next-parts">
+      <span class="np np-done">✅ Part 1: Fundamentals</span>
+      <span class="np np-done">✅ Part 2: AWS Examples</span>
+      <span class="np np-next">→ Part 3: Terragrunt</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>function T(id,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}</script>
+</body>
+</html>

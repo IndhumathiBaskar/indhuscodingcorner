@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Terraform — Part 3: Terragrunt</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6ff;--surface:#edf0ff;--card:#fff;--border:#dce2f5;--border2:#b8c0e8;
+  --tg:#00b4d8;--tg-l:#d0f4fb;--tg-d:#006d8a;
+  --fs:#7b42bc;--fs-l:#ede0f8;--fs-d:#4a1580;
+  --fh:#1a8a5a;--fh-l:#d4f0e0;--fh-d:#085c38;
+  --dr:#bf6a0e;--dr-l:#f8f0d4;--dr-d:#8a4500;
+  --dp:#bf2a1a;--dp-l:#f8d8d4;--dp-d:#8a1500;
+  --ra:#0e6abf;--ra-l:#d6ebf8;--ra-d:#0a4280;
+  --hk:#8a2abf;--hk-l:#ede0f8;--hk-d:#4a1580;
+  --rw:#1a7a3a;--rw-l:#d4f0e0;--rw-d:#085c20;
+  --green:#1f7a52;--green-l:#d4f0e4;
+  --orange:#c9600a;--orange-l:#fde8d0;
+  --text:#12141f;--text2:#2a2d40;--muted:#606278;
+  --code-bg:#0e1117;--r:10px;
+  --sh:0 1px 4px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-lg:0 2px 8px rgba(0,0,0,.08),0 8px 32px rgba(0,180,216,.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:15px;scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Sora',sans-serif;line-height:1.8;-webkit-font-smoothing:antialiased;}
+.container{max-width:880px;margin:0 auto;}
+.header{background:linear-gradient(135deg,#050e18 0%,#0a1e30 45%,#0e2240 100%);border-bottom:1px solid #0a1830;padding:clamp(2rem,6vw,4.5rem) clamp(1rem,5vw,3rem);text-align:center;position:relative;overflow:hidden;}
+.header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 15% 50%,rgba(0,180,216,.4) 0%,transparent 55%),radial-gradient(ellipse at 85% 30%,rgba(123,66,188,.3) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(26,138,90,.2) 0%,transparent 50%);pointer-events:none;}
+.header-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:4px 16px;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:14px;font-family:'JetBrains Mono',monospace;}
+.header h1{color:#fff;font-size:clamp(1.6rem,5.5vw,2.7rem);font-weight:800;margin-bottom:8px;letter-spacing:-.03em;position:relative;}
+.header h1 span{background:linear-gradient(135deg,#67e8f9,#c4b5fd,#6ee7b7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header p{color:rgba(255,255,255,.6);font-size:.88rem;position:relative;}
+.header-chips{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-top:14px;}
+.chip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:100px;padding:4px 12px;font-size:.72rem;color:rgba(255,255,255,.7);font-family:'JetBrains Mono',monospace;}
+.part-badge{display:inline-flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;justify-content:center;}
+.pb{padding:5px 12px;border-radius:6px;font-size:.7rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.pb-done{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+.pb-active{background:rgba(103,232,249,.2);border:1px solid rgba(103,232,249,.4);color:#67e8f9;}
+.tab-nav{position:sticky;top:0;z-index:100;background:rgba(244,246,255,.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 12px;overflow-x:auto;scrollbar-width:none;}
+.tab-nav::-webkit-scrollbar{display:none;}
+.tab-nav-inner{display:inline-flex;gap:2px;min-width:100%;padding:6px 0;white-space:nowrap;}
+.tab-btn{flex-shrink:0;background:none;border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;color:var(--muted);padding:7px 11px;border-radius:7px;transition:all .15s;}
+.tab-btn:hover{background:var(--surface);color:var(--text);}
+.tab-btn.active{font-weight:700;}
+.t-why.active{background:var(--tg-l);color:var(--tg-d);}
+.t-fs.active{background:var(--fs-l);color:var(--fs-d);}
+.t-fh.active{background:var(--fh-l);color:var(--fh-d);}
+.t-dr.active{background:var(--dr-l);color:var(--dr-d);}
+.t-dp.active{background:var(--dp-l);color:var(--dp-d);}
+.t-ra.active{background:var(--ra-l);color:var(--ra-d);}
+.t-hk.active{background:var(--hk-l);color:var(--hk-d);}
+.t-rw.active{background:var(--rw-l);color:var(--rw-d);}
+.tab-panel{display:none;animation:fadeIn .25s ease;}
+.tab-panel.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.section{padding:clamp(1.75rem,4vw,2.75rem) clamp(1rem,4vw,2rem);}
+.section h2{font-size:clamp(1.15rem,3.5vw,1.75rem);font-weight:800;margin-bottom:18px;padding-bottom:12px;letter-spacing:-.02em;}
+.section h3{font-size:1rem;font-weight:700;margin:22px 0 9px;}
+.section p{color:var(--muted);margin-bottom:13px;font-size:.9rem;}
+.ph-why h2,.ph-why h3{color:var(--tg-d);} .ph-why h2{border-bottom:3px solid var(--tg-l);}
+.ph-fs h2,.ph-fs h3{color:var(--fs-d);} .ph-fs h2{border-bottom:3px solid var(--fs-l);}
+.ph-fh h2,.ph-fh h3{color:var(--fh-d);} .ph-fh h2{border-bottom:3px solid var(--fh-l);}
+.ph-dr h2,.ph-dr h3{color:var(--dr-d);} .ph-dr h2{border-bottom:3px solid var(--dr-l);}
+.ph-dp h2,.ph-dp h3{color:var(--dp-d);} .ph-dp h2{border-bottom:3px solid var(--dp-l);}
+.ph-ra h2,.ph-ra h3{color:var(--ra-d);} .ph-ra h2{border-bottom:3px solid var(--ra-l);}
+.ph-hk h2,.ph-hk h3{color:var(--hk-d);} .ph-hk h2{border-bottom:3px solid var(--hk-l);}
+.ph-rw h2,.ph-rw h3{color:var(--rw-d);} .ph-rw h2{border-bottom:3px solid var(--rw-l);}
+.story{font-size:.92rem;color:var(--text2);margin-bottom:13px;line-height:1.85;}
+.story strong{color:var(--text);}
+.qa{background:#fff;border:1.5px dashed var(--border2);border-radius:var(--r);padding:13px 15px;margin:14px 0;}
+.qa-q{font-weight:700;font-size:.86rem;color:var(--text);margin-bottom:6px;display:flex;gap:8px;align-items:flex-start;}
+.qa-q .qa-bubble{flex-shrink:0;font-size:1rem;}
+.qa-a{color:var(--muted);font-size:.85rem;margin:0;padding-left:24px;}
+.aha{background:linear-gradient(135deg,#fff9e6,#fef3c7);border:1.5px solid rgba(217,160,15,.25);border-radius:var(--r);padding:14px 16px;margin:14px 0;}
+.aha-tag{font-size:.62rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#92660a;font-family:'JetBrains Mono',monospace;margin-bottom:5px;}
+.aha p{color:#5c4a10;font-size:.88rem;margin:0;}
+.tip{background:var(--green-l);border:1px solid rgba(31,122,82,.2);border-left:4px solid var(--green);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.tip h4{color:var(--green);margin-bottom:5px;font-size:.87rem;}
+.tip p,.tip li{color:var(--muted);font-size:.84rem;margin:0;}
+.tip ul{padding-left:16px;margin-top:4px;}
+.warn{background:var(--orange-l);border:1px solid rgba(201,96,10,.2);border-left:4px solid var(--orange);border-radius:var(--r);padding:12px 15px;margin:12px 0;}
+.warn h4{color:var(--orange);margin-bottom:5px;font-size:.87rem;}
+.warn p{color:var(--muted);font-size:.84rem;margin:0;}
+.card{background:var(--card);border:1px solid var(--border);padding:16px;border-radius:var(--r);margin:10px 0;box-shadow:var(--sh);}
+.card h4{margin-bottom:9px;font-size:.9rem;border-bottom:1px solid var(--border);padding-bottom:7px;}
+.card p,.card li{color:var(--muted);font-size:.84rem;margin:0;}
+.card ul{padding-left:16px;margin-top:5px;}
+.card li{margin-bottom:4px;}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:13px;margin:14px 0;}
+.code-block{background:var(--code-bg);border-radius:var(--r);padding:clamp(.9rem,2.5vw,1.3rem);margin:12px 0;overflow-x:auto;box-shadow:0 4px 20px rgba(0,0,0,.15);}
+.code-block.tg-c{border-left:4px solid var(--tg);}
+.code-block.fs-c{border-left:4px solid var(--fs);}
+.code-block.fh-c{border-left:4px solid var(--fh);}
+.code-block.dr-c{border-left:4px solid var(--dr);}
+.code-block.dp-c{border-left:4px solid var(--dp);}
+.code-block.ra-c{border-left:4px solid var(--ra);}
+.code-block.hk-c{border-left:4px solid var(--hk);}
+.code-block.rw-c{border-left:4px solid var(--rw);}
+.code-block pre{margin:0;font-family:'JetBrains Mono',monospace;font-size:clamp(.65rem,1.8vw,.77rem);line-height:1.8;color:#cdd6f4;white-space:pre-wrap;word-break:break-all;}
+.code-label{font-family:'JetBrains Mono',monospace;font-size:.63rem;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.tg-l{color:#67e8f9;}.fs-l{color:#c4b5fd;}.fh-l{color:#6ee7b7;}.dr-l{color:#fcd34d;}
+.dp-l{color:#fca5a5;}.ra-l{color:#7dd3fc;}.hk-l{color:#c4b5fd;}.rw-l{color:#6ee7b7;}
+.kw{color:#cba6f7;}.str{color:#a6e3a1;}.cm{color:#45486a;font-style:italic;}
+.tp{color:#89dceb;}.fn{color:#89b4fa;}.num{color:#fab387;}
+.attr{color:#89b4fa;}.blk{color:#cba6f7;}
+code{background:rgba(0,180,216,.1);padding:2px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:.79rem;color:var(--tg-d);}
+.folder-tree{background:var(--code-bg);border-radius:var(--r);padding:1rem 1.3rem;margin:14px 0;font-family:'JetBrains Mono',monospace;font-size:clamp(.7rem,1.9vw,.82rem);line-height:2;color:#cdd6f4;overflow-x:auto;-webkit-overflow-scrolling:touch;border-left:4px solid var(--tg);box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:pre;}
+.folder-tree .dir{color:#89b4fa;font-weight:600;}
+.folder-tree .file-tg{color:#67e8f9;}
+.folder-tree .file-tf{color:#c4b5fd;}
+.folder-tree .comment{color:#45486a;font-style:italic;}
+.completion{background:linear-gradient(135deg,#050e18,#0a1e30);border-radius:var(--r);padding:clamp(1.5rem,4vw,2.5rem);text-align:center;margin:16px 0;}
+.completion h3{font-size:1.2rem;font-weight:800;margin-bottom:12px;color:#fff;}
+.completion p{color:rgba(255,255,255,.65);font-size:.86rem;line-height:1.9;margin:0;}
+.all-done{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap;}
+.np{padding:8px 16px;border-radius:8px;font-size:.78rem;font-weight:600;font-family:'JetBrains Mono',monospace;}
+.np-done{background:rgba(52,211,153,.2);border:1px solid rgba(52,211,153,.3);color:#6ee7b7;}
+@media(max-width:640px){.grid-2{grid-template-columns:1fr;}.code-block pre{font-size:.63rem;}}
+</style>
+</head>
+<body>
+<div class="header"><div class="container">
+  <div class="header-badge">Infrastructure as Code · Terragrunt</div>
+  <div class="part-badge">
+    <span class="pb pb-done">✅ Part 1: Fundamentals</span>
+    <span class="pb pb-done">✅ Part 2: AWS Examples</span>
+    <span class="pb pb-active">③ Terragrunt</span>
+  </div>
+  <h1>Terragrunt — <span>Beginner to Advanced</span></h1>
+  <p>DRY Terraform at scale — no more copy-pasting backend config, provider blocks, or variable files across environments</p>
+  <div class="header-chips">
+    <span class="chip">DRY Config</span><span class="chip">Includes</span><span class="chip">Dependencies</span>
+    <span class="chip">run-all</span><span class="chip">Hooks</span><span class="chip">Inputs</span><span class="chip">Stacks</span>
+  </div>
+</div></div>
+<div class="tab-nav"><div class="container"><div class="tab-nav-inner">
+  <button class="tab-btn t-why active" onclick="T('why',this)">① Why Terragrunt?</button>
+  <button class="tab-btn t-fs"         onclick="T('fs',this)">② Folder Structure</button>
+  <button class="tab-btn t-fh"         onclick="T('fh',this)">③ Your First terragrunt.hcl</button>
+  <button class="tab-btn t-dr"         onclick="T('dr',this)">④ DRY Configs &amp; Includes</button>
+  <button class="tab-btn t-dp"         onclick="T('dp',this)">⑤ Dependencies</button>
+  <button class="tab-btn t-ra"         onclick="T('ra',this)">⑥ run-all &amp; Stacks</button>
+  <button class="tab-btn t-hk"         onclick="T('hk',this)">⑦ Hooks &amp; Inputs</button>
+  <button class="tab-btn t-rw"         onclick="T('rw',this)">⑧ Real-World Patterns</button>
+</div></div></div>
+<div class="container">
+
+<!-- TAB 1: WHY TERRAGRUNT -->
+<div id="tab-why" class="tab-panel active ph-why"><div class="section">
+  <h2>🤔 Why Does Terragrunt Exist?</h2>
+
+  <div class="story">You've followed the Part 1 folder structure — separate folders for dev, staging, and prod. Each environment has its own <code>backend.tf</code>, <code>providers.tf</code>, and <code>terraform.tfvars</code>. Your prod and staging backend configs are identical except for the S3 key name. Your provider blocks are copy-pasted three times. When you need to change the AWS region, you edit three files. When you add a fourth environment, you copy-paste everything again.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Can't I just use a shared variables file or module for that repeated config?</div>
+    <p class="qa-a">The problem is that <code>backend</code> blocks and <code>provider</code> blocks in Terraform <strong>cannot use variables or module outputs</strong> — they're evaluated before any variable resolution happens. So you literally cannot DRY them out in plain Terraform. That's the core gap Terragrunt fills.</p>
+  </div>
+
+  <div class="aha">
+    <div class="aha-tag">💡 What Terragrunt Actually Is</div>
+    <p>Terragrunt is a thin wrapper around Terraform. It doesn't replace Terraform — it runs Terraform under the hood. What it adds: a <code>terragrunt.hcl</code> config file that CAN use variables, functions, and inheritance. Terragrunt reads this file, generates the backend and provider config from it dynamically, then calls <code>terraform init / plan / apply</code> on your behalf. Your Terraform modules are completely unchanged.</p>
+  </div>
+
+  <h3>The Problems Terragrunt Solves</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>😩 Without Terragrunt</h4>
+      <ul>
+        <li>Backend config copy-pasted in every environment folder</li>
+        <li>Provider blocks duplicated everywhere</li>
+        <li>To deploy all environments: cd into each, run apply separately</li>
+        <li>No enforced ordering — forgetting to apply networking before compute causes errors</li>
+        <li>Common inputs (account ID, region) repeated in every tfvars</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>😊 With Terragrunt</h4>
+      <ul>
+        <li>Backend config defined ONCE in a root <code>terragrunt.hcl</code>, inherited everywhere</li>
+        <li>Provider config generated from a single shared file</li>
+        <li><code>terragrunt run-all apply</code> deploys everything in dependency order</li>
+        <li>Dependencies declared explicitly — networking always applies before compute</li>
+        <li>Common inputs defined once at root level, available everywhere</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Terragrunt vs Plain Terraform — When to Use Which</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>✅ Use plain Terraform when...</h4>
+      <ul>
+        <li>Single environment or small team</li>
+        <li>One or two AWS accounts</li>
+        <li>Learning Terraform (don't add Terragrunt complexity yet)</li>
+        <li>Simple repo with 2-3 root modules</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>✅ Add Terragrunt when...</h4>
+      <ul>
+        <li>Multiple environments (dev/staging/prod) with lots of repeated config</li>
+        <li>Multiple AWS accounts or regions</li>
+        <li>Split state across components that depend on each other</li>
+        <li>Need to deploy ALL components in the right order with one command</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Terragrunt Doesn't Change Your Terraform Modules</h4>
+    <p>Your existing <code>modules/</code> folder, resource definitions, and HCL code stay exactly as they are. Terragrunt just wraps the invocation — generating backend config, passing inputs, and orchestrating order. If you decided to remove Terragrunt later, your Terraform modules work exactly the same.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 2: FOLDER STRUCTURE -->
+<div id="tab-fs" class="tab-panel ph-fs"><div class="section">
+  <h2>📁 Folder Structure with Terragrunt</h2>
+
+  <div class="story">Terragrunt introduces a layered folder structure where each level has a <code>terragrunt.hcl</code> file. The root file sets account-wide defaults. Environment files inherit and extend. Component files declare which module to call and what inputs to pass. Each level adds only what's different from the level above.</div>
+
+  <h3>The Standard Terragrunt Structure</h3>
+  <div class="folder-tree"><span class="dir">infrastructure/</span>
+├── <span class="file-tg">terragrunt.hcl</span>              <span class="comment"># ROOT — backend config, common inputs, provider</span>
+├── <span class="file-tg">common.hcl</span>                  <span class="comment"># shared variables (account ID, region, etc.)</span>
+│
+├── <span class="dir">modules/</span>                     <span class="comment"># plain Terraform modules — no terragrunt.hcl needed</span>
+│   ├── <span class="dir">networking/</span>
+│   │   ├── <span class="file-tf">main.tf</span>
+│   │   ├── <span class="file-tf">variables.tf</span>
+│   │   └── <span class="file-tf">outputs.tf</span>
+│   ├── <span class="dir">ecs-service/</span>
+│   └── <span class="dir">rds/</span>
+│
+└── <span class="dir">environments/</span>
+    ├── <span class="dir">dev/</span>
+    │   ├── <span class="file-tg">env.hcl</span>              <span class="comment"># env-level vars: environment="dev", etc.</span>
+    │   ├── <span class="dir">networking/</span>
+    │   │   └── <span class="file-tg">terragrunt.hcl</span>   <span class="comment"># calls modules/networking, passes dev vars</span>
+    │   ├── <span class="dir">database/</span>
+    │   │   └── <span class="file-tg">terragrunt.hcl</span>   <span class="comment"># depends on networking</span>
+    │   └── <span class="dir">ecs-service/</span>
+    │       └── <span class="file-tg">terragrunt.hcl</span>   <span class="comment"># depends on networking + database</span>
+    ├── <span class="dir">staging/</span>
+    │   ├── <span class="file-tg">env.hcl</span>
+    │   ├── <span class="dir">networking/</span>
+    │   │   └── <span class="file-tg">terragrunt.hcl</span>   <span class="comment"># identical structure — different env.hcl values</span>
+    │   ├── <span class="dir">database/</span>
+    │   └── <span class="dir">ecs-service/</span>
+    └── <span class="dir">prod/</span>
+        ├── <span class="file-tg">env.hcl</span>
+        ├── <span class="dir">networking/</span>
+        ├── <span class="dir">database/</span>
+        └── <span class="dir">ecs-service/</span></div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> Each environment has the same subfolder structure — isn't that still repetition?</div>
+    <p class="qa-a">The STRUCTURE is repeated (same folder names), but the <code>terragrunt.hcl</code> files inside are tiny — they just declare which module to call and what env-specific values to pass. All the backend config, provider config, and common settings come from the root and env.hcl via <code>include</code> blocks. The difference between a dev and prod ECS service terragrunt.hcl might be just 5 lines — the rest is inherited.</p>
+  </div>
+
+  <h3>What Each File Does</h3>
+  <div class="grid-2">
+    <div class="card">
+      <h4>📄 Root terragrunt.hcl</h4>
+      <p>Defines the S3 backend config using dynamic values — no copy-pasting. Also sets provider config and account-wide inputs. Every child terragrunt.hcl can inherit this with <code>include "root"</code>.</p>
+    </div>
+    <div class="card">
+      <h4>📄 common.hcl</h4>
+      <p>A plain HCL file (not a terragrunt.hcl) holding shared locals — AWS account ID, region, project name. Read by other files using <code>read_terragrunt_config()</code>.</p>
+    </div>
+    <div class="card">
+      <h4>📄 env.hcl</h4>
+      <p>Environment-specific locals — <code>environment = "dev"</code>, CIDR blocks, instance sizes for this env. Read by component terragrunt.hcl files within the same environment folder.</p>
+    </div>
+    <div class="card">
+      <h4>📄 Component terragrunt.hcl</h4>
+      <p>The leaf file — inherits root config, reads env.hcl, declares the Terraform module source, and passes inputs. Usually 15-30 lines.</p>
+    </div>
+  </div>
+</div></div>
+
+
+<!-- TAB 3: YOUR FIRST terragrunt.hcl -->
+<div id="tab-fh" class="tab-panel ph-fh"><div class="section">
+  <h2>⚡ Your First terragrunt.hcl</h2>
+  <div class="story">Let's build from scratch. We'll create the root config that generates backend config dynamically, then a component config that calls a Terraform module and inherits from root.</div>
+
+  <h3>Root terragrunt.hcl</h3>
+  <div class="code-block fh-c">
+    <div class="code-label fh-l">HCL — infrastructure/terragrunt.hcl (root)</div>
+    <pre><span class="cm"># Read shared variables from common.hcl</span>
+<span class="blk">locals</span> {
+  common = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"common.hcl"</span>))
+
+  <span class="attr">aws_region</span>  = <span class="fn">local.common.locals.aws_region</span>
+  <span class="attr">account_id</span>  = <span class="fn">local.common.locals.account_id</span>
+  <span class="attr">project</span>     = <span class="fn">local.common.locals.project</span>
+}
+
+<span class="cm"># S3 backend — generated dynamically from path and locals
+# path_relative_to_include() gives the folder path relative to this root file
+# e.g. "environments/dev/networking"</span>
+<span class="blk">remote_state</span> {
+  <span class="attr">backend</span> = <span class="str">"s3"</span>
+  <span class="attr">generate</span> = {
+    <span class="attr">path</span>      = <span class="str">"backend.tf"</span>
+    <span class="attr">if_exists</span> = <span class="str">"overwrite_terragrunt"</span>
+  }
+  <span class="attr">config</span> = {
+    <span class="attr">bucket</span>         = <span class="str">"${local.project}-${local.account_id}-terraform-state"</span>
+    <span class="attr">key</span>            = <span class="str">"${path_relative_to_include()}/terraform.tfstate"</span>
+    <span class="attr">region</span>         = <span class="fn">local.aws_region</span>
+    <span class="attr">dynamodb_table</span> = <span class="str">"${local.project}-terraform-state-lock"</span>
+    <span class="attr">encrypt</span>        = <span class="kw">true</span>
+  }
+}
+
+<span class="cm"># Generate a providers.tf file in every component — no copy-pasting</span>
+<span class="blk">generate</span> <span class="str">"provider"</span> {
+  <span class="attr">path</span>      = <span class="str">"provider.tf"</span>
+  <span class="attr">if_exists</span> = <span class="str">"overwrite_terragrunt"</span>
+  <span class="attr">contents</span>  = <span class="str"><<EOF
+provider "aws" {
+  region = "${local.aws_region}"
+  default_tags {
+    tags = {
+      ManagedBy = "Terragrunt"
+      Project   = "${local.project}"
+    }
+  }
+}
+EOF</span>
+}
+
+<span class="cm"># Inputs available to every component that includes this root</span>
+<span class="blk">inputs</span> = {
+  <span class="attr">aws_region</span> = <span class="fn">local.aws_region</span>
+  <span class="attr">account_id</span> = <span class="fn">local.account_id</span>
+}</pre>
+  </div>
+
+  <div class="code-block fh-c">
+    <div class="code-label fh-l">HCL — infrastructure/common.hcl</div>
+    <pre><span class="blk">locals</span> {
+  <span class="attr">project</span>    = <span class="str">"myapp"</span>
+  <span class="attr">aws_region</span> = <span class="str">"eu-west-1"</span>
+  <span class="attr">account_id</span> = <span class="str">"123456789012"</span>
+}</pre>
+  </div>
+
+  <div class="code-block fh-c">
+    <div class="code-label fh-l">HCL — environments/dev/env.hcl</div>
+    <pre><span class="blk">locals</span> {
+  <span class="attr">environment</span>    = <span class="str">"dev"</span>
+  <span class="attr">vpc_cidr</span>       = <span class="str">"10.1.0.0/16"</span>
+  <span class="attr">instance_type</span>  = <span class="str">"t3.micro"</span>
+  <span class="attr">min_capacity</span>   = <span class="num">1</span>
+  <span class="attr">max_capacity</span>   = <span class="num">3</span>
+  <span class="attr">multi_az_db</span>    = <span class="kw">false</span>
+}</pre>
+  </div>
+
+  <div class="code-block fh-c">
+    <div class="code-label fh-l">HCL — environments/dev/networking/terragrunt.hcl (a leaf component)</div>
+    <pre><span class="cm"># Inherit everything from the root terragrunt.hcl
+# find_in_parent_folders() walks up until it finds the file</span>
+<span class="blk">include</span> <span class="str">"root"</span> {
+  <span class="attr">path</span>   = <span class="fn">find_in_parent_folders</span>()
+  <span class="attr">expose</span> = <span class="kw">true</span>
+}
+
+<span class="cm"># Read environment-specific values</span>
+<span class="blk">locals</span> {
+  env = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>))
+}
+
+<span class="cm"># Point to the reusable Terraform module</span>
+<span class="blk">terraform</span> {
+  <span class="attr">source</span> = <span class="str">"../../../modules/networking"</span>
+}
+
+<span class="cm"># Inputs passed to the Terraform module as variables</span>
+<span class="blk">inputs</span> = {
+  <span class="attr">environment</span>  = <span class="fn">local.env.locals.environment</span>
+  <span class="attr">vpc_cidr</span>     = <span class="fn">local.env.locals.vpc_cidr</span>
+  <span class="attr">aws_region</span>   = <span class="fn">include.root.locals.aws_region</span>
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 path_relative_to_include() Is the Key to Unique State Keys</h4>
+    <p>In the root backend config, <code>key = "${path_relative_to_include()}/terraform.tfstate"</code> automatically generates a unique S3 key for each component — <code>environments/dev/networking/terraform.tfstate</code>, <code>environments/dev/database/terraform.tfstate</code>, etc. No manual key management, no collisions.</p>
+  </div>
+
+  <h3>Running Terragrunt</h3>
+  <div class="code-block fh-c">
+    <div class="code-label fh-l">Shell — terragrunt commands</div>
+    <pre><span class="cm"># Install Terragrunt (macOS)</span>
+brew install terragrunt
+
+<span class="cm"># From inside a component folder — exactly like terraform commands</span>
+cd environments/dev/networking
+terragrunt init
+terragrunt plan
+terragrunt apply
+terragrunt destroy
+
+<span class="cm"># Terragrunt passes all unknown flags directly to terraform
+terragrunt plan -var="image_tag=v1.2.3"
+terragrunt apply -auto-approve
+
+<span class="cm"># See what backend config Terragrunt generates (without running terraform)</span>
+terragrunt render-json</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 4: DRY CONFIGS & INCLUDES -->
+<div id="tab-dr" class="tab-panel ph-dr"><div class="section">
+  <h2>🔁 DRY Configs &amp; Includes</h2>
+  <div class="story">The core Terragrunt superpower is the <code>include</code> block — it lets a child config inherit everything from a parent, override just what's different, and merge inputs. This is how you avoid writing the same backend config 20 times across your environments.</div>
+
+  <h3>include — Inheriting Parent Config</h3>
+  <div class="code-block dr-c">
+    <div class="code-label dr-l">HCL — include patterns</div>
+    <pre><span class="cm"># Basic include — inherit everything from root</span>
+<span class="blk">include</span> <span class="str">"root"</span> {
+  <span class="attr">path</span> = <span class="fn">find_in_parent_folders</span>()
+}
+
+<span class="cm"># expose = true — makes parent's locals available via include.root.locals</span>
+<span class="blk">include</span> <span class="str">"root"</span> {
+  <span class="attr">path</span>   = <span class="fn">find_in_parent_folders</span>()
+  <span class="attr">expose</span> = <span class="kw">true</span>
+}
+<span class="cm"># Then use: include.root.locals.aws_region, include.root.inputs.account_id etc.</span>
+
+<span class="cm"># Multiple includes — inherit from both root and a shared environment config</span>
+<span class="blk">include</span> <span class="str">"root"</span> {
+  <span class="attr">path</span>   = <span class="fn">find_in_parent_folders</span>()
+  <span class="attr">expose</span> = <span class="kw">true</span>
+}
+
+<span class="blk">include</span> <span class="str">"env"</span> {
+  <span class="attr">path</span>   = <span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>)
+  <span class="attr">expose</span> = <span class="kw">true</span>
+}
+<span class="cm"># Then: include.env.locals.environment, include.env.locals.instance_type</span></pre>
+  </div>
+
+  <h3>generate — Creating Files Automatically</h3>
+  <div class="code-block dr-c">
+    <div class="code-label dr-l">HCL — generate blocks for providers and versions</div>
+    <pre><span class="cm"># In root terragrunt.hcl — generate a versions.tf in every component</span>
+<span class="blk">generate</span> <span class="str">"versions"</span> {
+  <span class="attr">path</span>      = <span class="str">"versions.tf"</span>
+  <span class="attr">if_exists</span> = <span class="str">"overwrite_terragrunt"</span>
+  <span class="attr">contents</span>  = <span class="str"><<EOF
+terraform {
+  required_version = ">= 1.6.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+EOF</span>
+}
+
+<span class="cm"># generate for a provider with assume_role (cross-account deployments)</span>
+<span class="blk">generate</span> <span class="str">"provider"</span> {
+  <span class="attr">path</span>      = <span class="str">"provider.tf"</span>
+  <span class="attr">if_exists</span> = <span class="str">"overwrite_terragrunt"</span>
+  <span class="attr">contents</span>  = <span class="str"><<EOF
+provider "aws" {
+  region = "${local.aws_region}"
+  assume_role {
+    role_arn = "arn:aws:iam::${local.account_id}:role/TerraformDeployRole"
+  }
+}
+EOF</span>
+}</pre>
+  </div>
+
+  <h3>Merging Inputs at Multiple Levels</h3>
+  <div class="code-block dr-c">
+    <div class="code-label dr-l">HCL — how inputs merge from root → env → component</div>
+    <pre><span class="cm"># Root terragrunt.hcl — account-wide inputs</span>
+<span class="blk">inputs</span> = {
+  <span class="attr">aws_region</span> = <span class="str">"eu-west-1"</span>
+  <span class="attr">account_id</span> = <span class="str">"123456789012"</span>
+}
+
+<span class="cm"># environments/dev/env.hcl — environment inputs
+# (if this file is included, its inputs also merge in)</span>
+<span class="blk">inputs</span> = {
+  <span class="attr">environment</span>  = <span class="str">"dev"</span>
+  <span class="attr">instance_type</span> = <span class="str">"t3.micro"</span>
+}
+
+<span class="cm"># environments/dev/ecs-service/terragrunt.hcl — component inputs
+# All three levels merge together. Component values override parent values
+# if the same key appears at multiple levels (deepest wins)</span>
+<span class="blk">inputs</span> = {
+  <span class="attr">service_name</span>  = <span class="str">"api"</span>
+  <span class="attr">desired_count</span> = <span class="num">1</span>
+  <span class="cm"># The Terraform module receives ALL of:
+  # aws_region, account_id, environment, instance_type, service_name, desired_count</span>
+}
+
+<span class="cm"># Explicit merge using merge() function</span>
+<span class="blk">inputs</span> = <span class="fn">merge</span>(
+  <span class="fn">include.root.inputs</span>,
+  {
+    <span class="attr">service_name</span>  = <span class="str">"api"</span>
+    <span class="attr">desired_count</span> = <span class="num">1</span>
+  }
+)</pre>
+  </div>
+
+  <h3>read_terragrunt_config — Reading Sibling Files</h3>
+  <div class="code-block dr-c">
+    <div class="code-label dr-l">HCL — reading account and env config</div>
+    <pre><span class="blk">locals</span> {
+  <span class="cm"># Read the common.hcl at the root of the repo</span>
+  common = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"common.hcl"</span>))
+
+  <span class="cm"># Read the env.hcl in the environment folder above this component</span>
+  env    = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>))
+
+  <span class="cm"># Now use the values</span>
+  <span class="attr">project</span>     = <span class="fn">local.common.locals.project</span>
+  <span class="attr">environment</span> = <span class="fn">local.env.locals.environment</span>
+  <span class="attr">vpc_cidr</span>    = <span class="fn">local.env.locals.vpc_cidr</span>
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 5: DEPENDENCIES -->
+<div id="tab-dp" class="tab-panel ph-dp"><div class="section">
+  <h2>🔗 Dependencies</h2>
+  <div class="story">Your ECS service needs the VPC ID and private subnet IDs from the networking component. In plain Terraform with separate state files, you'd use <code>terraform_remote_state</code> data sources. Terragrunt has a cleaner way: declare a <code>dependency</code> block, and use the outputs of one component directly as inputs in another.</div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What's the difference between dependency and terraform_remote_state?</div>
+    <p class="qa-a">Both read another component's outputs. The difference: <code>terraform_remote_state</code> is Terraform code inside your module — it tightly couples your module to the state location. A Terragrunt <code>dependency</code> block is outside the module — your module stays clean, and Terragrunt passes the outputs as inputs. Much better separation of concerns.</p>
+  </div>
+
+  <h3>Declaring and Using Dependencies</h3>
+  <div class="code-block dp-c">
+    <div class="code-label dp-l">HCL — environments/dev/ecs-service/terragrunt.hcl</div>
+    <pre><span class="blk">include</span> <span class="str">"root"</span> {
+  <span class="attr">path</span>   = <span class="fn">find_in_parent_folders</span>()
+  <span class="attr">expose</span> = <span class="kw">true</span>
+}
+
+<span class="blk">locals</span> {
+  env = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>))
+}
+
+<span class="cm"># Declare dependency on the networking component
+# Terragrunt reads its state to get the outputs</span>
+<span class="blk">dependency</span> <span class="str">"networking"</span> {
+  <span class="attr">config_path</span> = <span class="str">"../networking"</span>
+
+  <span class="cm"># Mock outputs — used when running plan BEFORE networking is applied
+  # Without this, plan would fail because networking state doesn't exist yet</span>
+  <span class="attr">mock_outputs</span> = {
+    <span class="attr">vpc_id</span>             = <span class="str">"vpc-00000000"</span>
+    <span class="attr">private_subnet_ids</span> = [<span class="str">"subnet-00000000"</span>, <span class="str">"subnet-11111111"</span>]
+    <span class="attr">ecs_cluster_id</span>     = <span class="str">"arn:aws:ecs:eu-west-1:123:cluster/mock"</span>
+  }
+  <span class="attr">mock_outputs_allowed_terraform_commands</span> = [<span class="str">"plan"</span>, <span class="str">"validate"</span>]
+}
+
+<span class="blk">dependency</span> <span class="str">"database"</span> {
+  <span class="attr">config_path</span> = <span class="str">"../database"</span>
+  <span class="attr">mock_outputs</span> = {
+    <span class="attr">db_endpoint</span> = <span class="str">"mock.rds.endpoint:5432"</span>
+  }
+  <span class="attr">mock_outputs_allowed_terraform_commands</span> = [<span class="str">"plan"</span>, <span class="str">"validate"</span>]
+}
+
+<span class="blk">terraform</span> {
+  <span class="attr">source</span> = <span class="str">"../../../modules/ecs-service"</span>
+}
+
+<span class="blk">inputs</span> = {
+  <span class="attr">environment</span>       = <span class="fn">local.env.locals.environment</span>
+  <span class="attr">desired_count</span>     = <span class="fn">local.env.locals.min_capacity</span>
+  <span class="attr">image_tag</span>         = <span class="str">"latest"</span>
+
+  <span class="cm"># Values from dependencies — pulled directly from networking's outputs</span>
+  <span class="attr">vpc_id</span>            = <span class="fn">dependency.networking.outputs.vpc_id</span>
+  <span class="attr">private_subnet_ids</span> = <span class="fn">dependency.networking.outputs.private_subnet_ids</span>
+  <span class="attr">cluster_id</span>        = <span class="fn">dependency.networking.outputs.ecs_cluster_id</span>
+
+  <span class="cm"># From database dependency</span>
+  <span class="attr">db_endpoint</span>       = <span class="fn">dependency.database.outputs.db_endpoint</span>
+}</pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 Always Add mock_outputs for plan</h4>
+    <p>Without mock outputs, <code>terragrunt plan</code> on the ECS service would fail if the networking state doesn't exist yet — it tries to read the state and finds nothing. Mock outputs let CI/CD pipelines validate and plan ALL components even before any are applied, which is essential for PR checks.</p>
+  </div>
+
+  <h3>Visualising the Dependency Graph</h3>
+  <div class="code-block dp-c">
+    <div class="code-label dp-l">Shell — see the dependency graph</div>
+    <pre><span class="cm"># From the environment folder, see the full dependency tree</span>
+cd environments/dev
+terragrunt graph-dependencies
+
+<span class="cm"># Output example:
+# digraph {
+#   "networking" ;
+#   "database" ;
+#   "database" -> "networking" ;
+#   "ecs-service" ;
+#   "ecs-service" -> "networking" ;
+#   "ecs-service" -> "database" ;
+# }</span>
+
+<span class="cm"># Pipe to graphviz for a visual diagram</span>
+terragrunt graph-dependencies | dot -Tsvg > graph.svg</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 6: RUN-ALL & STACKS -->
+<div id="tab-ra" class="tab-panel ph-ra"><div class="section">
+  <h2>🚀 run-all &amp; Stacks</h2>
+  <div class="story">The single biggest time-saver Terragrunt offers: instead of cd-ing into networking, applying, then cd-ing into database, applying, then ecs-service — you run one command from the environment folder and Terragrunt figures out the order from dependency declarations and applies everything.</div>
+
+  <h3>run-all Commands</h3>
+  <div class="code-block ra-c">
+    <div class="code-label ra-l">Shell — run-all applies all components in dependency order</div>
+    <pre><span class="cm"># From the environment folder — apply ALL components</span>
+cd environments/dev
+terragrunt run-all apply
+
+<span class="cm"># Terragrunt builds the dependency graph, then:
+# 1. Applies networking (no dependencies)
+# 2. Applies database (depends on networking — waits for step 1)
+# 3. Applies ecs-service (depends on both — waits for steps 1 and 2)
+# Independent components apply in PARALLEL</span>
+
+<span class="cm"># Plan all components</span>
+terragrunt run-all plan
+
+<span class="cm"># Destroy in REVERSE dependency order</span>
+terragrunt run-all destroy
+
+<span class="cm"># Validate all</span>
+terragrunt run-all validate
+
+<span class="cm"># From the root — apply ALL environments (careful in prod!)</span>
+cd infrastructure
+terragrunt run-all apply
+
+<span class="cm"># Apply only specific environments by targeting folders</span>
+terragrunt run-all apply --terragrunt-include-dir "environments/dev/*"
+
+<span class="cm"># Exclude a specific component</span>
+terragrunt run-all apply --terragrunt-exclude-dir "environments/prod/database"</pre>
+  </div>
+
+  <div class="qa">
+    <div class="qa-q"><span class="qa-bubble">🤔</span> What if one component fails mid-run-all? Does everything roll back?</div>
+    <p class="qa-a">No — Terragrunt doesn't do atomic rollbacks. If networking applies successfully but database fails, networking stays applied. Terragrunt will show which components succeeded and which failed. You fix the failing component and run <code>run-all apply</code> again — already-applied components will show "no changes" and continue.</p>
+  </div>
+
+  <h3>Stacks (Terragrunt v0.67+)</h3>
+  <div class="story">Stacks are Terragrunt's newer, more explicit way to define a group of units that should be deployed together. Instead of Terragrunt discovering components by folder traversal, you declare them explicitly in a <code>terragrunt.stack.hcl</code> file.</div>
+
+  <div class="code-block ra-c">
+    <div class="code-label ra-l">HCL — environments/dev/terragrunt.stack.hcl</div>
+    <pre><span class="cm"># Explicitly declare the units in this stack</span>
+<span class="blk">unit</span> <span class="str">"networking"</span> {
+  <span class="attr">source</span> = <span class="str">"./networking"</span>
+}
+
+<span class="blk">unit</span> <span class="str">"database"</span> {
+  <span class="attr">source</span>    = <span class="str">"./database"</span>
+  <span class="cm"># Dependencies still respected from the unit's own terragrunt.hcl</span>
+}
+
+<span class="blk">unit</span> <span class="str">"ecs_service"</span> {
+  <span class="attr">source</span> = <span class="str">"./ecs-service"</span>
+}
+
+<span class="cm"># Run all units in the stack</span>
+<span class="cm"># terragrunt stack run apply</span>
+<span class="cm"># terragrunt stack run plan</span>
+<span class="cm"># terragrunt stack run destroy</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 run-all vs Stacks</h4>
+    <p><code>run-all</code> discovers components by recursively finding all <code>terragrunt.hcl</code> files under the current folder. Stacks are explicit — you list exactly which units belong. For large repos, stacks are more predictable and easier to reason about. <code>run-all</code> is simpler and works great for smaller setups.</p>
+  </div>
+</div></div>
+
+
+<!-- TAB 7: HOOKS & INPUTS -->
+<div id="tab-hk" class="tab-panel ph-hk"><div class="section">
+  <h2>🪝 Hooks &amp; Inputs</h2>
+  <div class="story">Hooks let you run arbitrary commands before or after Terraform runs. This is how you do things like validate a Docker image exists before deploying ECS, run database migrations after applying, or generate a config file that Terraform needs to read.</div>
+
+  <h3>before_hook and after_hook</h3>
+  <div class="code-block hk-c">
+    <div class="code-label hk-l">HCL — hooks in a component terragrunt.hcl</div>
+    <pre><span class="blk">terraform</span> {
+  <span class="attr">source</span> = <span class="str">"../../../modules/ecs-service"</span>
+
+  <span class="cm"># Run BEFORE terraform init</span>
+  <span class="attr">before_hook</span> <span class="str">"validate_image"</span> {
+    <span class="attr">commands</span> = [<span class="str">"apply"</span>, <span class="str">"plan"</span>]
+    <span class="attr">execute</span>  = [<span class="str">"bash"</span>, <span class="str">"-c"</span>, <span class="str">"aws ecr describe-images --repository-name myapp --image-ids imageTag=${var.image_tag}"</span>]
+    <span class="attr">run_on_error</span> = <span class="kw">false</span>  <span class="cm"># abort if this fails</span>
+  }
+
+  <span class="cm"># Run AFTER terraform apply succeeds</span>
+  <span class="attr">after_hook</span> <span class="str">"run_migrations"</span> {
+    <span class="attr">commands</span>     = [<span class="str">"apply"</span>]
+    <span class="attr">execute</span>      = [<span class="str">"bash"</span>, <span class="str">"-c"</span>, <span class="str">"./scripts/run_migrations.sh"</span>]
+    <span class="attr">run_on_error</span> = <span class="kw">false</span>
+  }
+
+  <span class="cm"># Run on errors — e.g., upload logs to S3</span>
+  <span class="attr">error_hook</span> <span class="str">"notify_slack"</span> {
+    <span class="attr">commands</span>     = [<span class="str">"apply"</span>]
+    <span class="attr">execute</span>      = [<span class="str">"bash"</span>, <span class="str">"-c"</span>, <span class="str">"./scripts/notify_slack.sh 'Terragrunt apply failed in ${local.env}'"</span>]
+    <span class="attr">run_on_error</span> = <span class="kw">true</span>
+  }
+}</pre>
+  </div>
+
+  <h3>Advanced Inputs — Dynamic and Conditional</h3>
+  <div class="code-block hk-c">
+    <div class="code-label hk-l">HCL — dynamic inputs from locals and conditionals</div>
+    <pre><span class="blk">locals</span> {
+  env     = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>))
+  is_prod = <span class="fn">local.env.locals.environment</span> == <span class="str">"prod"</span>
+
+  <span class="cm"># Get the current git commit SHA for image tagging</span>
+  image_tag = <span class="fn">run_cmd</span>(<span class="str">"--terragrunt-quiet"</span>, <span class="str">"git"</span>, <span class="str">"rev-parse"</span>, <span class="str">"--short"</span>, <span class="str">"HEAD"</span>)
+
+  <span class="cm"># Get AWS account ID dynamically from STS</span>
+  account_id = <span class="fn">run_cmd</span>(<span class="str">"--terragrunt-quiet"</span>, <span class="str">"aws"</span>, <span class="str">"sts"</span>, <span class="str">"get-caller-identity"</span>, <span class="str">"--query"</span>, <span class="str">"Account"</span>, <span class="str">"--output"</span>, <span class="str">"text"</span>)
+}
+
+<span class="blk">inputs</span> = {
+  <span class="attr">environment</span>    = <span class="fn">local.env.locals.environment</span>
+  <span class="attr">image_tag</span>      = <span class="fn">local.image_tag</span>
+  <span class="attr">account_id</span>     = <span class="fn">local.account_id</span>
+
+  <span class="cm"># Conditional values based on environment</span>
+  <span class="attr">desired_count</span>  = <span class="fn">local.is_prod</span> ? <span class="num">3</span> : <span class="num">1</span>
+  <span class="attr">multi_az</span>       = <span class="fn">local.is_prod</span>
+  <span class="attr">deletion_protection</span> = <span class="fn">local.is_prod</span>
+
+  <span class="cm"># From get_env() — read from OS environment variables</span>
+  <span class="attr">slack_webhook</span>  = <span class="fn">get_env</span>(<span class="str">"SLACK_WEBHOOK_URL"</span>, <span class="str">""</span>)
+}</pre>
+  </div>
+
+  <h3>Useful Built-in Functions</h3>
+  <div class="code-block hk-c">
+    <div class="code-label hk-l">HCL — terragrunt built-in functions</div>
+    <pre><span class="blk">locals</span> {
+  <span class="cm"># find_in_parent_folders() — walk up until the file is found</span>
+  <span class="attr">root_path</span> = <span class="fn">find_in_parent_folders</span>()
+
+  <span class="cm"># get_terragrunt_dir() — absolute path of current terragrunt.hcl</span>
+  <span class="attr">current_dir</span> = <span class="fn">get_terragrunt_dir</span>()
+
+  <span class="cm"># get_parent_terragrunt_dir() — parent's directory</span>
+  <span class="attr">parent_dir</span> = <span class="fn">get_parent_terragrunt_dir</span>()
+
+  <span class="cm"># path_relative_to_include() — relative path from root to current file
+  # "environments/dev/networking" — used for S3 state keys</span>
+  <span class="attr">rel_path</span> = <span class="fn">path_relative_to_include</span>()
+
+  <span class="cm"># get_env() — read OS environment variable with optional default</span>
+  <span class="attr">image_tag</span> = <span class="fn">get_env</span>(<span class="str">"IMAGE_TAG"</span>, <span class="str">"latest"</span>)
+
+  <span class="cm"># run_cmd() — run a shell command and capture its output</span>
+  <span class="attr">git_sha</span> = <span class="fn">run_cmd</span>(<span class="str">"--terragrunt-quiet"</span>, <span class="str">"git"</span>, <span class="str">"rev-parse"</span>, <span class="str">"--short"</span>, <span class="str">"HEAD"</span>)
+
+  <span class="cm"># get_aws_account_id() — built-in, no need for run_cmd</span>
+  <span class="attr">account_id</span> = <span class="fn">get_aws_account_id</span>()
+
+  <span class="cm"># get_aws_region() — current region</span>
+  <span class="attr">region</span> = <span class="fn">get_aws_region</span>()
+}</pre>
+  </div>
+</div></div>
+
+
+<!-- TAB 8: REAL-WORLD PATTERNS -->
+<div id="tab-rw" class="tab-panel ph-rw"><div class="section">
+  <h2>🏗️ Real-World Patterns</h2>
+  <div class="story">Let's put everything together into the patterns you'll actually use in a production multi-environment setup.</div>
+
+  <h3>Pattern 1 — Multi-Account AWS with assume_role</h3>
+  <div class="code-block rw-c">
+    <div class="code-label rw-l">HCL — different AWS accounts per environment</div>
+    <pre><span class="blk">locals</span> {
+  <span class="cm"># Map environments to AWS account IDs</span>
+  <span class="attr">account_ids</span> = {
+    <span class="attr">dev</span>     = <span class="str">"111111111111"</span>
+    <span class="attr">staging</span> = <span class="str">"222222222222"</span>
+    <span class="attr">prod</span>    = <span class="str">"333333333333"</span>
+  }
+
+  <span class="attr">env</span>        = <span class="fn">read_terragrunt_config</span>(<span class="fn">find_in_parent_folders</span>(<span class="str">"env.hcl"</span>))
+  <span class="attr">environment</span> = <span class="fn">local.env.locals.environment</span>
+  <span class="attr">account_id</span>  = <span class="fn">local.account_ids[local.environment]</span>
+}
+
+<span class="blk">generate</span> <span class="str">"provider"</span> {
+  <span class="attr">path</span>      = <span class="str">"provider.tf"</span>
+  <span class="attr">if_exists</span> = <span class="str">"overwrite_terragrunt"</span>
+  <span class="attr">contents</span>  = <span class="str"><<EOF
+provider "aws" {
+  region = "eu-west-1"
+  assume_role {
+    role_arn     = "arn:aws:iam::${local.account_id}:role/TerraformDeployRole"
+    session_name = "terragrunt-${local.environment}"
+  }
+}
+EOF</span>
+}</pre>
+  </div>
+
+  <h3>Pattern 2 — Using Public Registry Modules</h3>
+  <div class="code-block rw-c">
+    <div class="code-label rw-l">HCL — calling a registry module from Terragrunt</div>
+    <pre><span class="blk">terraform</span> {
+  <span class="cm"># Use a public registry module — double slash separates module path from submodule</span>
+  <span class="attr">source</span> = <span class="str">"tfr:///terraform-aws-modules/vpc/aws?version=5.1.0"</span>
+  <span class="cm"># or from git:</span>
+  <span class="attr">source</span> = <span class="str">"git::https://github.com/terraform-aws-modules/terraform-aws-vpc.git///?ref=v5.1.0"</span>
+}
+
+<span class="blk">inputs</span> = {
+  <span class="attr">name</span> = <span class="str">"${local.name_prefix}-vpc"</span>
+  <span class="attr">cidr</span> = <span class="fn">local.env.locals.vpc_cidr</span>
+  <span class="attr">azs</span>  = [<span class="str">"eu-west-1a"</span>, <span class="str">"eu-west-1b"</span>, <span class="str">"eu-west-1c"</span>]
+  <span class="attr">private_subnets</span>    = [<span class="str">"10.0.1.0/24"</span>, <span class="str">"10.0.2.0/24"</span>, <span class="str">"10.0.3.0/24"</span>]
+  <span class="attr">public_subnets</span>     = [<span class="str">"10.0.101.0/24"</span>, <span class="str">"10.0.102.0/24"</span>, <span class="str">"10.0.103.0/24"</span>]
+  <span class="attr">enable_nat_gateway</span> = <span class="kw">true</span>
+  <span class="attr">single_nat_gateway</span> = !<span class="fn">local.is_prod</span>
+}</pre>
+  </div>
+
+  <h3>Pattern 3 — CI/CD Pipeline Integration</h3>
+  <div class="code-block rw-c">
+    <div class="code-label rw-l">YAML — GitHub Actions workflow</div>
+    <pre><span class="attr">name</span>: <span class="str">Terragrunt Deploy</span>
+<span class="attr">on</span>:
+  <span class="attr">push</span>:
+    <span class="attr">branches</span>: [<span class="str">main</span>]
+
+<span class="attr">jobs</span>:
+  <span class="attr">deploy</span>:
+    <span class="attr">runs-on</span>: <span class="str">ubuntu-latest</span>
+    <span class="attr">steps</span>:
+      - <span class="attr">uses</span>: <span class="str">actions/checkout@v4</span>
+
+      - <span class="attr">name</span>: <span class="str">Setup Terraform</span>
+        <span class="attr">uses</span>: <span class="str">hashicorp/setup-terraform@v3</span>
+        <span class="attr">with</span>:
+          <span class="attr">terraform_version</span>: <span class="str">"1.7.0"</span>
+
+      - <span class="attr">name</span>: <span class="str">Install Terragrunt</span>
+        <span class="attr">run</span>: |
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v0.57.0/terragrunt_linux_amd64
+          chmod +x terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+
+      - <span class="attr">name</span>: <span class="str">Configure AWS Credentials</span>
+        <span class="attr">uses</span>: <span class="str">aws-actions/configure-aws-credentials@v4</span>
+        <span class="attr">with</span>:
+          <span class="attr">role-to-assume</span>: <span class="str">arn:aws:iam::123456789012:role/GitHubActionsRole</span>
+          <span class="attr">aws-region</span>: <span class="str">eu-west-1</span>
+
+      - <span class="attr">name</span>: <span class="str">Plan Dev</span>
+        <span class="attr">run</span>: |
+          cd environments/dev
+          terragrunt run-all plan --terragrunt-non-interactive
+        <span class="attr">env</span>:
+          <span class="attr">IMAGE_TAG</span>: <span class="str">${{ github.sha }}</span>
+
+      - <span class="attr">name</span>: <span class="str">Apply Dev</span>
+        <span class="attr">run</span>: |
+          cd environments/dev
+          terragrunt run-all apply --terragrunt-non-interactive
+        <span class="attr">env</span>:
+          <span class="attr">IMAGE_TAG</span>: <span class="str">${{ github.sha }}</span></pre>
+  </div>
+
+  <h3>Pattern 4 — Terragrunt + Atlantis</h3>
+  <div class="code-block rw-c">
+    <div class="code-label rw-l">YAML — atlantis.yaml for Terragrunt</div>
+    <pre><span class="attr">version</span>: <span class="num">3</span>
+<span class="attr">automerge</span>: <span class="kw">false</span>
+<span class="attr">autodiscover</span>:
+  <span class="attr">mode</span>: <span class="str">enabled</span>
+<span class="attr">projects</span>:
+  - <span class="attr">name</span>: <span class="str">dev-networking</span>
+    <span class="attr">dir</span>: <span class="str">environments/dev/networking</span>
+    <span class="attr">workflow</span>: <span class="str">terragrunt</span>
+  - <span class="attr">name</span>: <span class="str">dev-ecs-service</span>
+    <span class="attr">dir</span>: <span class="str">environments/dev/ecs-service</span>
+    <span class="attr">workflow</span>: <span class="str">terragrunt</span>
+<span class="attr">workflows</span>:
+  <span class="attr">terragrunt</span>:
+    <span class="attr">plan</span>:
+      <span class="attr">steps</span>:
+        - <span class="attr">run</span>: <span class="str">terragrunt plan -out $PLANFILE</span>
+    <span class="attr">apply</span>:
+      <span class="attr">steps</span>:
+        - <span class="attr">run</span>: <span class="str">terragrunt apply $PLANFILE</span></pre>
+  </div>
+
+  <div class="tip">
+    <h4>💡 --terragrunt-non-interactive in CI/CD</h4>
+    <p>Always pass <code>--terragrunt-non-interactive</code> in CI/CD pipelines — it tells Terragrunt not to prompt for confirmation on destructive operations (like <code>run-all destroy</code>). Combine with <code>-auto-approve</code> on the Terraform side when you want fully automated applies.</p>
+  </div>
+
+  <div class="completion">
+    <h3>🎉 Terraform Series — All 3 Parts Complete!</h3>
+    <p>Why Terragrunt — the backend/provider DRY problem that plain Terraform can't solve · Folder Structure — root, common.hcl, env.hcl, component layers · Your First terragrunt.hcl — remote_state, generate, include, path_relative_to_include for unique S3 keys · DRY Configs &amp; Includes — multiple includes, expose, read_terragrunt_config, input merging · Dependencies — dependency blocks, mock_outputs for plan, reading outputs from other components · run-all &amp; Stacks — parallel apply in dependency order, stack.hcl for explicit grouping · Hooks &amp; Inputs — before_hook, after_hook, error_hook, run_cmd, get_env, get_aws_account_id · Real-World Patterns — multi-account assume_role, registry modules, GitHub Actions CI/CD, Atlantis integration</p>
+    <div class="all-done">
+      <span class="np np-done">✅ Part 1: Fundamentals</span>
+      <span class="np np-done">✅ Part 2: AWS Examples</span>
+      <span class="np np-done">✅ Part 3: Terragrunt</span>
+    </div>
+  </div>
+</div></div>
+
+</div><!-- /.container -->
+<script>function T(id,btn){document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));document.getElementById('tab-'+id).classList.add('active');btn.classList.add('active');window.scrollTo({top:0,behavior:'smooth'});}</script>
+</body>
+</html>
